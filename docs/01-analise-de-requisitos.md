@@ -6,9 +6,9 @@
 |---|---|
 | **Projeto** | Libmork — Aplicativo web de RPG de mesa |
 | **Documento** | Análise de Requisitos |
-| **Versão** | 0.5 |
+| **Versão** | 0.6 |
 | **Data** | 2026-08-21 |
-| **Status** | Rascunho refinado v5 |
+| **Status** | Rascunho refinado v6 |
 | **Idioma** | Português (Brasil) |
 
 ### Histórico de Revisões
@@ -20,6 +20,7 @@
 | 0.3 | 2026-08-21 | Equipe Libmork | Incorporação do motor de jogo, classes, magias, perícias, 3 ações, morte e pontos de sombra, e filosofia de rolagens assistidas |
 | 0.4 | 2026-08-21 | Equipe Libmork | Ajuste das regras de Bloqueio, Fênix, testes de morte, automação de combate híbrido (digital/manual), uso de Pontos de Sombra e interface do Escudo do Mestre |
 | 0.5 | 2026-08-21 | Equipe Libmork | Refinamento de Pontos de Sombra (bônus +2 / dificuldade de monstros), Item Mágico (qualidade/contraponto), PvP por campanha, Estabilização (1 ação), Sequelas Fênix permanentes pelo mestre, atributos ilimitados, perícias dinâmicas e ações restritas ao turno |
+| 0.6 | 2026-08-21 | Equipe Libmork | Definição da infraestrutura centralizada, banco externo com migrations (Prisma/Drizzle), armazenamento de imagens em volume local, resiliência WebSocket, e detalhamento de NPCs no Escudo do Mestre |
 
 ---
 
@@ -94,6 +95,13 @@ As decisões abaixo são a **fonte da verdade** deste projeto. Os requisitos das
 | D-29 | Sem Limite de Atributos | Não existe limite máximo rígido nos atributos durante a distribuição de pontos no level-up. |
 | D-30 | Perícias Interpretáveis | O campo de rolagem cadastrado no CRUD de perícias é uma fórmula interpretável pelo sistema, somando o modificador do atributo chave automaticamente no teste. |
 | D-31 | Ações do Turno | As 3 ações do turno são consumidas exclusivamente no turno do jogador. Reações fora do turno são gratuitas ou separadas (não deduzem ações do próximo turno). |
+| D-32 | Centralização e Acesso | O sistema será centralizado em um servidor único de produção; usuários acessam pelo navegador do celular de forma responsiva. |
+| D-33 | Armazenamento de Imagens | Imagens de personagens e NPCs persistidas em um volume local no Docker Compose junto à aplicação Next.js. |
+| D-34 | Banco de Dados Externo e ORM | O banco PostgreSQL é provisionado externamente (fora do compose). A aplicação o consome por variáveis de ambiente de conexão. A criação de tabelas, controle de schema e população inicial é feita via migrations do ORM (Prisma ou Drizzle). |
+| D-35 | CRUD de Perícias com Fórmulas | Perícias suportam fórmulas de rolagens legíveis por humanos no CRUD (ex: `1d20 + {vigor}`), resolvidas pelo motor de testes da ficha. |
+| D-36 | NFC Universal via URL | O fluxo NFC opera via redirecionamento de link HTTP (URL NDEF gravada padrão), compatível nativamente com iOS e Android sem APIs proprietárias. |
+| D-37 | Sincronização e Resiliência a Falhas | Jogadores que perdem conexão WebSocket continuam visíveis no Escudo do Mestre, com sinalizador visual de perda de sinal. |
+| D-38 | Ficha Simplificada de NPC | NPCs no Escudo do Mestre exibem: HP atual/máximo, Mana atual/máximo, lista de Ataques/Habilidades/Magias pinados, e Atributos base. |
 
 ---
 
@@ -168,8 +176,8 @@ Convenção: cada requisito é atômico e verificável. "DEVE" indica obrigatori
 
 | ID | Requisito |
 |---|---|
-| **RF-021** | O sistema DEVE suportar a **associação de etiquetas NFC** gravadas com **URL NDEF** apontando para o endpoint de desbloqueio/criação de personagem. |
-| **RF-022** | O sistema DEVE, quando um **jogador logado** encostar o celular na etiqueta, **desbloquear** o personagem associado à etiqueta ou iniciar a **criação de um novo personagem**, conforme o estado da etiqueta. |
+| **RF-021** | O sistema DEVE suportar a **associação de etiquetas NFC** gravadas com **URL NDEF** apontando para o endpoint de desbloqueio/criação de personagem, operando via redirecionamento HTTP GET de URL NDEF padrão compatível nativamente com iOS e Android. |
+| **RF-022** | O sistema DEVE, quando um **jogador logado** encostar o celular na etiqueta, **desbloquear** o personagem associado à etiqueta ou iniciar a **criação de um novo personagem**, conforme o estado da etiqueta via redirecionamento HTTP GET de URL NDEF padrão compatível nativamente com iOS e Android. |
 | **RF-023** | O sistema DEVE gerar, para cada ficha, um **link público permanente**, **somente leitura** e acessível **sem login**, identificado por token. |
 | **RF-024** | O sistema DEVE permitir ao dono/mestre **revogar** e **regenerar** o link público e a associação da etiqueta NFC, invalidando o token anterior. |
 
@@ -180,11 +188,11 @@ Convenção: cada requisito é atômico e verificável. "DEVE" indica obrigatori
 | ID | Requisito |
 |---|---|
 | **RF-025** | O sistema DEVE sincronizar em **tempo real via WebSockets** as alterações de **pontos de vida**, **pontos de mana** e **condições** dos personagens durante a sessão. |
-| **RF-026** | O sistema DEVE indicar a **presença** dos participantes conectados à sessão (quem está online na mesa). |
+| **RF-026** | O sistema DEVE indicar a **presença** dos participantes conectados à sessão (quem está online na mesa), mantendo o jogador desconectado ativo visualmente no Escudo do Mestre com sinalização de "Offline" em caso de perda de sinal. |
 | **RF-045** | O sistema DEVE permitir a alocação e o consumo de Pontos de Sombra do Usuário (acumulados na morte definitiva e equivalentes à metade do nível do personagem morto, arredondado para baixo) na criação/setup de uma campanha, abrindo o fluxo de gasto que permite aumentar a dificuldade global de monstros/NPCs da campanha em troca de bônus permanente de +2 por ponto gasto em rolagens de atributo, perícia ou habilidade/magia escolhida (apenas 1 escolha de bônus por ponto gasto). *[novo em v0.4]* |
 | **RF-046** | O sistema DEVE permitir que os jogadores escolham dinamicamente, para cada teste, entre a rolagem automatizada pelo sistema (RNG) ou o preenchimento manual (rolagem assistida por dados físicos). *[novo em v0.4]* |
 | **RF-047** | O sistema DEVE permitir selecionar um alvo ao declarar um ataque, realizar a rolagem (digital ou manual), comparar contra a defesa do alvo, e deduzir automaticamente o dano de seus pontos de vida em caso de acerto. *[novo em v0.4]* |
-| **RF-048** | O Escudo do Mestre DEVE suportar a exibição de fichas simplificadas para NPCs e permitir a seleção de reações ativas de defesa (Esquivar vs Bloqueio) ao receberem ataques. *[novo em v0.4]* |
+| **RF-048** | O Escudo do Mestre DEVE suportar a exibição de fichas simplificadas para NPCs, exibindo HP atual/máximo, Mana atual/máximo, atributos base e permitindo a seleção de reações ativas de defesa (Esquivar vs Bloqueio) ao receberem ataques. *[novo em v0.4]* |
 | **RF-049** | O Escudo do Mestre DEVE disponibilizar um controle interativo de status dos jogadores que permite ao mestre alterar, adicionar ou remover qualquer valor (HP, Mana, condições) com atualização instantânea na tela do jogador. *[novo em v0.4]* |
 | **RF-050** | O Escudo do Mestre DEVE conter um log lateral persistente de todas as rolagens efetuadas na sessão. *[novo em v0.4]* |
 | **RF-051** | O sistema DEVE calcular automaticamente o custo em ações de conjuração de magias conforme o nível da magia, deduzindo-as das 3 ações do turno do personagem. *[novo em v0.4]* |
@@ -195,6 +203,9 @@ Convenção: cada requisito é atômico e verificável. "DEVE" indica obrigatori
 | **RF-060** | O sistema NÃO DEVE impor limites máximos rígidos nos valores de atributos durante a distribuição de pontos no level-up. *[novo em v0.5]* |
 | **RF-061** | O sistema DEVE expor no Escudo do Mestre a defesa estática do NPC (para fins de testes contra Esquiva) e aplicar mitigação baseada em Vigor em caso de Bloqueio. *[novo em v0.5]* |
 | **RF-062** | O sistema DEVE garantir que as 3 ações por turno de combate sejam gastas exclusivamente no próprio turno do jogador, sem deduzir ações por reações fora do turno. *[novo em v0.5]* |
+| **RF-063** | O sistema DEVE persistir arquivos de imagens de personagens e NPCs em um diretório do servidor mapeado como volume no Docker Compose (D-33). *[novo em v0.6]* |
+| **RF-064** | O sistema DEVE utilizar migrations do ORM (Prisma ou Drizzle) para a criação do schema de banco e carga de dados de população inicial (D-34). *[novo em v0.6]* |
+| **RF-065** | O sistema DEVE permitir ao mestre "pinar" (marcar como atalho rápido) magias, habilidades e ataques na ficha simplificada do NPC para exibição e combate no Escudo do Mestre (D-38). *[novo em v0.6]* |
 
 ---
 
@@ -203,7 +214,7 @@ Convenção: cada requisito é atômico e verificável. "DEVE" indica obrigatori
 | ID | Categoria | Requisito |
 |---|---|---|
 | **RNF-001** | Usabilidade / Responsividade | A frente do Jogador DEVE ser projetada **mobile-first**; a frente do Mestre/Admin DEVE ser projetada **desktop-first**; ambas DEVEM permanecer utilizáveis em viewport oposta à prioritária. |
-| **RNF-002** | Implantação | A aplicação DEVE ser implantável em ambiente **self-hosted via Docker Compose**, contendo ao menos os serviços **app (Next.js)** e **PostgreSQL local**. |
+| **RNF-002** | Implantação | A aplicação (Next.js) DEVE ser empacotada em container Docker e implantável via Docker Compose, contendo a persistência de imagens em volume de disco local. O banco PostgreSQL é externo, não devendo ser incluído como serviço local no docker-compose oficial de produção. |
 | **RNF-003** | Segurança | Todo token exposto publicamente (links de ficha, URLs NDEF) DEVE ter **alta entropia (≥ 128 bits aleatórios)** e ser **não enumerável**. |
 | **RNF-004** | Privacidade / LGPD | O sistema DEVE tratar imagem e dados pessoais conforme a **LGPD**: consentimento para uso de imagem, informação de finalidade e mecanismo de exclusão de dados pessoais a pedido do titular. |
 | **RNF-005** | Confiabilidade | RECOMENDA-SE rotina simples de backup do banco PostgreSQL (dump periódico local), dado o caráter pessoal do projeto (D-15). Não há exigência de procedimento formal testável. |
@@ -456,17 +467,11 @@ Critério de corte do MVP: ao final da **Fase 1**, um grupo deve conseguir cadas
 
 | # | Pergunta | Área afetada |
 |---|---|---|
-| P-37 | Autenticação Google e Self-Hosted: Como o OAuth do Google será configurado em ambiente self-hosted? Exigiremos que o administrador da instância configure suas próprias chaves de API do Google no Docker Compose? | Autenticação, Infra |
-| P-38 | Armazenamento de Imagens: Onde as imagens de personagens e NPCs serão armazenadas (banco PostgreSQL via BLOB/base64, armazenamento em disco local compartilhado em volume Docker, ou serviço externo)? | Infraestrutura, Banco de Dados |
-| P-39 | Banco de Dados local no Docker: O serviço PostgreSQL no docker-compose usará um volume persistente mapeado localmente? Qual a versão mínima recomendada do Postgres? | Docker, Banco de Dados |
-| P-40 | Interface de Fórmulas no CRUD: Como o mestre deve inserir a fórmula interpretável de perícias no CRUD? Usaremos sintaxe padrão (ex: `1d20 + {vigor}` ou `2d20k1 + {empatia}`)? | Perícias, UX/UI |
-| P-41 | Detecção do Toque NFC: O aplicativo mobile usará a Web NFC API nativa dos navegadores (Chrome Android) ou haverá uma interface simples onde o celular lê a tag e abre um link de redirecionamento HTTP normal? | NFC, Mobile UX |
-| P-42 | Status das Conexões WebSockets: Como o sistema tratará a desconexão temporária de jogadores (WebSockets caídos)? Manteremos o personagem ativo na mesa do mestre ou ele deve ser marcado como offline imediatamente? | Tempo Real, Presença |
-| P-43 | Simplificação da Ficha de NPC: Quais atributos mínimos devem aparecer na ficha simplificada do NPC exibida no Escudo do Mestre (ex: apenas Nome, PV, Vigor, Destreza)? | UI/UX, Escudo do Mestre |
 | P-44 | Histórico do Log de Rolagens: O log lateral de rolagens deve ser persistente entre sessões (salvo no banco de dados) ou temporário da sessão de combate atual (salvo apenas em memória)? | Banco de Dados, UX |
 | P-45 | Habilidades e Magias por Classe: O CRUD de classes com habilidades/magias por nível deve ser modelado no banco como relacionamentos dinâmicos com a biblioteca (`Spell`/`Skill`) ou como texto livre descritivo para as habilidades? | Banco de Dados, Perícias/Magias |
 | P-46 | Idiomas Falados e Proficiências: As proficiências (idiomas, tipos de itens) serão selecionáveis de uma lista fixa pré-cadastrada ou inseridas como tags textuais livres? | Classes, UI/UX |
+| P-47 | Escolha do ORM: Qual ORM prefere utilizar no projeto: **Prisma** ou **Drizzle**? | Banco de dados, Backend |
 
 ---
 
-*Fim do documento — Libmork · Análise de Requisitos v0.5 (rascunho refinado v5) · 2026-08-21*
+*Fim do documento — Libmork · Análise de Requisitos v0.6 (rascunho refinado v6) · 2026-08-21*
