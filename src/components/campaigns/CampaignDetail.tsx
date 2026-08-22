@@ -187,6 +187,14 @@ export function CampaignDetail() {
             Sombra: +{campaign.difficultyModifierShadowPoints}
           </span>
         </div>
+        <div className="mt-4">
+          <Link
+            href={`/master/campaigns/${campaign.id}/content`}
+            className="inline-block rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700"
+          >
+            Gerenciar Conteúdo
+          </Link>
+        </div>
       </div>
 
       <div className="mt-6 rounded-lg border border-gray-800 bg-gray-900 p-6">
