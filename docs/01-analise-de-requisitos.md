@@ -6,9 +6,9 @@
 |---|---|
 | **Projeto** | Libmork — Aplicativo web de RPG de mesa |
 | **Documento** | Análise de Requisitos |
-| **Versão** | 0.6 |
-| **Data** | 2026-08-21 |
-| **Status** | Rascunho refinado v6 |
+| **Versão** | 0.7 |
+| **Data** | 2026-08-22 |
+| **Status** | Rascunho refinado v7 |
 | **Idioma** | Português (Brasil) |
 
 ### Histórico de Revisões
@@ -21,6 +21,7 @@
 | 0.4 | 2026-08-21 | Equipe Libmork | Ajuste das regras de Bloqueio, Fênix, testes de morte, automação de combate híbrido (digital/manual), uso de Pontos de Sombra e interface do Escudo do Mestre |
 | 0.5 | 2026-08-21 | Equipe Libmork | Refinamento de Pontos de Sombra (bônus +2 / dificuldade de monstros), Item Mágico (qualidade/contraponto), PvP por campanha, Estabilização (1 ação), Sequelas Fênix permanentes pelo mestre, atributos ilimitados, perícias dinâmicas e ações restritas ao turno |
 | 0.6 | 2026-08-21 | Equipe Libmork | Definição da infraestrutura centralizada, banco externo com migrations (Prisma/Drizzle), armazenamento de imagens em volume local, resiliência WebSocket, e detalhamento de NPCs no Escudo do Mestre |
+| 0.7 | 2026-08-22 | Equipe Libmork | Pontos de Sombra com expiração em 3 campanhas e caos narrativo; filosofia do Renascimento Fênix documentada; tabela de custo de ações por círculo de magia (1–9); perícias treinadas escalonadas por Inteligência (base 3 + 1 a cada 2 pts); defesa ativa do jogador (Esquivar/Bloqueio); arquitetura monorepo com rotas separadas; motor de regras client-side; schemas JSON dos campos JSONB; autenticação via cookies HTTP-only; mecânica de Duelo P2P entre jogadores; campo Círculo e Tempo de Conjuração nas magias |
 
 ---
 
@@ -83,13 +84,13 @@ As decisões abaixo são a **fonte da verdade** deste projeto. Os requisitos das
 | D-17 | Atributos e Modificadores | Valores iniciais de criação do personagem: 8 pontos em todos os 5 atributos fixos, mais 8 pontos livres para distribuição. Modificador de atributo é calculado como `(valor − 10) / 2` arredondado para baixo. O nível máximo de referência do personagem é 20, sem teto rígido inicialmente. |
 | D-18 | Progressão de XP | A progressão de XP é de 0 a 100 por nível (zera ao subir de nível). O ganho de XP ocorre por monstros/desafios enfrentados e/ou por concessão direta do mestre da campanha. |
 | D-19 | Bloqueio tático | O jogador escolhe ativamente no combate sofrer o dano físico integralmente ou mitigá-lo usando a fórmula derivada do Vigor (`(Vigor ÷ 2) arredondado para baixo × nível`). Bloqueio funciona apenas para danos físicos. |
-| D-20 | CRUD de Perícias | Cada perícia possui Nome, Descrição, Rolagem (expressão de rolagem recomendada) e Atributo Chave. O jogador escolhe exatamente 3 perícias treinadas na ficha. Estar treinado em uma perícia concede vantagem no teste (rolar 2d20 e pegar o maior resultado). |
+| D-20 | CRUD de Perícias | Cada perícia possui Nome, Descrição, Rolagem (expressão de rolagem recomendada) e Atributo Chave. O jogador escolhe perícias treinadas na ficha conforme a fórmula: `3 + (pontos em Inteligência ÷ 2, arredondado para baixo)` (D-40). Estar treinado em uma perícia concede vantagem no teste (rolar 2d20 e pegar o maior resultado). |
 | D-21 | CRUD de Classes | Cada Classe possui Nome, Descrição, Habilidades/Magias por nível, Itens iniciais, Proficiências (itens utilizáveis, idiomas) e Diferencial por nível (soma em atributos/vida, perícias adicionais, vantagens). |
-| D-22 | CRUD de Magias | Cada Magia possui Nome, Descrição, Tipo de Uso (Somático, Manual, Falado), Custo de Mana, Duração e Efeito Extra. |
-| D-23 | Combate e Turno | Contém uma perícia padrão de "Iniciativa" (que pode ser selecionada como treinada). O pedido de rolar iniciativa disparado pelo mestre envia um pop-up na tela do jogador para preenchimento rápido do resultado. Durante o combate, cada personagem ativo possui 3 ações por turno. Conjuração de magias possui custos variáveis de ações dependendo do nível/círculo da magia. O painel "Escudo do Mestre" possui um botão "espadas cruzadas" que dispara o alerta de combate e o prompt de iniciativa para os jogadores e randomiza a iniciativa dos NPCs. |
-| D-24 | Filosofia de Rolagens Híbridas | O sistema suporta tanto a rolagem digital pelo sistema (RNG) quanto o preenchimento manual (rolagem assistida com dados físicos). Ataques automatizados permitem selecionar o alvo; o sistema rola o ataque (digital ou manual), verifica acerto e deduz o dano da vida do alvo automaticamente. NPCs possuem ficha simplificada no Escudo do Mestre. Se a reação defensiva for Esquivar, o ataque é testado contra um valor de defesa estático do NPC. Se for Bloqueio, o acerto é automático mas o dano é mitigado por Vigor. |
-| D-25 | Queda e Renascimento Fênix | Testes de morte a 0 PV: dificuldade é `10 − modificador de Vigor` usando 1d20 seco (sem modificadores somados ao dado). Aliados podem estabilizar gastando 1 ação inteira. Opção "Segurar a Caveira" faz o personagem renascer como fênix (metade dos níveis arredondada para baixo, perde habilidades dos níveis perdidos, retorna com 50% de HP/Mana máximos correspondentes ao novo nível, imagem muda, mesma ficha/nome/links). Recebe sequelas (condições permanentes para sempre) escolhidas e aplicadas manualmente pelo mestre. |
-| D-26 | Pontos de Sombra | Meta-moeda ganha na morte definitiva, igual à metade do nível do personagem morto (arredondado para baixo). No setup de uma nova campanha, se o jogador possuir pontos de sombra, o sistema abre o fluxo de perguntas "Quer gastar os pontos de sombra?" e "Como quer gastar?". Para cada ponto gasto na campanha: 1. Os monstros ficam mais fortes (escala global de dificuldade na campanha); 2. O jogador recebe um bônus permanente de +2 na campanha em rolagens de atributo, perícia, ou habilidade/magia escolhida (apenas 1 escolha de bônus por ponto gasto). |
+| D-22 | CRUD de Magias | Cada Magia possui Nome, Descrição, **Círculo** (1 a 9), Tipo de Uso (Somático, Manual, Falado), Custo de Mana, Duração, Efeito Extra e **Tempo de Conjuração** (opcional — override do custo padrão de ações do círculo, D-39). |
+| D-23 | Combate e Turno | Contém uma perícia padrão de "Iniciativa" (que pode ser selecionada como treinada). O pedido de rolar iniciativa disparado pelo mestre envia um pop-up na tela do jogador para preenchimento rápido do resultado. Durante o combate, cada personagem ativo possui 3 ações por turno. Conjuração de magias possui custos variáveis de ações conforme a tabela de círculos (D-39), podendo ser sobrescrito individualmente no CRUD de magias via campo "Tempo de Conjuração". O painel "Escudo do Mestre" possui um botão "espadas cruzadas" que dispara o alerta de combate e o prompt de iniciativa para os jogadores e randomiza a iniciativa dos NPCs. |
+| D-24 | Filosofia de Rolagens Híbridas | O sistema suporta tanto a rolagem digital pelo sistema (RNG) quanto o preenchimento manual (rolagem assistida com dados físicos). Ataques automatizados permitem selecionar o alvo; o sistema rola o ataque (digital ou manual), verifica acerto e deduz o dano da vida do alvo automaticamente. NPCs possuem ficha simplificada no Escudo do Mestre. Se a reação defensiva for Esquivar, o ataque é testado contra um valor de defesa estático do alvo. Se for Bloqueio, o acerto é automático mas o dano é mitigado por Vigor. **Jogadores** escolhem ativamente sua reação defensiva (Esquivar ou Bloqueio) quando atacados (D-41); **NPCs** têm a reação escolhida pelo mestre. |
+| D-25 | Queda e Renascimento Fênix | **Filosofia:** o Renascimento Fênix existe para dar ao jogador a possibilidade de não perder o personagem, resolver uma situação de urgência com a restauração parcial de recursos (cura + 50% HP/Mana) e continuar jogando com o mesmo personagem em troca de um custo de progressão (perda de níveis). Caso o personagem morra definitivamente, ele volta como novo personagem com nível inferior de qualquer forma, então o Fênix é a alternativa que preserva identidade e vínculo narrativo. **Mecânica:** Testes de morte a 0 PV: dificuldade é `10 − modificador de Vigor` usando 1d20 seco (sem modificadores somados ao dado). Aliados podem estabilizar gastando 1 ação inteira. Opção "Segurar a Caveira" faz o personagem renascer como fênix (metade dos níveis arredondada para baixo, perde habilidades dos níveis perdidos, retorna com 50% de HP/Mana máximos correspondentes ao novo nível, imagem muda, mesma ficha/nome/links). Recebe sequelas (condições permanentes para sempre) escolhidas e aplicadas manualmente pelo mestre. |
+| D-26 | Pontos de Sombra | Meta-moeda ganha na morte definitiva, igual à metade do nível do personagem morto (arredondado para baixo). No setup de uma nova campanha, se o jogador possuir pontos de sombra, o sistema abre o fluxo de perguntas "Quer gastar os pontos de sombra?" e "Como quer gastar?". Para cada ponto gasto na campanha: 1. Os monstros ficam mais fortes (escala global de dificuldade na campanha) e o mestre ganha liberdade narrativa para introduzir eventos caóticos contra os jogadores durante as sessões (o uso dos pontos alimenta o **caos narrativo** da campanha); 2. O jogador recebe um bônus de +2 em rolagens de atributo, perícia, ou habilidade/magia escolhida (apenas 1 escolha de bônus por ponto gasto). **Os bônus de Pontos de Sombra expiram após 3 campanhas** contadas a partir da campanha em que foram gastos; ao final da 3ª campanha o bônus é removido automaticamente. O efeito de dificuldade global nos monstros também se limita à campanha em que os pontos foram gastos. |
 | D-27 | Item Mágico com Contraponto | O item mágico de pontos de sombra é criado escrevendo uma qualidade livre pelo jogador, e o mestre edita o item para completar a qualidade ou adicionar um "Contraponto" (defeito do item). |
 | D-28 | PvP Configurável | O fogo amigo/PvP é configurado opcionalmente na criação da campanha (habilitado ou desabilitado). |
 | D-29 | Sem Limite de Atributos | Não existe limite máximo rígido nos atributos durante a distribuição de pontos no level-up. |
@@ -102,6 +103,13 @@ As decisões abaixo são a **fonte da verdade** deste projeto. Os requisitos das
 | D-36 | NFC Universal via URL | O fluxo NFC opera via redirecionamento de link HTTP (URL NDEF gravada padrão), compatível nativamente com iOS e Android sem APIs proprietárias. |
 | D-37 | Sincronização e Resiliência a Falhas | Jogadores que perdem conexão WebSocket continuam visíveis no Escudo do Mestre, com sinalizador visual de perda de sinal. |
 | D-38 | Ficha Simplificada de NPC | NPCs no Escudo do Mestre exibem: HP atual/máximo, Mana atual/máximo, lista de Ataques/Habilidades/Magias pinados, e Atributos base. |
+| D-39 | Tabela de Custo de Ações por Círculo de Magia | O custo de ações de conjuração é determinado pelo **Tempo de Conjuração / Concentração** da magia, parametrizado pelo círculo. A tabela padrão é: **1º círculo = 1 ação**, **2º = 1 ação**, **3º = 1 ação**, **4º = 2 ações**, **5º = 2 ações**, **6º = 2 ações**, **7º = 3 ações (turno inteiro)**, **8º = 3 ações (turno inteiro)**, **9º = 3 ações (turno inteiro)**. Magias individuais podem ter seu custo de ações ajustado pelo mestre no CRUD de magias, sobrescrevendo o padrão do círculo. |
+| D-40 | Perícias Treinadas Escalonadas por Inteligência | O número de perícias treinadas do personagem é `3 + (pontos investidos em Inteligência ÷ 2, arredondado para baixo)`. A base de 3 perícias treinadas pode aumentar conforme o jogador investe em Inteligência, incentivando builds intelectuais a terem maior versatilidade em perícias. |
+| D-41 | Defesa Ativa do Jogador | Quando um personagem jogador recebe um ataque, o **jogador** escolhe ativamente sua reação defensiva: **Esquivar** (teste contra defesa estática) ou **Bloqueio** (acerto automático, dano mitigado pela fórmula de Vigor). NPCs têm sua reação escolhida pelo mestre. |
+| D-42 | Monorepo com Rotas Separadas | O projeto utiliza um **único repositório e uma única aplicação Next.js** com rotas separadas por frente: `/player/*` (mobile-first) e `/master/*` (desktop-first, Escudo do Mestre). Ambas as frentes compartilham componentes comuns, motor de regras e API routes. |
+| D-43 | Motor de Regras Client-Side | O motor de regras (resolução de testes, cálculos de dano, bloqueio, status derivados) é executado **no cliente** priorizando velocidade e responsividade da UX. Validação de integridade anti-trapaça não é prioridade nesta fase. |
+| D-44 | Autenticação via Cookies HTTP-Only | Sessões de autenticação gerenciadas por **cookies HTTP-only**. Tokens de sessão não ficam acessíveis via JavaScript no navegador. Para WebSockets (pós-MVP), o cookie será enviado no handshake de conexão para autenticar o socket. |
+| D-45 | Duelo entre Jogadores | O sistema DEVE suportar um modo de **Duelo** entre dois ou mais jogadores, **independente do mestre**. O duelo funciona como um combate simplificado P2P onde os jogadores envolvidos gerenciam suas próprias ações, turnos e rolagens sem intervenção do mestre. O duelo não afeta a narrativa da campanha e seus resultados (dano, condições) podem ser temporários ou permanentes conforme configuração prévia dos participantes. |
 
 ---
 
@@ -132,9 +140,9 @@ Convenção: cada requisito é atômico e verificável. "DEVE" indica obrigatori
 | **RF-029** | O sistema DEVE gerenciar a progressão por níveis: ao subir de nível, o jogador distribui 1 ponto em qualquer atributo (D-13). *[novo em v0.2]* |
 | **RF-030** | O sistema DEVE registrar a participação do personagem em campanhas/sessões como base condicional da progressão (D-13). *[novo em v0.2]* |
 | **RF-031** | O sistema DEVE disponibilizar um CRUD de Perícias (Nome, Descrição, Expressão de Rolagem, Atributo Chave) de escopo global ou privado por campanha. *[novo em v0.3]* |
-| **RF-032** | O sistema DEVE permitir ao jogador selecionar exatamente 3 perícias treinadas, aplicando a regra de vantagem (rolar 2d20 e escolher o maior) nos testes de atributos associados. *[novo em v0.3]* |
+| **RF-032** | O sistema DEVE calcular o número de perícias treinadas do personagem como `3 + (pontos investidos em Inteligência ÷ 2, arredondado para baixo)` e permitir ao jogador selecionar essa quantidade, aplicando a regra de vantagem (rolar 2d20 e escolher o maior) nos testes de atributos associados (D-40). *[novo em v0.3, atualizado em v0.7]* |
 | **RF-033** | O sistema DEVE disponibilizar um CRUD de Classes (Nome, Descrição, Habilidades/Magias por nível, Itens iniciais, Proficiências, Diferencial por nível). *[novo em v0.3]* |
-| **RF-034** | O sistema DEVE disponibilizar um CRUD de Magias (Nome, Descrição, Tipo de Uso [Somático, Manual, Falado], Custo de Mana, Duração, Efeito Extra). *[novo em v0.3]* |
+| **RF-034** | O sistema DEVE disponibilizar um CRUD de Magias (Nome, Descrição, **Círculo [1–9]**, Tipo de Uso [Somático, Manual, Falado], Custo de Mana, Duração, Efeito Extra, **Tempo de Conjuração** [override opcional do custo de ações do círculo]). *[novo em v0.3, atualizado em v0.7]* |
 | **RF-035** | O sistema DEVE gerenciar o ganho de XP (0 a 100) associado a monstros enfrentados ou por concessão direta do mestre, com subida de nível e zeramento automáticos de XP ao atingir 100. *[novo em v0.3]* |
 | **RF-036** | O sistema DEVE implementar as fórmulas de status derivados: Vida Máxima = `15 + (mod Vigor × Nível)`, Mana Máxima = `5 + (mod Inteligência × Nível)` e a mitigação do Bloqueio físico = `(Vigor ÷ 2) arredondado para baixo × Nível`. *[novo em v0.3]* |
 | **RF-037** | O sistema DEVE permitir que o jogador selecione taticamente, ao receber dano, a ativação do Bloqueio para mitigar apenas danos físicos usando a fórmula derivada do Vigor: `(Vigor ÷ 2) arredondado para baixo × Nível`. *[novo em v0.3]* |
@@ -189,13 +197,13 @@ Convenção: cada requisito é atômico e verificável. "DEVE" indica obrigatori
 |---|---|
 | **RF-025** | O sistema DEVE sincronizar em **tempo real via WebSockets** as alterações de **pontos de vida**, **pontos de mana** e **condições** dos personagens durante a sessão. |
 | **RF-026** | O sistema DEVE indicar a **presença** dos participantes conectados à sessão (quem está online na mesa), mantendo o jogador desconectado ativo visualmente no Escudo do Mestre com sinalização de "Offline" em caso de perda de sinal. |
-| **RF-045** | O sistema DEVE permitir a alocação e o consumo de Pontos de Sombra do Usuário (acumulados na morte definitiva e equivalentes à metade do nível do personagem morto, arredondado para baixo) na criação/setup de uma campanha, abrindo o fluxo de gasto que permite aumentar a dificuldade global de monstros/NPCs da campanha em troca de bônus permanente de +2 por ponto gasto em rolagens de atributo, perícia ou habilidade/magia escolhida (apenas 1 escolha de bônus por ponto gasto). *[novo em v0.4]* |
+| **RF-045** | O sistema DEVE permitir a alocação e o consumo de Pontos de Sombra do Usuário (acumulados na morte definitiva e equivalentes à metade do nível do personagem morto, arredondado para baixo) na criação/setup de uma campanha, abrindo o fluxo de gasto que permite aumentar a dificuldade global de monstros/NPCs da campanha e habilitar o caos narrativo para o mestre, em troca de bônus de +2 por ponto gasto em rolagens de atributo, perícia ou habilidade/magia escolhida (apenas 1 escolha de bônus por ponto gasto). **Os bônus expiram após 3 campanhas** contadas a partir da campanha em que foram gastos (D-26). *[novo em v0.4, atualizado em v0.7]* |
 | **RF-046** | O sistema DEVE permitir que os jogadores escolham dinamicamente, para cada teste, entre a rolagem automatizada pelo sistema (RNG) ou o preenchimento manual (rolagem assistida por dados físicos). *[novo em v0.4]* |
 | **RF-047** | O sistema DEVE permitir selecionar um alvo ao declarar um ataque, realizar a rolagem (digital ou manual), comparar contra a defesa do alvo, e deduzir automaticamente o dano de seus pontos de vida em caso de acerto. *[novo em v0.4]* |
 | **RF-048** | O Escudo do Mestre DEVE suportar a exibição de fichas simplificadas para NPCs, exibindo HP atual/máximo, Mana atual/máximo, atributos base e permitindo a seleção de reações ativas de defesa (Esquivar vs Bloqueio) ao receberem ataques. *[novo em v0.4]* |
 | **RF-049** | O Escudo do Mestre DEVE disponibilizar um controle interativo de status dos jogadores que permite ao mestre alterar, adicionar ou remover qualquer valor (HP, Mana, condições) com atualização instantânea na tela do jogador. *[novo em v0.4]* |
 | **RF-050** | O Escudo do Mestre DEVE conter um log lateral persistente de todas as rolagens efetuadas na sessão. *[novo em v0.4]* |
-| **RF-051** | O sistema DEVE calcular automaticamente o custo em ações de conjuração de magias conforme o nível da magia, deduzindo-as das 3 ações do turno do personagem. *[novo em v0.4]* |
+| **RF-051** | O sistema DEVE calcular automaticamente o custo em ações de conjuração de magias conforme a tabela de círculos (D-39): **1º–3º círculo = 1 ação**, **4º–6º círculo = 2 ações**, **7º–9º círculo = 3 ações (turno inteiro)**, deduzindo-as das 3 ações do turno do personagem. O CRUD de magias DEVE permitir sobrescrever o custo padrão do círculo via campo "Tempo de Conjuração" individual. *[novo em v0.4, atualizado em v0.7]* |
 | **RF-052** | O sistema DEVE aplicar e calcular automaticamente os diferenciais e benefícios de classe (atributos, vida, perícias, vantagens) na ficha do personagem ao subir de nível. *[novo em v0.4]* |
 | **RF-053** | O sistema DEVE permitir configurar se o PvP (fogo amigo) está ativado ou desativado no momento de criação da campanha. *[novo em v0.5]* |
 | **RF-054** | O sistema DEVE implementar o fluxo de Item Mágico com Contraponto: o jogador digita uma qualidade em texto livre, e o mestre deve obrigatoriamente revisar, podendo alterar a qualidade ou adicionar um defeito (Contraponto). *[novo em v0.5]* |
@@ -206,6 +214,11 @@ Convenção: cada requisito é atômico e verificável. "DEVE" indica obrigatori
 | **RF-063** | O sistema DEVE persistir arquivos de imagens de personagens e NPCs em um diretório do servidor mapeado como volume no Docker Compose (D-33). *[novo em v0.6]* |
 | **RF-064** | O sistema DEVE utilizar migrations do ORM (Prisma ou Drizzle) para a criação do schema de banco e carga de dados de população inicial (D-34). *[novo em v0.6]* |
 | **RF-065** | O sistema DEVE permitir ao mestre "pinar" (marcar como atalho rápido) magias, habilidades e ataques na ficha simplificada do NPC para exibição e combate no Escudo do Mestre (D-38). *[novo em v0.6]* |
+| **RF-066** | O sistema DEVE permitir que jogadores atacados escolham ativamente sua reação defensiva (Esquivar ou Bloqueio) via prompt interativo na tela do jogador (D-41). *[novo em v0.7]* |
+| **RF-067** | O sistema DEVE recalcular automaticamente o número de perícias treinadas disponíveis sempre que o valor de Inteligência do personagem mudar, notificando o jogador caso novas vagas sejam abertas (D-40). *[novo em v0.7]* |
+| **RF-068** | O sistema DEVE rastrear a contagem de campanhas em que cada bônus de Pontos de Sombra foi utilizado e remover automaticamente o bônus ao final da 3ª campanha (D-26). *[novo em v0.7]* |
+| **RF-069** | O sistema DEVE suportar o modo **Duelo** entre dois ou mais jogadores, iniciável por qualquer jogador participante sem necessidade de intervenção do mestre. O duelo DEVE incluir: sistema de convite/aceite entre participantes, ordem de turnos por iniciativa, controle de 3 ações por turno, rolagens (digitais ou manuais), escolha de reação defensiva, e cálculo automático de dano. Os participantes DEVEM poder configurar se os resultados do duelo (dano, condições) são **temporários** (restaurados ao final) ou **permanentes** (D-45). *[novo em v0.7]* |
+| **RF-070** | O CRUD de magias DEVE incluir o campo **Círculo** (1 a 9) e o campo opcional **Tempo de Conjuração** (override do custo padrão de ações do círculo conforme D-39). *[novo em v0.7]* |
 
 ---
 
@@ -220,6 +233,9 @@ Convenção: cada requisito é atômico e verificável. "DEVE" indica obrigatori
 | **RNF-005** | Confiabilidade | RECOMENDA-SE rotina simples de backup do banco PostgreSQL (dump periódico local), dado o caráter pessoal do projeto (D-15). Não há exigência de procedimento formal testável. |
 | **RNF-006** | Performance / Infra | As conexões **WebSocket** DEVEM funcionar corretamente **atrás de proxy reverso** (headers de upgrade, timeouts/keepalive adequados), mantendo latência interativa na sincronização de mesa. |
 | **RNF-007** | Segurança | Credenciais de senha DEVEM ser armazenadas exclusivamente como **hash adaptativo** (ex.: bcrypt/argon2), jamais em texto plano ou reversível. |
+| **RNF-008** | Arquitetura | O motor de regras (resolução de testes, cálculos de dano, bloqueio, status derivados) DEVE ser executado **no cliente** (browser) priorizando velocidade e responsividade da experiência do jogador. A lógica do motor DEVE ser compartilhada como módulo reutilizável entre as frentes do jogador e do mestre (D-43). |
+| **RNF-009** | Segurança / Sessão | A autenticação DEVE utilizar **cookies HTTP-only** para gerenciamento de sessão, impedindo acesso ao token via JavaScript no navegador. Para conexões WebSocket (pós-MVP), o cookie DEVE ser enviado no handshake para autenticação do socket (D-44). |
+| **RNF-010** | Arquitetura | O projeto DEVE ser mantido em **monorepo único** com uma única aplicação Next.js servindo rotas separadas: `/player/*` (mobile-first) e `/master/*` (desktop-first), compartilhando componentes comuns, motor de regras e API routes (D-42). |
 
 ---
 
@@ -306,7 +322,7 @@ erDiagram
         string approval_status "draft | pending | approved | rejected"
         string origin "player_created | master_distributed"
         int sessions_played "base condicional da progressão - preliminar"
-        jsonb shadow_points_bonuses
+        jsonb shadow_points_bonuses "inclui campaign_count para expiração em 3 campanhas"
     }
 
     %% ============ BIBLIOTECA (GLOBAL vs POR CAMPANHA) ============
@@ -325,11 +341,13 @@ erDiagram
         uuid id PK
         uuid campaign_id FK "NULL = global"
         string name
+        int circle "1 a 9"
         int mana_cost
         text description
         string use_type "somatic | manual | verbal"
         string duration
         text extra_effect
+        int action_cost_override "NULL = usa padrão do círculo (D-39)"
     }
 
     ITEM {
@@ -388,6 +406,25 @@ erDiagram
         boolean active
     }
 
+    %% ================= DUELO (P2P entre jogadores) =================
+    DUEL {
+        uuid id PK
+        uuid campaign_id FK "campanha onde ocorre o duelo"
+        string status "pending | active | finished | cancelled"
+        boolean permanent_results "true = dano/condições persistem"
+        datetime created_at
+        datetime finished_at
+    }
+
+    DUEL_PARTICIPANT {
+        uuid id PK
+        uuid duel_id FK
+        uuid character_id FK
+        string invite_status "pending | accepted | declined"
+        int turn_order "ordem de iniciativa no duelo"
+        int actions_remaining "ações restantes no turno atual"
+    }
+
     %% ===================== RELACIONAMENTOS =====================
     USER          ||--o{ CHARACTER           : "possui"
     USER          ||--o{ CAMPAIGN            : "mestra"
@@ -407,6 +444,9 @@ erDiagram
     CHARACTER     ||--o{ CHARACTER_CONDITION : "sofre"
     CHARACTER     ||--o{ PUBLIC_SHARE_LINK   : "expõe"
     CHARACTER     ||--o| NFC_TAG             : "associada a"
+    CAMPAIGN      ||--o{ DUEL               : "hospeda"
+    DUEL          ||--o{ DUEL_PARTICIPANT   : "reúne"
+    CHARACTER     ||--o{ DUEL_PARTICIPANT   : "participa de"
 ```
 
 Observações de modelagem:
@@ -417,6 +457,139 @@ Observações de modelagem:
 - `PUBLIC_SHARE_LINK.token` e `NFC_TAG.ndef_url` são identificadores públicos e seguem RNF-003 (alta entropia, não enumeráveis).
 - A entidade `RPG_CLASS` serve para agrupar as classes de personagens, e `CLASS_LEVEL_BENEFIT` descreve o que cada nível dessa classe ganha (habilidades, magias, diferenciais) conforme D-21.
 - O campo `CHARACTER_SKILL.trained` indica se aquela perícia foi selecionada como treinada pelo jogador (D-20).
+- As entidades `DUEL` e `DUEL_PARTICIPANT` modelam o sistema de duelo P2P entre jogadores, independente do mestre (D-45).
+
+### 7.1 Schemas JSON dos Campos JSONB
+
+> Os schemas abaixo definem a estrutura esperada para cada campo `jsonb` do modelo de dados. Esses schemas devem ser **versionados** e **persistentes** — alterações futuras devem manter retrocompatibilidade ou incluir migração explícita dos dados existentes.
+
+#### `CHARACTER.attributes`
+
+Mapa fixo dos 5 atributos base do personagem. Valores iniciam em 8 + distribuição de 8 pontos livres (D-17).
+
+```json
+{
+  "forca": 10,
+  "destreza": 12,
+  "vigor": 8,
+  "inteligencia": 14,
+  "empatia": 10
+}
+```
+
+**Regras de validação:**
+- Todas as 5 chaves são obrigatórias e fixas
+- Valores são inteiros ≥ 1
+- Na criação: soma total = 48 (5×8 base + 8 livres)
+- Sem limite máximo rígido (D-29)
+
+#### `NPC.attributes`
+
+Mesma estrutura de `CHARACTER.attributes`, porém sem restrição de soma total (NPCs têm atributos definidos livremente pelo mestre).
+
+```json
+{
+  "forca": 16,
+  "destreza": 10,
+  "vigor": 14,
+  "inteligencia": 6,
+  "empatia": 4
+}
+```
+
+#### `RPG_CLASS.initial_items`
+
+Lista de itens que o personagem recebe ao criar a ficha com essa classe.
+
+```json
+[
+  {
+    "item_id": "uuid-ref-ou-null",
+    "name": "Espada Longa",
+    "quantity": 1,
+    "description": "Espada padrão de combate corpo a corpo"
+  }
+]
+```
+
+**Regras de validação:**
+- Array de objetos (pode ser vazio)
+- `item_id` referencia a tabela `ITEM` quando disponível, ou `null` para itens descritivos
+- `name` e `quantity` são obrigatórios
+
+#### `RPG_CLASS.proficiencies`
+
+Mapa de categorias de proficiência da classe.
+
+```json
+{
+  "weapons": ["espadas", "adagas", "arcos curtos"],
+  "armor": ["armaduras leves", "escudos"],
+  "languages": ["comum", "élfico"],
+  "tools": ["kit de alquimia"]
+}
+```
+
+**Regras de validação:**
+- Objeto com chaves de categoria (strings livres, mas as 4 acima são as recomendadas)
+- Cada valor é um array de strings
+
+#### `CLASS_LEVEL_BENEFIT.benefits`
+
+Descrição dos benefícios ganhos ao atingir um nível específico da classe.
+
+```json
+{
+  "attribute_bonuses": {
+    "vigor": 1
+  },
+  "hp_bonus": 5,
+  "mana_bonus": 3,
+  "skills_granted": ["uuid-skill-1"],
+  "spells_granted": ["uuid-spell-1", "uuid-spell-2"],
+  "extra_trained_skills": 0,
+  "advantages": ["Resistência a venenos"],
+  "description": "O guerreiro torna-se mais resiliente em combate"
+}
+```
+
+**Regras de validação:**
+- `attribute_bonuses`: mapa parcial dos 5 atributos (apenas os que recebem bônus)
+- `hp_bonus` e `mana_bonus`: inteiros ≥ 0
+- `skills_granted` e `spells_granted`: arrays de UUIDs referenciando `SKILL` e `SPELL`
+- `advantages`: array de strings descritivas
+- `description`: texto livre opcional
+
+#### `CHARACTER_CAMPAIGN.shadow_points_bonuses`
+
+Lista dos bônus de Pontos de Sombra ativos neste vínculo personagem-campanha, com controle de expiração.
+
+```json
+[
+  {
+    "bonus_type": "attribute",
+    "target": "forca",
+    "bonus_value": 2,
+    "source_campaign_id": "uuid-campanha-origem",
+    "campaigns_remaining": 2
+  },
+  {
+    "bonus_type": "skill",
+    "target": "uuid-skill",
+    "bonus_value": 2,
+    "source_campaign_id": "uuid-campanha-origem",
+    "campaigns_remaining": 1
+  }
+]
+```
+
+**Regras de validação:**
+- Array de objetos (pode ser vazio)
+- `bonus_type`: `"attribute"` | `"skill"` | `"spell"`
+- `target`: nome do atributo (se `attribute`) ou UUID da perícia/magia
+- `bonus_value`: sempre `2` (conforme D-26)
+- `campaigns_remaining`: inteiro de 3 a 0; ao chegar a 0 o bônus é removido automaticamente (RF-068)
+- `source_campaign_id`: UUID da campanha onde os pontos foram originalmente gastos
 
 ---
 
@@ -446,6 +619,8 @@ Os itens abaixo estão **explicitamente fora de escopo** desta fase e não devem
 | R-04 | **WebSockets self-hosted atrás de proxy reverso** falharem silenciosamente (upgrade bloqueado, conexões derrubadas) | Alto | Média | Configurar headers de upgrade e timeouts no proxy; healthcheck dedicado ao canal WebSocket; documentar receitas para nginx/Caddy/Traefik (RNF-006) |
 | R-05 | **Evolução do sistema próprio de regras** exigir migrações frequentes de schema e quebrar fichas existentes | Alto | Alta | Migrações versionadas e reversíveis; backup recomendado antes de cada migração (RNF-005, D-15); campos flexíveis (JSONB) para atributos ainda não normalizados; ambiente de staging para validar migrações |
 | R-06 | Tratamento inadequado de **imagem e dados pessoais** gerar passivo LGPD | Médio | Baixa | Consentimento explícito no upload de imagem; política de privacidade na plataforma; mecanismo de exclusão a pedido do titular (RNF-004) |
+| R-07 | **Motor de regras client-side** produzir resultados divergentes entre clientes (jogador vs mestre calculam valores diferentes) | Médio | Média | Módulo de regras compartilhado e importado por ambas as frentes; testes unitários exaustivos do motor; reconciliação server-side nos dados persistidos (P-51) |
+| R-08 | **Duelo P2P** sem supervisão do mestre gerar abusos ou inconsistências narrativas (jogadores manipulando resultados, duelos infinitos) | Médio | Média | Configuração prévia de resultados temporários/permanentes; timeout automático para duelos inativos; log completo do duelo visível para o mestre da campanha |
 
 ---
 
@@ -457,7 +632,8 @@ Os itens abaixo estão **explicitamente fora de escopo** desta fase e não devem
 | **Fase 1** | **MVP** *(corte inicial — D-01)* | **Autenticação** (e-mail/senha + Google, papéis por campanha); **fichas de personagem completas** — ficha com os **5 atributos** (Força, Destreza, Vigor, Inteligência, Empatia), **nível** e **status derivados (vida, mana, bloqueio)**; imagem, itens, magias, habilidades, condições; **CRUD de campanhas e mundos**; **vinculação N:N personagem↔campanha**; **links públicos permanentes somente leitura** |
 | **Fase 2** | **Conteúdo & Fluxo Mestre** | Biblioteca de conteúdo **global + privada por campanha**; **fluxo de aprovação** (rascunho→pendente→aprovado/rejeitado); **distribuição de fichas prontas** com personalização visual pelo jogador; **NPCs** (inimigos/comuns) com stats e imagem; **etiquetas NFC** (NDEF, desbloqueio/criação) |
 | **Fase 3** | **Tempo Real** | **WebSockets** para sincronização de HP/mana/condições; **presença** dos conectados; operação estável atrás de proxy reverso |
-| **Fase 4** | **Motor de Jogo** | Configuração do **motor dual por campanha**; execução de **testes d20+mod e 2d20 somados** contra dificuldade; rolagens integradas à ficha; **condições aplicadas em tempo real**; mecânica de ganho de nível com distribuição de ponto de atributo vinculada à participação em campanhas (RF-029, RF-030) |
+| **Fase 4** | **Motor de Jogo** | Configuração do **motor dual por campanha**; execução de **testes d20+mod e 2d20 somados** contra dificuldade; rolagens integradas à ficha; **condições aplicadas em tempo real**; mecânica de ganho de nível com distribuição de ponto de atributo vinculada à participação em campanhas (RF-029, RF-030); **defesa ativa do jogador** (Esquivar/Bloqueio); **tabela de custo de ações por círculo de magia** (D-39) |
+| **Fase 5** | **Duelo \u0026 Pontos de Sombra** | **Duelo P2P** entre jogadores independente do mestre (D-45, RF-069); **Pontos de Sombra** com expiração em 3 campanhas e caos narrativo (D-26); **Item Mágico com Contraponto** (D-27); escala de dificuldade global por Sombra (RF-055) |
 
 Critério de corte do MVP: ao final da **Fase 1**, um grupo deve conseguir cadastrar-se, criar campanhas/mundos, manter fichas completas e compartilhá-las por link público — **sem sessão ao vivo** (D-01).
 
@@ -470,8 +646,12 @@ Critério de corte do MVP: ao final da **Fase 1**, um grupo deve conseguir cadas
 | P-44 | Histórico do Log de Rolagens: O log lateral de rolagens deve ser persistente entre sessões (salvo no banco de dados) ou temporário da sessão de combate atual (salvo apenas em memória)? | Banco de Dados, UX |
 | P-45 | Habilidades e Magias por Classe: O CRUD de classes com habilidades/magias por nível deve ser modelado no banco como relacionamentos dinâmicos com a biblioteca (`Spell`/`Skill`) ou como texto livre descritivo para as habilidades? | Banco de Dados, Perícias/Magias |
 | P-46 | Idiomas Falados e Proficiências: As proficiências (idiomas, tipos de itens) serão selecionáveis de uma lista fixa pré-cadastrada ou inseridas como tags textuais livres? | Classes, UI/UX |
-| P-47 | Escolha do ORM: Qual ORM prefere utilizar no projeto: **Prisma** ou **Drizzle**? | Banco de dados, Backend |
+| ~~P-47~~ | ~~Escolha do ORM: Qual ORM prefere utilizar no projeto: **Prisma** ou **Drizzle**?~~ **RESPONDIDA: Drizzle ORM escolhido (2026-08-22)** | Banco de dados, Backend |
+| P-48 | Duelo — Escopo de participantes: O duelo pode envolver personagens de campanhas diferentes ou apenas da mesma campanha? E NPCs podem participar de duelos? | Game Design, Modelo de Dados |
+| P-49 | Duelo — Condições de vitória: O duelo termina automaticamente quando um participante chega a 0 HP, ou os participantes definem condições customizadas (ex.: primeiro a perder 50% HP, primeiro a falhar 3 testes)? | Game Design |
+| P-50 | Caos Narrativo — Interface do Mestre: O sistema deve fornecer ao mestre uma interface ou ferramentas específicas para gerenciar o "caos narrativo" habilitado pelos Pontos de Sombra, ou isso é puramente narrativo (sem suporte sistêmico)? | UX, Game Design |
+| P-51 | Motor Client-Side — Sincronização: Se o motor de regras roda no cliente, como garantir que dois clientes (ex.: jogador e mestre) calculem o mesmo resultado? Deve haver uma reconciliação server-side para dados persistidos? | Arquitetura, Backend |
 
 ---
 
-*Fim do documento — Libmork · Análise de Requisitos v0.6 (rascunho refinado v6) · 2026-08-21*
+*Fim do documento — Libmork · Análise de Requisitos v0.7 (rascunho refinado v7) · 2026-08-22*

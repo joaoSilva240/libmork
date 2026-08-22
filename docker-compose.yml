@@ -1,0 +1,31 @@
+# =============================================================================
+# Libmork — Docker Compose
+# =============================================================================
+# O banco PostgreSQL é EXTERNO (D-34) — não incluído aqui.
+# Configure DATABASE_URL no .env.local apontando para o banco externo.
+# =============================================================================
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: libmork-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+    volumes:
+      # Volume de imagens de personagens e NPCs (D-33, RF-063)
+      - libmork-uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  libmork-uploads:
+    driver: local
