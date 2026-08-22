@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { email, password, displayName } = validation.data;
+    const { email, password, displayName, role } = validation.data;
 
     // Verifica se o e-mail já existe
     const existingUser = await db
@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
         email,
         passwordHash,
         displayName,
+        role,
         oauthProvider: "local",
       })
       .returning();
@@ -63,6 +64,7 @@ export async function POST(request: NextRequest) {
         id: newUser.id,
         email: newUser.email,
         displayName: newUser.displayName,
+        role: newUser.role,
       },
     });
   } catch (error) {

@@ -19,6 +19,7 @@ export async function GET() {
         id: session.user.id,
         email: session.user.email,
         displayName: session.user.displayName,
+        role: session.user.role,
         shadowPoints: session.user.shadowPoints,
       },
     });

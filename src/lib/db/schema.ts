@@ -32,6 +32,7 @@ export const users = pgTable("users", {
   passwordHash: varchar("password_hash", { length: 255 }),
   oauthProvider: varchar("oauth_provider", { length: 20 }).notNull().default("local"),
   displayName: varchar("display_name", { length: 100 }).notNull(),
+  role: varchar("role", { length: 20 }).notNull().default("player"),
   shadowPoints: integer("shadow_points").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

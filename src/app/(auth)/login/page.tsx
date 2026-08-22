@@ -51,8 +51,8 @@ export default function LoginPage() {
         return;
       }
 
-      // Sucesso: redirecionar para a página inicial
-      router.push('/player');
+      // Sucesso: redirecionar conforme o papel do usuário
+      router.push(data.data?.role === "master" ? "/master" : "/player");
     } catch {
       setErrors({ general: 'Erro de conexão. Tente novamente.' });
     } finally {

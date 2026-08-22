@@ -77,3 +77,7 @@ export type SpellUseType = (typeof SPELL_USE_TYPES)[number];
 /** Status de duelo (D-45) */
 export const DUEL_STATUSES = ["pending", "active", "finished", "cancelled"] as const;
 export type DuelStatus = (typeof DUEL_STATUSES)[number];
+
+/** Papéis globais de usuário (D-09, RF-005) */
+export const USER_ROLES = ["player", "master"] as const;
+export type UserRole = (typeof USER_ROLES)[number];

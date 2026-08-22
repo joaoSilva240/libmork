@@ -12,6 +12,7 @@ export default function RegisterPage() {
     email: '',
     password: '',
     confirmPassword: '',
+    role: 'player' as 'player' | 'master',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -45,6 +46,7 @@ export default function RegisterPage() {
           displayName: formData.displayName,
           email: formData.email,
           password: formData.password,
+          role: formData.role,
         }),
       });
 
@@ -64,8 +66,8 @@ export default function RegisterPage() {
         return;
       }
 
-      // Sucesso: redirecionar para a página inicial
-      router.push('/player');
+      // Sucesso: redirecionar conforme o papel do usuário
+      router.push(data.data?.role === "master" ? "/master" : "/player");
     } catch {
       setErrors({ general: 'Erro de conexão. Tente novamente.' });
     } finally {
@@ -133,6 +135,36 @@ export default function RegisterPage() {
             autoComplete="new-password"
             disabled={isLoading}
           />
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Tipo de conta
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setFormData((prev) => ({ ...prev, role: "player" }))}
+                className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
+                  formData.role === "player"
+                    ? "border-blue-600 bg-blue-600 text-white"
+                    : "border-gray-300 bg-white text-gray-700 hover:border-blue-400"
+                }`}
+              >
+                Jogador
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData((prev) => ({ ...prev, role: "master" }))}
+                className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
+                  formData.role === "master"
+                    ? "border-purple-600 bg-purple-600 text-white"
+                    : "border-gray-300 bg-white text-gray-700 hover:border-purple-400"
+                }`}
+              >
+                Mestre
+              </button>
+            </div>
+          </div>
 
           <Button type="submit" className="w-full" isLoading={isLoading}>
             Criar Conta
