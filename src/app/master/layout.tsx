@@ -18,6 +18,9 @@ export default function MasterLayout({
             <Link href="/master/library" className="text-gray-300 hover:text-white">
               Biblioteca
             </Link>
+            <Link href="/master/classes" className="text-gray-300 hover:text-white">
+              Classes
+            </Link>
           </nav>
         </div>
         <LogoutButton />
