@@ -102,6 +102,14 @@ export type Campaign = {
   updatedAt: Date;
 };
 
+export type World = {
+  id: string;
+  campaignId: string;
+  name: string;
+  description: string | null;
+  createdAt: Date;
+};
+
 export type CharacterCampaign = {
   id: string;
   characterId: string;
