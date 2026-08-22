@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { Campaign, World } from "@/types";
 import { Button, Form, Input } from "@/components/ui";
 import { CampaignInvites } from "@/components/campaigns/CampaignInvites";
+import { CampaignCharacters } from "@/components/campaigns/CampaignCharacters";
 
 export function CampaignDetail() {
   const params = useParams<{ id: string }>();
@@ -216,7 +217,12 @@ export function CampaignDetail() {
                 className="flex items-start justify-between rounded-lg border border-gray-800 bg-gray-950 p-3"
               >
                 <div>
-                  <p className="font-semibold text-white">{world.name}</p>
+                  <Link
+                    href={`/master/campaigns/${campaign.id}/worlds/${world.id}`}
+                    className="font-semibold text-white hover:text-purple-300"
+                  >
+                    {world.name}
+                  </Link>
                   {world.description && (
                     <p className="mt-1 text-sm text-gray-400">{world.description}</p>
                   )}
@@ -261,6 +267,8 @@ export function CampaignDetail() {
       </div>
 
       <CampaignInvites campaignId={campaign.id} />
+
+      <CampaignCharacters campaignId={campaign.id} />
     </div>
   );
 }
