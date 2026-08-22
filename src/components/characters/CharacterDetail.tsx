@@ -10,6 +10,7 @@ import { getDerivedStats } from "@/lib/engine/attributes";
 import { ShareLink } from "@/components/characters/ShareLink";
 import { ImageUpload } from "@/components/characters/ImageUpload";
 import { CharacterContent } from "@/components/characters/CharacterContent";
+import { NfcManager } from "@/components/characters/NfcManager";
 
 const ATTRIBUTE_LABELS: Record<Attribute, string> = {
   forca: "Força",
@@ -183,6 +184,8 @@ export function CharacterDetail() {
       </div>
 
       <ShareLink characterId={character.id} />
+
+      <NfcManager characterId={character.id} />
 
       <CharacterContent characterId={character.id} />
     </div>

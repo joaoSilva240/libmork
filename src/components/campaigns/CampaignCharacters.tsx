@@ -30,6 +30,42 @@ export function CampaignCharacters({ campaignId }: { campaignId: string }) {
   const [characters, setCharacters] = useState<LinkedCharacter[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [distributeEmail, setDistributeEmail] = useState("");
+  const [distributeName, setDistributeName] = useState("");
+  const [isDistributing, setIsDistributing] = useState(false);
+  const [distributeError, setDistributeError] = useState<string | null>(null);
+
+  const handleDistribute = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDistributeError(null);
+    setIsDistributing(true);
+
+    try {
+      const response = await fetch(`/api/campaigns/${campaignId}/distribute`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          playerEmail: distributeEmail,
+          name: distributeName,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setDistributeError(data.error || "Erro ao distribuir ficha");
+        return;
+      }
+
+      setDistributeEmail("");
+      setDistributeName("");
+      await loadCharacters();
+    } catch {
+      setDistributeError("Erro de conexão. Tente novamente.");
+    } finally {
+      setIsDistributing(false);
+    }
+  };
 
   const loadCharacters = useCallback(async () => {
     try {
@@ -143,12 +179,49 @@ export function CampaignCharacters({ campaignId }: { campaignId: string }) {
         <div className="flex justify-center py-8">
           <div className="h-6 w-6 animate-spin rounded-full border-4 border-gray-700 border-t-purple-600" />
         </div>
-      ) : characters.length === 0 ? (
-        <p className="text-sm text-gray-400">
-          Nenhum personagem vinculado. Compartilhe o convite com seus jogadores.
-        </p>
       ) : (
-        <div className="space-y-3">
+        <div>
+          <form onSubmit={handleDistribute} className="mb-4 flex flex-wrap items-end gap-2">
+            <input
+              type="email"
+              placeholder="E-mail do jogador"
+              value={distributeEmail}
+              onChange={(e) => setDistributeEmail(e.target.value)}
+              required
+              disabled={isDistributing}
+              className="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent disabled:opacity-50"
+            />
+            <input
+              type="text"
+              placeholder="Nome do personagem"
+              value={distributeName}
+              onChange={(e) => setDistributeName(e.target.value)}
+              required
+              disabled={isDistributing}
+              className="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent disabled:opacity-50"
+            />
+            <button
+              type="submit"
+              disabled={isDistributing}
+              className="rounded-lg bg-purple-600 px-3 py-2 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
+            >
+              {isDistributing ? "Distribuindo..." : "Distribuir Ficha"}
+            </button>
+          </form>
+
+          {distributeError && (
+            <div className="mb-3 rounded-lg border border-red-800 bg-red-900/30 p-3 text-sm text-red-300">
+              {distributeError}
+            </div>
+          )}
+
+          {characters.length === 0 ? (
+            <p className="text-sm text-gray-400">
+              Nenhum personagem vinculado. Compartilhe o convite com seus jogadores
+              ou distribua uma ficha pronta.
+            </p>
+          ) : (
+            <div className="space-y-3">
           {characters.map((character) => (
             <div
               key={character.linkId}
@@ -213,6 +286,8 @@ export function CampaignCharacters({ campaignId }: { campaignId: string }) {
               </div>
             </div>
           ))}
+            </div>
+          )}
         </div>
       )}
     </div>

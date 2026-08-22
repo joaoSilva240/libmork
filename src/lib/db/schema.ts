@@ -186,6 +186,28 @@ export const npcs = pgTable(
   (table) => [index("idx_npc_world").on(table.worldId)],
 );
 
+/**
+ * NPC_PIN — Atalhos rápidos na ficha simplificada do NPC (RF-065, D-38).
+ * pinType: "skill" | "spell" | "attack". contentId aponta para skills/spells.
+ */
+export const npcPins = pgTable(
+  "npc_pins",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    npcId: uuid("npc_id")
+      .notNull()
+      .references(() => npcs.id, { onDelete: "cascade" }),
+    pinType: varchar("pin_type", { length: 20 }).notNull(),
+    contentId: uuid("content_id"),
+    label: varchar("label", { length: 100 }).notNull(),
+    rollExpression: varchar("roll_expression", { length: 200 }),
+    manaCost: integer("mana_cost"),
+    circle: integer("circle"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [index("idx_npc_pin_npc").on(table.npcId)],
+);
+
 // =============================================================================
 // VÍNCULO N:N — Personagem ↔ Campanha (D-06, D-07)
 // =============================================================================
@@ -516,8 +538,13 @@ export const worldsRelations = relations(worlds, ({ one, many }) => ({
   npcs: many(npcs),
 }));
 
-export const npcsRelations = relations(npcs, ({ one }) => ({
+export const npcsRelations = relations(npcs, ({ one, many }) => ({
   world: one(worlds, { fields: [npcs.worldId], references: [worlds.id] }),
+  pins: many(npcPins),
+}));
+
+export const npcPinsRelations = relations(npcPins, ({ one }) => ({
+  npc: one(npcs, { fields: [npcPins.npcId], references: [npcs.id] }),
 }));
 
 export const characterCampaignsRelations = relations(characterCampaigns, ({ one }) => ({
