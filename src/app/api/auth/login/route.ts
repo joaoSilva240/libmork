@@ -17,7 +17,11 @@ export async function POST(request: NextRequest) {
 
     if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: validation.error.errors[0].message },
+        { 
+          success: false, 
+          error: "Dados inválidos",
+          errors: validation.error.errors 
+        },
         { status: 400 }
       );
     }
