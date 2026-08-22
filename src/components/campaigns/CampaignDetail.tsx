@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Campaign, World } from "@/types";
 import { Button, Form, Input } from "@/components/ui";
+import { CampaignInvites } from "@/components/campaigns/CampaignInvites";
 
 export function CampaignDetail() {
   const params = useParams<{ id: string }>();
@@ -250,6 +251,8 @@ export function CampaignDetail() {
           />
         </Form>
       </div>
+
+      <CampaignInvites campaignId={campaign.id} />
     </div>
   );
 }

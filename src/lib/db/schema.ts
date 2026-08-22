@@ -391,6 +391,23 @@ export const publicShareLinks = pgTable(
 );
 
 /**
+ * CAMPAIGN_INVITE — Convite para jogador entrar na campanha (RF-015).
+ */
+export const campaignInvites = pgTable(
+  "campaign_invites",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    campaignId: uuid("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" }),
+    token: varchar("token", { length: 255 }).notNull().unique(),
+    revoked: boolean("revoked").notNull().default(false),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [index("idx_campaign_invite_campaign").on(table.campaignId)],
+);
+
+/**
  * NFC_TAG — Etiqueta NFC associada a um personagem (D-04, D-36).
  */
 export const nfcTags = pgTable("nfc_tags", {
@@ -486,6 +503,7 @@ export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
   master: one(users, { fields: [campaigns.masterId], references: [users.id] }),
   worlds: many(worlds),
   characterCampaigns: many(characterCampaigns),
+  campaignInvites: many(campaignInvites),
   skills: many(skills),
   spells: many(spells),
   items: many(items),
@@ -572,6 +590,13 @@ export const publicShareLinksRelations = relations(publicShareLinks, ({ one }) =
   character: one(characters, {
     fields: [publicShareLinks.characterId],
     references: [characters.id],
+  }),
+}));
+
+export const campaignInvitesRelations = relations(campaignInvites, ({ one }) => ({
+  campaign: one(campaigns, {
+    fields: [campaignInvites.campaignId],
+    references: [campaigns.id],
   }),
 }));
 

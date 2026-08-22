@@ -8,6 +8,7 @@ import { ATTRIBUTES } from "@/lib/utils/constants";
 import type { Attribute } from "@/lib/utils/constants";
 import { getDerivedStats } from "@/lib/engine/attributes";
 import { ShareLink } from "@/components/characters/ShareLink";
+import { ImageUpload } from "@/components/characters/ImageUpload";
 
 const ATTRIBUTE_LABELS: Record<Attribute, string> = {
   forca: "Força",
@@ -110,25 +111,20 @@ export function CharacterDetail() {
       </div>
 
       <div className="rounded-lg border border-gray-800 bg-gray-900 p-6">
-        <div className="flex items-center gap-4">
-          {character.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={character.imageUrl}
-              alt={character.name}
-              className="h-20 w-20 rounded-full object-cover"
-            />
-          ) : (
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-800 text-3xl font-bold text-gray-400">
-              {character.name.charAt(0).toUpperCase()}
-            </div>
-          )}
-          <div>
-            <h2 className="text-2xl font-bold text-white">{character.name}</h2>
-            <p className="text-gray-400">
-              Nível {character.level} · {character.xp} XP
-            </p>
-          </div>
+        <ImageUpload
+          characterId={character.id}
+          currentImageUrl={character.imageUrl}
+          characterName={character.name}
+          onUploaded={(imageUrl) =>
+            setCharacter((prev) => (prev ? { ...prev, imageUrl } : prev))
+          }
+        />
+
+        <div className="mt-4">
+          <h2 className="text-2xl font-bold text-white">{character.name}</h2>
+          <p className="text-gray-400">
+            Nível {character.level} · {character.xp} XP
+          </p>
         </div>
 
         <div className="mt-6 grid grid-cols-3 gap-3">
