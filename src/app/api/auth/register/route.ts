@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
         { 
           success: false, 
           error: "Dados inválidos",
-          errors: validation.error.errors 
+          errors: validation.error.issues 
         },
         { status: 400 }
       );

@@ -53,7 +53,7 @@ export default function LoginPage() {
 
       // Sucesso: redirecionar para a página inicial
       router.push('/player');
-    } catch (error) {
+    } catch {
       setErrors({ general: 'Erro de conexão. Tente novamente.' });
     } finally {
       setIsLoading(false);

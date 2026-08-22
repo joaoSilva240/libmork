@@ -93,12 +93,8 @@ export async function destroySession(): Promise<void> {
 }
 
 /**
- * Valida se há uma sessão ativa. Lança erro se não houver.
+ * Valida se há uma sessão ativa. Retorna null se não houver.
  */
 export async function requireAuth() {
-  const session = await getSession();
-  if (!session) {
-    throw new Error("Não autenticado");
-  }
-  return session;
+  return getSession();
 }
