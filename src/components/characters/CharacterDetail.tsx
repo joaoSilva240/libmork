@@ -7,6 +7,7 @@ import type { Character } from "@/types";
 import { ATTRIBUTES } from "@/lib/utils/constants";
 import type { Attribute } from "@/lib/utils/constants";
 import { getDerivedStats } from "@/lib/engine/attributes";
+import { ShareLink } from "@/components/characters/ShareLink";
 
 const ATTRIBUTE_LABELS: Record<Attribute, string> = {
   forca: "Força",
@@ -183,6 +184,8 @@ export function CharacterDetail() {
           <p>Perícias treinadas disponíveis: {stats.trainedSkillSlots}</p>
         </div>
       </div>
+
+      <ShareLink characterId={character.id} />
     </div>
   );
 }
