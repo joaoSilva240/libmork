@@ -111,21 +111,88 @@ export function LibraryNpcs() {
   const [isIncluding, setIsIncluding] = useState(false);
   const [isImportingDnd, setIsImportingDnd] = useState(false);
 
-  const handleImportDnd = async () => {
+  // Catálogo Completo do D&D 5e (334 Monstros)
+  const [showDndCatalogModal, setShowDndCatalogModal] = useState(false);
+  const [dndCatalogList, setDndCatalogList] = useState<Array<{ index: string; name: string }>>([]);
+  const [selectedDndIndexes, setSelectedDndIndexes] = useState<Set<string>>(new Set());
+  const [searchDndCatalog, setSearchDndCatalog] = useState("");
+  const [isLoadingCatalog, setIsLoadingCatalog] = useState(false);
+
+  const handleOpenDndCatalogModal = async () => {
+    setShowDndCatalogModal(true);
+    setError(null);
+    setIsLoadingCatalog(true);
+    try {
+      const res = await fetch("/api/npcs/dnd-catalog");
+      const data = await res.json();
+      if (res.ok && data.results) {
+        setDndCatalogList(data.results);
+      }
+    } catch {
+      setError("Erro ao carregar catálogo D&D 5e.");
+    } finally {
+      setIsLoadingCatalog(false);
+    }
+  };
+
+  const handleToggleSelectDndMonster = (index: string) => {
+    setSelectedDndIndexes((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
+
+  const handleImportSelectedDndMonsters = async () => {
+    if (selectedDndIndexes.size === 0) return;
     setError(null);
     setIsImportingDnd(true);
     try {
       const response = await fetch("/api/npcs/import-dnd", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ monsterIndexes: Array.from(selectedDndIndexes) }),
       });
       const data = await response.json();
       if (!response.ok) {
-        setError(data.error || "Erro ao importar monstros do D&D 5e");
+        setError(data.error || "Erro ao importar monstros selecionados do D&D 5e");
         return;
       }
       await loadNpcs();
-      alert(data.message || "Monstros D&D 5e importados com sucesso!");
+      setShowDndCatalogModal(false);
+      setSelectedDndIndexes(new Set());
+      alert(data.message || "Monstros selecionados importados com sucesso!");
+    } catch {
+      setError("Erro de conexão ao importar da API D&D 5e.");
+    } finally {
+      setIsImportingDnd(false);
+    }
+  };
+
+  const handleImportAllDndMonsters = async () => {
+    if (!window.confirm("Deseja importar TODOS os 334 monstros da API D&D 5e para sua biblioteca? Este processo levará alguns segundos.")) {
+      return;
+    }
+    setError(null);
+    setIsImportingDnd(true);
+    try {
+      const response = await fetch("/api/npcs/import-dnd", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ importAll: true }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.error || "Erro ao importar todos os monstros do D&D 5e");
+        return;
+      }
+      await loadNpcs();
+      setShowDndCatalogModal(false);
+      alert(data.message || "Todos os 334 monstros do D&D 5e foram importados para sua biblioteca!");
     } catch {
       setError("Erro de conexão ao importar da API D&D 5e.");
     } finally {
@@ -603,12 +670,12 @@ export function LibraryNpcs() {
 
         <button
           type="button"
-          onClick={handleImportDnd}
+          onClick={handleOpenDndCatalogModal}
           disabled={isImportingDnd}
           className="rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2.5 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg flex items-center gap-2 disabled:opacity-50"
         >
           <span>🐉</span>
-          <span>{isImportingDnd ? "Importando da API D&D 5e..." : "Alimentar da API D&D 5e"}</span>
+          <span>{isImportingDnd ? "Importando Monstros D&D 5e..." : "Catálogo D&D 5e (334 Monstros)"}</span>
         </button>
       </div>
 
@@ -814,6 +881,118 @@ export function LibraryNpcs() {
           )}
         </div>
       </div>
+
+      {/* Modal do Catálogo Completo D&D 5e (334 Monstros) */}
+      {showDndCatalogModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
+          onClick={() => setShowDndCatalogModal(false)}
+        >
+          <div
+            className="w-full max-w-2xl rounded-3xl border border-purple-800 bg-gray-950 p-6 shadow-2xl space-y-4 text-gray-100 max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">🐉</span>
+                <div>
+                  <h3 className="text-lg font-bold text-purple-200">Catálogo D&D 5e (334 Monstros)</h3>
+                  <p className="text-xs text-purple-400">
+                    Selecione monstros para importar ou alimente todos de uma vez
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDndCatalogModal(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <input
+                type="text"
+                placeholder="Pesquisar entre os 334 monstros (ex: Dragon, Goblin, Lich, Beholder)..."
+                value={searchDndCatalog}
+                onChange={(e) => setSearchDndCatalog(e.target.value)}
+                className="w-full rounded-xl border border-gray-800 bg-gray-900 p-2.5 text-xs text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
+              />
+
+              <button
+                type="button"
+                onClick={handleImportAllDndMonsters}
+                disabled={isImportingDnd}
+                className="w-full sm:w-auto rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-purple-500 transition whitespace-nowrap shadow-lg shadow-purple-950 disabled:opacity-50"
+              >
+                🔥 Importar Todos (334)
+              </button>
+            </div>
+
+            {isLoadingCatalog ? (
+              <div className="flex justify-center py-12">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-800 border-t-purple-600" />
+              </div>
+            ) : (
+              <div className="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 pr-1 min-h-[250px]">
+                {dndCatalogList
+                  .filter((m) => m.name.toLowerCase().includes(searchDndCatalog.toLowerCase()))
+                  .map((m) => {
+                    const isSelected = selectedDndIndexes.has(m.index);
+
+                    return (
+                      <div
+                        key={m.index}
+                        onClick={() => handleToggleSelectDndMonster(m.index)}
+                        className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition ${
+                          isSelected
+                            ? "border-purple-500 bg-purple-950/60 text-white"
+                            : "border-gray-800 bg-gray-900/60 text-gray-300 hover:border-gray-700"
+                        }`}
+                      >
+                        <div className="text-xs font-bold truncate pr-2">{m.name}</div>
+                        <div
+                          className={`h-5 w-5 rounded-md border flex items-center justify-center text-xs font-bold ${
+                            isSelected
+                              ? "bg-purple-600 border-purple-400 text-white"
+                              : "border-gray-700 bg-gray-800 text-transparent"
+                          }`}
+                        >
+                          ✓
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+
+            <div className="flex items-center justify-between pt-3 border-t border-gray-800 text-xs">
+              <span className="text-gray-400">
+                {selectedDndIndexes.size} monstro(s) selecionado(s)
+              </span>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDndCatalogModal(false)}
+                  className="rounded-xl border border-gray-800 bg-gray-900 px-4 py-2 text-xs font-semibold text-gray-300 hover:bg-gray-800"
+                >
+                  Fechar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleImportSelectedDndMonsters}
+                  disabled={selectedDndIndexes.size === 0 || isImportingDnd}
+                  className="rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white hover:bg-purple-500 disabled:opacity-50"
+                >
+                  {isImportingDnd ? "Importando..." : `Importar Selecionados (${selectedDndIndexes.size})`}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
