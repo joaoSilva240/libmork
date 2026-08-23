@@ -143,14 +143,31 @@ export const worlds = pgTable(
   "worlds",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    campaignId: uuid("campaign_id")
-      .notNull()
-      .references(() => campaigns.id, { onDelete: "cascade" }),
+    campaignId: uuid("campaign_id").references(() => campaigns.id, { onDelete: "cascade" }),
     name: varchar("name", { length: 200 }).notNull(),
     description: text("description"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [index("idx_world_campaign").on(table.campaignId)],
+);
+
+/**
+ * ESTABLISHMENT — Estabelecimentos comerciais/locais de um mundo.
+ */
+export const establishments = pgTable(
+  "establishments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    worldId: uuid("world_id")
+      .notNull()
+      .references(() => worlds.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 100 }).notNull(),
+    type: varchar("type", { length: 50 }).notNull().default("general"),
+    description: text("description"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [index("idx_establishment_world").on(table.worldId)],
 );
 
 /**
@@ -633,6 +650,11 @@ export const worldsRelations = relations(worlds, ({ one, many }) => ({
   campaign: one(campaigns, { fields: [worlds.campaignId], references: [campaigns.id] }),
   npcs: many(npcs),
   encounters: many(encounters),
+  establishments: many(establishments),
+}));
+
+export const establishmentsRelations = relations(establishments, ({ one }) => ({
+  world: one(worlds, { fields: [establishments.worldId], references: [worlds.id] }),
 }));
 
 export const npcsRelations = relations(npcs, ({ one, many }) => ({

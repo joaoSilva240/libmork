@@ -37,18 +37,20 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 
     const { id, worldId } = await params;
 
-    const campaign = await getOwnedCampaign(id, session.user.id);
-    if (!campaign) {
-      return NextResponse.json(
-        { success: false, error: "Campanha não encontrada" },
-        { status: 404 }
-      );
+    if (id !== "global") {
+      const campaign = await getOwnedCampaign(id, session.user.id);
+      if (!campaign) {
+        return NextResponse.json(
+          { success: false, error: "Campanha não encontrada" },
+          { status: 404 }
+        );
+      }
     }
 
     const world = await db
       .select()
       .from(worlds)
-      .where(and(eq(worlds.id, worldId), eq(worlds.campaignId, id)))
+      .where(eq(worlds.id, worldId))
       .limit(1);
 
     if (world.length === 0) {
@@ -74,10 +76,6 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
   }
 }
 
-/**
- * POST /api/campaigns/:id/worlds/:worldId/encounters
- * Cria um encontro em um mundo.
- */
 export async function POST(request: NextRequest, { params }: RouteContext) {
   try {
     const session = await requireAuth();
@@ -91,18 +89,20 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
     const { id, worldId } = await params;
 
-    const campaign = await getOwnedCampaign(id, session.user.id);
-    if (!campaign) {
-      return NextResponse.json(
-        { success: false, error: "Campanha não encontrada" },
-        { status: 404 }
-      );
+    if (id !== "global") {
+      const campaign = await getOwnedCampaign(id, session.user.id);
+      if (!campaign) {
+        return NextResponse.json(
+          { success: false, error: "Campanha não encontrada" },
+          { status: 404 }
+        );
+      }
     }
 
     const world = await db
       .select()
       .from(worlds)
-      .where(and(eq(worlds.id, worldId), eq(worlds.campaignId, id)))
+      .where(eq(worlds.id, worldId))
       .limit(1);
 
     if (world.length === 0) {

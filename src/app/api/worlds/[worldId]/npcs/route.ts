@@ -24,7 +24,7 @@ async function getCampaignByWorld(worldId: string) {
     .where(eq(worlds.id, worldId))
     .limit(1);
 
-  if (!world) return null;
+  if (!world || !world.campaignId) return null;
 
   const [campaign] = await db
     .select()

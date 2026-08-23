@@ -29,11 +29,18 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose }: WorldO
     
     const load = async () => {
       setIsLoading(true);
+      setError(null);
       try {
-        const response = await fetch(`/api/campaigns/${campaignId}/worlds/${worldId}/npcs`);
-        const data = await response.json();
+        let response = await fetch(`/api/campaigns/${campaignId}/worlds/${worldId}/npcs`);
+        let data = await response.json();
 
         if (!response.ok) {
+          response = await fetch(`/api/worlds/${worldId}`);
+          data = await response.json();
+          if (response.ok && data.data) {
+            setNpcs(data.data.npcs || []);
+            return;
+          }
           setError(data.error || "Erro ao carregar NPCs do mundo");
           return;
         }
@@ -55,11 +62,18 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose }: WorldO
     
     const load = async () => {
       setIsLoading(true);
+      setError(null);
       try {
-        const response = await fetch(`/api/campaigns/${campaignId}/worlds/${worldId}/encounters`);
-        const data = await response.json();
+        let response = await fetch(`/api/campaigns/${campaignId}/worlds/${worldId}/encounters`);
+        let data = await response.json();
 
         if (!response.ok) {
+          response = await fetch(`/api/worlds/${worldId}`);
+          data = await response.json();
+          if (response.ok && data.data) {
+            setEncounters(data.data.encounters || []);
+            return;
+          }
           setError(data.error || "Erro ao carregar encontros");
           return;
         }

@@ -19,7 +19,7 @@ async function isWorldMaster(worldId: string, userId: string): Promise<boolean> 
     .where(eq(worlds.id, worldId))
     .limit(1);
 
-  if (!world) return false;
+  if (!world || !world.campaignId) return false;
 
   const [campaign] = await db
     .select()

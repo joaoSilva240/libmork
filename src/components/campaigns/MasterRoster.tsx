@@ -63,13 +63,15 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
 
     const loadData = async () => {
       try {
-        const [rosterRes, worldsRes] = await Promise.all([
+        const [rosterRes, campaignWorldsRes, globalWorldsRes] = await Promise.all([
           fetch(`/api/campaigns/${campaignId}/roster`),
           fetch(`/api/campaigns/${campaignId}/worlds`),
+          fetch(`/api/worlds`),
         ]);
 
         const rosterData = await rosterRes.json();
-        const worldsData = await worldsRes.json();
+        const campaignWorldsData = await campaignWorldsRes.json();
+        const globalWorldsData = await globalWorldsRes.json();
 
         if (cancelled) return;
 
@@ -79,11 +81,18 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
           setError(rosterData.error || "Erro ao carregar personagens da campanha");
         }
 
-        if (worldsRes.ok && worldsData.data) {
-          setWorlds(worldsData.data);
-          if (worldsData.data.length > 0 && !selectedWorldId) {
-            setSelectedWorldId(worldsData.data[0].id);
-          }
+        const allWorldsMap = new Map<string, World>();
+        if (campaignWorldsRes.ok && campaignWorldsData.data) {
+          (campaignWorldsData.data as World[]).forEach((w) => allWorldsMap.set(w.id, w));
+        }
+        if (globalWorldsRes.ok && globalWorldsData.data) {
+          (globalWorldsData.data as World[]).forEach((w) => allWorldsMap.set(w.id, w));
+        }
+
+        const combinedWorlds = Array.from(allWorldsMap.values());
+        setWorlds(combinedWorlds);
+        if (combinedWorlds.length > 0 && !selectedWorldId) {
+          setSelectedWorldId(combinedWorlds[0].id);
         }
       } catch {
         if (!cancelled) {

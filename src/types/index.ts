@@ -104,10 +104,20 @@ export type Campaign = {
 
 export type World = {
   id: string;
-  campaignId: string;
+  campaignId: string | null;
   name: string;
   description: string | null;
   createdAt: Date;
+};
+
+export type Establishment = {
+  id: string;
+  worldId: string;
+  name: string;
+  type: string;
+  description: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 export type CharacterCampaign = {

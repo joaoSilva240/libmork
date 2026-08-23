@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { ContentManager } from "@/components/content/ContentManager";
 import { LibraryNpcs } from "@/components/npcs/LibraryNpcs";
+import { LibraryWorlds } from "@/components/worlds/LibraryWorlds";
 
 const TABS = [
   { key: "content", label: "Conteúdo" },
   { key: "npcs", label: "NPCs" },
+  { key: "worlds", label: "Mundos" },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -32,11 +34,11 @@ export default function LibraryPage() {
         ))}
       </div>
 
-      {activeTab === "content" ? (
+      {activeTab === "content" && (
         <ContentManager basePath="/api/content" title="Biblioteca Global" />
-      ) : (
-        <LibraryNpcs />
       )}
+      {activeTab === "npcs" && <LibraryNpcs />}
+      {activeTab === "worlds" && <LibraryWorlds />}
     </div>
   );
 }

@@ -31,7 +31,7 @@ export async function getCampaignAsMaster(campaignId: string, userId: string) {
 export async function getCampaignByWorld(worldId: string) {
   const [world] = await db.select().from(worlds).where(eq(worlds.id, worldId)).limit(1);
 
-  if (!world) return null;
+  if (!world || !world.campaignId) return null;
 
   const [campaign] = await db
     .select()
