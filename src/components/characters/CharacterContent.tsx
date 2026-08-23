@@ -24,10 +24,12 @@ type LinkedRow = {
 
 type CharacterContentProps = {
   characterId: string;
+  defaultType?: ContentType;
+  allowedTypes?: ContentType[];
 };
 
-export function CharacterContent({ characterId }: CharacterContentProps) {
-  const [activeType, setActiveType] = useState<ContentType>("skills");
+export function CharacterContent({ characterId, defaultType = "skills", allowedTypes }: CharacterContentProps) {
+  const [activeType, setActiveType] = useState<ContentType>(defaultType);
   const [data, setData] = useState<{ linked: LinkedRow[]; available: Record<string, unknown>[] }>({
     linked: [],
     available: [],
@@ -169,25 +171,27 @@ export function CharacterContent({ characterId }: CharacterContentProps) {
     (content) => !linkedIds.has(content.id as string)
   );
 
-  return (
-    <div className="mt-6 rounded-lg border border-gray-800 bg-gray-900 p-6">
-      <h3 className="mb-3 text-lg font-semibold text-white">Conteúdo da Ficha</h3>
+  const displayTypes = allowedTypes ? TYPE_ORDER.filter((t) => allowedTypes.includes(t)) : TYPE_ORDER;
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        {TYPE_ORDER.map((type) => (
-          <button
-            key={type}
-            onClick={() => setActiveType(type)}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-              activeType === type
-                ? "bg-blue-600 text-white"
-                : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-            }`}
-          >
-            {TYPE_LABELS[type]}
-          </button>
-        ))}
-      </div>
+  return (
+    <div className="rounded-2xl border border-gray-800 bg-gray-900/80 p-4">
+      {displayTypes.length > 1 && (
+        <div className="mb-4 flex flex-wrap gap-1.5 border-b border-gray-800 pb-3">
+          {displayTypes.map((type) => (
+            <button
+              key={type}
+              onClick={() => setActiveType(type)}
+              className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
+                activeType === type
+                  ? "bg-purple-600 text-white shadow-sm"
+                  : "bg-gray-800/80 text-gray-400 hover:bg-gray-700 hover:text-white"
+              }`}
+            >
+              {TYPE_LABELS[type]}
+            </button>
+          ))}
+        </div>
+      )}
 
       {error && (
         <div className="mb-3 rounded-lg border border-red-800 bg-red-900/30 p-3 text-sm text-red-300">

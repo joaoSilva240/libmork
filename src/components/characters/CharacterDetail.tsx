@@ -11,6 +11,15 @@ import { ShareLink } from "@/components/characters/ShareLink";
 import { ImageUpload } from "@/components/characters/ImageUpload";
 import { CharacterContent } from "@/components/characters/CharacterContent";
 import { NfcManager } from "@/components/characters/NfcManager";
+import {
+  StatusFilledIcon,
+  SkillsFilledIcon,
+  InventoryFilledIcon,
+  SettingsFilledIcon,
+} from "@/components/ui/Icons";
+import { useSocket } from "@/context/SocketContext";
+
+type TabType = "status" | "skills" | "inventory" | "settings";
 
 const ATTRIBUTE_LABELS: Record<Attribute, string> = {
   forca: "Força",
@@ -20,19 +29,43 @@ const ATTRIBUTE_LABELS: Record<Attribute, string> = {
   empatia: "Empatia",
 };
 
+const ATTRIBUTE_ICONS: Record<Attribute, string> = {
+  forca: "⚔️",
+  destreza: "🏹",
+  vigor: "🛡️",
+  inteligencia: "🧠",
+  empatia: "💬",
+};
+
 export function CharacterDetail() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const { updateActorStatus, rollDice, isConnected } = useSocket();
+
   const [character, setCharacter] = useState<Character | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>("status");
+  const [isMutatingHpMp, setIsMutatingHpMp] = useState(false);
+
+  // Rolagem de Dados
+  const [activeRollResult, setActiveRollResult] = useState<{
+    title: string;
+    formula: string;
+    result: number;
+    detail: string;
+  } | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     async function loadCharacter() {
       try {
         const response = await fetch(`/api/characters/${params.id}`);
         const data = await response.json();
+
+        if (cancelled) return;
 
         if (!response.ok) {
           setError(data.error || "Erro ao carregar personagem");
@@ -41,13 +74,21 @@ export function CharacterDetail() {
 
         setCharacter(data.data);
       } catch {
-        setError("Erro de conexão. Tente novamente.");
+        if (!cancelled) {
+          setError("Erro de conexão. Tente novamente.");
+        }
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     }
 
-    loadCharacter();
+    void loadCharacter();
+
+    return () => {
+      cancelled = true;
+    };
   }, [params.id]);
 
   const handleDelete = async () => {
@@ -75,18 +116,92 @@ export function CharacterDetail() {
     }
   };
 
+  const handleModifyHpMp = async (hpDelta: number, manaDelta: number) => {
+    if (!character || isMutatingHpMp) return;
+    setIsMutatingHpMp(true);
+
+    const newHp = Math.max(0, Math.min(character.hitPointsMax, character.hitPointsCurrent + hpDelta));
+    const newMana = Math.max(0, Math.min(character.manaPointsMax, character.manaPointsCurrent + manaDelta));
+
+    // Atualização otimista local
+    setCharacter((prev) =>
+      prev
+        ? {
+            ...prev,
+            hitPointsCurrent: newHp,
+            manaPointsCurrent: newMana,
+          }
+        : prev
+    );
+
+    try {
+      // Usar a rota de atualização do personagem se disponível ou a rota da campanha
+      // Atualização via socket para a mesa em tempo real
+      updateActorStatus({
+        campaignId: character.id,
+        actorId: character.id,
+        currentHp: newHp,
+        currentMana: newMana,
+      });
+    } catch {
+      // ignore
+    } finally {
+      setIsMutatingHpMp(false);
+    }
+  };
+
+  const handleRollAttribute = (attr: Attribute) => {
+    if (!character) return;
+    const stats = getDerivedStats(character.attributes, character.level);
+    const mod = stats.modifiers[attr];
+    const array = new Uint32Array(1);
+    if (typeof window !== "undefined" && window.crypto) {
+      window.crypto.getRandomValues(array);
+    }
+    const d20 = (array[0] % 20) + 1;
+    const total = d20 + mod;
+    const label = ATTRIBUTE_LABELS[attr];
+    const formula = `1d20 + ${label} (${mod >= 0 ? `+${mod}` : mod})`;
+    const detail = `Dado [${d20}] ${mod >= 0 ? `+ ${mod}` : `- ${Math.abs(mod)}`} = ${total}`;
+
+    setActiveRollResult({
+      title: `Teste de ${label}`,
+      formula,
+      result: total,
+      detail,
+    });
+
+    rollDice({
+      campaignId: character.id,
+      actorId: character.id,
+      actorName: character.name,
+      rollType: `Atributo: ${label}`,
+      formula,
+      result: total,
+      diceDetail: detail,
+      isManual: false,
+    });
+  };
+
   if (isLoading) {
     return (
-      <div className="flex justify-center py-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-700 border-t-blue-600" />
+      <div className="flex h-[80vh] flex-col items-center justify-center space-y-3">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-800 border-t-purple-600" />
+        <p className="text-xs text-gray-400 font-medium">Carregando ficha...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="rounded-lg border border-red-800 bg-red-900/30 p-4 text-red-300">
-        {error}
+      <div className="mx-auto max-w-md p-4">
+        <div className="rounded-2xl border border-red-900/60 bg-red-950/40 p-4 text-center text-sm text-red-300">
+          <p className="font-bold mb-1">Erro de Carregamento</p>
+          <p>{error}</p>
+          <Link href="/player" className="mt-3 inline-block text-xs font-semibold text-purple-400 underline">
+            Voltar para Personagens
+          </Link>
+        </div>
       </div>
     );
   }
@@ -96,98 +211,359 @@ export function CharacterDetail() {
   }
 
   const stats = getDerivedStats(character.attributes, character.level);
+  const hpPercent = Math.min(100, Math.max(0, (character.hitPointsCurrent / Math.max(character.hitPointsMax, 1)) * 100));
+  const manaPercent = Math.min(100, Math.max(0, (character.manaPointsCurrent / Math.max(character.manaPointsMax, 1)) * 100));
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <div className="mb-4 flex items-center justify-between">
-        <Link href="/player" className="text-sm text-blue-400 hover:text-blue-300">
-          ← Voltar
+    <div className="relative mx-auto min-h-screen max-w-md bg-gray-950 text-gray-100 pb-24 shadow-2xl font-sans">
+      {/* Top Header Mobile Bar */}
+      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-gray-800/80 bg-gray-900/90 px-4 py-3 backdrop-blur-md">
+        <Link href="/player" className="flex items-center gap-1.5 text-xs font-semibold text-gray-400 hover:text-white">
+          <span>‹</span> Meus Personagens
         </Link>
-        <button
-          onClick={handleDelete}
-          disabled={isDeleting}
-          className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
-        >
-          {isDeleting ? "Excluindo..." : "Excluir"}
-        </button>
-      </div>
 
-      <div className="rounded-lg border border-gray-800 bg-gray-900 p-6">
-        <ImageUpload
-          characterId={character.id}
-          currentImageUrl={character.imageUrl}
-          characterName={character.name}
-          onUploaded={(imageUrl) =>
-            setCharacter((prev) => (prev ? { ...prev, imageUrl } : prev))
-          }
-        />
-
-        <div className="mt-4">
-          <h2 className="text-2xl font-bold text-white">{character.name}</h2>
-          <p className="text-gray-400">
-            Nível {character.level} · {character.xp} XP
-          </p>
+        <div className="flex items-center gap-2">
+          <span
+            className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+              isConnected ? "bg-emerald-950 text-emerald-400 border border-emerald-800/60" : "bg-gray-800 text-gray-400"
+            }`}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${isConnected ? "bg-emerald-400 animate-pulse" : "bg-gray-500"}`} />
+            {isConnected ? "Mesa Ao Vivo" : "Offline"}
+          </span>
         </div>
+      </header>
 
-        <div className="mt-6 grid grid-cols-3 gap-3">
-          <div className="rounded-lg border border-red-900/50 bg-red-900/20 p-3 text-center">
-            <p className="text-xs text-red-300">HP</p>
-            <p className="text-xl font-bold text-red-400">
-              {character.hitPointsCurrent}/{character.hitPointsMax}
-            </p>
+      {/* Main Tab Content */}
+      <main className="p-4 space-y-4">
+        {/* Modal de Resultado de Rolagem de Dados */}
+        {activeRollResult && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+            onClick={() => setActiveRollResult(null)}
+          >
+            <div
+              className="w-full max-w-xs rounded-2xl border border-purple-600/50 bg-gray-900 p-5 text-center shadow-2xl animate-in fade-in zoom-in"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <span className="text-2xl mb-1 block">🎲</span>
+              <h4 className="text-sm font-bold text-white">{activeRollResult.title}</h4>
+              <p className="text-xs text-purple-300 font-semibold mb-3">{activeRollResult.formula}</p>
+              
+              <div className="my-2 rounded-xl bg-purple-950/80 border border-purple-800/60 py-4">
+                <span className="text-4xl font-black text-purple-400">{activeRollResult.result}</span>
+              </div>
+              <p className="text-[11px] text-gray-400 mb-4">{activeRollResult.detail}</p>
+              
+              <button
+                onClick={() => setActiveRollResult(null)}
+                className="w-full rounded-xl bg-purple-600 py-2 text-xs font-bold text-white hover:bg-purple-700"
+              >
+                Fechar
+              </button>
+            </div>
           </div>
-          <div className="rounded-lg border border-blue-900/50 bg-blue-900/20 p-3 text-center">
-            <p className="text-xs text-blue-300">Mana</p>
-            <p className="text-xl font-bold text-blue-400">
-              {character.manaPointsCurrent}/{character.manaPointsMax}
-            </p>
-          </div>
-          <div className="rounded-lg border border-gray-700 bg-gray-800/50 p-3 text-center">
-            <p className="text-xs text-gray-400">Bloqueio</p>
-            <p className="text-xl font-bold text-white">{stats.block}</p>
-          </div>
-        </div>
+        )}
 
-        <div className="mt-6">
-          <h3 className="mb-3 text-lg font-semibold text-white">Atributos</h3>
-          <div className="space-y-2">
-            {ATTRIBUTES.map((attr) => {
-              const mod = stats.modifiers[attr];
-              return (
-                <div
-                  key={attr}
-                  className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-950 px-3 py-2"
-                >
-                  <span className="text-gray-300">{ATTRIBUTE_LABELS[attr]}</span>
-                  <div className="flex items-center gap-3">
-                    <span className="font-bold text-white">
-                      {character.attributes[attr]}
-                    </span>
-                    <span
-                      className={`w-8 text-center text-sm font-semibold ${
-                        mod >= 0 ? "text-green-400" : "text-red-400"
-                      }`}
-                    >
-                      {mod >= 0 ? "+" : ""}
-                      {mod}
-                    </span>
+        {/* TAB 1: STATUS */}
+        {activeTab === "status" && (
+          <div className="space-y-4 animate-in fade-in duration-200">
+            {/* Header Hero Card */}
+            <div className="relative overflow-hidden rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900 to-gray-950 p-4 shadow-lg">
+              <div className="flex items-center gap-4">
+                {character.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={character.imageUrl}
+                    alt={character.name}
+                    className="h-20 w-20 shrink-0 rounded-2xl border-2 border-purple-600/60 object-cover shadow-md"
+                  />
+                ) : (
+                  <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border-2 border-purple-700/60 bg-purple-950/60 text-2xl font-black text-purple-300">
+                    {character.name.slice(0, 2).toUpperCase()}
+                  </div>
+                )}
+
+                <div className="min-w-0 flex-1">
+                  <span className="inline-block rounded-md bg-purple-950/80 px-2 py-0.5 text-[10px] font-bold text-purple-300 border border-purple-800/60">
+                    Nível {character.level}
+                  </span>
+                  <h2 className="mt-1 truncate text-xl font-bold text-white tracking-tight">{character.name}</h2>
+                  <p className="text-xs text-gray-400">{character.xp} XP total</p>
+
+                  {/* XP Progress Bar */}
+                  <div className="mt-2.5 space-y-1">
+                    <div className="flex justify-between text-[10px] text-gray-400 font-medium">
+                      <span>Progresso XP</span>
+                      <span>{character.xp % 100} / 100 XP</span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-800">
+                      <div
+                        className="h-full bg-gradient-to-r from-purple-600 to-blue-500 transition-all duration-300"
+                        style={{ width: `${character.xp % 100}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            </div>
+
+            {/* Combat Stats: HP, Mana, Bloqueio */}
+            <div className="grid grid-cols-3 gap-2.5">
+              {/* HP Card */}
+              <div className="flex flex-col justify-between rounded-2xl border border-red-900/60 bg-red-950/20 p-3 shadow-sm">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider">VIDA (HP)</span>
+                    <span className="text-[10px] text-red-300 font-semibold">{Math.round(hpPercent)}%</span>
+                  </div>
+                  <p className="mt-1 text-lg font-black text-red-400">
+                    {character.hitPointsCurrent} <span className="text-xs font-normal text-red-300/70">/ {character.hitPointsMax}</span>
+                  </p>
+                </div>
+
+                <div className="mt-2 space-y-2">
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-900">
+                    <div className="h-full bg-red-500 transition-all duration-300" style={{ width: `${hpPercent}%` }} />
+                  </div>
+                  <div className="flex gap-1 pt-1">
+                    <button
+                      onClick={() => handleModifyHpMp(-1, 0)}
+                      className="flex-1 rounded-md bg-red-900/60 py-1 text-[10px] font-bold text-red-200 hover:bg-red-800 active:scale-95"
+                    >
+                      -1
+                    </button>
+                    <button
+                      onClick={() => handleModifyHpMp(1, 0)}
+                      className="flex-1 rounded-md bg-red-900/60 py-1 text-[10px] font-bold text-red-200 hover:bg-red-800 active:scale-95"
+                    >
+                      +1
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mana Card */}
+              <div className="flex flex-col justify-between rounded-2xl border border-blue-900/60 bg-blue-950/20 p-3 shadow-sm">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">MANA (MP)</span>
+                    <span className="text-[10px] text-blue-300 font-semibold">{Math.round(manaPercent)}%</span>
+                  </div>
+                  <p className="mt-1 text-lg font-black text-blue-400">
+                    {character.manaPointsCurrent} <span className="text-xs font-normal text-blue-300/70">/ {character.manaPointsMax}</span>
+                  </p>
+                </div>
+
+                <div className="mt-2 space-y-2">
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-900">
+                    <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${manaPercent}%` }} />
+                  </div>
+                  <div className="flex gap-1 pt-1">
+                    <button
+                      onClick={() => handleModifyHpMp(0, -1)}
+                      className="flex-1 rounded-md bg-blue-900/60 py-1 text-[10px] font-bold text-blue-200 hover:bg-blue-800 active:scale-95"
+                    >
+                      -1
+                    </button>
+                    <button
+                      onClick={() => handleModifyHpMp(0, 1)}
+                      className="flex-1 rounded-md bg-blue-900/60 py-1 text-[10px] font-bold text-blue-200 hover:bg-blue-800 active:scale-95"
+                    >
+                      +1
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bloqueio / Defesa Card */}
+              <div className="flex flex-col justify-between rounded-2xl border border-gray-800 bg-gray-900/60 p-3 shadow-sm">
+                <div>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">BLOQUEIO</span>
+                  <p className="mt-1 text-2xl font-black text-white">{stats.block}</p>
+                </div>
+                <div className="mt-2">
+                  <p className="text-[10px] text-gray-500 leading-tight">Mitigação tática com Vigor</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Atributos do Personagem com Rolagem Instantânea */}
+            <div className="rounded-2xl border border-gray-800 bg-gray-900/80 p-4 shadow-sm">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-300">Atributos Principais</h3>
+                <span className="text-[10px] text-purple-400 font-medium">Toque para rolar d20</span>
+              </div>
+
+              <div className="space-y-2">
+                {ATTRIBUTES.map((attr) => {
+                  const mod = stats.modifiers[attr];
+                  const value = character.attributes[attr];
+                  return (
+                    <button
+                      key={attr}
+                      onClick={() => handleRollAttribute(attr)}
+                      className="flex w-full items-center justify-between rounded-xl border border-gray-800/80 bg-gray-950 p-2.5 transition-all hover:border-purple-600/60 hover:bg-purple-950/20 active:scale-[0.99]"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-lg">{ATTRIBUTE_ICONS[attr]}</span>
+                        <span className="text-xs font-semibold text-gray-200">{ATTRIBUTE_LABELS[attr]}</span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-white">{value}</span>
+                        <span
+                          className={`min-w-8 rounded-md py-0.5 px-1.5 text-center text-xs font-black ${
+                            mod >= 0 ? "bg-emerald-950 text-emerald-400 border border-emerald-800/60" : "bg-rose-950 text-rose-400 border border-rose-800/60"
+                          }`}
+                        >
+                          {mod >= 0 ? `+${mod}` : mod}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
+        )}
+
+        {/* TAB 2: PERÍCIAS */}
+        {activeTab === "skills" && (
+          <div className="space-y-4 animate-in fade-in duration-200">
+            <div className="rounded-2xl border border-purple-900/60 bg-purple-950/20 p-4">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-purple-300">
+                Perícias & Treinamento
+              </h3>
+              <p className="mt-1 text-xs text-gray-300">
+                Slots de perícias treinadas disponíveis por Inteligência:{" "}
+                <span className="font-bold text-purple-400">{stats.trainedSkillSlots}</span>
+              </p>
+            </div>
+
+            {/* Gerenciador completo de Perícias */}
+            <CharacterContent characterId={character.id} defaultType="skills" allowedTypes={["skills"]} />
+          </div>
+        )}
+
+        {/* TAB 3: INVENTÁRIO */}
+        {activeTab === "inventory" && (
+          <div className="space-y-4 animate-in fade-in duration-200">
+            {/* Conteúdo da Ficha (Itens, Magias, Habilidades, Condições) */}
+            <CharacterContent characterId={character.id} defaultType="items" allowedTypes={["items", "spells", "conditions"]} />
+          </div>
+        )}
+
+        {/* TAB 4: CONFIGURAÇÕES */}
+        {activeTab === "settings" && (
+          <div className="space-y-4 animate-in fade-in duration-200">
+            <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 space-y-4">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-300">
+                Gerenciamento da Ficha
+              </h3>
+
+              {/* Upload de Foto */}
+              <div className="border-b border-gray-800 pb-4">
+                <p className="mb-2 text-xs font-medium text-gray-400">Imagem do Personagem</p>
+                <ImageUpload
+                  characterId={character.id}
+                  currentImageUrl={character.imageUrl}
+                  characterName={character.name}
+                  onUploaded={(imageUrl) =>
+                    setCharacter((prev) => (prev ? { ...prev, imageUrl } : prev))
+                  }
+                />
+              </div>
+
+              {/* Links Públicos de Compartilhamento */}
+              <div className="border-b border-gray-800 pb-4">
+                <ShareLink characterId={character.id} />
+              </div>
+
+              {/* Associação de Etiquetas NFC */}
+              <div className="border-b border-gray-800 pb-4">
+                <NfcManager characterId={character.id} />
+              </div>
+
+              {/* Exclusão do Personagem */}
+              <div className="pt-2">
+                <button
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="w-full rounded-xl border border-red-800/80 bg-red-950/40 py-2.5 text-xs font-bold text-red-300 hover:bg-red-900/60 disabled:opacity-50"
+                >
+                  {isDeleting ? "Excluindo Ficha..." : "🗑️ Excluir Personagem"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* Sticky Bottom Navigation Bar (Menu Inferior com Ícones Filled) */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 mx-auto max-w-md border-t border-gray-800/80 bg-gray-900/95 py-2 px-3 backdrop-blur-lg shadow-2xl">
+        <div className="flex items-center justify-around">
+          {/* Tab 1: Status */}
+          <button
+            onClick={() => setActiveTab("status")}
+            className={`flex flex-col items-center gap-1 px-3 py-1 transition-all ${
+              activeTab === "status"
+                ? "text-purple-400 scale-105"
+                : "text-gray-500 hover:text-gray-300"
+            }`}
+          >
+            <StatusFilledIcon className={`h-6 w-6 ${activeTab === "status" ? "fill-purple-400" : "fill-gray-500"}`} />
+            <span className={`text-[10px] font-bold ${activeTab === "status" ? "text-purple-400" : "text-gray-400"}`}>
+              Status
+            </span>
+          </button>
+
+          {/* Tab 2: Perícias */}
+          <button
+            onClick={() => setActiveTab("skills")}
+            className={`flex flex-col items-center gap-1 px-3 py-1 transition-all ${
+              activeTab === "skills"
+                ? "text-purple-400 scale-105"
+                : "text-gray-500 hover:text-gray-300"
+            }`}
+          >
+            <SkillsFilledIcon className={`h-6 w-6 ${activeTab === "skills" ? "fill-purple-400" : "fill-gray-500"}`} />
+            <span className={`text-[10px] font-bold ${activeTab === "skills" ? "text-purple-400" : "text-gray-400"}`}>
+              Perícias
+            </span>
+          </button>
+
+          {/* Tab 3: Inventário */}
+          <button
+            onClick={() => setActiveTab("inventory")}
+            className={`flex flex-col items-center gap-1 px-3 py-1 transition-all ${
+              activeTab === "inventory"
+                ? "text-purple-400 scale-105"
+                : "text-gray-500 hover:text-gray-300"
+            }`}
+          >
+            <InventoryFilledIcon className={`h-6 w-6 ${activeTab === "inventory" ? "fill-purple-400" : "fill-gray-500"}`} />
+            <span className={`text-[10px] font-bold ${activeTab === "inventory" ? "text-purple-400" : "text-gray-400"}`}>
+              Inventário
+            </span>
+          </button>
+
+          {/* Tab 4: Configurações */}
+          <button
+            onClick={() => setActiveTab("settings")}
+            className={`flex flex-col items-center gap-1 px-3 py-1 transition-all ${
+              activeTab === "settings"
+                ? "text-purple-400 scale-105"
+                : "text-gray-500 hover:text-gray-300"
+            }`}
+          >
+            <SettingsFilledIcon className={`h-6 w-6 ${activeTab === "settings" ? "fill-purple-400" : "fill-gray-500"}`} />
+            <span className={`text-[10px] font-bold ${activeTab === "settings" ? "text-purple-400" : "text-gray-400"}`}>
+              Configurações
+            </span>
+          </button>
         </div>
-
-        <div className="mt-6 rounded-lg border border-gray-800 bg-gray-950 p-3 text-sm text-gray-400">
-          <p>Perícias treinadas disponíveis: {stats.trainedSkillSlots}</p>
-        </div>
-      </div>
-
-      <ShareLink characterId={character.id} />
-
-      <NfcManager characterId={character.id} />
-
-      <CharacterContent characterId={character.id} />
+      </nav>
     </div>
   );
 }
