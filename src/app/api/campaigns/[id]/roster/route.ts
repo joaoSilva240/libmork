@@ -8,7 +8,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import {
-  worlds,
   npcs,
   npcCampaigns,
   characterCampaigns,
@@ -18,7 +17,7 @@ import {
 } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { getCampaignAsMaster } from "@/lib/auth/campaign-access";
-import { eq, inArray, and, or, isNull } from "drizzle-orm";
+import { eq, inArray, and } from "drizzle-orm";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -100,38 +99,14 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       conditions: conditionsByCharacter.get(player.id) ?? [],
     }));
 
-    const campaignWorlds = await db
-      .select()
-      .from(worlds)
-      .where(or(eq(worlds.campaignId, id), isNull(worlds.campaignId)));
-
-    const worldNpcs = campaignWorlds.length
-      ? await db
-          .select()
-          .from(npcs)
-          .where(
-            inArray(
-              npcs.worldId,
-              campaignWorlds.map((world) => world.id)
-            )
-          )
-      : [];
-
+    // NPCs selecionados explicitamente no overlay de mundos para esta campanha
     const included = await db
       .select({ npc: npcs })
       .from(npcCampaigns)
       .innerJoin(npcs, eq(npcCampaigns.npcId, npcs.id))
       .where(eq(npcCampaigns.campaignId, id));
 
-    const seen = new Set<string>();
-    const campaignNpcs: typeof worldNpcs = [];
-
-    for (const npc of [...worldNpcs, ...included.map((row) => row.npc)]) {
-      if (!seen.has(npc.id)) {
-        seen.add(npc.id);
-        campaignNpcs.push(npc);
-      }
-    }
+    const campaignNpcs = included.map((row) => row.npc);
 
     return NextResponse.json({
       success: true,

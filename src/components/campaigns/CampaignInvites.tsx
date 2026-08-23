@@ -187,7 +187,7 @@ export function CampaignInvites({ campaignId }: { campaignId: string }) {
             {searchQuery ? "Nenhum personagem encontrado." : "Nenhum personagem ou NPC cadastrado."}
           </p>
         ) : (
-          <div className="max-h-56 space-y-1.5 overflow-y-auto pr-0.5">
+          <div className="max-h-36 space-y-1.5 overflow-y-auto pr-0.5">
             {filteredActors.map((actor) => (
               <div
                 key={`${actor.kind}-${actor.id}`}
@@ -250,7 +250,7 @@ export function CampaignInvites({ campaignId }: { campaignId: string }) {
             Nenhum convite pendente. Gere um link acima.
           </p>
         ) : (
-          <div className="space-y-1.5">
+          <div className="max-h-24 space-y-1.5 overflow-y-auto pr-0.5">
             {invites.map((invite) => (
               <div
                 key={invite.id}
