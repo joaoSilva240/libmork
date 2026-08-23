@@ -133,6 +133,7 @@ export function advanceCombatTurn(session: CombatSessionState): CombatSessionSta
 
 /**
  * Consome ações do turno do combatente atual (RF-040, RF-062).
+ * Ao zerar as ações (0/3), avança automaticamente o turno para o próximo combatente da fila.
  */
 export function spendCombatActions(
   session: CombatSessionState,
@@ -152,17 +153,35 @@ export function spendCombatActions(
     };
   }
 
+  const newActionsLeft = currentCombatant.actionsRemaining - actionCost;
+
   const updatedCombatants = session.combatants.map((c) => {
     if (c.id === combatantId) {
-      return { ...c, actionsRemaining: Math.max(0, c.actionsRemaining - actionCost) };
+      return { ...c, actionsRemaining: Math.max(0, newActionsLeft) };
     }
     return c;
   });
 
+  const updatedSession: CombatSessionState = {
+    ...session,
+    combatants: updatedCombatants,
+  };
+
+  // Se esgotou todas as 3 ações (<= 0), avança automaticamente para o próximo turno da fila
+  if (newActionsLeft <= 0) {
+    const nextSession = advanceCombatTurn(updatedSession);
+    const nextCombatant = nextSession.combatants[nextSession.currentTurnIndex];
+    return {
+      session: nextSession,
+      success: true,
+      message: `${currentCombatant.name} esgotou suas 3 ações! Turno avançado automaticamente para ${nextCombatant?.name}.`,
+    };
+  }
+
   return {
-    session: { ...session, combatants: updatedCombatants },
+    session: updatedSession,
     success: true,
-    message: `${currentCombatant.name} usou ${actionCost} ação(ões). Restam: ${currentCombatant.actionsRemaining - actionCost}`,
+    message: `${currentCombatant.name} usou ${actionCost} ação(ões). Restam: ${newActionsLeft}`,
   };
 }
 
