@@ -268,14 +268,14 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-xl border border-gray-800 bg-gray-900 p-4"
+        className="w-full max-w-md rounded-xl border border-gray-800 bg-gray-900 p-3"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-4 flex items-center gap-3">
+        <div className="mb-3 flex items-center gap-3">
           {actor.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -307,7 +307,7 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
           </button>
         </div>
 
-        <div className="mb-4 grid grid-cols-3 gap-2">
+        <div className="mb-3 grid grid-cols-3 gap-2">
           {(
             [
               ["roll", "Exigir rolagem"],
@@ -330,18 +330,18 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
         </div>
 
         {error && (
-          <div className="mb-3 rounded-lg border border-red-800 bg-red-900/30 p-2 text-sm text-red-300">
+          <div className="mb-2 rounded-lg border border-red-800 bg-red-900/30 p-2 text-sm text-red-300">
             {error}
           </div>
         )}
         {success && (
-          <div className="mb-3 rounded-lg border border-green-800 bg-green-900/30 p-2 text-sm text-green-300">
+          <div className="mb-2 rounded-lg border border-green-800 bg-green-900/30 p-2 text-sm text-green-300">
             {success}
           </div>
         )}
 
         {panel === "roll" && (
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-300">
                 Expressão de rolagem
@@ -390,7 +390,7 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
         )}
 
         {panel === "modify" && (
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-300">
                 Variação de HP (negativo = dano)
@@ -453,8 +453,8 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
             </button>
 
             {actor.kind === "character" && conditionOptions.length > 0 && (
-              <div className="rounded border border-gray-800 p-3">
-                <p className="mb-2 text-sm font-semibold text-gray-300">Condições</p>
+              <div className="rounded border border-gray-800 p-2">
+                <p className="mb-1.5 text-sm font-semibold text-gray-300">Condições</p>
                 <div className="space-y-1">
                   {conditionOptions.map((condition) => {
                     const applied = appliedConditionIds.has(condition.id);
@@ -481,7 +481,7 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
         )}
 
         {panel === "xp" && (
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-300">
                 Quantidade de XP

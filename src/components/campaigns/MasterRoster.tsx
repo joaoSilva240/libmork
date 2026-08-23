@@ -108,15 +108,15 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-white">Mesa</h2>
-        <span className="text-sm text-gray-400">
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-lg font-bold text-white">Mesa</h2>
+        <span className="text-xs text-gray-400">
           {roster.players.length} jogadores · {roster.npcs.length} NPCs
         </span>
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-800 bg-red-900/30 p-3 text-sm text-red-300">
+        <div className="mb-3 rounded-lg border border-red-800 bg-red-900/30 p-2 text-sm text-red-300">
           {error}
         </div>
       )}
@@ -126,7 +126,7 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
           Nenhum personagem na campanha ainda. Aprove fichas dos jogadores ou inclua NPCs.
         </p>
       ) : (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
           {actors.map((actor) => {
             const hpPercent = Math.min(
               100,

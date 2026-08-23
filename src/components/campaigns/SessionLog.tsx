@@ -142,11 +142,11 @@ export function SessionLog({ campaignId }: SessionLogProps) {
 
   return (
     <div className="flex h-full flex-col rounded-lg border border-gray-800 bg-gray-900">
-      <div className="border-b border-gray-800 p-3">
-        <h2 className="font-bold text-white">Log da Sessão</h2>
+      <div className="border-b border-gray-800 p-2">
+        <h2 className="text-sm font-bold text-white">Log da Sessão</h2>
       </div>
 
-      <div className="max-h-[70vh] flex-1 space-y-2 overflow-y-auto p-3">
+      <div className="max-h-[70vh] flex-1 space-y-1.5 overflow-y-auto p-2">
         {isLoading && logs.length === 0 ? (
           <div className="flex justify-center py-8">
             <div className="h-6 w-6 animate-spin rounded-full border-4 border-gray-700 border-t-purple-600" />
@@ -157,7 +157,7 @@ export function SessionLog({ campaignId }: SessionLogProps) {
           </p>
         ) : (
           logs.map((log) => (
-            <div key={log.id} className="rounded-lg border border-gray-800 bg-gray-950 p-2">
+            <div key={log.id} className="rounded-lg border border-gray-800 bg-gray-950 p-1.5">
               <div className="flex items-start justify-between gap-2">
                 <p className={`text-sm ${toneFor(log.action)}`}>
                   {log.actorName && log.actorType !== "system" ? (

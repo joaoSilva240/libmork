@@ -6,7 +6,6 @@ import Link from "next/link";
 import type { Campaign, World } from "@/types";
 import { Button, Form } from "@/components/ui";
 import { CampaignInvites } from "@/components/campaigns/CampaignInvites";
-import { CampaignCharacters } from "@/components/campaigns/CampaignCharacters";
 import { MasterRoster } from "@/components/campaigns/MasterRoster";
 import { SessionLog } from "@/components/campaigns/SessionLog";
 
@@ -224,10 +223,10 @@ export function CampaignDetail() {
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)_320px]">
+      <div className="grid gap-3 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
         {/* ===== Coluna esquerda — Gestão ===== */}
-        <div className="space-y-4">
-          <div className="rounded-lg border border-gray-800 bg-gray-900 p-4">
+        <div className="space-y-3">
+          <div className="rounded-lg border border-gray-800 bg-gray-900 p-3">
             <div className="flex flex-wrap gap-2 text-xs">
               <span className="rounded bg-gray-800 px-2 py-1 text-gray-300">
                 Motor: {campaign.rulesEngine === "d20_mod" ? "d20 + modificador" : "2d20 somado"}
@@ -239,29 +238,29 @@ export function CampaignDetail() {
                 Sombra: +{campaign.difficultyModifierShadowPoints}
               </span>
             </div>
-            <div className="mt-3">
+            <div className="mt-2">
               <Link
                 href={`/master/campaigns/${campaign.id}/content`}
-                className="inline-block rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700"
+                className="inline-block rounded-lg bg-purple-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-purple-700"
               >
                 Gerenciar Conteúdo
               </Link>
             </div>
           </div>
 
-          <div className="rounded-lg border border-gray-800 bg-gray-900 p-4">
-            <h3 className="mb-3 font-semibold text-white">Mundos</h3>
+          <div className="rounded-lg border border-gray-800 bg-gray-900 p-3">
+            <h3 className="mb-2 font-semibold text-white">Mundos</h3>
 
             {worldError && (
-              <div className="mb-3 rounded-lg border border-red-800 bg-red-900/30 p-2 text-xs text-red-300">
+              <div className="mb-2 rounded-lg border border-red-800 bg-red-900/30 p-2 text-xs text-red-300">
                 {worldError}
               </div>
             )}
 
             {worlds.length === 0 ? (
-              <p className="mb-3 text-sm text-gray-400">Nenhum mundo criado ainda.</p>
+              <p className="mb-2 text-sm text-gray-400">Nenhum mundo criado ainda.</p>
             ) : (
-              <div className="mb-4 space-y-2">
+              <div className="mb-3 space-y-2">
                 {worlds.map((world) => (
                   <div
                     key={world.id}
@@ -365,16 +364,12 @@ export function CampaignDetail() {
         </div>
 
         {/* ===== Coluna central — Mesa (galeria de personagens) ===== */}
-        <div className="rounded-lg border border-gray-800 bg-gray-900 p-4">
+        <div className="rounded-lg border border-gray-800 bg-gray-900 p-3">
           <MasterRoster campaignId={campaign.id} />
         </div>
 
         {/* ===== Coluna direita — Log da sessão ===== */}
         <SessionLog campaignId={campaign.id} />
-      </div>
-
-      <div className="mt-4">
-        <CampaignCharacters campaignId={campaign.id} />
       </div>
     </div>
   );

@@ -164,7 +164,7 @@ export function CampaignCharacters({ campaignId }: { campaignId: string }) {
   };
 
   return (
-    <div className="mt-6 rounded-lg border border-gray-800 bg-gray-900 p-6">
+    <div className="mt-4 rounded-lg border border-gray-800 bg-gray-900 p-4">
       <h3 className="mb-3 text-lg font-semibold text-white">
         Personagens na Campanha
       </h3>

@@ -582,7 +582,7 @@ export function LibraryNpcs() {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <div className="rounded-lg border border-gray-800 bg-gray-900 p-4">
           <h3 className="mb-3 font-semibold text-white">Novo NPC</h3>
           <Form onSubmit={handleCreate} error={undefined}>

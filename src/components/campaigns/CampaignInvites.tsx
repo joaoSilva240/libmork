@@ -109,7 +109,7 @@ export function CampaignInvites({ campaignId }: { campaignId: string }) {
   };
 
   return (
-    <div className="mt-6 rounded-lg border border-gray-800 bg-gray-900 p-6">
+    <div className="mt-4 rounded-lg border border-gray-800 bg-gray-900 p-4">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-lg font-semibold text-white">Convites de Jogadores</h3>
         <button
