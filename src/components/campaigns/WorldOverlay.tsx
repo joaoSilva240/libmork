@@ -25,6 +25,64 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
   const [selectedEncounter, setSelectedEncounter] = useState<Encounter | null>(null);
   const [includeInCampaign, setIncludeInCampaign] = useState<Record<string, boolean>>({});
 
+  // Importação da Biblioteca para o Mundo
+  const [showLibraryModal, setShowLibraryModal] = useState(false);
+  const [libraryNpcs, setLibraryNpcs] = useState<Npc[]>([]);
+  const [selectedSourceNpcId, setSelectedSourceNpcId] = useState("");
+  const [importQuantity, setImportQuantity] = useState(1);
+  const [isImporting, setIsImporting] = useState(false);
+
+  const handleOpenLibraryModal = async () => {
+    setShowLibraryModal(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/npcs");
+      const data = await response.json();
+      if (response.ok && data.data) {
+        setLibraryNpcs(data.data);
+      }
+    } catch {
+      setError("Erro ao carregar biblioteca de NPCs.");
+    }
+  };
+
+  const handleImportFromLibrary = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSourceNpcId) return;
+
+    setIsImporting(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/worlds/${worldId}/npcs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sourceNpcId: selectedSourceNpcId,
+          quantity: importQuantity,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Erro ao importar NPC para o mundo");
+        return;
+      }
+
+      const importedList = Array.isArray(data.data) ? data.data : [data.data];
+      setNpcs((prev) => [...prev, ...importedList]);
+      setShowLibraryModal(false);
+      setSelectedSourceNpcId("");
+      setImportQuantity(1);
+      onChanged?.();
+    } catch {
+      setError("Erro de conexão ao importar NPC.");
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   // Load NPCs and Campaign Included NPCs
   useEffect(() => {
     if (activeTab !== "npcs") return;
@@ -223,7 +281,7 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
           </button>
         </div>
 
-        <div className="mb-3">
+        <div className="mb-3 flex items-center justify-between gap-2">
           <input
             type="text"
             placeholder={activeTab === "npcs" ? "Pesquisar NPCs..." : "Pesquisar Encontros..."}
@@ -231,6 +289,16 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white focus:border-transparent focus:ring-2 focus:ring-purple-600"
           />
+
+          {activeTab === "npcs" && (
+            <button
+              type="button"
+              onClick={handleOpenLibraryModal}
+              className="rounded-lg bg-purple-600 px-3 py-2 text-xs font-bold text-white hover:bg-purple-500 transition whitespace-nowrap shadow"
+            >
+              📚 Puxar da Biblioteca
+            </button>
+          )}
         </div>
 
         {error && (
@@ -420,6 +488,95 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
           </div>
         </div>
       </div>
+
+      {/* Modal de Seleção da Biblioteca de NPCs */}
+      {showLibraryModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="w-full max-w-md rounded-2xl border border-purple-800 bg-gray-950 p-5 shadow-2xl space-y-4 text-gray-100">
+            <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
+              <h3 className="text-base font-bold text-purple-200">Importar NPCs da Biblioteca</h3>
+              <button
+                type="button"
+                onClick={() => setShowLibraryModal(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
+              {libraryNpcs.map((npcItem) => (
+                <div
+                  key={npcItem.id}
+                  onClick={() => setSelectedSourceNpcId(npcItem.id)}
+                  className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition ${
+                    selectedSourceNpcId === npcItem.id
+                      ? "border-purple-500 bg-purple-950/60 text-white"
+                      : "border-gray-800 bg-gray-900/60 text-gray-300 hover:border-gray-700"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-xs font-bold overflow-hidden">
+                      {npcItem.imageUrl ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={npcItem.imageUrl} alt={npcItem.name} className="h-full w-full object-cover" />
+                      ) : (
+                        npcItem.name.charAt(0)
+                      )}
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold">{npcItem.name}</div>
+                      <div className="text-[10px] text-gray-400">
+                        {npcItem.npcType === "enemy" ? "Inimigo" : "Comum"} • HP: {npcItem.hitPointsMax}
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedSourceNpcId === npcItem.id && (
+                    <span className="text-xs font-bold text-purple-400">✓ Selecionado</span>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <form onSubmit={handleImportFromLibrary} className="space-y-4 pt-2 border-t border-gray-800">
+              <div>
+                <label className="block text-xs font-semibold text-gray-300 mb-1">
+                  Quantidade de Instâncias Independente
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={importQuantity}
+                  onChange={(e) => setImportQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-full rounded-xl border border-gray-800 bg-gray-900 p-2.5 text-xs text-white"
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowLibraryModal(false)}
+                  className="w-1/2 rounded-xl border border-gray-800 bg-gray-900 py-2.5 text-xs font-semibold text-gray-300 hover:bg-gray-800"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={!selectedSourceNpcId || isImporting}
+                  className="w-1/2 rounded-xl bg-purple-600 py-2.5 text-xs font-bold text-white hover:bg-purple-500 disabled:opacity-50"
+                >
+                  {isImporting ? "Importando..." : `Adicionar ao Mundo (${importQuantity})`}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
