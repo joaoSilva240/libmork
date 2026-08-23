@@ -185,6 +185,7 @@ export type Npc = {
   xpReward: number;
   createdAt: Date;
   updatedAt: Date;
+  campaigns?: { campaignId: string }[];
 };
 
 export type NpcCampaign = {

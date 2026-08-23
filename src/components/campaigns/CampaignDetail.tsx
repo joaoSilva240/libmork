@@ -8,6 +8,8 @@ import { Button, Form } from "@/components/ui";
 import { CampaignInvites } from "@/components/campaigns/CampaignInvites";
 import { MasterRoster } from "@/components/campaigns/MasterRoster";
 import { SessionLog } from "@/components/campaigns/SessionLog";
+import { ContentOverlay } from "@/components/campaigns/ContentOverlay";
+import { WorldOverlay } from "@/components/campaigns/WorldOverlay";
 
 export function CampaignDetail() {
   const params = useParams<{ id: string }>();
@@ -27,6 +29,9 @@ export function CampaignDetail() {
   const [editWorldName, setEditWorldName] = useState("");
   const [editWorldDescription, setEditWorldDescription] = useState("");
   const [isSavingWorld, setIsSavingWorld] = useState(false);
+
+  const [showContentOverlay, setShowContentOverlay] = useState(false);
+  const [selectedWorld, setSelectedWorld] = useState<{ id: string; name: string } | null>(null);
 
   const loadWorlds = useCallback(async () => {
     try {
@@ -239,12 +244,12 @@ export function CampaignDetail() {
               </span>
             </div>
             <div className="mt-2">
-              <Link
-                href={`/master/campaigns/${campaign.id}/content`}
+              <button
+                onClick={() => setShowContentOverlay(true)}
                 className="inline-block rounded-lg bg-purple-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-purple-700"
               >
                 Gerenciar Conteúdo
-              </Link>
+              </button>
             </div>
           </div>
 
@@ -303,12 +308,12 @@ export function CampaignDetail() {
                     ) : (
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <Link
-                            href={`/master/campaigns/${campaign.id}/worlds/${world.id}`}
-                            className="text-sm font-semibold text-white hover:text-purple-300"
+                          <button
+                            onClick={() => setSelectedWorld({ id: world.id, name: world.name })}
+                            className="text-left text-sm font-semibold text-white hover:text-purple-300"
                           >
                             {world.name}
-                          </Link>
+                          </button>
                           {world.description && (
                             <p className="mt-0.5 text-xs text-gray-400">{world.description}</p>
                           )}
@@ -371,6 +376,19 @@ export function CampaignDetail() {
         {/* ===== Coluna direita — Log da sessão ===== */}
         <SessionLog campaignId={campaign.id} />
       </div>
+
+      {showContentOverlay && (
+        <ContentOverlay campaignId={campaign.id} onClose={() => setShowContentOverlay(false)} />
+      )}
+
+      {selectedWorld && (
+        <WorldOverlay
+          campaignId={campaign.id}
+          worldId={selectedWorld.id}
+          worldName={selectedWorld.name}
+          onClose={() => setSelectedWorld(null)}
+        />
+      )}
     </div>
   );
 }
