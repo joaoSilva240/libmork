@@ -20,7 +20,9 @@ import {
 import { useSocket, type DefenseReactionRequestPayload } from "@/context/SocketContext";
 import { DefenseReactionModal } from "@/components/combat/DefenseReactionModal";
 import { DeathSaveModal } from "@/components/combat/DeathSaveModal";
+import { PlayerTurnOverlay } from "@/components/combat/PlayerTurnOverlay";
 import type { CombatSessionState } from "@/lib/engine";
+import { spendCombatActions } from "@/lib/engine";
 
 type TabType = "status" | "skills" | "inventory" | "settings";
 
@@ -52,6 +54,7 @@ export function CharacterDetail() {
     subscribeDefenseRequest,
     subscribeCombatState,
     respondDefenseReaction,
+    updateCombatState,
   } = useSocket();
 
   const [character, setCharacter] = useState<Character | null>(null);
@@ -314,6 +317,17 @@ export function CharacterDetail() {
       diceDetail: detail,
       isManual: false,
     });
+
+    // Dedução automática de ação de combate se for o turno do personagem (RF-040, RF-062)
+    if (combatState?.active && combatState.combatants.length > 0) {
+      const current = combatState.combatants[combatState.currentTurnIndex];
+      if (current && (current.id === character.id || current.characterId === character.id)) {
+        const spent = spendCombatActions(combatState, current.id, 1);
+        if (spent.success) {
+          updateCombatState(spent.session);
+        }
+      }
+    }
   };
 
   if (isLoading) {
@@ -644,6 +658,11 @@ export function CharacterDetail() {
           </div>
         )}
       </main>
+
+      {/* Overlay Compacto de Turno do Jogador (apenas em combate ativo) */}
+      {combatState && character && (
+        <PlayerTurnOverlay combatState={combatState} characterId={character.id} />
+      )}
 
       {/* Sticky Bottom Navigation Bar (Menu Inferior com Ícones Filled) */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 mx-auto max-w-md border-t border-gray-800/80 bg-gray-900/95 py-2 px-3 backdrop-blur-lg shadow-2xl">
