@@ -23,6 +23,7 @@
     "postgres": "^3.4.9",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "react-grid-layout": "^2.2.4",
     "uuid": "^14.0.2",
     "zod": "^4.4.3"
   },

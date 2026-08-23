@@ -369,7 +369,7 @@ export function CampaignDetail() {
         </div>
 
         {/* ===== Coluna central — Mesa (galeria de personagens) ===== */}
-        <div className="rounded-lg border border-gray-800 bg-gray-900 p-3">
+        <div className="flex h-[calc(100vh-12rem)] flex-col rounded-lg border border-gray-800 bg-gray-900 p-3">
           <MasterRoster campaignId={campaign.id} />
         </div>
 
