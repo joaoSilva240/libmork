@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { ATTRIBUTES, SPELL_USE_TYPES } from "@/lib/utils/constants";
 import type { ContentType } from "@/lib/validators/content";
 import { Button, Form, Input } from "@/components/ui";
@@ -92,9 +92,37 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
   const [editData, setEditData] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
 
+  // Overlay de Criação, Busca e Importação D&D 5e
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [searchContent, setSearchContent] = useState("");
+  const [isImportingDnd, setIsImportingDnd] = useState(false);
+
+  const handleImportDndContent = async () => {
+    setError(null);
+    setIsImportingDnd(true);
+    try {
+      const response = await fetch("/api/content/import-dnd", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contentType: activeType }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.error || "Erro ao importar conteúdo D&D 5e");
+        return;
+      }
+      await loadItems();
+      alert(data.message || "Conteúdo D&D 5e importado com sucesso!");
+    } catch {
+      setError("Erro de conexão ao importar da API D&D 5e.");
+    } finally {
+      setIsImportingDnd(false);
+    }
+  };
+
   const config = TYPE_CONFIGS[activeType];
 
-  const loadItems = useCallback(async () => {
+  const loadItems = async () => {
     try {
       const response = await fetch(`${basePath}/${activeType}`);
       const data = await response.json();
@@ -110,7 +138,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [basePath, activeType]);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -182,6 +210,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
       }
 
       setFormData({});
+      setShowCreateModal(false);
       await loadItems();
     } catch {
       setError("Erro de conexão. Tente novamente.");
@@ -322,108 +351,156 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
     });
 
   return (
-    <div>
-      <h2 className="mb-4 text-2xl font-bold text-white">{title}</h2>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-2xl font-bold text-white">{title}</h2>
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        {CONTENT_TYPE_ORDER.map((type) => (
+        <div className="flex items-center gap-2">
           <button
-            key={type}
-            onClick={() => {
-              setActiveType(type);
-              setFormData({});
-              setEditingId(null);
-            }}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-              activeType === type
-                ? "bg-purple-600 text-white"
-                : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-            }`}
+            type="button"
+            onClick={() => setShowCreateModal(true)}
+            className="rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-purple-500 transition shadow-lg flex items-center gap-1.5"
           >
-            {TYPE_CONFIGS[type].label}
+            <span>+</span>
+            <span>Criar {config.label.replace(/s$/, "")}</span>
           </button>
-        ))}
+
+          <button
+            type="button"
+            onClick={handleImportDndContent}
+            disabled={isImportingDnd}
+            className="rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2.5 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg flex items-center gap-2 disabled:opacity-50"
+          >
+            <span>🐉</span>
+            <span>{isImportingDnd ? "Importando D&D 5e..." : `Alimentar ${config.label} (API D&D 5e)`}</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 pb-3">
+        <div className="flex flex-wrap gap-2">
+          {CONTENT_TYPE_ORDER.map((type) => (
+            <button
+              key={type}
+              onClick={() => {
+                setActiveType(type);
+                setFormData({});
+                setEditingId(null);
+                setSearchContent("");
+              }}
+              className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+                activeType === type
+                  ? "bg-purple-600 text-white shadow"
+                  : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+              }`}
+            >
+              {TYPE_CONFIGS[type].label}
+            </button>
+          ))}
+        </div>
+
+        <input
+          type="text"
+          placeholder={`Buscar ${config.label.toLowerCase()} por nome...`}
+          value={searchContent}
+          onChange={(e) => setSearchContent(e.target.value)}
+          className="w-full sm:w-64 rounded-xl border border-gray-800 bg-gray-900 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
+        />
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-800 bg-red-900/30 p-3 text-sm text-red-300">
+        <div className="rounded-lg border border-red-800 bg-red-900/30 p-3 text-sm text-red-300">
           {error}
         </div>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-lg border border-gray-800 bg-gray-900 p-4">
-          <h3 className="mb-3 font-semibold text-white">Nova {config.label.replace(/s$/, "")}</h3>
-          <Form onSubmit={handleCreate} error={undefined}>
-            {renderFields(formData, (name, value) => setFormData((prev) => ({ ...prev, [name]: value })), isCreating, "create")}
-            <Button type="submit" variant="master" isLoading={isCreating}>
-              Criar
-            </Button>
-          </Form>
-        </div>
+      {/* Área Principal de Conteúdo (Full Width) */}
+      <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+        <h3 className="mb-3 font-semibold text-white text-sm flex items-center justify-between">
+          <span>{config.label} Cadastradas</span>
+          <span className="text-xs text-purple-400 font-bold">{items.length} itens</span>
+        </h3>
 
-        <div className="rounded-lg border border-gray-800 bg-gray-900 p-4">
-          <h3 className="mb-3 font-semibold text-white">
-            {config.label} ({items.length})
-          </h3>
-
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <div className="h-6 w-6 animate-spin rounded-full border-4 border-gray-700 border-t-purple-600" />
-            </div>
-          ) : items.length === 0 ? (
-            <p className="text-sm text-gray-400">Nenhum conteúdo cadastrado.</p>
-          ) : (
-            <div className="space-y-2">
-              {items.map((item) => (
-                <div
-                  key={item.id as string}
-                  className="rounded-lg border border-gray-800 bg-gray-950"
-                >
-                  <div className="flex items-start justify-between p-3">
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-700 border-t-purple-600" />
+          </div>
+        ) : items.length === 0 ? (
+          <div className="py-12 text-center text-sm text-gray-400 space-y-2">
+            <p>Nenhuma {config.label.toLowerCase().replace(/s$/, "")} cadastrada ainda.</p>
+            <p className="text-xs text-gray-500">
+              Clique em <strong>+ Criar {config.label.replace(/s$/, "")}</strong> ou <strong>Alimentar (API D&D 5e)</strong> para popular.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {items
+              .filter((item) =>
+                String(item.name || "")
+                  .toLowerCase()
+                  .includes(searchContent.toLowerCase())
+              )
+              .map((item) => (
+                <div key={item.id as string} className="rounded-xl border border-gray-800 bg-gray-950 p-3">
+                  <div className="flex items-start justify-between">
                     <div className="min-w-0 flex-1">
                       <button
                         onClick={() =>
-                          editingId === item.id
-                            ? setEditingId(null)
-                            : startEditing(item)
+                          editingId === item.id ? setEditingId(null) : startEditing(item)
                         }
-                        className="text-left font-semibold text-white hover:text-purple-300"
+                        className="text-left font-bold text-sm text-white hover:text-purple-300 flex items-center gap-1.5"
                       >
-                        {item.name as string} {editingId === item.id ? "−" : "✎"}
+                        <span>{item.name as string}</span>
+                        <span className="text-xs text-purple-400 opacity-70">
+                          {editingId === item.id ? "−" : "✎"}
+                        </span>
                       </button>
-                      <div className="mt-1 space-y-0.5">
+
+                      <div className="mt-1 space-y-0.5 text-xs text-gray-400">
                         {config.showInList.map((field) => {
                           const value = item[field];
                           if (value === null || value === undefined || value === "") return null;
                           return (
-                            <p key={field} className="text-xs text-gray-400">
-                              {field}: {String(value)}
+                            <p key={field} className="text-gray-300">
+                              <strong className="text-gray-400">{field}:</strong> {String(value)}
                             </p>
                           );
                         })}
+                        {Boolean(item.description) && (
+                          <p className="text-gray-400 text-[11px] line-clamp-2 mt-1">
+                            {String(item.description)}
+                          </p>
+                        )}
                         {item.campaignId ? (
-                          <p className="text-xs text-purple-400">Privado da campanha</p>
+                          <p className="text-[10px] text-purple-400 font-semibold pt-1">
+                            Privado da campanha
+                          </p>
                         ) : (
-                          <p className="text-xs text-gray-500">Global</p>
+                          <p className="text-[10px] text-gray-500 pt-1">Global</p>
                         )}
                       </div>
                     </div>
+
                     <button
                       onClick={() => handleDelete(item.id as string)}
-                      className="ml-4 shrink-0 text-sm text-red-400 hover:text-red-300"
+                      className="ml-2 shrink-0 text-xs font-semibold text-red-400 hover:text-red-300"
                     >
                       Excluir
                     </button>
                   </div>
 
                   {editingId === item.id && (
-                    <div className="space-y-3 border-t border-gray-800 p-3">
-                      <p className="text-sm font-semibold text-gray-300">
+                    <div className="space-y-3 border-t border-gray-800 mt-3 pt-3">
+                      <p className="text-xs font-bold text-purple-300">
                         Editar {config.label.replace(/s$/, "")}
                       </p>
-                      {renderFields(editData, (name, value) => setEditData((prev) => ({ ...prev, [name]: value })), isSaving, "edit")}
-                      <div className="flex gap-2">
+                      {renderFields(
+                        editData,
+                        (name, value) => setEditData((prev) => ({ ...prev, [name]: value })),
+                        isSaving,
+                        "edit"
+                      )}
+                      <div className="flex gap-2 pt-1">
                         <Button
                           type="button"
                           variant="master"
@@ -440,10 +517,56 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
                   )}
                 </div>
               ))}
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
+
+      {/* Modal / Overlay de Criação de Conteúdo */}
+      {showCreateModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
+          onClick={() => setShowCreateModal(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-3xl border border-purple-800 bg-gray-950 p-6 shadow-2xl space-y-4 text-gray-100 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
+              <h3 className="text-base font-bold text-purple-200">
+                Criar Nova {config.label.replace(/s$/, "")}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <Form onSubmit={handleCreate} error={undefined}>
+              {renderFields(
+                formData,
+                (name, value) => setFormData((prev) => ({ ...prev, [name]: value })),
+                isCreating,
+                "create"
+              )}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="w-1/2 rounded-xl border border-gray-800 bg-gray-900 py-2.5 text-xs font-semibold text-gray-300 hover:bg-gray-800"
+                >
+                  Cancelar
+                </button>
+                <Button type="submit" variant="master" isLoading={isCreating} className="w-1/2">
+                  Criar
+                </Button>
+              </div>
+            </Form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

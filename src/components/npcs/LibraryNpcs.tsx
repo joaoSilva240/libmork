@@ -110,6 +110,8 @@ export function LibraryNpcs() {
   const [includeCampaignId, setIncludeCampaignId] = useState("");
   const [isIncluding, setIsIncluding] = useState(false);
   const [isImportingDnd, setIsImportingDnd] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [searchNpc, setSearchNpc] = useState("");
 
   // Catálogo Completo do D&D 5e (334 Monstros)
   const [showDndCatalogModal, setShowDndCatalogModal] = useState(false);
@@ -334,6 +336,7 @@ export function LibraryNpcs() {
       setNpcs((prev) => [created, ...prev]);
       setForm(EMPTY_FORM);
       setCreateImage(null);
+      setShowCreateModal(false);
       if (createFileRef.current) {
         createFileRef.current.value = "";
       }
@@ -659,69 +662,76 @@ export function LibraryNpcs() {
   );
 
   return (
-    <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-white">NPCs & Biblioteca de Monstros</h2>
+          <h2 className="text-2xl font-bold text-white">Biblioteca de NPCs & Monstros</h2>
           <p className="text-sm text-gray-400">
-            Fichas completas de NPCs, disponíveis para incluir em qualquer campanha ou mundo.
+            Fichas completas de NPCs, prontas para incluir em qualquer campanha ou mundo.
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleOpenDndCatalogModal}
-          disabled={isImportingDnd}
-          className="rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2.5 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg flex items-center gap-2 disabled:opacity-50"
-        >
-          <span>🐉</span>
-          <span>{isImportingDnd ? "Importando Monstros D&D 5e..." : "Catálogo D&D 5e (334 Monstros)"}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowCreateModal(true)}
+            className="rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-purple-500 transition shadow-lg flex items-center gap-1.5"
+          >
+            <span>+</span>
+            <span>Criar Novo NPC</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleOpenDndCatalogModal}
+            disabled={isImportingDnd}
+            className="rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2.5 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg flex items-center gap-2 disabled:opacity-50"
+          >
+            <span>🐉</span>
+            <span>{isImportingDnd ? "Importando D&D 5e..." : "Catálogo D&D 5e (334 Monstros)"}</span>
+          </button>
+        </div>
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-800 bg-red-900/30 p-3 text-sm text-red-300">
+        <div className="rounded-lg border border-red-800 bg-red-900/30 p-3 text-sm text-red-300">
           {error}
         </div>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-lg border border-gray-800 bg-gray-900 p-4">
-          <h3 className="mb-3 font-semibold text-white">Novo NPC</h3>
-          <Form onSubmit={handleCreate} error={undefined}>
-            {renderFormFields(form, setForm, isCreating, "create")}
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-300">
-                Imagem (opcional)
-              </label>
-              <input
-                ref={createFileRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={(e) => setCreateImage(e.target.files?.[0] ?? null)}
-                disabled={isCreating}
-                className="block w-full text-sm text-gray-400 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-800 file:px-3 file:py-1.5 file:text-white"
-              />
-            </div>
-            <Button type="submit" variant="master" isLoading={isCreating}>
-              Criar
-            </Button>
-          </Form>
+      {/* Busca e Barra Principal de Filtros */}
+      <div className="rounded-2xl border border-gray-800 bg-gray-900 p-3 flex items-center justify-between gap-3">
+        <input
+          type="text"
+          placeholder="Pesquisar NPC na biblioteca por nome..."
+          value={searchNpc}
+          onChange={(e) => setSearchNpc(e.target.value)}
+          className="w-full rounded-xl border border-gray-800 bg-gray-950 px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
+        />
+        <div className="text-xs text-gray-400 font-semibold whitespace-nowrap px-2">
+          Total: <span className="text-purple-300 font-bold">{npcs.length}</span>
         </div>
+      </div>
 
-        <div className="rounded-lg border border-gray-800 bg-gray-900 p-4">
-          <h3 className="mb-3 font-semibold text-white">NPCs ({npcs.length})</h3>
-
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <div className="h-6 w-6 animate-spin rounded-full border-4 border-gray-700 border-t-purple-600" />
-            </div>
-          ) : npcs.length === 0 ? (
-            <p className="text-sm text-gray-400">Nenhum NPC na biblioteca.</p>
-          ) : (
-            <div className="space-y-3">
-              {npcs.map((npc) => (
-                <div key={npc.id} className="rounded-lg border border-gray-800 bg-gray-950">
+      {/* Área Principal de NPCs (Full Width) */}
+      <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-700 border-t-purple-600" />
+          </div>
+        ) : npcs.length === 0 ? (
+          <div className="py-12 text-center text-sm text-gray-400 space-y-2">
+            <p>Nenhum NPC na biblioteca ainda.</p>
+            <p className="text-xs text-gray-500">
+              Clique em <strong>+ Criar Novo NPC</strong> ou use <strong>Catálogo D&D 5e</strong> para alimentar a biblioteca.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {npcs
+              .filter((n) => n.name.toLowerCase().includes(searchNpc.toLowerCase()))
+              .map((npc) => (
+                <div key={npc.id} className="rounded-xl border border-gray-800 bg-gray-950 p-3">
                   <div className="flex items-start gap-3 p-3">
                     {npc.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -880,119 +890,171 @@ export function LibraryNpcs() {
             </div>
           )}
         </div>
-      </div>
 
-      {/* Modal do Catálogo Completo D&D 5e (334 Monstros) */}
-      {showDndCatalogModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
-          onClick={() => setShowDndCatalogModal(false)}
-        >
+        {/* Modal do Catálogo Completo D&D 5e (334 Monstros) */}
+        {showDndCatalogModal && (
           <div
-            className="w-full max-w-2xl rounded-3xl border border-purple-800 bg-gray-950 p-6 shadow-2xl space-y-4 text-gray-100 max-h-[85vh] flex flex-col"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
+            onClick={() => setShowDndCatalogModal(false)}
           >
-            <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">🐉</span>
-                <div>
-                  <h3 className="text-lg font-bold text-purple-200">Catálogo D&D 5e (334 Monstros)</h3>
-                  <p className="text-xs text-purple-400">
-                    Selecione monstros para importar ou alimente todos de uma vez
-                  </p>
+            <div
+              className="w-full max-w-2xl rounded-3xl border border-purple-800 bg-gray-950 p-6 shadow-2xl space-y-4 text-gray-100 max-h-[85vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">🐉</span>
+                  <div>
+                    <h3 className="text-lg font-bold text-purple-200">Catálogo D&D 5e (334 Monstros)</h3>
+                    <p className="text-xs text-purple-400">
+                      Selecione monstros para importar ou alimente todos de uma vez
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowDndCatalogModal(false)}
-                className="text-gray-400 hover:text-white"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-              <input
-                type="text"
-                placeholder="Pesquisar entre os 334 monstros (ex: Dragon, Goblin, Lich, Beholder)..."
-                value={searchDndCatalog}
-                onChange={(e) => setSearchDndCatalog(e.target.value)}
-                className="w-full rounded-xl border border-gray-800 bg-gray-900 p-2.5 text-xs text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
-              />
-
-              <button
-                type="button"
-                onClick={handleImportAllDndMonsters}
-                disabled={isImportingDnd}
-                className="w-full sm:w-auto rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-purple-500 transition whitespace-nowrap shadow-lg shadow-purple-950 disabled:opacity-50"
-              >
-                🔥 Importar Todos (334)
-              </button>
-            </div>
-
-            {isLoadingCatalog ? (
-              <div className="flex justify-center py-12">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-800 border-t-purple-600" />
-              </div>
-            ) : (
-              <div className="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 pr-1 min-h-[250px]">
-                {dndCatalogList
-                  .filter((m) => m.name.toLowerCase().includes(searchDndCatalog.toLowerCase()))
-                  .map((m) => {
-                    const isSelected = selectedDndIndexes.has(m.index);
-
-                    return (
-                      <div
-                        key={m.index}
-                        onClick={() => handleToggleSelectDndMonster(m.index)}
-                        className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition ${
-                          isSelected
-                            ? "border-purple-500 bg-purple-950/60 text-white"
-                            : "border-gray-800 bg-gray-900/60 text-gray-300 hover:border-gray-700"
-                        }`}
-                      >
-                        <div className="text-xs font-bold truncate pr-2">{m.name}</div>
-                        <div
-                          className={`h-5 w-5 rounded-md border flex items-center justify-center text-xs font-bold ${
-                            isSelected
-                              ? "bg-purple-600 border-purple-400 text-white"
-                              : "border-gray-700 bg-gray-800 text-transparent"
-                          }`}
-                        >
-                          ✓
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-            )}
-
-            <div className="flex items-center justify-between pt-3 border-t border-gray-800 text-xs">
-              <span className="text-gray-400">
-                {selectedDndIndexes.size} monstro(s) selecionado(s)
-              </span>
-
-              <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => setShowDndCatalogModal(false)}
-                  className="rounded-xl border border-gray-800 bg-gray-900 px-4 py-2 text-xs font-semibold text-gray-300 hover:bg-gray-800"
+                  className="text-gray-400 hover:text-white"
                 >
-                  Fechar
+                  ✕
                 </button>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <input
+                  type="text"
+                  placeholder="Pesquisar entre os 334 monstros (ex: Dragon, Goblin, Lich, Beholder)..."
+                  value={searchDndCatalog}
+                  onChange={(e) => setSearchDndCatalog(e.target.value)}
+                  className="w-full rounded-xl border border-gray-800 bg-gray-900 p-2.5 text-xs text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
+                />
+
                 <button
                   type="button"
-                  onClick={handleImportSelectedDndMonsters}
-                  disabled={selectedDndIndexes.size === 0 || isImportingDnd}
-                  className="rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white hover:bg-purple-500 disabled:opacity-50"
+                  onClick={handleImportAllDndMonsters}
+                  disabled={isImportingDnd}
+                  className="w-full sm:w-auto rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-purple-500 transition whitespace-nowrap shadow-lg shadow-purple-950 disabled:opacity-50"
                 >
-                  {isImportingDnd ? "Importando..." : `Importar Selecionados (${selectedDndIndexes.size})`}
+                  🔥 Importar Todos (334)
                 </button>
+              </div>
+
+              {isLoadingCatalog ? (
+                <div className="flex justify-center py-12">
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-800 border-t-purple-600" />
+                </div>
+              ) : (
+                <div className="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 pr-1 min-h-[250px]">
+                  {dndCatalogList
+                    .filter((m) => m.name.toLowerCase().includes(searchDndCatalog.toLowerCase()))
+                    .map((m) => {
+                      const isSelected = selectedDndIndexes.has(m.index);
+
+                      return (
+                        <div
+                          key={m.index}
+                          onClick={() => handleToggleSelectDndMonster(m.index)}
+                          className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition ${
+                            isSelected
+                              ? "border-purple-500 bg-purple-950/60 text-white"
+                              : "border-gray-800 bg-gray-900/60 text-gray-300 hover:border-gray-700"
+                          }`}
+                        >
+                          <div className="text-xs font-bold truncate pr-2">{m.name}</div>
+                          <div
+                            className={`h-5 w-5 rounded-md border flex items-center justify-center text-xs font-bold ${
+                              isSelected
+                                ? "bg-purple-600 border-purple-400 text-white"
+                                : "border-gray-700 bg-gray-800 text-transparent"
+                            }`}
+                          >
+                            ✓
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+
+              <div className="flex items-center justify-between pt-3 border-t border-gray-800 text-xs">
+                <span className="text-gray-400">
+                  {selectedDndIndexes.size} monstro(s) selecionado(s)
+                </span>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowDndCatalogModal(false)}
+                    className="rounded-xl border border-gray-800 bg-gray-900 px-4 py-2 text-xs font-semibold text-gray-300 hover:bg-gray-800"
+                  >
+                    Fechar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleImportSelectedDndMonsters}
+                    disabled={selectedDndIndexes.size === 0 || isImportingDnd}
+                    className="rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white hover:bg-purple-500 disabled:opacity-50"
+                  >
+                    {isImportingDnd ? "Importando..." : `Importar Selecionados (${selectedDndIndexes.size})`}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+
+        {/* Modal / Overlay de Criação de Novo NPC */}
+        {showCreateModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
+            onClick={() => setShowCreateModal(false)}
+          >
+            <div
+              className="w-full max-w-lg rounded-3xl border border-purple-800 bg-gray-950 p-6 shadow-2xl space-y-4 text-gray-100 max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
+                <h3 className="text-base font-bold text-purple-200">Criar Novo NPC / Monstro</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <Form onSubmit={handleCreate} error={undefined}>
+                {renderFormFields(form, setForm, isCreating, "create")}
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-300">
+                    Imagem (opcional)
+                  </label>
+                  <input
+                    ref={createFileRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(e) => setCreateImage(e.target.files?.[0] ?? null)}
+                    disabled={isCreating}
+                    className="block w-full text-sm text-gray-400 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-800 file:px-3 file:py-1.5 file:text-white"
+                  />
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateModal(false)}
+                    className="w-1/2 rounded-xl border border-gray-800 bg-gray-900 py-2.5 text-xs font-semibold text-gray-300 hover:bg-gray-800"
+                  >
+                    Cancelar
+                  </button>
+                  <Button type="submit" variant="master" isLoading={isCreating} className="w-1/2">
+                    Criar NPC
+                  </Button>
+                </div>
+              </Form>
+            </div>
+          </div>
+        )}
+      </div>
   );
 }
