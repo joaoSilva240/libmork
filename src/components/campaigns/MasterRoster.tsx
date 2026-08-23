@@ -336,7 +336,7 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
         <EncounterModal
           campaignId={campaignId}
           worldId={selectedWorldId}
-          actors={actors}
+          actors={deskActors.length > 0 ? deskActors : actors}
           onClose={() => setShowEncounterModal(false)}
           onEncounterStarted={() => {
             void checkActiveEncounter();
