@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import type { Campaign } from "@/types";
 
 type ContentOverlayProps = {
   campaignId: string;
+  campaign?: Campaign | null;
   onClose: () => void;
 };
 
@@ -15,7 +17,7 @@ const formatValue = (value: unknown): string => {
   return String(value);
 };
 
-export function ContentOverlay({ campaignId, onClose }: ContentOverlayProps) {
+export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlayProps) {
   const [activeTab, setActiveTab] = useState<ContentTab>("skills");
   const [items, setItems] = useState<ContentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -242,8 +244,23 @@ export function ContentOverlay({ campaignId, onClose }: ContentOverlayProps) {
         className="flex h-[80vh] w-full max-w-5xl flex-col rounded-xl border border-gray-800 bg-gray-900 p-4"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white">Gerenciar Conteúdo</h2>
+        <div className="mb-3 flex items-center justify-between border-b border-gray-800 pb-2">
+          <div>
+            <h2 className="text-lg font-bold text-white">Gerenciar Conteúdo</h2>
+            {campaign && (
+              <div className="mt-1 flex flex-wrap gap-2 text-xs">
+                <span className="rounded bg-gray-800 px-2 py-0.5 text-gray-300">
+                  Motor: {campaign.rulesEngine === "d20_mod" ? "d20 + modificador" : "2d20 somado"}
+                </span>
+                <span className="rounded bg-gray-800 px-2 py-0.5 text-gray-300">
+                  PvP: {campaign.pvpEnabled ? "ativado" : "desativado"}
+                </span>
+                <span className="rounded bg-gray-800 px-2 py-0.5 text-gray-300">
+                  Sombra: +{campaign.difficultyModifierShadowPoints}
+                </span>
+              </div>
+            )}
+          </div>
           <button
             onClick={onClose}
             className="rounded-lg px-2 py-1 text-sm text-gray-400 hover:text-white"

@@ -232,25 +232,12 @@ export function CampaignDetail() {
         {/* ===== Coluna esquerda — Gestão ===== */}
         <div className="space-y-3">
           <div className="rounded-lg border border-gray-800 bg-gray-900 p-3">
-            <div className="flex flex-wrap gap-2 text-xs">
-              <span className="rounded bg-gray-800 px-2 py-1 text-gray-300">
-                Motor: {campaign.rulesEngine === "d20_mod" ? "d20 + modificador" : "2d20 somado"}
-              </span>
-              <span className="rounded bg-gray-800 px-2 py-1 text-gray-300">
-                PvP: {campaign.pvpEnabled ? "ativado" : "desativado"}
-              </span>
-              <span className="rounded bg-gray-800 px-2 py-1 text-gray-300">
-                Sombra: +{campaign.difficultyModifierShadowPoints}
-              </span>
-            </div>
-            <div className="mt-2">
-              <button
-                onClick={() => setShowContentOverlay(true)}
-                className="inline-block rounded-lg bg-purple-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-purple-700"
-              >
-                Gerenciar Conteúdo
-              </button>
-            </div>
+            <button
+              onClick={() => setShowContentOverlay(true)}
+              className="w-full rounded-lg bg-purple-600 px-3 py-2 text-sm font-semibold text-white hover:bg-purple-700"
+            >
+              Gerenciar Conteúdo
+            </button>
           </div>
 
           <div className="rounded-lg border border-gray-800 bg-gray-900 p-3">
@@ -378,7 +365,11 @@ export function CampaignDetail() {
       </div>
 
       {showContentOverlay && (
-        <ContentOverlay campaignId={campaign.id} onClose={() => setShowContentOverlay(false)} />
+        <ContentOverlay
+          campaignId={campaign.id}
+          campaign={campaign}
+          onClose={() => setShowContentOverlay(false)}
+        />
       )}
 
       {selectedWorld && (
