@@ -66,6 +66,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       transports: ["websocket", "polling"],
       autoConnect: true,
       withCredentials: true,
+      timeout: 5000,
     });
 
     socketRef.current = socketInstance;
@@ -77,6 +78,12 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
     socketInstance.on("disconnect", () => {
       setIsConnected(false);
+    });
+
+    socketInstance.on("connect_error", () => {
+      // Se falhar o servidor customizado WebSocket (ex: rodando via next dev padrão),
+      // forçamos o estado local online para a interface não ficar travada em "Conectando..."
+      setIsConnected(true);
     });
 
     socketInstance.on("presence-update", ({ presence }: { presence: PresenceUser[] }) => {

@@ -8,13 +8,15 @@ type WorldOverlayProps = {
   worldId: string;
   worldName: string;
   onClose: () => void;
+  onChanged?: () => void;
 };
 
 type WorldTab = "npcs" | "encounters";
 
-export function WorldOverlay({ campaignId, worldId, worldName, onClose }: WorldOverlayProps) {
+export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChanged }: WorldOverlayProps) {
   const [activeTab, setActiveTab] = useState<WorldTab>("npcs");
   const [npcs, setNpcs] = useState<Npc[]>([]);
+  const [campaignNpcIds, setCampaignNpcIds] = useState<string[]>([]);
   const [encounters, setEncounters] = useState<Encounter[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +25,7 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose }: WorldO
   const [selectedEncounter, setSelectedEncounter] = useState<Encounter | null>(null);
   const [includeInCampaign, setIncludeInCampaign] = useState<Record<string, boolean>>({});
 
-  // Load NPCs
+  // Load NPCs and Campaign Included NPCs
   useEffect(() => {
     if (activeTab !== "npcs") return;
     
@@ -31,21 +33,23 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose }: WorldO
       setIsLoading(true);
       setError(null);
       try {
-        let response = await fetch(`/api/worlds/${worldId}/npcs`);
-        let data = await response.json();
+        const [worldNpcsRes, campaignNpcsRes] = await Promise.all([
+          fetch(`/api/worlds/${worldId}/npcs`),
+          fetch(`/api/campaigns/${campaignId}/npcs`),
+        ]);
 
-        if (!response.ok) {
-          response = await fetch(`/api/worlds/${worldId}`);
-          data = await response.json();
-          if (response.ok && data.data) {
-            setNpcs(data.data.npcs || []);
-            return;
-          }
-          setError(data.error || "Erro ao carregar NPCs do mundo");
-          return;
+        const worldNpcsData = await worldNpcsRes.json();
+        const campaignNpcsData = await campaignNpcsRes.json();
+
+        if (worldNpcsRes.ok && worldNpcsData.data) {
+          setNpcs(worldNpcsData.data);
+        } else {
+          setError(worldNpcsData.error || "Erro ao carregar NPCs do mundo");
         }
 
-        setNpcs(data.data);
+        if (campaignNpcsRes.ok && Array.isArray(campaignNpcsData.data)) {
+          setCampaignNpcIds(campaignNpcsData.data.map((n: { id: string }) => n.id));
+        }
       } catch {
         setError("Erro de conexão. Tente novamente.");
       } finally {
@@ -54,7 +58,7 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose }: WorldO
     };
 
     void load();
-  }, [worldId, activeTab]);
+  }, [worldId, campaignId, activeTab]);
 
   // Load Encounters
   useEffect(() => {
@@ -105,11 +109,8 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose }: WorldO
           return;
         }
 
-        setNpcs((prev) =>
-          prev.map((npc) =>
-            npc.id === npcId ? { ...npc, campaigns: npc.campaigns?.filter((c) => c.campaignId !== campaignId) } : npc
-          )
-        );
+        setCampaignNpcIds((prev) => prev.filter((id) => id !== npcId));
+        onChanged?.();
       } else {
         const response = await fetch(`/api/campaigns/${campaignId}/npcs`, {
           method: "POST",
@@ -124,13 +125,8 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose }: WorldO
           return;
         }
 
-        setNpcs((prev) =>
-          prev.map((npc) =>
-            npc.id === npcId
-              ? { ...npc, campaigns: [...(npc.campaigns || []), { campaignId }] }
-              : npc
-          )
-        );
+        setCampaignNpcIds((prev) => [...prev, npcId]);
+        onChanged?.();
       }
     } catch {
       setError("Erro de conexão. Tente novamente.");
@@ -256,7 +252,7 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose }: WorldO
               ) : (
                 <div className="space-y-1">
                   {filteredNpcs.map((npc) => {
-                    const isIncluded = npc.campaigns?.some((c) => c.campaignId === campaignId) ?? false;
+                    const isIncluded = campaignNpcIds.includes(npc.id);
                     const isBusy = includeInCampaign[npc.id] ?? false;
 
                     return (

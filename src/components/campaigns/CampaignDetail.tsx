@@ -32,6 +32,7 @@ export function CampaignDetail() {
 
   const [showContentOverlay, setShowContentOverlay] = useState(false);
   const [selectedWorld, setSelectedWorld] = useState<{ id: string; name: string } | null>(null);
+  const [rosterVersion, setRosterVersion] = useState(0);
 
   const loadWorlds = useCallback(async () => {
     try {
@@ -352,12 +353,12 @@ export function CampaignDetail() {
             </Form>
           </div>
 
-          <CampaignInvites campaignId={campaign.id} />
+          <CampaignInvites key={`invites-${rosterVersion}`} campaignId={campaign.id} />
         </div>
 
         {/* ===== Coluna central — Mesa (galeria de personagens) ===== */}
         <div className="flex h-[calc(100vh-12rem)] flex-col rounded-lg border border-gray-800 bg-gray-900 p-3">
-          <MasterRoster campaignId={campaign.id} />
+          <MasterRoster key={`roster-${rosterVersion}`} campaignId={campaign.id} />
         </div>
 
         {/* ===== Coluna direita — Log da sessão ===== */}
@@ -378,6 +379,7 @@ export function CampaignDetail() {
           worldId={selectedWorld.id}
           worldName={selectedWorld.name}
           onClose={() => setSelectedWorld(null)}
+          onChanged={() => setRosterVersion((v) => v + 1)}
         />
       )}
     </div>

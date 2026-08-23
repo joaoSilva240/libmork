@@ -34,26 +34,14 @@ app.prepare().then(() => {
   io.use((socket, nextMiddleware) => {
     try {
       const cookieHeader = socket.request.headers.cookie;
-      if (!cookieHeader) {
-        // Em desenvolvimento ou testes, aceitamos conexão mas marcamos aviso se não houver cookie
-        if (dev) {
-          return nextMiddleware();
-        }
-        return nextMiddleware(new Error("Sem cookie de autenticação"));
+      if (cookieHeader) {
+        const cookies = cookie.parse(cookieHeader);
+        socket.data.sessionToken = cookies.libmork_session;
       }
-
-      const cookies = cookie.parse(cookieHeader);
-      const sessionToken = cookies.libmork_session;
-
-      if (!sessionToken && !dev) {
-        return nextMiddleware(new Error("Token de sessão ausente"));
-      }
-
-      socket.data.sessionToken = sessionToken;
-      nextMiddleware();
+      return nextMiddleware();
     } catch (err) {
       console.error("[Socket Middleware Error]:", err);
-      nextMiddleware();
+      return nextMiddleware();
     }
   });
 

@@ -9,7 +9,7 @@ import { db } from "@/lib/db";
 import { npcs, npcCampaigns, campaignLogs } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { getCampaignAsMaster } from "@/lib/auth/campaign-access";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -116,7 +116,12 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const [existing] = await db
       .select()
       .from(npcCampaigns)
-      .where(eq(npcCampaigns.npcId, npc.id))
+      .where(
+        and(
+          eq(npcCampaigns.npcId, npc.id),
+          eq(npcCampaigns.campaignId, id)
+        )
+      )
       .limit(1);
 
     if (!existing) {
