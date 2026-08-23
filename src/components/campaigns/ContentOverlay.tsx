@@ -30,11 +30,6 @@ export function ContentOverlay({ campaignId, onClose }: ContentOverlayProps) {
     { key: "conditions", label: "Condições" },
   ];
 
-  const toString = (value: unknown): string => {
-    if (value === null || value === undefined) return "-";
-    return String(value);
-  };
-
   const loadItems = useCallback(async () => {
     setIsLoading(true);
     setError(null);

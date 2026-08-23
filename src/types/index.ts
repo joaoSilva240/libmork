@@ -195,6 +195,25 @@ export type NpcCampaign = {
   createdAt: Date;
 };
 
+export type Encounter = {
+  id: string;
+  worldId: string;
+  name: string;
+  description: string | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type EncounterParticipant = {
+  id: string;
+  encounterId: string;
+  actorType: "character" | "npc";
+  actorId: string;
+  initiative: number | null;
+  createdAt: Date;
+};
+
 export type CampaignLog = {
   id: string;
   campaignId: string;

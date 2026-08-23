@@ -259,6 +259,50 @@ export const campaignLogs = pgTable(
 );
 
 // =============================================================================
+// ENCONTROS — Combates vinculados a mundos
+// =============================================================================
+
+/**
+ * ENCOUNTER — Encontro/combate configurado para um mundo.
+ */
+export const encounters = pgTable(
+  "encounters",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    worldId: uuid("world_id")
+      .notNull()
+      .references(() => worlds.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 200 }).notNull(),
+    description: text("description"),
+    isActive: boolean("is_active").notNull().default(false),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [index("idx_encounter_world").on(table.worldId)],
+);
+
+/**
+ * ENCOUNTER_PARTICIPANT — Participantes selecionados para o encontro.
+ */
+export const encounterParticipants = pgTable(
+  "encounter_participants",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    encounterId: uuid("encounter_id")
+      .notNull()
+      .references(() => encounters.id, { onDelete: "cascade" }),
+    actorType: varchar("actor_type", { length: 20 }).notNull(), // "character" | "npc"
+    actorId: uuid("actor_id").notNull(),
+    initiative: integer("initiative"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_encounter_participant_encounter").on(table.encounterId),
+    uniqueIndex("idx_encounter_participant_unique").on(table.encounterId, table.actorType, table.actorId),
+  ],
+);
+
+// =============================================================================
 // VÍNCULO N:N — Personagem ↔ Campanha (D-06, D-07)
 // =============================================================================
 
@@ -588,6 +632,7 @@ export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
 export const worldsRelations = relations(worlds, ({ one, many }) => ({
   campaign: one(campaigns, { fields: [worlds.campaignId], references: [campaigns.id] }),
   npcs: many(npcs),
+  encounters: many(encounters),
 }));
 
 export const npcsRelations = relations(npcs, ({ one, many }) => ({
@@ -611,14 +656,17 @@ export const npcCampaignsRelations = relations(npcCampaigns, ({ one }) => ({
 }));
 
 export const campaignLogsRelations = relations(campaignLogs, ({ one }) => ({
-  campaign: one(campaigns, {
-    fields: [campaignLogs.campaignId],
-    references: [campaigns.id],
-  }),
-  createdBy: one(users, {
-    fields: [campaignLogs.createdById],
-    references: [users.id],
-  }),
+  campaign: one(campaigns, { fields: [campaignLogs.campaignId], references: [campaigns.id] }),
+  creator: one(users, { fields: [campaignLogs.createdById], references: [users.id] }),
+}));
+
+export const encountersRelations = relations(encounters, ({ one, many }) => ({
+  world: one(worlds, { fields: [encounters.worldId], references: [worlds.id] }),
+  participants: many(encounterParticipants),
+}));
+
+export const encounterParticipantsRelations = relations(encounterParticipants, ({ one }) => ({
+  encounter: one(encounters, { fields: [encounterParticipants.encounterId], references: [encounters.id] }),
 }));
 
 export const characterCampaignsRelations = relations(characterCampaigns, ({ one }) => ({
