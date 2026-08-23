@@ -127,6 +127,39 @@ app.prepare().then(() => {
       io.emit("defense-reaction-responded", responsePayload);
     });
 
+    // Eventos de Duelo P2P (Fase 5 - RF-069, D-45)
+    socket.on("request-duel-invite", (invitePayload) => {
+      if (!invitePayload) return;
+      if (invitePayload.campaignId) {
+        io.to(`campaign:${invitePayload.campaignId}`).emit("duel-invite-requested", invitePayload);
+      }
+      io.emit("duel-invite-requested", invitePayload);
+    });
+
+    socket.on("respond-duel-invite", (responsePayload) => {
+      if (!responsePayload) return;
+      if (responsePayload.campaignId) {
+        io.to(`campaign:${responsePayload.campaignId}`).emit("duel-invite-responded", responsePayload);
+      }
+      io.emit("duel-invite-responded", responsePayload);
+    });
+
+    socket.on("update-duel-state", (duelState) => {
+      if (!duelState) return;
+      if (duelState.campaignId) {
+        io.to(`campaign:${duelState.campaignId}`).emit("duel-state-updated", duelState);
+      }
+      io.emit("duel-state-updated", duelState);
+    });
+
+    socket.on("finish-duel", (finishPayload) => {
+      if (!finishPayload) return;
+      if (finishPayload.campaignId) {
+        io.to(`campaign:${finishPayload.campaignId}`).emit("duel-finished", finishPayload);
+      }
+      io.emit("duel-finished", finishPayload);
+    });
+
     // Sair explicitamente de uma campanha
     socket.on("leave-campaign", ({ campaignId }) => {
       if (!campaignId) return;

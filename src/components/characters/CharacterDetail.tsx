@@ -17,11 +17,21 @@ import {
   InventoryFilledIcon,
   SettingsFilledIcon,
 } from "@/components/ui/Icons";
-import { useSocket, type DefenseReactionRequestPayload } from "@/context/SocketContext";
+import {
+  useSocket,
+  type DefenseReactionRequestPayload,
+  type DuelInviteRequestPayload,
+} from "@/context/SocketContext";
 import { DefenseReactionModal } from "@/components/combat/DefenseReactionModal";
 import { DeathSaveModal } from "@/components/combat/DeathSaveModal";
 import { PlayerTurnOverlay } from "@/components/combat/PlayerTurnOverlay";
+import { ShadowPointsModal } from "@/components/characters/ShadowPointsModal";
+import { DuelInviteModal } from "@/components/combat/DuelInviteModal";
+import { DuelIncomingInviteModal } from "@/components/combat/DuelIncomingInviteModal";
+import { DuelArenaModal } from "@/components/combat/DuelArenaModal";
 import type { CombatSessionState } from "@/lib/engine";
+import type { DuelSessionState } from "@/lib/engine/duel";
+import { createDuelSession, startDuelSession } from "@/lib/engine/duel";
 import { spendCombatActions } from "@/lib/engine";
 
 type TabType = "status" | "skills" | "inventory" | "settings";
@@ -53,8 +63,13 @@ export function CharacterDetail() {
     subscribeInitiativeRequest,
     subscribeDefenseRequest,
     subscribeCombatState,
+    subscribeDuelInvite,
+    subscribeDuelResponse,
+    subscribeDuelState,
+    subscribeDuelFinish,
     respondDefenseReaction,
     updateCombatState,
+    updateDuelState,
   } = useSocket();
 
   const [character, setCharacter] = useState<Character | null>(null);
@@ -69,6 +84,15 @@ export function CharacterDetail() {
   const [showInitiativeModal, setShowInitiativeModal] = useState(false);
   const [manualInitiative, setManualInitiative] = useState("");
   const [defenseRequestPayload, setDefenseRequestPayload] = useState<DefenseReactionRequestPayload | null>(null);
+
+  // Pontos de Sombra (RF-045, D-26)
+  const [showShadowModal, setShowShadowModal] = useState(false);
+  const [userShadowPoints, setUserShadowPoints] = useState(0);
+
+  // Duelo P2P (RF-069, D-45)
+  const [showDuelInviteModal, setShowDuelInviteModal] = useState(false);
+  const [incomingDuelInvite, setIncomingDuelInvite] = useState<DuelInviteRequestPayload | null>(null);
+  const [activeDuelState, setActiveDuelState] = useState<DuelSessionState | null>(null);
 
   // Rolagem de Dados
   const [activeRollResult, setActiveRollResult] = useState<{
@@ -99,6 +123,15 @@ export function CharacterDetail() {
         }
 
         setCharacter(data.data);
+
+        // Buscar Pontos de Sombra do Usuário
+        const meRes = await fetch("/api/auth/me");
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          if (meData.user?.shadowPoints !== undefined) {
+            setUserShadowPoints(meData.user.shadowPoints);
+          }
+        }
       } catch {
         if (!cancelled) {
           setError("Erro de conexão. Tente novamente.");
@@ -141,12 +174,74 @@ export function CharacterDetail() {
       setCombatState(state);
     });
 
+    const unsubDuelInvite = subscribeDuelInvite((payload) => {
+      if (characterRef.current && payload.targetCharacterId === characterRef.current.id) {
+        setIncomingDuelInvite(payload);
+      }
+    });
+
+    const unsubDuelResponse = subscribeDuelResponse((payload) => {
+      if (characterRef.current && payload.challengerId === characterRef.current.id && payload.accepted) {
+        const char = characterRef.current;
+        const newDuel = createDuelSession(payload.campaignId, payload.permanentResults, [
+          {
+            id: char.id,
+            characterId: char.id,
+            name: char.name,
+            avatarUrl: char.imageUrl,
+            initiative: Math.floor(Math.random() * 20) + 1,
+            hpCurrent: char.hitPointsCurrent,
+            hpMax: char.hitPointsMax,
+            manaCurrent: char.manaPointsCurrent,
+            manaMax: char.manaPointsMax,
+            vigor: char.attributes.vigor,
+            destreza: char.attributes.destreza,
+            level: char.level,
+            originalHp: char.hitPointsCurrent,
+            originalMana: char.manaPointsMax,
+          },
+        ]);
+        const started = startDuelSession(newDuel);
+        setActiveDuelState(started);
+        updateDuelState(started);
+      }
+    });
+
+    const unsubDuelState = subscribeDuelState((state) => {
+      if (
+        characterRef.current &&
+        state.participants.some((p) => p.characterId === characterRef.current?.id)
+      ) {
+        setActiveDuelState(state);
+      }
+    });
+
+    const unsubDuelFinish = subscribeDuelFinish(() => {
+      setActiveDuelState((prev) => (prev ? { ...prev, status: "finished" } : null));
+    });
+
     return () => {
       unsubInit();
       unsubDefense();
       unsubCombat();
+      unsubDuelInvite();
+      unsubDuelResponse();
+      unsubDuelState();
+      unsubDuelFinish();
     };
-  }, [character?.id, character?.name, joinCampaign, subscribeInitiativeRequest, subscribeDefenseRequest, subscribeCombatState]);
+  }, [
+    character?.id,
+    character?.name,
+    joinCampaign,
+    subscribeInitiativeRequest,
+    subscribeDefenseRequest,
+    subscribeCombatState,
+    subscribeDuelInvite,
+    subscribeDuelResponse,
+    subscribeDuelState,
+    subscribeDuelFinish,
+    updateDuelState,
+  ]);
 
   const handleDelete = async () => {
     if (!window.confirm("Tem certeza que deseja excluir este personagem?")) {
@@ -416,6 +511,29 @@ export function CharacterDetail() {
 
       {/* Main Tab Content */}
       <main className="p-4 space-y-4">
+        {/* Barra de Ações Rápidas da Fase 5 (Pontos de Sombra e Duelo P2P) */}
+        <div className="flex items-center justify-between gap-2">
+          {userShadowPoints > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowShadowModal(true)}
+              className="flex-1 rounded-xl border border-purple-800/80 bg-purple-950/60 px-3 py-1.5 text-xs font-bold text-purple-300 hover:bg-purple-900/60 transition flex items-center justify-center gap-1.5 shadow-sm"
+            >
+              <span>🔮</span>
+              <span>Gastar Sombra ({userShadowPoints})</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setShowDuelInviteModal(true)}
+            className="flex-1 rounded-xl border border-rose-800/80 bg-rose-950/60 px-3 py-1.5 text-xs font-bold text-rose-300 hover:bg-rose-900/60 transition flex items-center justify-center gap-1.5 shadow-sm"
+          >
+            <span>⚔️</span>
+            <span>Duelo P2P</span>
+          </button>
+        </div>
+
         {isTurnLocked && (
           <div className="flex items-center justify-center gap-1.5 rounded-full border border-amber-800/60 bg-amber-950/40 px-3 py-1 text-xs font-bold text-amber-300 shadow-sm w-fit mx-auto">
             🔒 <span>Turno de {currentCombatant?.name}</span>
@@ -759,6 +877,43 @@ export function CharacterDetail() {
           </button>
         </div>
       </nav>
+
+      {/* Modais de Fase 5 — Pontos de Sombra e Duelo P2P */}
+      {character && (
+        <>
+          <ShadowPointsModal
+            characterId={character.id}
+            campaignId={character.id}
+            userShadowPoints={userShadowPoints}
+            isOpen={showShadowModal}
+            onClose={() => setShowShadowModal(false)}
+            onSuccess={(addedBonus) => {
+              alert(`Bônus +2 de Pontos de Sombra ativado no alvo: ${addedBonus.target}`);
+            }}
+          />
+
+          <DuelInviteModal
+            campaignId={character.id}
+            challengerId={character.id}
+            challengerName={character.name}
+            roster={[{ id: character.id, name: character.name }]}
+            isOpen={showDuelInviteModal}
+            onClose={() => setShowDuelInviteModal(false)}
+          />
+
+          <DuelIncomingInviteModal
+            invite={incomingDuelInvite}
+            onRespond={() => setIncomingDuelInvite(null)}
+          />
+
+          <DuelArenaModal
+            duelState={activeDuelState}
+            myCharacterId={character.id}
+            isOpen={Boolean(activeDuelState)}
+            onClose={() => setActiveDuelState(null)}
+          />
+        </>
+      )}
 
       {/* Pop-up Requisitado pelo Mestre: Rolar Iniciativa (RF-039) */}
       {showInitiativeModal && (

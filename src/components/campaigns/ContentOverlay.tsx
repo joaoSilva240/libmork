@@ -196,25 +196,33 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
 
     if (activeTab === "items") {
       return (
-        <div className="space-y-2 text-sm">
+        <div className="space-y-3 text-sm">
           {item.description !== null && item.description !== undefined && (
             <div>
               <span className="font-semibold text-gray-400">Descrição:</span>
               <p className="mt-1 text-gray-300">{formatValue(item.description)}</p>
             </div>
           )}
-          {item.qualityDescription !== null && item.qualityDescription !== undefined && (
-            <div>
-              <span className="font-semibold text-gray-400">Qualidade:</span>
-              <p className="mt-1 text-gray-300">{formatValue(item.qualityDescription)}</p>
+          {item.qualityDescription !== null && item.qualityDescription !== undefined && item.qualityDescription !== "" && (
+            <div className="rounded-xl border border-emerald-800/60 bg-emerald-950/30 p-3">
+              <span className="flex items-center gap-1.5 font-bold text-emerald-300 text-xs">
+                ✦ Qualidade
+              </span>
+              <p className="mt-1 text-emerald-100 text-xs">{formatValue(item.qualityDescription)}</p>
             </div>
           )}
-          {item.counterpointDescription !== null && item.counterpointDescription !== undefined && (
-            <div>
-              <span className="font-semibold text-gray-400">Contraponto:</span>
-              <p className="mt-1 text-gray-300">{formatValue(item.counterpointDescription)}</p>
+          {item.counterpointDescription !== null && item.counterpointDescription !== undefined && item.counterpointDescription !== "" ? (
+            <div className="rounded-xl border border-rose-800/60 bg-rose-950/30 p-3">
+              <span className="flex items-center gap-1.5 font-bold text-rose-300 text-xs">
+                ⚠️ Contraponto (Defeito do Mestre)
+              </span>
+              <p className="mt-1 text-rose-100 text-xs">{formatValue(item.counterpointDescription)}</p>
             </div>
-          )}
+          ) : item.qualityDescription ? (
+            <div className="rounded-xl border border-amber-800/60 bg-amber-950/30 p-2.5 text-xs text-amber-300 flex items-center justify-between">
+              <span>⚡ Aguardando revisão do Mestre para definir o Contraponto.</span>
+            </div>
+          ) : null}
         </div>
       );
     }

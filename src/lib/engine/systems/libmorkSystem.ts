@@ -83,6 +83,10 @@ export class LibmorkSystem implements GameSystem {
   calculateShadowPointsGained(level: number): number {
     return calculateShadowPointsGained(level);
   }
+
+  getEffectiveDifficulty(baseDifficulty: number, shadowPointsDifficultyModifier: number = 0): number {
+    return baseDifficulty + shadowPointsDifficultyModifier;
+  }
 }
 
 export const libmorkSystem = new LibmorkSystem();

@@ -106,4 +106,7 @@ export interface GameSystem {
 
   /** Cálculo de Pontos de Sombra na morte definitiva */
   calculateShadowPointsGained(level: number): number;
+
+  /** Cálculo da dificuldade ajustada por Pontos de Sombra na campanha (RF-055) */
+  getEffectiveDifficulty(baseDifficulty: number, shadowPointsDifficultyModifier?: number): number;
 }

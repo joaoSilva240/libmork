@@ -38,6 +38,7 @@ export interface RollDataPayload {
 }
 
 import type { CombatSessionState, PendingDefenseReaction } from "@/lib/engine";
+import type { DuelSessionState } from "@/lib/engine/duel";
 
 export interface DefenseReactionRequestPayload extends PendingDefenseReaction {
   campaignId: string;
@@ -48,6 +49,23 @@ export interface DefenseReactionResponsePayload {
   reactionId: string;
   targetId: string;
   reaction: "dodge" | "block";
+}
+
+export interface DuelInviteRequestPayload {
+  campaignId: string;
+  challengerId: string;
+  challengerName: string;
+  targetCharacterId: string;
+  targetCharacterName: string;
+  permanentResults: boolean;
+}
+
+export interface DuelInviteResponsePayload {
+  campaignId: string;
+  challengerId: string;
+  targetCharacterId: string;
+  accepted: boolean;
+  permanentResults: boolean;
 }
 
 interface SocketContextValue {
@@ -62,12 +80,20 @@ interface SocketContextValue {
   requestInitiativeRoll: (campaignId: string) => void;
   requestDefenseReaction: (payload: DefenseReactionRequestPayload) => void;
   respondDefenseReaction: (payload: DefenseReactionResponsePayload) => void;
+  requestDuelInvite: (payload: DuelInviteRequestPayload) => void;
+  respondDuelInvite: (payload: DuelInviteResponsePayload) => void;
+  updateDuelState: (duelState: DuelSessionState) => void;
+  finishDuel: (payload: { campaignId: string; duelId: string; winnerId?: string }) => void;
   subscribeActorStatus: (handler: (payload: ActorStatusPayload) => void) => () => void;
   subscribeDiceRoll: (handler: (roll: RollDataPayload) => void) => () => void;
   subscribeCombatState: (handler: (state: CombatSessionState) => void) => () => void;
   subscribeInitiativeRequest: (handler: (payload: { campaignId: string }) => void) => () => void;
   subscribeDefenseRequest: (handler: (payload: DefenseReactionRequestPayload) => void) => () => void;
   subscribeDefenseResponse: (handler: (payload: DefenseReactionResponsePayload) => void) => () => void;
+  subscribeDuelInvite: (handler: (payload: DuelInviteRequestPayload) => void) => () => void;
+  subscribeDuelResponse: (handler: (payload: DuelInviteResponsePayload) => void) => () => void;
+  subscribeDuelState: (handler: (state: DuelSessionState) => void) => () => void;
+  subscribeDuelFinish: (handler: (payload: { campaignId: string; duelId: string; winnerId?: string }) => void) => () => void;
 }
 
 const SocketContext = createContext<SocketContextValue | undefined>(undefined);
@@ -83,6 +109,10 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   const initRequestSubscribersRef = useRef<Set<(payload: { campaignId: string }) => void>>(new Set());
   const defenseRequestSubscribersRef = useRef<Set<(payload: DefenseReactionRequestPayload) => void>>(new Set());
   const defenseResponseSubscribersRef = useRef<Set<(payload: DefenseReactionResponsePayload) => void>>(new Set());
+  const duelInviteSubscribersRef = useRef<Set<(payload: DuelInviteRequestPayload) => void>>(new Set());
+  const duelResponseSubscribersRef = useRef<Set<(payload: DuelInviteResponsePayload) => void>>(new Set());
+  const duelStateSubscribersRef = useRef<Set<(state: DuelSessionState) => void>>(new Set());
+  const duelFinishSubscribersRef = useRef<Set<(payload: { campaignId: string; duelId: string; winnerId?: string }) => void>>(new Set());
 
   useEffect(() => {
     // Inicializa a conexão Socket.IO na mesma origem
@@ -137,6 +167,22 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
     socketInstance.on("defense-reaction-responded", (payload: DefenseReactionResponsePayload) => {
       defenseResponseSubscribersRef.current.forEach((handler) => handler(payload));
+    });
+
+    socketInstance.on("duel-invite-requested", (payload: DuelInviteRequestPayload) => {
+      duelInviteSubscribersRef.current.forEach((handler) => handler(payload));
+    });
+
+    socketInstance.on("duel-invite-responded", (payload: DuelInviteResponsePayload) => {
+      duelResponseSubscribersRef.current.forEach((handler) => handler(payload));
+    });
+
+    socketInstance.on("duel-state-updated", (state: DuelSessionState) => {
+      duelStateSubscribersRef.current.forEach((handler) => handler(state));
+    });
+
+    socketInstance.on("duel-finished", (payload: { campaignId: string; duelId: string; winnerId?: string }) => {
+      duelFinishSubscribersRef.current.forEach((handler) => handler(payload));
     });
 
     return () => {
@@ -228,6 +274,46 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     [socket]
   );
 
+  const requestDuelInvite = useCallback(
+    (payload: DuelInviteRequestPayload) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("request-duel-invite", payload);
+      }
+    },
+    [socket]
+  );
+
+  const respondDuelInvite = useCallback(
+    (payload: DuelInviteResponsePayload) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("respond-duel-invite", payload);
+      }
+    },
+    [socket]
+  );
+
+  const updateDuelState = useCallback(
+    (duelState: DuelSessionState) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("update-duel-state", duelState);
+      }
+    },
+    [socket]
+  );
+
+  const finishDuel = useCallback(
+    (payload: { campaignId: string; duelId: string; winnerId?: string }) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("finish-duel", payload);
+      }
+    },
+    [socket]
+  );
+
   const subscribeActorStatus = useCallback((handler: (payload: ActorStatusPayload) => void) => {
     statusSubscribersRef.current.add(handler);
     return () => {
@@ -270,6 +356,34 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  const subscribeDuelInvite = useCallback((handler: (payload: DuelInviteRequestPayload) => void) => {
+    duelInviteSubscribersRef.current.add(handler);
+    return () => {
+      duelInviteSubscribersRef.current.delete(handler);
+    };
+  }, []);
+
+  const subscribeDuelResponse = useCallback((handler: (payload: DuelInviteResponsePayload) => void) => {
+    duelResponseSubscribersRef.current.add(handler);
+    return () => {
+      duelResponseSubscribersRef.current.delete(handler);
+    };
+  }, []);
+
+  const subscribeDuelState = useCallback((handler: (state: DuelSessionState) => void) => {
+    duelStateSubscribersRef.current.add(handler);
+    return () => {
+      duelStateSubscribersRef.current.delete(handler);
+    };
+  }, []);
+
+  const subscribeDuelFinish = useCallback((handler: (payload: { campaignId: string; duelId: string; winnerId?: string }) => void) => {
+    duelFinishSubscribersRef.current.add(handler);
+    return () => {
+      duelFinishSubscribersRef.current.delete(handler);
+    };
+  }, []);
+
   return (
     <SocketContext.Provider
       value={{
@@ -284,12 +398,20 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         requestInitiativeRoll,
         requestDefenseReaction,
         respondDefenseReaction,
+        requestDuelInvite,
+        respondDuelInvite,
+        updateDuelState,
+        finishDuel,
         subscribeActorStatus,
         subscribeDiceRoll,
         subscribeCombatState,
         subscribeInitiativeRequest,
         subscribeDefenseRequest,
         subscribeDefenseResponse,
+        subscribeDuelInvite,
+        subscribeDuelResponse,
+        subscribeDuelState,
+        subscribeDuelFinish,
       }}
     >
       {children}
