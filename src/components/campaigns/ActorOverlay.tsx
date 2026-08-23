@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSocket } from "@/context/SocketContext";
 
 export type RosterCondition = {
   junctionId: string;
@@ -63,6 +64,7 @@ type ActorOverlayProps = {
 };
 
 export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOverlayProps) {
+  const { updateActorStatus, rollDice } = useSocket();
   const [panel, setPanel] = useState<Panel>("inventory");
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +72,8 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
 
   const [rollExpression, setRollExpression] = useState("1d20");
   const [rollReason, setRollReason] = useState("");
+  const [rollMode, setRollMode] = useState<"digital" | "manual">("digital");
+  const [manualValue, setManualValue] = useState("");
   const [hpDelta, setHpDelta] = useState("");
   const [manaDelta, setManaDelta] = useState("");
   const [modifyReason, setModifyReason] = useState("");
@@ -260,7 +264,55 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
     setIsBusy(true);
 
     try {
-      const response = await fetch(`/api/campaigns/${campaignId}/rolls`, {
+      let finalResult = 0;
+      let detailText = "";
+      const isManual = rollMode === "manual";
+
+      if (isManual) {
+        const val = Number(manualValue);
+        if (Number.isNaN(val) || manualValue.trim() === "") {
+          setError("Informe um resultado válido para o dado físico.");
+          setIsBusy(false);
+          return;
+        }
+        finalResult = val;
+        detailText = `Resultado informado manualmente: ${val}`;
+      } else {
+        const match = rollExpression.trim().match(/^(\d+)d(\d+)(?:\s*([+-])\s*(\d+))?$/i);
+        if (match) {
+          const count = parseInt(match[1], 10);
+          const sides = parseInt(match[2], 10);
+          const sign = match[3] === "-" ? -1 : 1;
+          const mod = match[4] ? parseInt(match[4], 10) * sign : 0;
+          let sum = 0;
+          const rolls: number[] = [];
+          for (let i = 0; i < count; i++) {
+            const r = Math.floor(Math.random() * sides) + 1;
+            rolls.push(r);
+            sum += r;
+          }
+          finalResult = sum + mod;
+          detailText = `Rolou [${rolls.join(", ")}]${mod !== 0 ? (mod > 0 ? ` + ${mod}` : ` - ${Math.abs(mod)}`) : ""} = ${finalResult}`;
+        } else {
+          finalResult = Math.floor(Math.random() * 20) + 1;
+          detailText = `Rolou [${finalResult}]`;
+        }
+      }
+
+      // Notificar via WebSocket em tempo real (RF-041, RF-046)
+      rollDice({
+        campaignId,
+        actorId: actor.id,
+        actorName: actor.name,
+        rollType: rollReason || "Rolagem",
+        formula: rollExpression,
+        result: finalResult,
+        diceDetail: detailText,
+        isManual,
+      });
+
+      // Gravar no backend de logs
+      await fetch(`/api/campaigns/${campaignId}/rolls`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -268,20 +320,17 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
           actorId: actor.id,
           actorName: actor.name,
           rollExpression,
+          result: finalResult,
           reason: rollReason || undefined,
+          isManual,
         }),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || "Erro ao exigir rolagem");
-        return;
-      }
-
-      setSuccess(`Rolagem ${rollExpression} exigida de ${actor.name} e registrada no log.`);
+      setSuccess(
+        `Rolagem (${isManual ? "Manual" : "Digital"}) concluída: ${finalResult} (${detailText})`
+      );
     } catch {
-      setError("Erro de conexão. Tente novamente.");
+      setError("Erro ao executar rolagem. Tente novamente.");
     } finally {
       setIsBusy(false);
     }
@@ -334,6 +383,15 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
       setManaDelta("");
       setModifyReason("");
       setSuccess(`Elementos de ${actor.name} atualizados.`);
+      
+      // Notificar a sala por WebSocket (RF-025, RF-049)
+      updateActorStatus({
+        campaignId,
+        actorId: actor.id,
+        currentHp: actor.hitPoints + (hp || 0),
+        currentMana: actor.manaPoints + (mana || 0),
+      });
+
       onChanged();
     } catch {
       setError("Erro de conexão. Tente novamente.");
@@ -364,6 +422,12 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
         setError(data.error || "Erro ao alterar condição");
         return;
       }
+
+      // Notificar sala por WebSocket (RF-025, RF-049)
+      updateActorStatus({
+        campaignId,
+        actorId: actor.id,
+      });
 
       onChanged();
     } catch {
@@ -400,6 +464,14 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
       }
 
       setSuccess(`${amount} XP concedidos a ${actor.name}.`);
+
+      // Notificar sala por WebSocket
+      updateActorStatus({
+        campaignId,
+        actorId: actor.id,
+        currentXp: actor.xp + amount,
+      });
+
       onChanged();
     } catch {
       setError("Erro de conexão. Tente novamente.");
@@ -574,10 +646,36 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
 
             {/* Conteúdo das outras abas */}
             {panel === "roll" && (
-              <div className="space-y-2 overflow-y-auto pr-1">
+              <div className="space-y-3 overflow-y-auto pr-1">
+                {/* Seletor de Modo: Digital RNG vs Rolagem Assistida (Manual) (RF-041, RF-046) */}
+                <div className="flex rounded-lg bg-gray-950 p-1 border border-gray-800">
+                  <button
+                    type="button"
+                    onClick={() => setRollMode("digital")}
+                    className={`flex-1 rounded-md py-1 text-xs font-semibold ${
+                      rollMode === "digital"
+                        ? "bg-purple-600 text-white"
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    ⚡ Digital (RNG)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRollMode("manual")}
+                    className={`flex-1 rounded-md py-1 text-xs font-semibold ${
+                      rollMode === "manual"
+                        ? "bg-amber-600 text-white"
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    🎲 Assistida (Dado Físico)
+                  </button>
+                </div>
+
                 <div>
                   <label className="mb-1 block text-xs font-medium text-gray-300">
-                    Expressão de rolagem
+                    Expressão de rolagem / Fórmula
                   </label>
                   <input
                     type="text"
@@ -599,6 +697,23 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
                     ))}
                   </div>
                 </div>
+
+                {rollMode === "manual" && (
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-amber-400">
+                      Resultado do Dado Físico (Preenchimento Manual)
+                    </label>
+                    <input
+                      type="number"
+                      value={manualValue}
+                      onChange={(e) => setManualValue(e.target.value)}
+                      disabled={isBusy}
+                      placeholder="Ex.: 17"
+                      className="w-full rounded-lg border border-amber-600/60 bg-gray-950 px-3 py-2 text-sm text-amber-300 focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                )}
+
                 <div>
                   <label className="mb-1 block text-xs font-medium text-gray-300">
                     Motivo (opcional)
@@ -608,16 +723,19 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
                     value={rollReason}
                     onChange={(e) => setRollReason(e.target.value)}
                     disabled={isBusy}
-                    placeholder="Ex.: teste de Força, iniciativa..."
+                    placeholder="Ex.: teste de Força, ataque..."
                     className={inputClass}
                   />
                 </div>
+
                 <button
                   onClick={requestRoll}
                   disabled={isBusy}
-                  className="w-full rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
+                  className={`w-full rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-50 ${
+                    rollMode === "manual" ? "bg-amber-600 hover:bg-amber-700" : "bg-purple-600 hover:bg-purple-700"
+                  }`}
                 >
-                  {isBusy ? "..." : "Exigir rolagem"}
+                  {isBusy ? "..." : rollMode === "manual" ? "Enviar Resultado Físico" : "Rolar Dados (Digital)"}
                 </button>
               </div>
             )}

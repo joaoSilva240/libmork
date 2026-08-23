@@ -42,6 +42,35 @@ export async function createSession(userId: string): Promise<string> {
 }
 
 /**
+ * Valida um token de sessão diretamente (útil para WebSockets / Handshake).
+ * @param token Token da sessão
+ */
+export async function verifySessionToken(token: string): Promise<{
+  user: typeof users.$inferSelect;
+  session: typeof sessions.$inferSelect;
+} | null> {
+  if (!token) return null;
+
+  const result = await db
+    .select()
+    .from(sessions)
+    .innerJoin(users, eq(sessions.userId, users.id))
+    .where(eq(sessions.token, token))
+    .limit(1);
+
+  if (result.length === 0) return null;
+
+  const { sessions: session, users: user } = result[0];
+
+  if (new Date() > session.expiresAt) {
+    await db.delete(sessions).where(eq(sessions.token, token));
+    return null;
+  }
+
+  return { user, session };
+}
+
+/**
  * Recupera a sessão atual do cookie e valida no banco.
  * @returns Dados do usuário autenticado ou null
  */

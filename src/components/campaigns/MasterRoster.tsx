@@ -7,6 +7,7 @@ import type { RosterActor, RosterPlayer } from "@/components/campaigns/ActorOver
 import { InfiniteCanvas } from "@/components/campaigns/InfiniteCanvas";
 import { CharacterCarousel } from "@/components/campaigns/CharacterCarousel";
 import { EncounterModal } from "@/components/campaigns/EncounterModal";
+import { useSocket, type RollDataPayload } from "@/context/SocketContext";
 
 type RosterData = {
   players: RosterPlayer[];
@@ -14,6 +15,7 @@ type RosterData = {
 };
 
 export function MasterRoster({ campaignId }: { campaignId: string }) {
+  const { isConnected, presenceList, joinCampaign, subscribeActorStatus, subscribeDiceRoll } = useSocket();
   const [roster, setRoster] = useState<RosterData>({ players: [], npcs: [] });
   const [worlds, setWorlds] = useState<World[]>([]);
   const [selectedWorldId, setSelectedWorldId] = useState<string>("");
@@ -22,6 +24,9 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<RosterActor | null>(null);
+  const [recentRolls, setRecentRolls] = useState<RollDataPayload[]>([]);
+  const [showRollFeed, setShowRollFeed] = useState(false);
+
   const [deskActors, setDeskActors] = useState<RosterActor[]>(() => {
     if (typeof window === "undefined") return [];
     try {
@@ -116,6 +121,23 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
     }
   }, [campaignId]);
 
+  // Entrar no Socket da campanha e escutar atualizações em tempo real
+  useEffect(() => {
+    joinCampaign({ campaignId, role: "master" });
+
+    const unsubscribeStatus = subscribeActorStatus(() => {
+      void handleRosterChanged();
+    });
+
+    const unsubscribeRoll = subscribeDiceRoll((roll) => {
+      setRecentRolls((prev) => [roll, ...prev.slice(0, 49)]);
+    });
+
+    return () => {
+      unsubscribeStatus();
+      unsubscribeRoll();
+    };
+  }, [campaignId, joinCampaign, subscribeActorStatus, subscribeDiceRoll, handleRosterChanged]);
   const checkActiveEncounter = useCallback(async () => {
     if (!selectedWorldId) {
       setActiveEncounter(null);
@@ -278,8 +300,8 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 pb-2">
+        <div className="flex items-center gap-3">
           <h2 className="text-lg font-bold text-white">Mesa</h2>
           {worlds.length > 0 && (
             <select
@@ -294,12 +316,88 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
               ))}
             </select>
           )}
+
+          {/* Status Socket WebSocket em tempo real */}
+          <span className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+            isConnected ? "bg-emerald-950/80 text-emerald-400 border border-emerald-800" : "bg-rose-950/80 text-rose-400 border border-rose-800"
+          }`}>
+            <span className={`h-2 w-2 rounded-full ${isConnected ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
+            {isConnected ? "Ao Vivo" : "Conectando..."}
+          </span>
         </div>
 
-        <span className="text-xs text-gray-400">
-          {roster.players.length} jogadores · {filteredNpcs.length} NPCs
-        </span>
+        {/* Presença de Participantes da Mesa (RF-026, D-37) */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center -space-x-1 overflow-hidden">
+            {presenceList.map((p) => (
+              <div
+                key={p.userId}
+                title={`${p.userName} (${p.role === "master" ? "Mestre" : "Jogador"}) — ${p.online ? "Online" : "Offline"}`}
+                className="relative"
+              >
+                <div className={`flex h-7 w-7 items-center justify-center rounded-full border border-gray-900 text-xs font-bold text-white ${
+                  p.role === "master" ? "bg-purple-700" : "bg-blue-600"
+                }`}>
+                  {p.userName.slice(0, 2).toUpperCase()}
+                </div>
+                <span className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-gray-950 ${
+                  p.online ? "bg-emerald-500" : "bg-gray-500"
+                }`} />
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={() => setShowRollFeed(!showRollFeed)}
+            className="flex items-center gap-1.5 rounded-lg border border-purple-700/60 bg-purple-950/40 px-2.5 py-1 text-xs font-semibold text-purple-300 hover:bg-purple-900/50"
+          >
+            🎲 Rolagens {recentRolls.length > 0 && `(${recentRolls.length})`}
+          </button>
+
+          <span className="text-xs text-gray-400">
+            {roster.players.length} jogadores · {filteredNpcs.length} NPCs
+          </span>
+        </div>
       </div>
+
+      {/* Feed de Rolagens de Dados em Tempo Real (RF-041, RF-046) */}
+      {showRollFeed && (
+        <div className="mb-2 max-h-40 overflow-y-auto rounded-lg border border-purple-900/60 bg-purple-950/20 p-2.5 text-xs text-purple-200 shadow-inner">
+          <div className="mb-1 flex items-center justify-between border-b border-purple-900/40 pb-1">
+            <span className="font-bold text-purple-300">Feed de Rolagens ao Vivo</span>
+            <button
+              onClick={() => setRecentRolls([])}
+              className="text-[10px] text-purple-400 hover:underline"
+            >
+              Limpar
+            </button>
+          </div>
+          {recentRolls.length === 0 ? (
+            <p className="py-2 text-center text-gray-400 italic">Nenhuma rolagem realizada na sessão ainda.</p>
+          ) : (
+            <div className="space-y-1">
+              {recentRolls.map((roll, idx) => (
+                <div key={idx} className="flex items-center justify-between rounded bg-gray-900/70 p-1.5 border border-purple-900/30">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-white">{roll.actorName}</span>
+                    <span className="rounded bg-purple-900/60 px-1.5 py-0.5 text-[10px] uppercase font-semibold text-purple-300">
+                      {roll.rollType}
+                    </span>
+                    <span className="text-gray-300">{roll.formula}</span>
+                    {roll.isManual && <span className="text-[10px] text-amber-400 font-semibold">[Físico]</span>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-400">{roll.diceDetail}</span>
+                    <span className="rounded bg-emerald-950 px-2 py-0.5 text-sm font-black text-emerald-400 border border-emerald-800">
+                      {roll.result}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {error && (
         <div className="mb-2 rounded-lg border border-red-800 bg-red-900/30 p-2 text-sm text-red-300">
