@@ -168,7 +168,9 @@ export type Condition = {
 
 export type Npc = {
   id: string;
-  worldId: string;
+  worldId: string | null;
+  ownerId: string | null;
+  classId: string | null;
   name: string;
   npcType: NpcType;
   hitPoints: number;
@@ -176,8 +178,32 @@ export type Npc = {
   manaPoints: number;
   manaPointsMax: number;
   attributes: AttributeMap;
+  level: number;
+  xp: number;
+  block: number;
   imageUrl: string | null;
   xpReward: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type NpcCampaign = {
+  id: string;
+  npcId: string;
+  campaignId: string;
+  createdAt: Date;
+};
+
+export type CampaignLog = {
+  id: string;
+  campaignId: string;
+  actorType: "character" | "npc" | "system";
+  actorId: string | null;
+  actorName: string | null;
+  action: string;
+  description: string | null;
+  payload: Record<string, unknown>;
+  createdById: string | null;
   createdAt: Date;
 };
 

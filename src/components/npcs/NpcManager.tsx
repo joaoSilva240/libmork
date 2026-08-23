@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Npc } from "@/types";
 import { Button, Form, Input } from "@/components/ui";
 import { ATTRIBUTES } from "@/lib/utils/constants";
+import type { Attribute } from "@/lib/utils/constants";
 import { getModifier } from "@/lib/engine/attributes";
 
 type NpcManagerProps = {
@@ -49,9 +50,18 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
     hitPointsMax: "10",
     manaPoints: "0",
     manaPointsMax: "0",
+    level: "1",
     xpReward: "0",
+    attributes: {
+      forca: "10",
+      destreza: "10",
+      vigor: "10",
+      inteligencia: "10",
+      empatia: "10",
+    } as Record<Attribute, string>,
   });
   const [isCreating, setIsCreating] = useState(false);
+  const [createImage, setCreateImage] = useState<File | null>(null);
   const [expandedNpcId, setExpandedNpcId] = useState<string | null>(null);
   const [pins, setPins] = useState<Pin[]>([]);
   const [pinForm, setPinForm] = useState({
@@ -63,6 +73,27 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
   const [skillOptions, setSkillOptions] = useState<ContentOption[]>([]);
   const [spellOptions, setSpellOptions] = useState<ContentOption[]>([]);
   const [isPinBusy, setIsPinBusy] = useState(false);
+
+  const [editForm, setEditForm] = useState<{
+    name: string;
+    npcType: string;
+    hitPoints: string;
+    hitPointsMax: string;
+    manaPoints: string;
+    manaPointsMax: string;
+    level: string;
+    xpReward: string;
+    attributes: Record<Attribute, string>;
+  } | null>(null);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  const DEFAULT_ATTRIBUTES: Record<Attribute, string> = {
+    forca: "10",
+    destreza: "10",
+    vigor: "10",
+    inteligencia: "10",
+    empatia: "10",
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -112,7 +143,11 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
           hitPointsMax: Number(formData.hitPointsMax),
           manaPoints: Number(formData.manaPoints),
           manaPointsMax: Number(formData.manaPointsMax),
+          level: Number(formData.level),
           xpReward: Number(formData.xpReward),
+          attributes: Object.fromEntries(
+            ATTRIBUTES.map((attr) => [attr, Number(formData.attributes[attr]) || 0])
+          ),
         }),
       });
 
@@ -123,6 +158,28 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
         return;
       }
 
+      let created = data.data as Npc;
+
+      if (createImage) {
+        try {
+          const imageForm = new FormData();
+          imageForm.append("image", createImage);
+          const imageResponse = await fetch(`/api/npcs/${created.id}/image`, {
+            method: "POST",
+            body: imageForm,
+          });
+          const imageData = await imageResponse.json();
+
+          if (imageResponse.ok) {
+            created = imageData.data as Npc;
+          } else {
+            setError(imageData.error || "Erro ao enviar imagem");
+          }
+        } catch {
+          setError("Erro de conexão ao enviar imagem.");
+        }
+      }
+
       setFormData({
         name: "",
         npcType: "common",
@@ -130,13 +187,99 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
         hitPointsMax: "10",
         manaPoints: "0",
         manaPointsMax: "0",
+        level: "1",
         xpReward: "0",
+        attributes: { ...DEFAULT_ATTRIBUTES },
       });
-      setNpcs((prev) => [...prev, data.data]);
+      setCreateImage(null);
+      setNpcs((prev) => [...prev, created]);
     } catch {
       setError("Erro de conexão. Tente novamente.");
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const startEditing = (npc: Npc) => {
+    setEditForm({
+      name: npc.name,
+      npcType: npc.npcType,
+      hitPoints: String(npc.hitPoints),
+      hitPointsMax: String(npc.hitPointsMax),
+      manaPoints: String(npc.manaPoints),
+      manaPointsMax: String(npc.manaPointsMax),
+      level: String(npc.level),
+      xpReward: String(npc.xpReward),
+      attributes: {
+        forca: String(npc.attributes.forca),
+        destreza: String(npc.attributes.destreza),
+        vigor: String(npc.attributes.vigor),
+        inteligencia: String(npc.attributes.inteligencia),
+        empatia: String(npc.attributes.empatia),
+      },
+    });
+  };
+
+  const handleSaveEdit = async (npcId: string) => {
+    if (!editForm) return;
+
+    setError(null);
+    setIsSavingEdit(true);
+
+    try {
+      const response = await fetch(`/api/worlds/${worldId}/npcs/${npcId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: editForm.name,
+          npcType: editForm.npcType,
+          hitPoints: Number(editForm.hitPoints),
+          hitPointsMax: Number(editForm.hitPointsMax),
+          manaPoints: Number(editForm.manaPoints),
+          manaPointsMax: Number(editForm.manaPointsMax),
+          level: Number(editForm.level),
+          xpReward: Number(editForm.xpReward),
+          attributes: Object.fromEntries(
+            ATTRIBUTES.map((attr) => [attr, Number(editForm.attributes[attr]) || 0])
+          ),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Erro ao salvar NPC");
+        return;
+      }
+
+      setEditForm(null);
+      setNpcs((prev) => prev.map((npc) => (npc.id === npcId ? data.data : npc)));
+    } catch {
+      setError("Erro de conexão. Tente novamente.");
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
+  const handleEditImage = async (npcId: string, file: File) => {
+    setError(null);
+    try {
+      const imageForm = new FormData();
+      imageForm.append("image", file);
+      const response = await fetch(`/api/npcs/${npcId}/image`, {
+        method: "POST",
+        body: imageForm,
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Erro ao enviar imagem");
+        return;
+      }
+
+      setNpcs((prev) => prev.map((npc) => (npc.id === npcId ? data.data : npc)));
+    } catch {
+      setError("Erro de conexão. Tente novamente.");
     }
   };
 
@@ -204,10 +347,12 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
   const handleToggleNpc = async (npcId: string) => {
     if (expandedNpcId === npcId) {
       setExpandedNpcId(null);
+      setEditForm(null);
       return;
     }
 
     setExpandedNpcId(npcId);
+    setEditForm(null);
     setPinForm({ pinType: "attack", label: "", rollExpression: "", contentId: "" });
     await Promise.all([loadPins(npcId), loadContentOptions()]);
   };
@@ -365,17 +510,68 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                 disabled={isCreating}
                 className="bg-gray-950 text-white"
               />
+              <Input
+                label="Nível"
+                name="level"
+                type="number"
+                min={1}
+                value={formData.level}
+                onChange={(e) => setFormData((prev) => ({ ...prev, level: e.target.value }))}
+                disabled={isCreating}
+                className="bg-gray-950 text-white"
+              />
+              <Input
+                label="XP de Recompensa"
+                name="xpReward"
+                type="number"
+                min={0}
+                value={formData.xpReward}
+                onChange={(e) => setFormData((prev) => ({ ...prev, xpReward: e.target.value }))}
+                disabled={isCreating}
+                className="bg-gray-950 text-white"
+              />
             </div>
-            <Input
-              label="XP de Recompensa"
-              name="xpReward"
-              type="number"
-              min={0}
-              value={formData.xpReward}
-              onChange={(e) => setFormData((prev) => ({ ...prev, xpReward: e.target.value }))}
-              disabled={isCreating}
-              className="bg-gray-950 text-white"
-            />
+            <div>
+              <p className="mb-1 text-sm font-medium text-gray-300">Atributos</p>
+              <div className="grid grid-cols-2 gap-3">
+                {ATTRIBUTES.map((attr) => (
+                  <div key={attr} className="flex items-center gap-2">
+                    <Input
+                      label={attr.charAt(0).toUpperCase() + attr.slice(1)}
+                      name={`attr-${attr}`}
+                      type="number"
+                      min={1}
+                      max={30}
+                      value={formData.attributes[attr]}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          attributes: { ...prev.attributes, [attr]: e.target.value },
+                        }))
+                      }
+                      disabled={isCreating}
+                      className="bg-gray-950 text-white"
+                    />
+                    <span className="mt-4 text-xs text-gray-400">
+                      {getModifier(Number(formData.attributes[attr]) || 0) >= 0 ? "+" : ""}
+                      {getModifier(Number(formData.attributes[attr]) || 0)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-300">
+                Imagem (opcional)
+              </label>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(e) => setCreateImage(e.target.files?.[0] ?? null)}
+                disabled={isCreating}
+                className="block w-full text-sm text-gray-400 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-800 file:px-3 file:py-1.5 file:text-white"
+              />
+            </div>
             <Button type="submit" variant="master" isLoading={isCreating}>
               Criar
             </Button>
@@ -395,17 +591,29 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
             <div className="space-y-2">
               {npcs.map((npc) => (
                 <div key={npc.id} className="rounded-lg border border-gray-800 bg-gray-950">
-                  <div className="flex items-start justify-between p-3">
-                    <div>
-                      <button
-                        onClick={() => handleToggleNpc(npc.id)}
-                        className="font-semibold text-white hover:text-purple-300"
-                      >
-                        {npc.name} {expandedNpcId === npc.id ? "−" : "+"}
-                      </button>
-                      <div className="mt-1 flex flex-wrap gap-2 text-xs text-gray-400">
+                  <div className="flex items-start gap-3 p-3">
+                    {npc.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={npc.imageUrl}
+                        alt={npc.name}
+                        className="h-12 w-12 shrink-0 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gray-800 text-lg font-bold text-gray-400">
+                        {npc.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          onClick={() => handleToggleNpc(npc.id)}
+                          className="font-semibold text-white hover:text-purple-300"
+                        >
+                          {npc.name} {expandedNpcId === npc.id ? "−" : "+"}
+                        </button>
                         <span
-                          className={`rounded px-1.5 py-0.5 ${
+                          className={`rounded px-1.5 py-0.5 text-xs ${
                             npc.npcType === "enemy"
                               ? "bg-red-900/50 text-red-300"
                               : "bg-gray-800 text-gray-300"
@@ -413,6 +621,11 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                         >
                           {npc.npcType === "enemy" ? "Inimigo" : "Comum"}
                         </span>
+                        <span className="rounded bg-purple-900/50 px-1.5 py-0.5 text-xs text-purple-300">
+                          Nível {npc.level}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex flex-wrap gap-2 text-xs text-gray-400">
                         <span>
                           HP {npc.hitPoints}/{npc.hitPointsMax}
                         </span>
@@ -430,16 +643,185 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                         ).join(" · ")}
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleDelete(npc.id)}
-                      className="ml-4 shrink-0 text-sm text-red-400 hover:text-red-300"
-                    >
-                      Excluir
-                    </button>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <button
+                        onClick={() =>
+                          editForm ? setEditForm(null) : startEditing(npc)
+                        }
+                        className="text-xs text-purple-400 hover:text-purple-300"
+                      >
+                        {editForm ? "cancelar edição" : "Editar ficha"}
+                      </button>
+                      <button
+                        onClick={() => handleDelete(npc.id)}
+                        className="text-xs text-red-400 hover:text-red-300"
+                      >
+                        Excluir
+                      </button>
+                    </div>
                   </div>
 
                   {expandedNpcId === npc.id && (
                     <div className="border-t border-gray-800 p-3">
+                      {editForm && (
+                        <div className="mb-4 space-y-3 rounded border border-gray-800 p-3">
+                          <p className="text-sm font-semibold text-gray-300">Editar ficha</p>
+                          <Input
+                            label="Nome"
+                            name="editName"
+                            type="text"
+                            value={editForm.name}
+                            onChange={(e) =>
+                              setEditForm((prev) =>
+                                prev ? { ...prev, name: e.target.value } : prev
+                              )
+                            }
+                            required
+                            disabled={isSavingEdit}
+                            className="bg-gray-900 text-white"
+                          />
+                          <div className="grid grid-cols-2 gap-3">
+                            <Input
+                              label="HP"
+                              name="editHp"
+                              type="number"
+                              min={0}
+                              value={editForm.hitPoints}
+                              onChange={(e) =>
+                                setEditForm((prev) =>
+                                  prev ? { ...prev, hitPoints: e.target.value } : prev
+                                )
+                              }
+                              disabled={isSavingEdit}
+                              className="bg-gray-900 text-white"
+                            />
+                            <Input
+                              label="HP Máximo"
+                              name="editHpMax"
+                              type="number"
+                              min={0}
+                              value={editForm.hitPointsMax}
+                              onChange={(e) =>
+                                setEditForm((prev) =>
+                                  prev ? { ...prev, hitPointsMax: e.target.value } : prev
+                                )
+                              }
+                              disabled={isSavingEdit}
+                              className="bg-gray-900 text-white"
+                            />
+                            <Input
+                              label="Mana"
+                              name="editMana"
+                              type="number"
+                              min={0}
+                              value={editForm.manaPoints}
+                              onChange={(e) =>
+                                setEditForm((prev) =>
+                                  prev ? { ...prev, manaPoints: e.target.value } : prev
+                                )
+                              }
+                              disabled={isSavingEdit}
+                              className="bg-gray-900 text-white"
+                            />
+                            <Input
+                              label="Mana Máxima"
+                              name="editManaMax"
+                              type="number"
+                              min={0}
+                              value={editForm.manaPointsMax}
+                              onChange={(e) =>
+                                setEditForm((prev) =>
+                                  prev ? { ...prev, manaPointsMax: e.target.value } : prev
+                                )
+                              }
+                              disabled={isSavingEdit}
+                              className="bg-gray-900 text-white"
+                            />
+                            <Input
+                              label="Nível"
+                              name="editLevel"
+                              type="number"
+                              min={1}
+                              value={editForm.level}
+                              onChange={(e) =>
+                                setEditForm((prev) =>
+                                  prev ? { ...prev, level: e.target.value } : prev
+                                )
+                              }
+                              disabled={isSavingEdit}
+                              className="bg-gray-900 text-white"
+                            />
+                            <Input
+                              label="XP de Recompensa"
+                              name="editXpReward"
+                              type="number"
+                              min={0}
+                              value={editForm.xpReward}
+                              onChange={(e) =>
+                                setEditForm((prev) =>
+                                  prev ? { ...prev, xpReward: e.target.value } : prev
+                                )
+                              }
+                              disabled={isSavingEdit}
+                              className="bg-gray-900 text-white"
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            {ATTRIBUTES.map((attr) => (
+                              <Input
+                                key={attr}
+                                label={attr.charAt(0).toUpperCase() + attr.slice(1)}
+                                name={`editAttr-${attr}`}
+                                type="number"
+                                min={1}
+                                max={30}
+                                value={editForm.attributes[attr]}
+                                onChange={(e) =>
+                                  setEditForm((prev) =>
+                                    prev
+                                      ? {
+                                          ...prev,
+                                          attributes: {
+                                            ...prev.attributes,
+                                            [attr]: e.target.value,
+                                          },
+                                        }
+                                      : prev
+                                  )
+                                }
+                                disabled={isSavingEdit}
+                                className="bg-gray-900 text-white"
+                              />
+                            ))}
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-300">
+                              Trocar imagem
+                            </label>
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  void handleEditImage(npc.id, file);
+                                }
+                              }}
+                              disabled={isSavingEdit}
+                              className="block w-full text-sm text-gray-400 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-800 file:px-3 file:py-1.5 file:text-white"
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="master"
+                            isLoading={isSavingEdit}
+                            onClick={() => handleSaveEdit(npc.id)}
+                          >
+                            Salvar ficha
+                          </Button>
+                        </div>
+                      )}
+
                       <h4 className="mb-2 text-sm font-semibold text-gray-300">
                         Atalhos (pins) — magias, perícias e ataques
                       </h4>

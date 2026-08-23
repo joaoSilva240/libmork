@@ -155,15 +155,17 @@ export const worlds = pgTable(
 
 /**
  * NPC — Personagem não-jogador (D-38).
+ * worldId NULL => NPC da Biblioteca (global, ficha completa estilo jogador);
+ * worldId preenchido => NPC criado dentro de um mundo/campanha.
  * Campo JSONB: attributes (mesmo schema de CHARACTER.attributes)
  */
 export const npcs = pgTable(
   "npcs",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    worldId: uuid("world_id")
-      .notNull()
-      .references(() => worlds.id, { onDelete: "cascade" }),
+    worldId: uuid("world_id").references(() => worlds.id, { onDelete: "cascade" }),
+    ownerId: uuid("owner_id").references(() => users.id, { onDelete: "set null" }),
+    classId: uuid("class_id").references(() => rpgClasses.id, { onDelete: "set null" }),
     name: varchar("name", { length: 100 }).notNull(),
     npcType: varchar("npc_type", { length: 20 }).notNull().default("common"),
     hitPoints: integer("hit_points").notNull().default(10),
@@ -179,9 +181,13 @@ export const npcs = pgTable(
         inteligencia: 10,
         empatia: 10,
       }),
+    level: integer("level").notNull().default(1),
+    xp: integer("xp").notNull().default(0),
+    block: integer("block").notNull().default(0),
     imageUrl: varchar("image_url", { length: 500 }),
     xpReward: integer("xp_reward").notNull().default(0),
     createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
   (table) => [index("idx_npc_world").on(table.worldId)],
 );
@@ -206,6 +212,50 @@ export const npcPins = pgTable(
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [index("idx_npc_pin_npc").on(table.npcId)],
+);
+
+/**
+ * NPC_CAMPAIGN — Inclusão de NPCs da Biblioteca em campanhas (N:N).
+ */
+export const npcCampaigns = pgTable(
+  "npc_campaigns",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    npcId: uuid("npc_id")
+      .notNull()
+      .references(() => npcs.id, { onDelete: "cascade" }),
+    campaignId: uuid("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_npc_campaign_unique").on(table.npcId, table.campaignId),
+    index("idx_npc_campaign_campaign").on(table.campaignId),
+  ],
+);
+
+/**
+ * CAMPAIGN_LOG — Log da sessão no Escudo do Mestre (RF-050, RF-041, RF-049).
+ * Registra rolagens, dano, XP e alterações feitas por jogadores/mestre.
+ */
+export const campaignLogs = pgTable(
+  "campaign_logs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    campaignId: uuid("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" }),
+    actorType: varchar("actor_type", { length: 20 }).notNull().default("system"),
+    actorId: uuid("actor_id"),
+    actorName: varchar("actor_name", { length: 100 }),
+    action: varchar("action", { length: 40 }).notNull(),
+    description: text("description"),
+    payload: jsonb("payload").notNull().default({}),
+    createdById: uuid("created_by_id").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [index("idx_campaign_log_campaign").on(table.campaignId, table.createdAt)],
 );
 
 // =============================================================================
@@ -531,6 +581,8 @@ export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
   items: many(items),
   conditions: many(conditions),
   duels: many(duels),
+  npcCampaigns: many(npcCampaigns),
+  logs: many(campaignLogs),
 }));
 
 export const worldsRelations = relations(worlds, ({ one, many }) => ({
@@ -540,11 +592,33 @@ export const worldsRelations = relations(worlds, ({ one, many }) => ({
 
 export const npcsRelations = relations(npcs, ({ one, many }) => ({
   world: one(worlds, { fields: [npcs.worldId], references: [worlds.id] }),
+  owner: one(users, { fields: [npcs.ownerId], references: [users.id] }),
+  rpgClass: one(rpgClasses, { fields: [npcs.classId], references: [rpgClasses.id] }),
   pins: many(npcPins),
+  npcCampaigns: many(npcCampaigns),
 }));
 
 export const npcPinsRelations = relations(npcPins, ({ one }) => ({
   npc: one(npcs, { fields: [npcPins.npcId], references: [npcs.id] }),
+}));
+
+export const npcCampaignsRelations = relations(npcCampaigns, ({ one }) => ({
+  npc: one(npcs, { fields: [npcCampaigns.npcId], references: [npcs.id] }),
+  campaign: one(campaigns, {
+    fields: [npcCampaigns.campaignId],
+    references: [campaigns.id],
+  }),
+}));
+
+export const campaignLogsRelations = relations(campaignLogs, ({ one }) => ({
+  campaign: one(campaigns, {
+    fields: [campaignLogs.campaignId],
+    references: [campaigns.id],
+  }),
+  createdBy: one(users, {
+    fields: [campaignLogs.createdById],
+    references: [users.id],
+  }),
 }));
 
 export const characterCampaignsRelations = relations(characterCampaigns, ({ one }) => ({

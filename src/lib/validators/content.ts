@@ -49,6 +49,21 @@ export const conditionSchema = z.object({
   description: z.string().max(5000).optional().nullable(),
 });
 
+/**
+ * Schema de atualização de magia — SEM defaults para não resetar
+ * campos omitidos no PATCH (o create usa defaults para conveniência).
+ */
+export const updateSpellSchema = z.object({
+  name: z.string().min(2).max(100).optional(),
+  circle: z.number().int().min(1).max(9).optional(),
+  manaCost: z.number().int().min(0).optional(),
+  description: z.string().max(5000).optional().nullable(),
+  useType: z.enum(SPELL_USE_TYPES).optional(),
+  duration: z.string().max(100).optional().nullable(),
+  extraEffect: z.string().max(5000).optional().nullable(),
+  actionCostOverride: z.number().int().min(0).max(3).optional().nullable(),
+});
+
 /** Tipos de conteúdo suportados */
 export const CONTENT_TYPES = ["skills", "spells", "items", "conditions"] as const;
 export type ContentType = (typeof CONTENT_TYPES)[number];
@@ -75,13 +90,14 @@ export function getContentCreateValidator(type: ContentType) {
 
 /**
  * Validador de atualização (parcial) por tipo de conteúdo.
+ * Sem defaults nos campos opcionais — PATCH não pode resetar dados.
  */
 export function getContentUpdateValidator(type: ContentType) {
   switch (type) {
     case "skills":
       return skillSchema.partial();
     case "spells":
-      return spellSchema.partial();
+      return updateSpellSchema;
     case "items":
       return itemSchema.partial();
     case "conditions":

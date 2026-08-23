@@ -1,0 +1,783 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { Npc } from "@/types";
+import { ATTRIBUTES } from "@/lib/utils/constants";
+import type { Attribute } from "@/lib/utils/constants";
+import { getModifier } from "@/lib/engine/attributes";
+import { Button, Form, Input } from "@/components/ui";
+
+type CampaignOption = { id: string; name: string };
+type ClassOption = { id: string; name: string };
+
+type NpcFormState = {
+  name: string;
+  npcType: string;
+  level: string;
+  xp: string;
+  hitPoints: string;
+  hitPointsMax: string;
+  manaPoints: string;
+  manaPointsMax: string;
+  block: string;
+  xpReward: string;
+  classId: string;
+  attributes: Record<Attribute, string>;
+};
+
+const DEFAULT_ATTRIBUTES: Record<Attribute, string> = {
+  forca: "10",
+  destreza: "10",
+  vigor: "10",
+  inteligencia: "10",
+  empatia: "10",
+};
+
+const EMPTY_FORM: NpcFormState = {
+  name: "",
+  npcType: "common",
+  level: "1",
+  xp: "0",
+  hitPoints: "10",
+  hitPointsMax: "10",
+  manaPoints: "0",
+  manaPointsMax: "0",
+  block: "0",
+  xpReward: "0",
+  classId: "",
+  attributes: { ...DEFAULT_ATTRIBUTES },
+};
+
+type NpcDetail = Npc & { includedCampaigns?: CampaignOption[] };
+
+function toForm(npc: Npc): NpcFormState {
+  return {
+    name: npc.name,
+    npcType: npc.npcType,
+    level: String(npc.level),
+    xp: String(npc.xp),
+    hitPoints: String(npc.hitPoints),
+    hitPointsMax: String(npc.hitPointsMax),
+    manaPoints: String(npc.manaPoints),
+    manaPointsMax: String(npc.manaPointsMax),
+    block: String(npc.block),
+    xpReward: String(npc.xpReward),
+    classId: npc.classId ?? "",
+    attributes: {
+      forca: String(npc.attributes.forca),
+      destreza: String(npc.attributes.destreza),
+      vigor: String(npc.attributes.vigor),
+      inteligencia: String(npc.attributes.inteligencia),
+      empatia: String(npc.attributes.empatia),
+    },
+  };
+}
+
+function toPayload(form: NpcFormState) {
+  return {
+    name: form.name,
+    npcType: form.npcType,
+    level: Number(form.level) || 1,
+    xp: Number(form.xp) || 0,
+    hitPoints: Number(form.hitPoints) || 0,
+    hitPointsMax: Number(form.hitPointsMax) || 0,
+    manaPoints: Number(form.manaPoints) || 0,
+    manaPointsMax: Number(form.manaPointsMax) || 0,
+    block: Number(form.block) || 0,
+    xpReward: Number(form.xpReward) || 0,
+    classId: form.classId || null,
+    attributes: Object.fromEntries(
+      ATTRIBUTES.map((attr) => [attr, Number(form.attributes[attr]) || 0])
+    ),
+  };
+}
+
+export function LibraryNpcs() {
+  const [npcs, setNpcs] = useState<Npc[]>([]);
+  const [campaigns, setCampaigns] = useState<CampaignOption[]>([]);
+  const [classes, setClasses] = useState<ClassOption[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [form, setForm] = useState<NpcFormState>(EMPTY_FORM);
+  const [isCreating, setIsCreating] = useState(false);
+  const [createImage, setCreateImage] = useState<File | null>(null);
+  const createFileRef = useRef<HTMLInputElement>(null);
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<NpcFormState>(EMPTY_FORM);
+  const [editDetail, setEditDetail] = useState<NpcDetail | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [includeCampaignId, setIncludeCampaignId] = useState("");
+  const [isIncluding, setIsIncluding] = useState(false);
+
+  const loadNpcs = useCallback(async () => {
+    try {
+      const response = await fetch("/api/npcs");
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Erro ao carregar NPCs");
+        return;
+      }
+
+      setNpcs(data.data);
+    } catch {
+      setError("Erro de conexão. Tente novamente.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const response = await fetch("/api/npcs");
+        const data = await response.json();
+
+        if (cancelled) return;
+
+        if (!response.ok) {
+          setError(data.error || "Erro ao carregar NPCs");
+          return;
+        }
+
+        setNpcs(data.data);
+      } catch {
+        if (!cancelled) {
+          setError("Erro de conexão. Tente novamente.");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    const loadOptionsData = async () => {
+      try {
+        const [campaignsResponse, classesResponse] = await Promise.all([
+          fetch("/api/campaigns"),
+          fetch("/api/classes"),
+        ]);
+        const campaignsData = await campaignsResponse.json();
+        const classesData = await classesResponse.json();
+
+        if (cancelled) return;
+
+        if (campaignsResponse.ok) {
+          setCampaigns(
+            campaignsData.data.map((campaign: CampaignOption) => ({
+              id: campaign.id,
+              name: campaign.name,
+            }))
+          );
+        }
+        if (classesResponse.ok) {
+          setClasses(classesData.data);
+        }
+      } catch {
+        if (!cancelled) {
+          setError("Erro ao carregar opções.");
+        }
+      }
+    };
+
+    void load();
+    void loadOptionsData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const uploadImage = async (npcId: string, file: File) => {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const response = await fetch(`/api/npcs/${npcId}/image`, {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Erro ao enviar imagem");
+    }
+
+    return data.data as Npc;
+  };
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setIsCreating(true);
+
+    try {
+      const response = await fetch("/api/npcs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(toPayload(form)),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Erro ao criar NPC");
+        return;
+      }
+
+      let created = data.data as Npc;
+
+      if (createImage) {
+        try {
+          created = await uploadImage(created.id, createImage);
+        } catch (uploadError) {
+          setError(
+            uploadError instanceof Error ? uploadError.message : "Erro ao enviar imagem"
+          );
+        }
+      }
+
+      setNpcs((prev) => [created, ...prev]);
+      setForm(EMPTY_FORM);
+      setCreateImage(null);
+      if (createFileRef.current) {
+        createFileRef.current.value = "";
+      }
+    } catch {
+      setError("Erro de conexão. Tente novamente.");
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const startEditing = async (npcId: string) => {
+    const npc = npcs.find((item) => item.id === npcId);
+    if (!npc) return;
+
+    setEditingId(npc.id);
+    setEditForm(toForm(npc));
+    setEditDetail(null);
+
+    try {
+      const response = await fetch(`/api/npcs/${npc.id}`);
+      const data = await response.json();
+
+      if (response.ok) {
+        setEditDetail(data.data);
+      }
+    } catch {
+      // ignora falha na carga de detalhes; edição continua funcionando
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingId) return;
+
+    setError(null);
+    setIsSaving(true);
+
+    try {
+      const response = await fetch(`/api/npcs/${editingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(toPayload(editForm)),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Erro ao salvar NPC");
+        return;
+      }
+
+      setEditingId(null);
+      await loadNpcs();
+    } catch {
+      setError("Erro de conexão. Tente novamente.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEditImage = async (file: File) => {
+    if (!editingId) return;
+
+    setError(null);
+    try {
+      await uploadImage(editingId, file);
+      await loadNpcs();
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : "Erro ao enviar imagem");
+    }
+  };
+
+  const handleDuplicate = async (npcId: string) => {
+    setError(null);
+    try {
+      const response = await fetch(`/api/npcs/${npcId}/duplicate`, { method: "POST" });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Erro ao duplicar NPC");
+        return;
+      }
+
+      await loadNpcs();
+    } catch {
+      setError("Erro de conexão. Tente novamente.");
+    }
+  };
+
+  const handleDelete = async (npcId: string) => {
+    if (!window.confirm("Excluir este NPC da biblioteca?")) {
+      return;
+    }
+
+    setError(null);
+    try {
+      const response = await fetch(`/api/npcs/${npcId}`, { method: "DELETE" });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Erro ao excluir NPC");
+        return;
+      }
+
+      if (editingId === npcId) {
+        setEditingId(null);
+      }
+      await loadNpcs();
+    } catch {
+      setError("Erro de conexão. Tente novamente.");
+    }
+  };
+
+  const handleInclude = async (npcId: string) => {
+    if (!includeCampaignId) {
+      setError("Selecione uma campanha");
+      return;
+    }
+
+    setError(null);
+    setIsIncluding(true);
+    try {
+      const response = await fetch(`/api/campaigns/${includeCampaignId}/npcs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ npcId }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Erro ao incluir NPC na campanha");
+        return;
+      }
+
+      setIncludeCampaignId("");
+      await startEditing(npcId);
+      await loadNpcs();
+    } catch {
+      setError("Erro de conexão. Tente novamente.");
+    } finally {
+      setIsIncluding(false);
+    }
+  };
+
+  const handleRemoveFromCampaign = async (npcId: string, campaignId: string) => {
+    setError(null);
+    try {
+      const response = await fetch(`/api/campaigns/${campaignId}/npcs/${npcId}`, {
+        method: "DELETE",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Erro ao remover NPC da campanha");
+        return;
+      }
+
+      await startEditing(npcId);
+    } catch {
+      setError("Erro de conexão. Tente novamente.");
+    }
+  };
+
+  const renderFormFields = (
+    state: NpcFormState,
+    onChange: (next: NpcFormState) => void,
+    disabled: boolean,
+    prefix: string
+  ) => (
+    <>
+      <Input
+        label="Nome"
+        name={`${prefix}-name`}
+        type="text"
+        value={state.name}
+        onChange={(e) => onChange({ ...state, name: e.target.value })}
+        required
+        disabled={disabled}
+        className="bg-gray-950 text-white"
+      />
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-300">Tipo</label>
+        <select
+          value={state.npcType}
+          onChange={(e) => onChange({ ...state, npcType: e.target.value })}
+          disabled={disabled}
+          className="w-full rounded-lg border border-gray-700 bg-gray-950 px-4 py-2 text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+        >
+          <option value="common">Comum</option>
+          <option value="enemy">Inimigo</option>
+        </select>
+      </div>
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-300">Classe (opcional)</label>
+        <select
+          value={state.classId}
+          onChange={(e) => onChange({ ...state, classId: e.target.value })}
+          disabled={disabled}
+          className="w-full rounded-lg border border-gray-700 bg-gray-950 px-4 py-2 text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+        >
+          <option value="">Sem classe</option>
+          {classes.map((rpgClass) => (
+            <option key={rpgClass.id} value={rpgClass.id}>
+              {rpgClass.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <Input
+          label="Nível"
+          name={`${prefix}-level`}
+          type="number"
+          min={1}
+          value={state.level}
+          onChange={(e) => onChange({ ...state, level: e.target.value })}
+          disabled={disabled}
+          className="bg-gray-950 text-white"
+        />
+        <Input
+          label="XP (0-99)"
+          name={`${prefix}-xp`}
+          type="number"
+          min={0}
+          max={99}
+          value={state.xp}
+          onChange={(e) => onChange({ ...state, xp: e.target.value })}
+          disabled={disabled}
+          className="bg-gray-950 text-white"
+        />
+        <Input
+          label="HP"
+          name={`${prefix}-hp`}
+          type="number"
+          min={0}
+          value={state.hitPoints}
+          onChange={(e) => onChange({ ...state, hitPoints: e.target.value })}
+          disabled={disabled}
+          className="bg-gray-950 text-white"
+        />
+        <Input
+          label="HP Máximo"
+          name={`${prefix}-hpMax`}
+          type="number"
+          min={0}
+          value={state.hitPointsMax}
+          onChange={(e) => onChange({ ...state, hitPointsMax: e.target.value })}
+          disabled={disabled}
+          className="bg-gray-950 text-white"
+        />
+        <Input
+          label="Mana"
+          name={`${prefix}-mana`}
+          type="number"
+          min={0}
+          value={state.manaPoints}
+          onChange={(e) => onChange({ ...state, manaPoints: e.target.value })}
+          disabled={disabled}
+          className="bg-gray-950 text-white"
+        />
+        <Input
+          label="Mana Máxima"
+          name={`${prefix}-manaMax`}
+          type="number"
+          min={0}
+          value={state.manaPointsMax}
+          onChange={(e) => onChange({ ...state, manaPointsMax: e.target.value })}
+          disabled={disabled}
+          className="bg-gray-950 text-white"
+        />
+        <Input
+          label="Bloqueio"
+          name={`${prefix}-block`}
+          type="number"
+          min={0}
+          value={state.block}
+          onChange={(e) => onChange({ ...state, block: e.target.value })}
+          disabled={disabled}
+          className="bg-gray-950 text-white"
+        />
+        <Input
+          label="XP de Recompensa"
+          name={`${prefix}-xpReward`}
+          type="number"
+          min={0}
+          value={state.xpReward}
+          onChange={(e) => onChange({ ...state, xpReward: e.target.value })}
+          disabled={disabled}
+          className="bg-gray-950 text-white"
+        />
+      </div>
+      <div>
+        <p className="mb-1 text-sm font-medium text-gray-300">Atributos</p>
+        <div className="grid grid-cols-2 gap-3">
+          {ATTRIBUTES.map((attr) => (
+            <div key={`${prefix}-${attr}`} className="flex items-center gap-2">
+              <Input
+                label={attr.charAt(0).toUpperCase() + attr.slice(1)}
+                name={`${prefix}-attr-${attr}`}
+                type="number"
+                min={1}
+                max={30}
+                value={state.attributes[attr]}
+                onChange={(e) =>
+                  onChange({
+                    ...state,
+                    attributes: { ...state.attributes, [attr]: e.target.value },
+                  })
+                }
+                disabled={disabled}
+                className="bg-gray-950 text-white"
+              />
+              <span className="mt-4 text-xs text-gray-400">
+                {getModifier(Number(state.attributes[attr]) || 0) >= 0 ? "+" : ""}
+                {getModifier(Number(state.attributes[attr]) || 0)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+
+  return (
+    <div>
+      <h2 className="mb-4 text-2xl font-bold text-white">NPCs da Biblioteca</h2>
+      <p className="mb-4 text-sm text-gray-400">
+        Fichas completas de NPCs (iguais às dos jogadores), disponíveis para incluir em
+        qualquer campanha, duplicar e ajustar o nível diretamente.
+      </p>
+
+      {error && (
+        <div className="mb-4 rounded-lg border border-red-800 bg-red-900/30 p-3 text-sm text-red-300">
+          {error}
+        </div>
+      )}
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-lg border border-gray-800 bg-gray-900 p-4">
+          <h3 className="mb-3 font-semibold text-white">Novo NPC</h3>
+          <Form onSubmit={handleCreate} error={undefined}>
+            {renderFormFields(form, setForm, isCreating, "create")}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-300">
+                Imagem (opcional)
+              </label>
+              <input
+                ref={createFileRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(e) => setCreateImage(e.target.files?.[0] ?? null)}
+                disabled={isCreating}
+                className="block w-full text-sm text-gray-400 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-800 file:px-3 file:py-1.5 file:text-white"
+              />
+            </div>
+            <Button type="submit" variant="master" isLoading={isCreating}>
+              Criar
+            </Button>
+          </Form>
+        </div>
+
+        <div className="rounded-lg border border-gray-800 bg-gray-900 p-4">
+          <h3 className="mb-3 font-semibold text-white">NPCs ({npcs.length})</h3>
+
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="h-6 w-6 animate-spin rounded-full border-4 border-gray-700 border-t-purple-600" />
+            </div>
+          ) : npcs.length === 0 ? (
+            <p className="text-sm text-gray-400">Nenhum NPC na biblioteca.</p>
+          ) : (
+            <div className="space-y-3">
+              {npcs.map((npc) => (
+                <div key={npc.id} className="rounded-lg border border-gray-800 bg-gray-950">
+                  <div className="flex items-start gap-3 p-3">
+                    {npc.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={npc.imageUrl}
+                        alt={npc.name}
+                        className="h-14 w-14 shrink-0 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-gray-800 text-xl font-bold text-gray-400">
+                        {npc.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          onClick={() =>
+                            editingId === npc.id ? setEditingId(null) : startEditing(npc.id)
+                          }
+                          className="font-semibold text-white hover:text-purple-300"
+                        >
+                          {npc.name}
+                        </button>
+                        <span
+                          className={`rounded px-1.5 py-0.5 text-xs ${
+                            npc.npcType === "enemy"
+                              ? "bg-red-900/50 text-red-300"
+                              : "bg-gray-800 text-gray-300"
+                          }`}
+                        >
+                          {npc.npcType === "enemy" ? "Inimigo" : "Comum"}
+                        </span>
+                        <span className="rounded bg-purple-900/50 px-1.5 py-0.5 text-xs text-purple-300">
+                          Nível {npc.level}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex flex-wrap gap-2 text-xs text-gray-400">
+                        <span>
+                          HP {npc.hitPoints}/{npc.hitPointsMax}
+                        </span>
+                        <span>
+                          Mana {npc.manaPoints}/{npc.manaPointsMax}
+                        </span>
+                        <span>XP {npc.xp}/100</span>
+                        <span>Recompensa +{npc.xpReward}</span>
+                      </div>
+                      <div className="mt-1 text-xs text-gray-500">
+                        {ATTRIBUTES.map(
+                          (attr) =>
+                            ` ${attr.charAt(0).toUpperCase()}: ${npc.attributes[attr]} (${getModifier(npc.attributes[attr]) >= 0 ? "+" : ""}${getModifier(npc.attributes[attr])})`
+                        ).join(" · ")}
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <button
+                        onClick={() => handleDuplicate(npc.id)}
+                        className="text-xs text-purple-400 hover:text-purple-300"
+                      >
+                        Duplicar
+                      </button>
+                      <button
+                        onClick={() => handleDelete(npc.id)}
+                        className="text-xs text-red-400 hover:text-red-300"
+                      >
+                        Excluir
+                      </button>
+                    </div>
+                  </div>
+
+                  {editingId === npc.id && (
+                    <div className="space-y-3 border-t border-gray-800 p-3">
+                      <p className="text-sm font-semibold text-gray-300">Editar ficha</p>
+                      {renderFormFields(editForm, setEditForm, isSaving, "edit")}
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-300">
+                          Trocar imagem
+                        </label>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleEditImage(file);
+                            }
+                          }}
+                          disabled={isSaving}
+                          className="block w-full text-sm text-gray-400 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-800 file:px-3 file:py-1.5 file:text-white"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="master"
+                          isLoading={isSaving}
+                          onClick={handleSaveEdit}
+                        >
+                          Salvar
+                        </Button>
+                        <Button type="button" variant="secondary" onClick={() => setEditingId(null)}>
+                          Fechar
+                        </Button>
+                      </div>
+
+                      <div className="rounded border border-gray-800 p-3">
+                        <p className="mb-2 text-sm font-semibold text-gray-300">Campanhas</p>
+                        {editDetail?.includedCampaigns?.length ? (
+                          <div className="mb-2 space-y-1">
+                            {editDetail.includedCampaigns.map((campaign) => (
+                              <div
+                                key={campaign.id}
+                                className="flex items-center justify-between rounded bg-gray-900 px-2 py-1 text-sm"
+                              >
+                                <span className="text-gray-300">{campaign.name}</span>
+                                <button
+                                  onClick={() => handleRemoveFromCampaign(npc.id, campaign.id)}
+                                  className="text-xs text-red-400 hover:text-red-300"
+                                >
+                                  Remover
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="mb-2 text-xs text-gray-500">
+                            Não incluído em nenhuma campanha.
+                          </p>
+                        )}
+                        <div className="flex items-end gap-2">
+                          <select
+                            value={includeCampaignId}
+                            onChange={(e) => setIncludeCampaignId(e.target.value)}
+                            disabled={isIncluding}
+                            className="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                          >
+                            <option value="">Selecione a campanha</option>
+                            {campaigns.map((campaign) => (
+                              <option key={campaign.id} value={campaign.id}>
+                                {campaign.name}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={() => handleInclude(npc.id)}
+                            disabled={isIncluding}
+                            className="rounded-lg bg-purple-600 px-3 py-2 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
+                          >
+                            {isIncluding ? "..." : "Incluir"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
