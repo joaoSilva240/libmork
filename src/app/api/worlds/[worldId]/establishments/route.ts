@@ -9,7 +9,7 @@ import { requireAuth } from "@/lib/auth/session";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
 
-type RouteContext = { params: Promise<{ id: string }> };
+type RouteContext = { params: Promise<{ worldId: string }> };
 
 const createEstablishmentSchema = z.object({
   name: z.string().min(1).max(100),
@@ -24,11 +24,11 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
-    const { id } = await params;
+    const { worldId } = await params;
     const data = await db
       .select()
       .from(establishments)
-      .where(eq(establishments.worldId, id))
+      .where(eq(establishments.worldId, worldId))
       .orderBy(desc(establishments.createdAt));
 
     return NextResponse.json({ success: true, data });
@@ -45,8 +45,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
-    const { id } = await params;
-    const [world] = await db.select().from(worlds).where(eq(worlds.id, id)).limit(1);
+    const { worldId } = await params;
+    const [world] = await db.select().from(worlds).where(eq(worlds.id, worldId)).limit(1);
 
     if (!world) {
       return NextResponse.json({ success: false, error: "Mundo não encontrado" }, { status: 404 });
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const [newEst] = await db
       .insert(establishments)
       .values({
-        worldId: id,
+        worldId,
         name: validation.data.name,
         type: validation.data.type,
         description: validation.data.description ?? null,

@@ -9,7 +9,7 @@ import { requireAuth } from "@/lib/auth/session";
 import { createWorldSchema } from "@/lib/validators/campaign";
 import { eq } from "drizzle-orm";
 
-type RouteContext = { params: Promise<{ id: string }> };
+type RouteContext = { params: Promise<{ worldId: string }> };
 
 export async function GET(request: NextRequest, { params }: RouteContext) {
   try {
@@ -18,8 +18,8 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
-    const { id } = await params;
-    const [world] = await db.select().from(worlds).where(eq(worlds.id, id)).limit(1);
+    const { worldId } = await params;
+    const [world] = await db.select().from(worlds).where(eq(worlds.id, worldId)).limit(1);
 
     if (!world) {
       return NextResponse.json({ success: false, error: "Mundo não encontrado" }, { status: 404 });
@@ -28,17 +28,17 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const worldEstablishments = await db
       .select()
       .from(establishments)
-      .where(eq(establishments.worldId, id));
+      .where(eq(establishments.worldId, worldId));
 
     const worldEncounters = await db
       .select()
       .from(encounters)
-      .where(eq(encounters.worldId, id));
+      .where(eq(encounters.worldId, worldId));
 
     const worldNpcs = await db
       .select()
       .from(npcs)
-      .where(eq(npcs.worldId, id));
+      .where(eq(npcs.worldId, worldId));
 
     return NextResponse.json({
       success: true,
@@ -62,7 +62,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
-    const { id } = await params;
+    const { worldId } = await params;
     const body = await request.json();
     const validation = createWorldSchema.partial().safeParse(body);
 
@@ -76,7 +76,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     const [updated] = await db
       .update(worlds)
       .set(validation.data)
-      .where(eq(worlds.id, id))
+      .where(eq(worlds.id, worldId))
       .returning();
 
     return NextResponse.json({ success: true, data: updated });
@@ -93,8 +93,8 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
-    const { id } = await params;
-    await db.delete(worlds).where(eq(worlds.id, id));
+    const { worldId } = await params;
+    await db.delete(worlds).where(eq(worlds.id, worldId));
 
     return NextResponse.json({ success: true, message: "Mundo excluído com sucesso" });
   } catch (error) {

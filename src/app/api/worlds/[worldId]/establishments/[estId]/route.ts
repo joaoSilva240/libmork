@@ -4,7 +4,7 @@ import { establishments } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { eq, and } from "drizzle-orm";
 
-type RouteContext = { params: Promise<{ id: string; estId: string }> };
+type RouteContext = { params: Promise<{ worldId: string; estId: string }> };
 
 export async function DELETE(request: NextRequest, { params }: RouteContext) {
   try {
@@ -13,10 +13,10 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
-    const { id, estId } = await params;
+    const { worldId, estId } = await params;
     await db
       .delete(establishments)
-      .where(and(eq(establishments.id, estId), eq(establishments.worldId, id)));
+      .where(and(eq(establishments.id, estId), eq(establishments.worldId, worldId)));
 
     return NextResponse.json({ success: true, message: "Estabelecimento excluído com sucesso" });
   } catch (error) {
