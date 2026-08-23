@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { Npc } from "@/types";
+import type { Npc, World, Encounter } from "@/types";
 import { ActorOverlay } from "@/components/campaigns/ActorOverlay";
 import type { RosterActor, RosterPlayer } from "@/components/campaigns/ActorOverlay";
 import { InfiniteCanvas } from "@/components/campaigns/InfiniteCanvas";
 import { CharacterCarousel } from "@/components/campaigns/CharacterCarousel";
+import { EncounterModal } from "@/components/campaigns/EncounterModal";
 
 type RosterData = {
   players: RosterPlayer[];
@@ -14,6 +15,10 @@ type RosterData = {
 
 export function MasterRoster({ campaignId }: { campaignId: string }) {
   const [roster, setRoster] = useState<RosterData>({ players: [], npcs: [] });
+  const [worlds, setWorlds] = useState<World[]>([]);
+  const [selectedWorldId, setSelectedWorldId] = useState<string>("");
+  const [activeEncounter, setActiveEncounter] = useState<Encounter | null>(null);
+  const [showEncounterModal, setShowEncounterModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<RosterActor | null>(null);
@@ -36,22 +41,50 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
     }
   }, [campaignId]);
 
+  const checkActiveEncounter = useCallback(async () => {
+    if (!selectedWorldId) {
+      setActiveEncounter(null);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/campaigns/${campaignId}/worlds/${selectedWorldId}/encounters`);
+      const data = await res.json();
+      if (res.ok && data.data) {
+        const active = (data.data as Encounter[]).find((e) => e.isActive);
+        setActiveEncounter(active || null);
+      }
+    } catch {
+      // ignore
+    }
+  }, [campaignId, selectedWorldId]);
+
   useEffect(() => {
     let cancelled = false;
 
-    (async () => {
+    const loadData = async () => {
       try {
-        const response = await fetch(`/api/campaigns/${campaignId}/roster`);
-        const data = await response.json();
+        const [rosterRes, worldsRes] = await Promise.all([
+          fetch(`/api/campaigns/${campaignId}/roster`),
+          fetch(`/api/campaigns/${campaignId}/worlds`),
+        ]);
+
+        const rosterData = await rosterRes.json();
+        const worldsData = await worldsRes.json();
 
         if (cancelled) return;
 
-        if (!response.ok) {
-          setError(data.error || "Erro ao carregar personagens da campanha");
-          return;
+        if (rosterRes.ok) {
+          setRoster(rosterData.data);
+        } else {
+          setError(rosterData.error || "Erro ao carregar personagens da campanha");
         }
 
-        setRoster(data.data);
+        if (worldsRes.ok && worldsData.data) {
+          setWorlds(worldsData.data);
+          if (worldsData.data.length > 0 && !selectedWorldId) {
+            setSelectedWorldId(worldsData.data[0].id);
+          }
+        }
       } catch {
         if (!cancelled) {
           setError("Erro de conexão. Tente novamente.");
@@ -61,12 +94,58 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
           setIsLoading(false);
         }
       }
-    })();
+    };
+
+    void loadData();
 
     return () => {
       cancelled = true;
     };
-  }, [campaignId]);
+  }, [campaignId, selectedWorldId]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const checkActive = async () => {
+      if (!selectedWorldId) {
+        if (!cancelled) setActiveEncounter(null);
+        return;
+      }
+      try {
+        const res = await fetch(`/api/campaigns/${campaignId}/worlds/${selectedWorldId}/encounters`);
+        const data = await res.json();
+        if (cancelled) return;
+        if (res.ok && data.data) {
+          const active = (data.data as Encounter[]).find((e) => e.isActive);
+          setActiveEncounter(active || null);
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    void checkActive();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [campaignId, selectedWorldId]);
+
+  const handleEndEncounter = async () => {
+    if (!activeEncounter) return;
+    try {
+      const res = await fetch(`/api/campaigns/${campaignId}/encounters/${activeEncounter.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: false }),
+      });
+      if (res.ok) {
+        setActiveEncounter(null);
+      }
+    } catch {
+      setError("Erro ao encerrar encontro");
+    }
+  };
 
   const toActor = (player: RosterPlayer): RosterActor => ({
     kind: "character",
@@ -82,9 +161,14 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
     conditions: player.conditions,
   });
 
+  // Filtrar NPCs se houver mundo selecionado
+  const filteredNpcs = selectedWorldId
+    ? roster.npcs.filter((npc) => !npc.worldId || npc.worldId === selectedWorldId)
+    : roster.npcs;
+
   const actors: RosterActor[] = [
     ...roster.players.map(toActor),
-    ...roster.npcs.map((npc) => ({
+    ...filteredNpcs.map((npc) => ({
       kind: "npc" as const,
       id: npc.id,
       name: npc.name,
@@ -110,10 +194,26 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-lg font-bold text-white">Mesa</h2>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-bold text-white">Mesa</h2>
+          {worlds.length > 0 && (
+            <select
+              value={selectedWorldId}
+              onChange={(e) => setSelectedWorldId(e.target.value)}
+              className="rounded-lg border border-gray-700 bg-gray-950 px-2 py-1 text-xs text-white focus:border-transparent focus:ring-1 focus:ring-purple-600"
+            >
+              {worlds.map((w) => (
+                <option key={w.id} value={w.id}>
+                  🌍 {w.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+
         <span className="text-xs text-gray-400">
-          {roster.players.length} jogadores · {roster.npcs.length} NPCs
+          {roster.players.length} jogadores · {filteredNpcs.length} NPCs
         </span>
       </div>
 
@@ -123,13 +223,51 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
         </div>
       )}
 
-      {/* Canvas infinito com post-its */}
-      <div className="mb-3 flex-1 overflow-hidden rounded-lg border border-gray-800">
-        <InfiniteCanvas campaignId={campaignId} />
+      {/* Canvas infinito com post-its vinculados ao mundo/campanha */}
+      <div className="mb-2 flex-1 overflow-hidden rounded-lg border border-gray-800">
+        <InfiniteCanvas campaignId={selectedWorldId ? `${campaignId}-${selectedWorldId}` : campaignId} />
+      </div>
+
+      {/* Barra de Ações sobre o Carrossel (Combate/Encontros) */}
+      <div className="mb-1 flex items-center justify-between rounded-t-lg bg-gray-900 px-3 py-1.5 border border-b-0 border-gray-800 text-xs">
+        <div className="flex items-center gap-2">
+          {activeEncounter ? (
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500"></span>
+              </span>
+              <span className="font-semibold text-red-400">
+                COMBATE ATIVO: {activeEncounter.name}
+              </span>
+            </div>
+          ) : (
+            <span className="text-gray-400">Nenhum combate ativo</span>
+          )}
+        </div>
+
+        <div className="flex gap-2">
+          {activeEncounter ? (
+            <button
+              onClick={handleEndEncounter}
+              className="rounded bg-red-900/80 px-2 py-1 text-xs font-semibold text-red-200 hover:bg-red-800"
+            >
+              🏁 Encerrar Encontro
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowEncounterModal(true)}
+              disabled={!selectedWorldId}
+              className="rounded bg-purple-600 px-2 py-1 text-xs font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
+            >
+              ⚔️ Iniciar Encontro
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Carrossel de personagens fixo na parte inferior */}
-      <div className="h-48 rounded-lg border border-gray-800 bg-gray-900/50 p-2">
+      <div className="h-48 rounded-b-lg border border-gray-800 bg-gray-900/50 p-2">
         <CharacterCarousel actors={actors} onSelect={setSelected} />
       </div>
 
@@ -139,6 +277,18 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
           actor={selected}
           onClose={() => setSelected(null)}
           onChanged={loadRoster}
+        />
+      )}
+
+      {showEncounterModal && selectedWorldId && (
+        <EncounterModal
+          campaignId={campaignId}
+          worldId={selectedWorldId}
+          actors={actors}
+          onClose={() => setShowEncounterModal(false)}
+          onEncounterStarted={() => {
+            void checkActiveEncounter();
+          }}
         />
       )}
     </div>
