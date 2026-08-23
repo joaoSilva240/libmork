@@ -29,10 +29,10 @@ export function PlayerTurnOverlay({ combatState, characterId }: PlayerTurnOverla
   const actionsLeft = myCombatant.actionsRemaining ?? 3;
 
   return (
-    <div className="fixed bottom-16 left-0 right-0 z-30 mx-auto max-w-md px-3 pointer-events-none transition-all duration-300">
-      <div className="flex items-center justify-between rounded-full border border-purple-800/60 bg-gray-950/90 px-3 py-1.5 backdrop-blur-md shadow-2xl">
-        {/* Mini Fila de Avatares dos Combatentes */}
-        <div className="flex items-center -space-x-1.5 overflow-x-auto scrollbar-hide max-w-[55%] py-0.5">
+    <div className="fixed bottom-[56px] left-0 right-0 z-30 mx-auto max-w-md px-2 pointer-events-none transition-all duration-300">
+      <div className="flex items-center justify-between rounded-t-2xl rounded-b-none border border-b-0 border-purple-700/60 bg-gray-950/95 px-4 py-2.5 backdrop-blur-md shadow-2xl">
+        {/* Fila de Avatares dos Combatentes */}
+        <div className="flex items-center -space-x-1 overflow-x-auto scrollbar-hide max-w-[60%] py-1">
           {combatState.combatants.map((c, idx) => {
             const isCurrent = idx === combatState.currentTurnIndex;
             const isMe = c.id === myCombatant.id;
@@ -41,7 +41,7 @@ export function PlayerTurnOverlay({ combatState, characterId }: PlayerTurnOverla
               <div
                 key={c.id}
                 title={`${c.name} (Ini: ${c.initiative})`}
-                className={`relative shrink-0 transition-transform ${
+                className={`relative shrink-0 transition-all duration-200 ${
                   isCurrent ? "scale-110 z-10" : "scale-90 opacity-75"
                 }`}
               >
@@ -50,7 +50,7 @@ export function PlayerTurnOverlay({ combatState, characterId }: PlayerTurnOverla
                   <img
                     src={c.avatarUrl}
                     alt={c.name}
-                    className={`h-7 w-7 rounded-full object-cover border ${
+                    className={`h-9 w-9 rounded-full object-cover border-2 ${
                       isCurrent
                         ? "border-purple-400 ring-2 ring-purple-500 animate-pulse"
                         : isMe
@@ -60,7 +60,7 @@ export function PlayerTurnOverlay({ combatState, characterId }: PlayerTurnOverla
                   />
                 ) : (
                   <div
-                    className={`flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white border ${
+                    className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-white border-2 ${
                       isCurrent
                         ? "bg-purple-700 border-purple-400 ring-2 ring-purple-500 animate-pulse"
                         : isMe
@@ -72,7 +72,7 @@ export function PlayerTurnOverlay({ combatState, characterId }: PlayerTurnOverla
                   </div>
                 )}
                 {isCurrent && (
-                  <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-purple-500 text-[7px] text-white font-black">
+                  <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-purple-500 text-[9px] text-white font-black shadow border border-purple-300">
                     ⚡
                   </span>
                 )}
@@ -82,31 +82,31 @@ export function PlayerTurnOverlay({ combatState, characterId }: PlayerTurnOverla
         </div>
 
         {/* Status de Ações & Turno do Jogador */}
-        <div className="flex items-center gap-2 pl-2 border-l border-gray-800/80">
+        <div className="flex items-center gap-3 pl-3 border-l border-gray-800">
           <div className="text-right">
             <span
-              className={`block text-[9px] font-black uppercase tracking-wider ${
+              className={`block text-[11px] font-black uppercase tracking-wider ${
                 isMyTurn ? "text-purple-300 animate-pulse" : "text-gray-400"
               }`}
             >
               {isMyTurn ? "SEU TURNO!" : `Turno: ${currentTurnCombatant?.name.split(" ")[0] || ""}`}
             </span>
-            <span className="text-[10px] font-bold text-gray-200">
-              Ações: <strong className="text-purple-400">{actionsLeft}/3</strong>
+            <span className="text-xs font-bold text-gray-200">
+              Ações: <strong className="text-purple-400 text-sm">{actionsLeft}/3</strong>
             </span>
           </div>
 
-          {/* Bolinhas dos Pontos de Ação */}
-          <div className="flex gap-1">
+          {/* Círculos dos Pontos de Ação (Aumentados) */}
+          <div className="flex gap-1.5">
             {[1, 2, 3].map((num) => (
               <span
                 key={num}
-                className={`h-2.5 w-2.5 rounded-full border transition-all ${
+                className={`h-3.5 w-3.5 rounded-full border-2 transition-all ${
                   num <= actionsLeft
                     ? isMyTurn
-                      ? "bg-purple-400 border-purple-300 shadow-sm shadow-purple-500"
-                      : "bg-gray-400 border-gray-300"
-                    : "bg-gray-900 border-gray-800 opacity-40"
+                      ? "bg-purple-400 border-purple-300 shadow-md shadow-purple-500"
+                      : "bg-gray-300 border-gray-100"
+                    : "bg-gray-900 border-gray-800 opacity-30"
                 }`}
               />
             ))}
