@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Npc } from "@/types";
 import { ATTRIBUTES } from "@/lib/utils/constants";
 import type { Attribute } from "@/lib/utils/constants";
@@ -109,8 +109,31 @@ export function LibraryNpcs() {
   const [isSaving, setIsSaving] = useState(false);
   const [includeCampaignId, setIncludeCampaignId] = useState("");
   const [isIncluding, setIsIncluding] = useState(false);
+  const [isImportingDnd, setIsImportingDnd] = useState(false);
 
-  const loadNpcs = useCallback(async () => {
+  const handleImportDnd = async () => {
+    setError(null);
+    setIsImportingDnd(true);
+    try {
+      const response = await fetch("/api/npcs/import-dnd", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.error || "Erro ao importar monstros do D&D 5e");
+        return;
+      }
+      await loadNpcs();
+      alert(data.message || "Monstros D&D 5e importados com sucesso!");
+    } catch {
+      setError("Erro de conexão ao importar da API D&D 5e.");
+    } finally {
+      setIsImportingDnd(false);
+    }
+  };
+
+  const loadNpcs = async () => {
     try {
       const response = await fetch("/api/npcs");
       const data = await response.json();
@@ -126,7 +149,7 @@ export function LibraryNpcs() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -570,11 +593,24 @@ export function LibraryNpcs() {
 
   return (
     <div>
-      <h2 className="mb-4 text-2xl font-bold text-white">NPCs da Biblioteca</h2>
-      <p className="mb-4 text-sm text-gray-400">
-        Fichas completas de NPCs (iguais às dos jogadores), disponíveis para incluir em
-        qualquer campanha, duplicar e ajustar o nível diretamente.
-      </p>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-bold text-white">NPCs & Biblioteca de Monstros</h2>
+          <p className="text-sm text-gray-400">
+            Fichas completas de NPCs, disponíveis para incluir em qualquer campanha ou mundo.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleImportDnd}
+          disabled={isImportingDnd}
+          className="rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2.5 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg flex items-center gap-2 disabled:opacity-50"
+        >
+          <span>🐉</span>
+          <span>{isImportingDnd ? "Importando da API D&D 5e..." : "Alimentar da API D&D 5e"}</span>
+        </button>
+      </div>
 
       {error && (
         <div className="mb-4 rounded-lg border border-red-800 bg-red-900/30 p-3 text-sm text-red-300">
