@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { Npc } from "@/types";
 import type { RosterPlayer, RosterActor } from "@/components/campaigns/ActorOverlay";
 
 type InviteData = {
@@ -14,7 +15,8 @@ type InviteData = {
 
 export function CampaignInvites({ campaignId }: { campaignId: string }) {
   const [invites, setInvites] = useState<InviteData[]>([]);
-  const [players, setPlayers] = useState<RosterPlayer[]>([]);
+  const [actors, setActors] = useState<RosterActor[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,12 +40,45 @@ export function CampaignInvites({ campaignId }: { campaignId: string }) {
         if (invitesRes.ok && invitesData.data) {
           setInvites(invitesData.data.filter((invite: InviteData) => !invite.revoked));
         }
+
         if (rosterRes.ok && rosterData.data) {
-          setPlayers(rosterData.data.players || []);
+          const playersList: RosterPlayer[] = rosterData.data.players || [];
+          const npcsList: Npc[] = rosterData.data.npcs || [];
+
+          const playerActors: RosterActor[] = playersList.map((player) => ({
+            kind: "character",
+            id: player.id,
+            name: player.name,
+            imageUrl: player.imageUrl,
+            level: player.level,
+            xp: player.xp,
+            hitPoints: player.hitPointsCurrent,
+            hitPointsMax: player.hitPointsMax,
+            manaPoints: player.manaPointsCurrent,
+            manaPointsMax: player.manaPointsMax,
+            conditions: player.conditions,
+          }));
+
+          const npcActors: RosterActor[] = npcsList.map((npc) => ({
+            kind: "npc",
+            id: npc.id,
+            name: npc.name,
+            imageUrl: npc.imageUrl,
+            level: npc.level,
+            xp: npc.xp,
+            hitPoints: npc.hitPoints,
+            hitPointsMax: npc.hitPointsMax,
+            manaPoints: npc.manaPoints,
+            manaPointsMax: npc.manaPointsMax,
+            npcType: npc.npcType,
+            xpReward: npc.xpReward,
+          }));
+
+          setActors([...playerActors, ...npcActors]);
         }
       } catch {
         if (!cancelled) {
-          setError("Erro de conexão ao carregar convites/jogadores.");
+          setError("Erro de conexão ao carregar convites/personagens.");
         }
       } finally {
         if (!cancelled) {
@@ -117,53 +152,71 @@ export function CampaignInvites({ campaignId }: { campaignId: string }) {
     }
   };
 
-  const handleDragStartPlayer = (e: React.DragEvent, player: RosterPlayer) => {
-    const actor: RosterActor = {
-      kind: "character",
-      id: player.id,
-      name: player.name,
-      imageUrl: player.imageUrl,
-      level: player.level,
-      xp: player.xp,
-      hitPoints: player.hitPointsCurrent,
-      hitPointsMax: player.hitPointsMax,
-      manaPoints: player.manaPointsCurrent,
-      manaPointsMax: player.manaPointsMax,
-      conditions: player.conditions,
-    };
+  const handleDragStartActor = (e: React.DragEvent, actor: RosterActor) => {
     e.dataTransfer.setData("application/json", JSON.stringify(actor));
   };
 
+  const filteredActors = actors.filter((actor) =>
+    actor.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="space-y-3 rounded-lg border border-gray-800 bg-gray-900 p-3">
-      {/* Seção Personagens Entrados na Campanha */}
+      {/* Seção Personagens e NPCs com Barra de Pesquisa */}
       <div>
-        <h3 className="mb-1.5 text-xs font-bold uppercase tracking-wider text-purple-400">
-          Personagens na Campanha ({players.length})
-        </h3>
-        {players.length === 0 ? (
+        <div className="mb-1.5 flex items-center justify-between">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400">
+            Personagens e NPCs ({actors.length})
+          </h3>
+        </div>
+
+        <div className="mb-2">
+          <input
+            type="text"
+            placeholder="Pesquisar personagem ou NPC..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full rounded border border-gray-800 bg-gray-950 px-2 py-1 text-xs text-white placeholder-gray-500 focus:border-transparent focus:ring-1 focus:ring-purple-600"
+          />
+        </div>
+
+        {isLoading ? (
+          <p className="text-xs text-gray-500">Carregando personagens...</p>
+        ) : filteredActors.length === 0 ? (
           <p className="text-xs text-gray-500">
-            Nenhum personagem entrou via convite ainda.
+            {searchQuery ? "Nenhum personagem encontrado." : "Nenhum personagem ou NPC cadastrado."}
           </p>
         ) : (
-          <div className="space-y-1.5">
-            {players.map((player) => (
+          <div className="max-h-56 space-y-1.5 overflow-y-auto pr-0.5">
+            {filteredActors.map((actor) => (
               <div
-                key={player.id}
+                key={`${actor.kind}-${actor.id}`}
                 draggable
-                onDragStart={(e) => handleDragStartPlayer(e, player)}
+                onDragStart={(e) => handleDragStartActor(e, actor)}
                 className="group flex cursor-grab items-center justify-between rounded-lg border border-gray-800 bg-gray-950 p-2 transition-colors hover:border-purple-600 hover:bg-gray-900 active:cursor-grabbing"
                 title="Arraste para o carrossel na Mesa para ativar no combate"
               >
                 <div className="flex items-center gap-2 overflow-hidden">
                   <span className="text-gray-500 group-hover:text-purple-400">⠿</span>
                   <div className="min-w-0">
-                    <p className="truncate text-xs font-semibold text-white">{player.name}</p>
-                    <p className="text-[10px] text-gray-400">Nível {player.level}</p>
+                    <p className="truncate text-xs font-semibold text-white">{actor.name}</p>
+                    <p className="text-[10px] text-gray-400">Nível {actor.level}</p>
                   </div>
                 </div>
-                <span className="shrink-0 rounded bg-gray-800 px-1.5 py-0.5 text-[10px] text-gray-400">
-                  Jogador
+                <span
+                  className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+                    actor.kind === "character"
+                      ? "bg-purple-900/50 text-purple-300 border border-purple-800/50"
+                      : actor.npcType === "enemy"
+                      ? "bg-red-900/50 text-red-300 border border-red-800/50"
+                      : "bg-gray-800 text-gray-300"
+                  }`}
+                >
+                  {actor.kind === "character"
+                    ? "Jogador"
+                    : actor.npcType === "enemy"
+                    ? "Inimigo"
+                    : "NPC"}
                 </span>
               </div>
             ))}
@@ -192,9 +245,7 @@ export function CampaignInvites({ campaignId }: { campaignId: string }) {
           </div>
         )}
 
-        {isLoading ? (
-          <p className="text-xs text-gray-500">Carregando convites...</p>
-        ) : invites.length === 0 ? (
+        {invites.length === 0 ? (
           <p className="text-xs text-gray-500">
             Nenhum convite pendente. Gere um link acima.
           </p>
