@@ -26,9 +26,15 @@ type CharacterContentProps = {
   characterId: string;
   defaultType?: ContentType;
   allowedTypes?: ContentType[];
+  isTurnLocked?: boolean;
 };
 
-export function CharacterContent({ characterId, defaultType = "skills", allowedTypes }: CharacterContentProps) {
+export function CharacterContent({
+  characterId,
+  defaultType = "skills",
+  allowedTypes,
+  isTurnLocked = false,
+}: CharacterContentProps) {
   const [activeType, setActiveType] = useState<ContentType>(defaultType);
   const [data, setData] = useState<{ linked: LinkedRow[]; available: Record<string, unknown>[] }>({
     linked: [],
@@ -161,6 +167,12 @@ export function CharacterContent({ characterId, defaultType = "skills", allowedT
         </div>
       )}
 
+      {isTurnLocked && (
+        <div className="mb-3 rounded-xl border border-amber-800/60 bg-amber-950/40 p-2.5 text-center text-xs font-semibold text-amber-300 shadow">
+          🔒 Modo Combate Ativo: Aguarde o seu turno na rodada para realizar rolagens.
+        </div>
+      )}
+
       {error && (
         <div className="mb-3 rounded-lg border border-red-800 bg-red-900/30 p-3 text-sm text-red-300">
           {error}
@@ -202,7 +214,8 @@ export function CharacterContent({ characterId, defaultType = "skills", allowedT
                                 trained: e.target.checked,
                               })
                             }
-                            className="h-4 w-4 accent-purple-600"
+                            disabled={isTurnLocked}
+                            className="h-4 w-4 accent-purple-600 disabled:opacity-40"
                           />
                           <span className={row.junction.trained ? "text-purple-400 font-bold" : "text-gray-400"}>
                             {row.junction.trained ? "Treinada" : "Não Treinada"}

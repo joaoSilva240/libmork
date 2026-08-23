@@ -286,8 +286,29 @@ export function CharacterDetail() {
     router.push("/player");
   };
 
+  const isCombatActive = Boolean(combatState?.active && combatState.combatants.length > 0);
+  const myCombatant = isCombatActive && character
+    ? combatState?.combatants.find((c) => c.id === character.id || c.characterId === character.id)
+    : null;
+  const currentCombatant = isCombatActive
+    ? combatState?.combatants[combatState.currentTurnIndex]
+    : null;
+
+  // Bloqueio de turno: se o combate está ativo, o personagem está nele e NÃO é a vez dele
+  const isTurnLocked = Boolean(
+    isCombatActive &&
+    myCombatant &&
+    currentCombatant &&
+    currentCombatant.id !== myCombatant.id
+  );
+
   const handleRollAttribute = (attr: Attribute) => {
     if (!character) return;
+
+    if (isTurnLocked) {
+      alert("🔒 Aguarde o seu turno no combate para realizar rolagens de atributo!");
+      return;
+    }
     const stats = getDerivedStats(character.attributes, character.level);
     const mod = stats.modifiers[attr];
     const array = new Uint32Array(1);
@@ -395,6 +416,11 @@ export function CharacterDetail() {
 
       {/* Main Tab Content */}
       <main className="p-4 space-y-4">
+        {isTurnLocked && (
+          <div className="rounded-2xl border border-amber-800/80 bg-amber-950/40 p-3 text-center text-xs font-bold text-amber-300 shadow-md">
+            🔒 Trava de Turno: Um combate está ativo e é o turno de {currentCombatant?.name}. Aguarde sua vez para realizar rolagens.
+          </div>
+        )}
         {/* Modal de Resultado de Rolagem de Dados */}
         {activeRollResult && (
           <div
@@ -562,7 +588,12 @@ export function CharacterDetail() {
                     <button
                       key={attr}
                       onClick={() => handleRollAttribute(attr)}
-                      className="flex w-full items-center justify-between rounded-xl border border-gray-800/80 bg-gray-950 p-2.5 transition-all hover:border-purple-600/60 hover:bg-purple-950/20 active:scale-[0.99]"
+                      disabled={isTurnLocked}
+                      className={`flex w-full items-center justify-between rounded-xl border border-gray-800/80 bg-gray-950 p-2.5 transition-all ${
+                        isTurnLocked
+                          ? "opacity-50 cursor-not-allowed border-gray-900 bg-gray-950/40"
+                          : "hover:border-purple-600/60 hover:bg-purple-950/20 active:scale-[0.99]"
+                      }`}
                     >
                       <div className="flex items-center gap-2.5">
                         <span className="text-lg">{ATTRIBUTE_ICONS[attr]}</span>
@@ -601,7 +632,7 @@ export function CharacterDetail() {
             </div>
 
             {/* Gerenciador completo de Perícias */}
-            <CharacterContent characterId={character.id} defaultType="skills" allowedTypes={["skills"]} />
+            <CharacterContent characterId={character.id} defaultType="skills" allowedTypes={["skills"]} isTurnLocked={isTurnLocked} />
           </div>
         )}
 
@@ -609,7 +640,7 @@ export function CharacterDetail() {
         {activeTab === "inventory" && (
           <div className="space-y-4 animate-in fade-in duration-200">
             {/* Conteúdo da Ficha (Itens, Magias, Habilidades, Condições) */}
-            <CharacterContent characterId={character.id} defaultType="items" allowedTypes={["items", "spells", "conditions"]} />
+            <CharacterContent characterId={character.id} defaultType="items" allowedTypes={["items", "spells", "conditions"]} isTurnLocked={isTurnLocked} />
           </div>
         )}
 
