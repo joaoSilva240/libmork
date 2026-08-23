@@ -10,6 +10,7 @@ import { EncounterModal } from "@/components/campaigns/EncounterModal";
 import { useSocket, type RollDataPayload } from "@/context/SocketContext";
 import { CombatTrackerModal } from "@/components/combat/CombatTrackerModal";
 import type { CombatSessionState } from "@/lib/engine";
+import { advanceCombatTurn, spendCombatActions } from "@/lib/engine";
 
 type RosterData = {
   players: RosterPlayer[];
@@ -246,16 +247,41 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
     };
   }, [campaignId, selectedWorldId, subscribeCombatState]);
 
+  const { updateCombatState } = useSocket();
+
+  const handleNextTurn = () => {
+    if (!combatState || !combatState.active) return;
+    const nextState = advanceCombatTurn(combatState);
+    updateCombatState(nextState);
+  };
+
+  const handleSpendAction = (cost: number = 1) => {
+    if (!combatState || !combatState.active || combatState.combatants.length === 0) return;
+    const current = combatState.combatants[combatState.currentTurnIndex];
+    if (!current) return;
+    const result = spendCombatActions(combatState, current.id, cost);
+    if (result.success) {
+      updateCombatState(result.session);
+    }
+  };
+
   const handleEndEncounter = async () => {
-    if (!activeEncounter) return;
+    if (!activeEncounter && !combatState?.active) return;
     try {
-      const res = await fetch(`/api/campaigns/${campaignId}/encounters/${activeEncounter.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isActive: false }),
-      });
-      if (res.ok) {
+      if (activeEncounter) {
+        await fetch(`/api/campaigns/${campaignId}/encounters/${activeEncounter.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isActive: false }),
+        });
         setActiveEncounter(null);
+      }
+
+      if (combatState) {
+        updateCombatState({
+          ...combatState,
+          active: false,
+        });
       }
     } catch {
       setError("Erro ao encerrar encontro");
@@ -420,16 +446,16 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
       </div>
 
       {/* Barra de Ações sobre o Carrossel (Combate/Encontros) */}
-      <div className="mb-1 flex items-center justify-between rounded-t-lg bg-gray-900 px-3 py-1.5 border border-b-0 border-gray-800 text-xs">
-        <div className="flex items-center gap-2">
-          {activeEncounter ? (
+      <div className="mb-1 flex items-center justify-between rounded-t-lg bg-gray-900 px-3 py-2 border border-b-0 border-gray-800 text-xs flex-wrap gap-2">
+        <div className="flex items-center gap-3">
+          {combatState?.active || activeEncounter ? (
             <div className="flex items-center gap-2">
-              <span className="relative flex h-2 w-2">
+              <span className="relative flex h-2.5 w-2.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500"></span>
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500"></span>
               </span>
-              <span className="font-semibold text-red-400">
-                COMBATE ATIVO: {activeEncounter.name}
+              <span className="font-bold text-red-400">
+                COMBATE ATIVO {activeEncounter ? `: ${activeEncounter.name}` : ""} {combatState?.active ? `(Rodada ${combatState.round})` : ""}
               </span>
             </div>
           ) : (
@@ -437,27 +463,42 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
           )}
         </div>
 
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowCombatTrackerModal(true)}
-            className="rounded bg-purple-600/80 px-2 py-1 text-xs font-semibold text-purple-100 hover:bg-purple-600 border border-purple-500/40"
-          >
-            ⚔️ Painel de Iniciativa {combatState?.active ? "(Rodada " + combatState.round + ")" : ""}
-          </button>
-          {activeEncounter ? (
-            <button
-              onClick={handleEndEncounter}
-              className="rounded bg-red-900/80 px-2 py-1 text-xs font-semibold text-red-200 hover:bg-red-800"
-            >
-              🏁 Encerrar Encontro
-            </button>
+        <div className="flex items-center gap-2">
+          {combatState?.active ? (
+            <>
+              {/* Controles RÁPIDOS de Turno para o Mestre */}
+              <button
+                onClick={() => handleSpendAction(1)}
+                className="rounded-lg border border-purple-600/60 bg-purple-950/60 px-2.5 py-1 text-xs font-bold text-purple-200 hover:bg-purple-900"
+              >
+                ⚡ Gastar 1 Ação
+              </button>
+              <button
+                onClick={handleNextTurn}
+                className="rounded-lg bg-purple-600 px-3 py-1 text-xs font-bold text-white shadow hover:bg-purple-500"
+              >
+                Próximo Turno ⏩
+              </button>
+              <button
+                onClick={() => setShowCombatTrackerModal(true)}
+                className="rounded-lg border border-gray-700 bg-gray-800 px-2.5 py-1 text-xs font-semibold text-gray-200 hover:bg-gray-700"
+              >
+                📋 Detalhes
+              </button>
+              <button
+                onClick={handleEndEncounter}
+                className="rounded-lg bg-red-900/80 px-2.5 py-1 text-xs font-bold text-red-200 hover:bg-red-800"
+              >
+                🏁 Encerrar
+              </button>
+            </>
           ) : (
             <button
               onClick={() => setShowEncounterModal(true)}
               disabled={!selectedWorldId}
-              className="rounded bg-purple-600 px-2 py-1 text-xs font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
+              className="rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-bold text-white shadow hover:bg-purple-500 disabled:opacity-50"
             >
-              ⚔️ Iniciar Encontro
+              ⚔️ Iniciar Encontro (Combate)
             </button>
           )}
         </div>
@@ -470,7 +511,8 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
         className="h-48 rounded-b-lg border border-gray-800 bg-gray-900/50 p-2"
       >
         <CharacterCarousel
-          actors={deskActors}
+          actors={deskActors.length > 0 ? deskActors : actors}
+          combatState={combatState}
           onSelect={setSelected}
           onRemove={handleRemoveDeskActor}
         />

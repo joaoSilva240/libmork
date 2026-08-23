@@ -78,37 +78,53 @@ app.prepare().then(() => {
 
     // Atualização de status de personagem em tempo real (HP, Mana, XP, Condições) - RF-025, RF-049
     socket.on("update-actor-status", (payload) => {
-      if (!payload || !payload.campaignId) return;
-      // Reenvia para todos na sala da campanha (inclusive mestre e jogadores)
-      io.to(`campaign:${payload.campaignId}`).emit("actor-status-updated", payload);
+      if (!payload) return;
+      if (payload.campaignId) {
+        io.to(`campaign:${payload.campaignId}`).emit("actor-status-updated", payload);
+      }
+      io.emit("actor-status-updated", payload);
     });
 
     // Evento de rolagem de dados em tempo real - RF-041, RF-046
     socket.on("roll-dice", (rollData) => {
-      if (!rollData || !rollData.campaignId) return;
-      // Transmite a rolagem para todos os participantes na mesa
-      io.to(`campaign:${rollData.campaignId}`).emit("dice-rolled", rollData);
+      if (!rollData) return;
+      if (rollData.campaignId) {
+        io.to(`campaign:${rollData.campaignId}`).emit("dice-rolled", rollData);
+      }
+      io.emit("dice-rolled", rollData);
     });
 
     // Eventos do Motor de Combate (Fase 4 - RF-039, RF-040, RF-041, RF-047, RF-066)
     socket.on("update-combat-state", (combatState) => {
-      if (!combatState || !combatState.campaignId) return;
-      io.to(`campaign:${combatState.campaignId}`).emit("combat-state-updated", combatState);
+      if (!combatState) return;
+      if (combatState.campaignId) {
+        io.to(`campaign:${combatState.campaignId}`).emit("combat-state-updated", combatState);
+      }
+      io.emit("combat-state-updated", combatState);
     });
 
     socket.on("request-initiative-roll", (payload) => {
-      if (!payload || !payload.campaignId) return;
-      io.to(`campaign:${payload.campaignId}`).emit("initiative-roll-requested", payload);
+      if (!payload) return;
+      if (payload.campaignId) {
+        io.to(`campaign:${payload.campaignId}`).emit("initiative-roll-requested", payload);
+      }
+      io.emit("initiative-roll-requested", payload);
     });
 
     socket.on("request-defense-reaction", (reactionPrompt) => {
-      if (!reactionPrompt || !reactionPrompt.campaignId) return;
-      io.to(`campaign:${reactionPrompt.campaignId}`).emit("defense-reaction-requested", reactionPrompt);
+      if (!reactionPrompt) return;
+      if (reactionPrompt.campaignId) {
+        io.to(`campaign:${reactionPrompt.campaignId}`).emit("defense-reaction-requested", reactionPrompt);
+      }
+      io.emit("defense-reaction-requested", reactionPrompt);
     });
 
     socket.on("respond-defense-reaction", (responsePayload) => {
-      if (!responsePayload || !responsePayload.campaignId) return;
-      io.to(`campaign:${responsePayload.campaignId}`).emit("defense-reaction-responded", responsePayload);
+      if (!responsePayload) return;
+      if (responsePayload.campaignId) {
+        io.to(`campaign:${responsePayload.campaignId}`).emit("defense-reaction-responded", responsePayload);
+      }
+      io.emit("defense-reaction-responded", responsePayload);
     });
 
     // Sair explicitamente de uma campanha

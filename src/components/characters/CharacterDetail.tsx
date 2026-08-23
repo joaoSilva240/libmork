@@ -47,6 +47,7 @@ export function CharacterDetail() {
     updateActorStatus,
     rollDice,
     isConnected,
+    joinCampaign,
     subscribeInitiativeRequest,
     subscribeDefenseRequest,
     subscribeCombatState,
@@ -90,6 +91,14 @@ export function CharacterDetail() {
         }
 
         setCharacter(data.data);
+        if (data.data && data.data.id) {
+          joinCampaign({
+            campaignId: data.data.id,
+            user: { id: data.data.id, name: data.data.name },
+            actorId: data.data.id,
+            role: "player",
+          });
+        }
       } catch {
         if (!cancelled) {
           setError("Erro de conexão. Tente novamente.");
@@ -123,7 +132,7 @@ export function CharacterDetail() {
       unsubDefense();
       unsubCombat();
     };
-  }, [params.id, character, subscribeInitiativeRequest, subscribeDefenseRequest, subscribeCombatState]);
+  }, [params.id, character, joinCampaign, subscribeInitiativeRequest, subscribeDefenseRequest, subscribeCombatState]);
 
   const handleDelete = async () => {
     if (!window.confirm("Tem certeza que deseja excluir este personagem?")) {

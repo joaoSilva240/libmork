@@ -1,16 +1,51 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { RosterActor } from "@/components/campaigns/ActorOverlay";
+import type { CombatSessionState } from "@/lib/engine";
 
 type CharacterCarouselProps = {
   actors: RosterActor[];
+  combatState?: CombatSessionState | null;
   onSelect: (actor: RosterActor) => void;
   onRemove?: (actorId: string, kind: string) => void;
 };
 
-export function CharacterCarousel({ actors, onSelect, onRemove }: CharacterCarouselProps) {
+export function CharacterCarousel({
+  actors,
+  combatState,
+  onSelect,
+  onRemove,
+}: CharacterCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const activeCardRef = useRef<HTMLDivElement>(null);
+
+  // Ordena os atores se houver um combate ativo
+  const sortedActors = [...actors];
+  const activeCombatantId =
+    combatState?.active && combatState.combatants.length > 0
+      ? combatState.combatants[combatState.currentTurnIndex]?.id
+      : null;
+
+  if (combatState?.active && combatState.combatants.length > 0) {
+    const combatantMap = new Map(combatState.combatants.map((c) => [c.id, c]));
+    sortedActors.sort((a, b) => {
+      const iniA = combatantMap.get(a.id)?.initiative ?? 0;
+      const iniB = combatantMap.get(b.id)?.initiative ?? 0;
+      return iniB - iniA;
+    });
+  }
+
+  // Centraliza o card do combatente ativo suavemente quando o turno muda
+  useEffect(() => {
+    if (activeCardRef.current && scrollRef.current) {
+      activeCardRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "center",
+      });
+    }
+  }, [activeCombatantId]);
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
@@ -35,10 +70,10 @@ export function CharacterCarousel({ actors, onSelect, onRemove }: CharacterCarou
 
   return (
     <div className="relative flex h-full items-center overflow-hidden">
-      {actors.length > 3 && (
+      {sortedActors.length > 3 && (
         <button
           onClick={() => scroll("left")}
-          className="absolute left-1 z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-800/90 text-lg text-white shadow-lg hover:bg-gray-700"
+          className="absolute left-1 z-20 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-800/90 text-lg text-white shadow-lg hover:bg-gray-700"
         >
           ‹
         </button>
@@ -46,10 +81,16 @@ export function CharacterCarousel({ actors, onSelect, onRemove }: CharacterCarou
 
       <div
         ref={scrollRef}
-        className="flex gap-3 overflow-x-auto px-4 scrollbar-hide"
+        className="flex items-center gap-4 overflow-x-auto px-6 py-2 scrollbar-hide w-full"
         style={{ scrollbarWidth: "none" }}
       >
-        {actors.map((actor) => {
+        {sortedActors.map((actor) => {
+          const isCombatActive = Boolean(combatState?.active);
+          const combatant = isCombatActive
+            ? combatState?.combatants.find((c) => c.id === actor.id)
+            : null;
+          const isActiveTurn = isCombatActive && activeCombatantId === actor.id;
+
           const hpPercent = Math.min(
             100,
             Math.max(0, (actor.hitPoints / Math.max(actor.hitPointsMax, 1)) * 100)
@@ -62,7 +103,14 @@ export function CharacterCarousel({ actors, onSelect, onRemove }: CharacterCarou
           return (
             <div
               key={`${actor.kind}-${actor.id}`}
-              className="group relative aspect-[3/4] w-32 shrink-0 overflow-hidden rounded-lg border border-gray-800 bg-gray-900 transition-all hover:border-purple-600 hover:scale-105"
+              ref={isActiveTurn ? activeCardRef : null}
+              className={`group relative shrink-0 aspect-[3/4] transition-all duration-300 rounded-xl overflow-hidden border ${
+                isActiveTurn
+                  ? "w-36 scale-110 border-purple-500 bg-purple-950/60 ring-2 ring-purple-500 z-10 shadow-2xl shadow-purple-950/80"
+                  : isCombatActive
+                  ? "w-28 scale-90 opacity-70 border-gray-800 bg-gray-900/60 hover:opacity-100 hover:scale-95"
+                  : "w-32 border-gray-800 bg-gray-900 hover:border-purple-600 hover:scale-105"
+              }`}
             >
               <button
                 onClick={() => onSelect(actor)}
@@ -81,15 +129,30 @@ export function CharacterCarousel({ actors, onSelect, onRemove }: CharacterCarou
                   </div>
                 )}
 
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/40" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-black/50" />
 
-                <span className="absolute right-1.5 top-1.5 rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                  Nv {actor.level}
-                </span>
+                {/* Selo TURNO ATIVO */}
+                {isActiveTurn && (
+                  <div className="absolute top-1 inset-x-1 z-10 rounded bg-purple-600 py-0.5 text-center text-[9px] font-black uppercase tracking-wider text-white shadow-md animate-pulse">
+                    ⚡ TURNO ATIVO
+                  </div>
+                )}
+
+                {/* Nível e Iniciativa */}
+                <div className={`absolute right-1.5 flex flex-col items-end gap-1 ${isActiveTurn ? "top-6" : "top-1.5"}`}>
+                  <span className="rounded-full bg-black/80 px-1.5 py-0.5 text-[10px] font-bold text-white shadow">
+                    Nv {actor.level}
+                  </span>
+                  {combatant && (
+                    <span className="rounded-md bg-purple-900/90 px-1.5 py-0.5 text-[9px] font-extrabold text-purple-200 shadow border border-purple-700/60">
+                      Ini: {combatant.initiative}
+                    </span>
+                  )}
+                </div>
 
                 {actor.kind === "npc" && (
                   <span
-                    className={`absolute left-1.5 top-1.5 rounded px-1 py-0.5 text-[9px] font-semibold ${
+                    className={`absolute left-1.5 ${isActiveTurn ? "top-6" : "top-1.5"} rounded px-1 py-0.5 text-[9px] font-semibold ${
                       actor.npcType === "enemy"
                         ? "bg-red-900/80 text-red-200"
                         : "bg-gray-800/80 text-gray-300"
@@ -103,7 +166,25 @@ export function CharacterCarousel({ actors, onSelect, onRemove }: CharacterCarou
                   <p className="truncate text-xs font-bold text-white drop-shadow">
                     {actor.name}
                   </p>
-                  <div className="mt-1 space-y-0.5">
+
+                  {/* Ações Restantes (se combate ativo) */}
+                  {combatant && (
+                    <div className="my-1 flex items-center justify-between">
+                      <span className="text-[9px] text-purple-300 font-semibold">Ações:</span>
+                      <div className="flex gap-1">
+                        {[1, 2, 3].map((num) => (
+                          <span
+                            key={num}
+                            className={`h-2 w-2 rounded-full ${
+                              num <= combatant.actionsRemaining ? "bg-purple-400" : "bg-gray-700"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-0.5">
                     <div className="h-1.5 overflow-hidden rounded-full bg-black/60">
                       <div
                         className="h-full rounded-full bg-red-500"
@@ -123,7 +204,7 @@ export function CharacterCarousel({ actors, onSelect, onRemove }: CharacterCarou
                 </div>
               </button>
 
-              {onRemove && (
+              {onRemove && !isCombatActive && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -140,10 +221,10 @@ export function CharacterCarousel({ actors, onSelect, onRemove }: CharacterCarou
         })}
       </div>
 
-      {actors.length > 3 && (
+      {sortedActors.length > 3 && (
         <button
           onClick={() => scroll("right")}
-          className="absolute right-1 z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-800/90 text-lg text-white shadow-lg hover:bg-gray-700"
+          className="absolute right-1 z-20 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-800/90 text-lg text-white shadow-lg hover:bg-gray-700"
         >
           ›
         </button>
