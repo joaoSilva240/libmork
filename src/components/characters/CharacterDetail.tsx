@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Character } from "@/types";
@@ -75,6 +75,11 @@ export function CharacterDetail() {
     detail: string;
   } | null>(null);
 
+  const characterRef = useRef<Character | null>(null);
+  useEffect(() => {
+    characterRef.current = character;
+  }, [character]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -91,14 +96,6 @@ export function CharacterDetail() {
         }
 
         setCharacter(data.data);
-        if (data.data && data.data.id) {
-          joinCampaign({
-            campaignId: data.data.id,
-            user: { id: data.data.id, name: data.data.name },
-            actorId: data.data.id,
-            role: "player",
-          });
-        }
       } catch {
         if (!cancelled) {
           setError("Erro de conexão. Tente novamente.");
@@ -112,12 +109,27 @@ export function CharacterDetail() {
 
     void loadCharacter();
 
+    return () => {
+      cancelled = true;
+    };
+  }, [params.id]);
+
+  useEffect(() => {
+    if (!character?.id) return;
+
+    joinCampaign({
+      campaignId: character.id,
+      user: { id: character.id, name: character.name },
+      actorId: character.id,
+      role: "player",
+    });
+
     const unsubInit = subscribeInitiativeRequest(() => {
       setShowInitiativeModal(true);
     });
 
     const unsubDefense = subscribeDefenseRequest((payload) => {
-      if (character && payload.targetId === character.id) {
+      if (characterRef.current && payload.targetId === characterRef.current.id) {
         setDefenseRequestPayload(payload);
       }
     });
@@ -127,12 +139,11 @@ export function CharacterDetail() {
     });
 
     return () => {
-      cancelled = true;
       unsubInit();
       unsubDefense();
       unsubCombat();
     };
-  }, [params.id, character, joinCampaign, subscribeInitiativeRequest, subscribeDefenseRequest, subscribeCombatState]);
+  }, [character?.id, character?.name, joinCampaign, subscribeInitiativeRequest, subscribeDefenseRequest, subscribeCombatState]);
 
   const handleDelete = async () => {
     if (!window.confirm("Tem certeza que deseja excluir este personagem?")) {
