@@ -306,7 +306,7 @@ export function CharacterDetail() {
     if (!character) return;
 
     if (isTurnLocked) {
-      alert("🔒 Aguarde o seu turno no combate para realizar rolagens de atributo!");
+      alert("🔒 Fora do seu turno");
       return;
     }
     const stats = getDerivedStats(character.attributes, character.level);
@@ -417,8 +417,8 @@ export function CharacterDetail() {
       {/* Main Tab Content */}
       <main className="p-4 space-y-4">
         {isTurnLocked && (
-          <div className="rounded-2xl border border-amber-800/80 bg-amber-950/40 p-3 text-center text-xs font-bold text-amber-300 shadow-md">
-            🔒 Trava de Turno: Um combate está ativo e é o turno de {currentCombatant?.name}. Aguarde sua vez para realizar rolagens.
+          <div className="flex items-center justify-center gap-1.5 rounded-full border border-amber-800/60 bg-amber-950/40 px-3 py-1 text-xs font-bold text-amber-300 shadow-sm w-fit mx-auto">
+            🔒 <span>Turno de {currentCombatant?.name}</span>
           </div>
         )}
         {/* Modal de Resultado de Rolagem de Dados */}

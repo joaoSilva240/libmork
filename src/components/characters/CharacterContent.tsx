@@ -168,8 +168,8 @@ export function CharacterContent({
       )}
 
       {isTurnLocked && (
-        <div className="mb-3 rounded-xl border border-amber-800/60 bg-amber-950/40 p-2.5 text-center text-xs font-semibold text-amber-300 shadow">
-          🔒 Modo Combate Ativo: Aguarde o seu turno na rodada para realizar rolagens.
+        <div className="mb-2 flex items-center justify-center gap-1.5 rounded-full border border-amber-800/60 bg-amber-950/40 px-3 py-0.5 text-xs font-bold text-amber-300 w-fit mx-auto">
+          🔒 <span>Bloqueado (Fora do turno)</span>
         </div>
       )}
 
