@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Npc } from "@/types";
+import type { Npc, Encounter } from "@/types";
 
 type WorldOverlayProps = {
   campaignId: string;
@@ -10,16 +10,25 @@ type WorldOverlayProps = {
   onClose: () => void;
 };
 
+type WorldTab = "npcs" | "encounters";
+
 export function WorldOverlay({ campaignId, worldId, worldName, onClose }: WorldOverlayProps) {
+  const [activeTab, setActiveTab] = useState<WorldTab>("npcs");
   const [npcs, setNpcs] = useState<Npc[]>([]);
+  const [encounters, setEncounters] = useState<Encounter[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedNpc, setSelectedNpc] = useState<Npc | null>(null);
+  const [selectedEncounter, setSelectedEncounter] = useState<Encounter | null>(null);
   const [includeInCampaign, setIncludeInCampaign] = useState<Record<string, boolean>>({});
 
+  // Load NPCs
   useEffect(() => {
+    if (activeTab !== "npcs") return;
+    
     const load = async () => {
+      setIsLoading(true);
       try {
         const response = await fetch(`/api/campaigns/${campaignId}/worlds/${worldId}/npcs`);
         const data = await response.json();
@@ -38,7 +47,33 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose }: WorldO
     };
 
     void load();
-  }, [campaignId, worldId]);
+  }, [campaignId, worldId, activeTab]);
+
+  // Load Encounters
+  useEffect(() => {
+    if (activeTab !== "encounters") return;
+    
+    const load = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`/api/campaigns/${campaignId}/worlds/${worldId}/encounters`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          setError(data.error || "Erro ao carregar encontros");
+          return;
+        }
+
+        setEncounters(data.data);
+      } catch {
+        setError("Erro de conexão. Tente novamente.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void load();
+  }, [campaignId, worldId, activeTab]);
 
   const toggleInclude = async (npcId: string, currentlyIncluded: boolean) => {
     setIncludeInCampaign((prev) => ({ ...prev, [npcId]: true }));
@@ -90,8 +125,40 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose }: WorldO
     }
   };
 
+  const toggleEncounterActive = async (encounterId: string, currentlyActive: boolean) => {
+    try {
+      const response = await fetch(`/api/campaigns/${campaignId}/encounters/${encounterId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: !currentlyActive }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        setError(data.error || "Erro ao atualizar encontro");
+        return;
+      }
+
+      const result = await response.json();
+      
+      // Atualiza lista (apenas um pode estar ativo)
+      setEncounters((prev) =>
+        prev.map((enc) => ({
+          ...enc,
+          isActive: enc.id === encounterId ? result.data.isActive : false,
+        }))
+      );
+    } catch {
+      setError("Erro de conexão. Tente novamente.");
+    }
+  };
+
   const filteredNpcs = npcs.filter((npc) =>
     npc.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredEncounters = encounters.filter((enc) =>
+    enc.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -113,10 +180,43 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose }: WorldO
           </button>
         </div>
 
+        <div className="mb-3 flex gap-2 border-b border-gray-800 pb-2">
+          <button
+            onClick={() => {
+              setActiveTab("npcs");
+              setSearchQuery("");
+              setSelectedNpc(null);
+              setSelectedEncounter(null);
+            }}
+            className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+              activeTab === "npcs"
+                ? "bg-purple-600 text-white"
+                : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+            }`}
+          >
+            NPCs
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab("encounters");
+              setSearchQuery("");
+              setSelectedNpc(null);
+              setSelectedEncounter(null);
+            }}
+            className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+              activeTab === "encounters"
+                ? "bg-purple-600 text-white"
+                : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+            }`}
+          >
+            Encontros
+          </button>
+        </div>
+
         <div className="mb-3">
           <input
             type="text"
-            placeholder="Pesquisar NPCs..."
+            placeholder={activeTab === "npcs" ? "Pesquisar NPCs..." : "Pesquisar Encontros..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white focus:border-transparent focus:ring-2 focus:ring-purple-600"
@@ -136,61 +236,97 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose }: WorldO
               <div className="flex justify-center py-8">
                 <div className="h-6 w-6 animate-spin rounded-full border-4 border-gray-700 border-t-purple-600" />
               </div>
-            ) : filteredNpcs.length === 0 ? (
-              <p className="text-center text-sm text-gray-500">
-                Nenhum NPC neste mundo ainda.
-              </p>
-            ) : (
-              <div className="space-y-1">
-                {filteredNpcs.map((npc) => {
-                  const isIncluded = npc.campaigns?.some((c) => c.campaignId === campaignId) ?? false;
-                  const isBusy = includeInCampaign[npc.id] ?? false;
+            ) : activeTab === "npcs" ? (
+              filteredNpcs.length === 0 ? (
+                <p className="text-center text-sm text-gray-500">Nenhum NPC neste mundo ainda.</p>
+              ) : (
+                <div className="space-y-1">
+                  {filteredNpcs.map((npc) => {
+                    const isIncluded = npc.campaigns?.some((c) => c.campaignId === campaignId) ?? false;
+                    const isBusy = includeInCampaign[npc.id] ?? false;
 
-                  return (
+                    return (
+                      <div
+                        key={npc.id}
+                        className={`flex items-center gap-2 rounded-lg border p-2 transition-colors ${
+                          selectedNpc?.id === npc.id
+                            ? "border-purple-600 bg-purple-900/20"
+                            : "border-gray-800 bg-gray-900 hover:border-gray-700"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isIncluded}
+                          onChange={() => toggleInclude(npc.id, isIncluded)}
+                          disabled={isBusy}
+                          className="h-4 w-4 accent-purple-600 disabled:opacity-50"
+                          title={isIncluded ? "Remover da mesa" : "Incluir na mesa"}
+                        />
+                        <button
+                          onClick={() => setSelectedNpc(npc)}
+                          className="flex flex-1 items-center gap-2 text-left"
+                        >
+                          <span className="text-sm font-semibold text-white">{npc.name}</span>
+                          <span
+                            className={`rounded px-1.5 py-0.5 text-xs font-semibold ${
+                              npc.npcType === "enemy"
+                                ? "bg-red-900/80 text-red-200"
+                                : "bg-gray-800 text-gray-300"
+                            }`}
+                          >
+                            {npc.npcType === "enemy" ? "Inimigo" : "NPC"}
+                          </span>
+                          <span className="rounded bg-gray-800 px-1.5 py-0.5 text-xs text-gray-400">
+                            Nv {npc.level}
+                          </span>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
+            ) : (
+              filteredEncounters.length === 0 ? (
+                <p className="text-center text-sm text-gray-500">Nenhum encontro criado ainda.</p>
+              ) : (
+                <div className="space-y-1">
+                  {filteredEncounters.map((encounter) => (
                     <div
-                      key={npc.id}
+                      key={encounter.id}
                       className={`flex items-center gap-2 rounded-lg border p-2 transition-colors ${
-                        selectedNpc?.id === npc.id
+                        selectedEncounter?.id === encounter.id
                           ? "border-purple-600 bg-purple-900/20"
                           : "border-gray-800 bg-gray-900 hover:border-gray-700"
                       }`}
                     >
                       <input
                         type="checkbox"
-                        checked={isIncluded}
-                        onChange={() => toggleInclude(npc.id, isIncluded)}
-                        disabled={isBusy}
-                        className="h-4 w-4 accent-purple-600 disabled:opacity-50"
-                        title={isIncluded ? "Remover da mesa" : "Incluir na mesa"}
+                        checked={encounter.isActive}
+                        onChange={() => toggleEncounterActive(encounter.id, encounter.isActive)}
+                        className="h-4 w-4 accent-purple-600"
+                        title={encounter.isActive ? "Desativar" : "Ativar"}
                       />
                       <button
-                        onClick={() => setSelectedNpc(npc)}
+                        onClick={() => setSelectedEncounter(encounter)}
                         className="flex flex-1 items-center gap-2 text-left"
                       >
-                        <span className="text-sm font-semibold text-white">{npc.name}</span>
-                        <span
-                          className={`rounded px-1.5 py-0.5 text-xs font-semibold ${
-                            npc.npcType === "enemy"
-                              ? "bg-red-900/80 text-red-200"
-                              : "bg-gray-800 text-gray-300"
-                          }`}
-                        >
-                          {npc.npcType === "enemy" ? "Inimigo" : "NPC"}
-                        </span>
-                        <span className="rounded bg-gray-800 px-1.5 py-0.5 text-xs text-gray-400">
-                          Nv {npc.level}
-                        </span>
+                        <span className="text-sm font-semibold text-white">{encounter.name}</span>
+                        {encounter.isActive && (
+                          <span className="rounded bg-green-900/80 px-1.5 py-0.5 text-xs font-semibold text-green-200">
+                            Ativo
+                          </span>
+                        )}
                       </button>
                     </div>
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
+              )
             )}
           </div>
 
           {/* Detalhes */}
           <div className="w-1/2 overflow-y-auto rounded-lg border border-gray-800 bg-gray-950 p-3">
-            {selectedNpc ? (
+            {activeTab === "npcs" && selectedNpc ? (
               <div>
                 <div className="mb-3 flex items-center gap-2">
                   {selectedNpc.imageUrl && (
@@ -247,9 +383,28 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose }: WorldO
                   </div>
                 </div>
               </div>
+            ) : activeTab === "encounters" && selectedEncounter ? (
+              <div>
+                <h3 className="mb-3 text-lg font-bold text-white">{selectedEncounter.name}</h3>
+                {selectedEncounter.description && (
+                  <div className="mb-3">
+                    <p className="text-sm font-semibold text-gray-400">Descrição:</p>
+                    <p className="mt-1 text-sm text-gray-300">{selectedEncounter.description}</p>
+                  </div>
+                )}
+                <div className="mb-3">
+                  <p className="text-sm font-semibold text-gray-400">Status:</p>
+                  <p className="mt-1 text-sm text-white">
+                    {selectedEncounter.isActive ? "Ativo (em combate)" : "Inativo"}
+                  </p>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Criado em {new Date(selectedEncounter.createdAt).toLocaleDateString("pt-BR")}
+                </p>
+              </div>
             ) : (
               <p className="text-center text-sm text-gray-500">
-                Selecione um NPC para ver os detalhes
+                Selecione um item para ver os detalhes
               </p>
             )}
           </div>
