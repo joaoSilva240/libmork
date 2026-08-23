@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef } from "react";
 import type { RosterActor } from "@/components/campaigns/ActorOverlay";
 
 type CharacterCarouselProps = {
@@ -11,37 +11,6 @@ type CharacterCarouselProps = {
 
 export function CharacterCarousel({ actors, onSelect, onRemove }: CharacterCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  // Duplicate actors for infinite scroll effect
-  const infiniteActors = actors.length > 0 ? [...actors, ...actors, ...actors] : [];
-
-  useEffect(() => {
-    if (!scrollRef.current || actors.length === 0) return;
-
-    // Start at the middle set
-    const container = scrollRef.current;
-    const cardWidth = 128 + 12; // width + gap (w-32 = 128px)
-    const startPosition = actors.length * cardWidth;
-    container.scrollLeft = startPosition;
-
-    const handleScroll = () => {
-      if (!scrollRef.current) return;
-      const { scrollLeft } = scrollRef.current;
-      const sectionWidth = actors.length * cardWidth;
-
-      // If scrolled past the last set, jump back to middle
-      if (scrollLeft >= sectionWidth * 2) {
-        scrollRef.current.scrollLeft = scrollLeft - sectionWidth;
-      }
-      // If scrolled before the first set, jump forward to middle
-      else if (scrollLeft < sectionWidth) {
-        scrollRef.current.scrollLeft = scrollLeft + sectionWidth;
-      }
-    };
-
-    container.addEventListener("scroll", handleScroll);
-    return () => container.removeEventListener("scroll", handleScroll);
-  }, [actors.length]);
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
@@ -66,19 +35,21 @@ export function CharacterCarousel({ actors, onSelect, onRemove }: CharacterCarou
 
   return (
     <div className="relative flex h-full items-center overflow-hidden">
-      <button
-        onClick={() => scroll("left")}
-        className="absolute left-1 z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-800/90 text-lg text-white shadow-lg hover:bg-gray-700"
-      >
-        ‹
-      </button>
+      {actors.length > 3 && (
+        <button
+          onClick={() => scroll("left")}
+          className="absolute left-1 z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-800/90 text-lg text-white shadow-lg hover:bg-gray-700"
+        >
+          ‹
+        </button>
+      )}
 
       <div
         ref={scrollRef}
-        className="flex gap-3 overflow-x-auto px-10 scrollbar-hide"
+        className="flex gap-3 overflow-x-auto px-4 scrollbar-hide"
         style={{ scrollbarWidth: "none" }}
       >
-        {infiniteActors.map((actor, index) => {
+        {actors.map((actor) => {
           const hpPercent = Math.min(
             100,
             Math.max(0, (actor.hitPoints / Math.max(actor.hitPointsMax, 1)) * 100)
@@ -90,7 +61,7 @@ export function CharacterCarousel({ actors, onSelect, onRemove }: CharacterCarou
 
           return (
             <div
-              key={`${actor.kind}-${actor.id}-${index}`}
+              key={`${actor.kind}-${actor.id}`}
               className="group relative aspect-[3/4] w-32 shrink-0 overflow-hidden rounded-lg border border-gray-800 bg-gray-900 transition-all hover:border-purple-600 hover:scale-105"
             >
               <button
@@ -158,7 +129,7 @@ export function CharacterCarousel({ actors, onSelect, onRemove }: CharacterCarou
                     e.stopPropagation();
                     onRemove(actor.id, actor.kind);
                   }}
-                  className="absolute right-1 top-7 z-20 hidden rounded bg-red-900/80 px-1 text-[10px] font-bold text-white hover:bg-red-700 group-hover:block"
+                  className="absolute right-1 top-7 z-20 hidden rounded bg-red-900/80 px-1.5 py-0.5 text-[10px] font-bold text-white hover:bg-red-700 group-hover:block shadow"
                   title="Remover da mesa"
                 >
                   ✕
@@ -169,12 +140,14 @@ export function CharacterCarousel({ actors, onSelect, onRemove }: CharacterCarou
         })}
       </div>
 
-      <button
-        onClick={() => scroll("right")}
-        className="absolute right-1 z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-800/90 text-lg text-white shadow-lg hover:bg-gray-700"
-      >
-        ›
-      </button>
+      {actors.length > 3 && (
+        <button
+          onClick={() => scroll("right")}
+          className="absolute right-1 z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-800/90 text-lg text-white shadow-lg hover:bg-gray-700"
+        >
+          ›
+        </button>
+      )}
     </div>
   );
 }
