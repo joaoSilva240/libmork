@@ -228,7 +228,7 @@ export function CampaignDetail() {
         </div>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
+      <div className="grid gap-3 lg:grid-cols-[220px_minmax(0,1fr)_240px] xl:grid-cols-[240px_minmax(0,1fr)_260px]">
         {/* ===== Coluna esquerda — Gestão ===== */}
         <div className="space-y-3">
           <div className="rounded-lg border border-gray-800 bg-gray-900 p-3">

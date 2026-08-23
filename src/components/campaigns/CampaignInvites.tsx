@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { RosterPlayer, RosterActor } from "@/components/campaigns/ActorOverlay";
 
 type InviteData = {
   id: string;
@@ -13,6 +14,7 @@ type InviteData = {
 
 export function CampaignInvites({ campaignId }: { campaignId: string }) {
   const [invites, setInvites] = useState<InviteData[]>([]);
+  const [players, setPlayers] = useState<RosterPlayer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,29 +23,36 @@ export function CampaignInvites({ campaignId }: { campaignId: string }) {
   useEffect(() => {
     let cancelled = false;
 
-    (async () => {
+    const loadData = async () => {
       try {
-        const response = await fetch(`/api/campaigns/${campaignId}/invites`);
-        const data = await response.json();
+        const [invitesRes, rosterRes] = await Promise.all([
+          fetch(`/api/campaigns/${campaignId}/invites`),
+          fetch(`/api/campaigns/${campaignId}/roster`),
+        ]);
+
+        const invitesData = await invitesRes.json();
+        const rosterData = await rosterRes.json();
 
         if (cancelled) return;
 
-        if (!response.ok) {
-          setError(data.error || "Erro ao carregar convites");
-          return;
+        if (invitesRes.ok && invitesData.data) {
+          setInvites(invitesData.data.filter((invite: InviteData) => !invite.revoked));
         }
-
-        setInvites(data.data.filter((invite: InviteData) => !invite.revoked));
+        if (rosterRes.ok && rosterData.data) {
+          setPlayers(rosterData.data.players || []);
+        }
       } catch {
         if (!cancelled) {
-          setError("Erro de conexão. Tente novamente.");
+          setError("Erro de conexão ao carregar convites/jogadores.");
         }
       } finally {
         if (!cancelled) {
           setIsLoading(false);
         }
       }
-    })();
+    };
+
+    void loadData();
 
     return () => {
       cancelled = true;
@@ -108,61 +117,118 @@ export function CampaignInvites({ campaignId }: { campaignId: string }) {
     }
   };
 
+  const handleDragStartPlayer = (e: React.DragEvent, player: RosterPlayer) => {
+    const actor: RosterActor = {
+      kind: "character",
+      id: player.id,
+      name: player.name,
+      imageUrl: player.imageUrl,
+      level: player.level,
+      xp: player.xp,
+      hitPoints: player.hitPointsCurrent,
+      hitPointsMax: player.hitPointsMax,
+      manaPoints: player.manaPointsCurrent,
+      manaPointsMax: player.manaPointsMax,
+      conditions: player.conditions,
+    };
+    e.dataTransfer.setData("application/json", JSON.stringify(actor));
+  };
+
   return (
-    <div className="mt-4 rounded-lg border border-gray-800 bg-gray-900 p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-white">Convites de Jogadores</h3>
-        <button
-          onClick={handleGenerate}
-          disabled={isGenerating}
-          className="rounded-lg bg-purple-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
-        >
-          {isGenerating ? "Gerando..." : "+ Novo Convite"}
-        </button>
+    <div className="space-y-3 rounded-lg border border-gray-800 bg-gray-900 p-3">
+      {/* Seção Personagens Entrados na Campanha */}
+      <div>
+        <h3 className="mb-1.5 text-xs font-bold uppercase tracking-wider text-purple-400">
+          Personagens na Campanha ({players.length})
+        </h3>
+        {players.length === 0 ? (
+          <p className="text-xs text-gray-500">
+            Nenhum personagem entrou via convite ainda.
+          </p>
+        ) : (
+          <div className="space-y-1.5">
+            {players.map((player) => (
+              <div
+                key={player.id}
+                draggable
+                onDragStart={(e) => handleDragStartPlayer(e, player)}
+                className="group flex cursor-grab items-center justify-between rounded-lg border border-gray-800 bg-gray-950 p-2 transition-colors hover:border-purple-600 hover:bg-gray-900 active:cursor-grabbing"
+                title="Arraste para o carrossel na Mesa para ativar no combate"
+              >
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <span className="text-gray-500 group-hover:text-purple-400">⠿</span>
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-semibold text-white">{player.name}</p>
+                    <p className="text-[10px] text-gray-400">Nível {player.level}</p>
+                  </div>
+                </div>
+                <span className="shrink-0 rounded bg-gray-800 px-1.5 py-0.5 text-[10px] text-gray-400">
+                  Jogador
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {error && (
-        <div className="mb-3 rounded-lg border border-red-800 bg-red-900/30 p-3 text-sm text-red-300">
-          {error}
+      {/* Seção Convites de Jogadores */}
+      <div className="border-t border-gray-800 pt-3">
+        <div className="mb-2 flex items-center justify-between">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">
+            Links de Convite
+          </h3>
+          <button
+            onClick={handleGenerate}
+            disabled={isGenerating}
+            className="rounded bg-purple-600 px-2 py-1 text-xs font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
+          >
+            {isGenerating ? "..." : "+ Novo Convite"}
+          </button>
         </div>
-      )}
 
-      {isLoading ? (
-        <p className="text-sm text-gray-500">Carregando convites...</p>
-      ) : invites.length === 0 ? (
-        <p className="text-sm text-gray-400">
-          Nenhum convite ativo. Gere um link e envie aos seus jogadores.
-        </p>
-      ) : (
-        <div className="space-y-3">
-          {invites.map((invite) => (
-            <div
-              key={invite.id}
-              className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-950 p-3"
-            >
-              <input
-                type="text"
-                readOnly
-                value={invite.url}
-                className="w-full rounded-lg border border-gray-800 bg-gray-900 px-3 py-2 text-xs text-gray-400"
-                onFocus={(e) => e.target.select()}
-              />
-              <button
-                onClick={() => handleCopy(invite)}
-                className="shrink-0 rounded-lg bg-gray-800 px-3 py-2 text-xs font-medium text-white hover:bg-gray-700"
+        {error && (
+          <div className="mb-2 rounded-lg border border-red-800 bg-red-900/30 p-2 text-xs text-red-300">
+            {error}
+          </div>
+        )}
+
+        {isLoading ? (
+          <p className="text-xs text-gray-500">Carregando convites...</p>
+        ) : invites.length === 0 ? (
+          <p className="text-xs text-gray-500">
+            Nenhum convite pendente. Gere um link acima.
+          </p>
+        ) : (
+          <div className="space-y-1.5">
+            {invites.map((invite) => (
+              <div
+                key={invite.id}
+                className="flex items-center gap-1.5 rounded-lg border border-gray-800 bg-gray-950 p-1.5"
               >
-                {copiedToken === invite.token ? "Copiado!" : "Copiar"}
-              </button>
-              <button
-                onClick={() => handleRevoke(invite.id)}
-                className="shrink-0 text-xs text-red-400 hover:text-red-300"
-              >
-                Revogar
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+                <input
+                  type="text"
+                  readOnly
+                  value={invite.url}
+                  className="w-full truncate rounded border border-gray-800 bg-gray-900 px-2 py-1 text-[11px] text-gray-400"
+                  onFocus={(e) => e.target.select()}
+                />
+                <button
+                  onClick={() => handleCopy(invite)}
+                  className="shrink-0 rounded bg-gray-800 px-2 py-1 text-[11px] font-medium text-white hover:bg-gray-700"
+                >
+                  {copiedToken === invite.token ? "Copiado!" : "Copiar"}
+                </button>
+                <button
+                  onClick={() => handleRevoke(invite.id)}
+                  className="shrink-0 text-[11px] text-red-400 hover:text-red-300"
+                >
+                  Revogar
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

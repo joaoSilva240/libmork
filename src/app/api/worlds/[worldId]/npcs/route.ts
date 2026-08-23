@@ -17,14 +17,19 @@ type RouteContext = { params: Promise<{ worldId: string }> };
  * Obtém a campanha dona do mundo e verifica o papel do usuário.
  * Retorna null se não encontrado.
  */
-async function getCampaignByWorld(worldId: string) {
+async function getWorldAndPermission(worldId: string, userId: string) {
   const [world] = await db
     .select()
     .from(worlds)
     .where(eq(worlds.id, worldId))
     .limit(1);
 
-  if (!world || !world.campaignId) return null;
+  if (!world) return { world: null, allowed: false };
+
+  // Mundo global (sem campanha associada diretamente) é acessível a usuários autenticados
+  if (!world.campaignId) {
+    return { world, allowed: true };
+  }
 
   const [campaign] = await db
     .select()
@@ -32,7 +37,9 @@ async function getCampaignByWorld(worldId: string) {
     .where(eq(campaigns.id, world.campaignId))
     .limit(1);
 
-  return campaign ?? null;
+  if (!campaign) return { world: null, allowed: false };
+
+  return { world, allowed: campaign.masterId === userId };
 }
 
 /**
@@ -51,17 +58,16 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     }
 
     const { worldId } = await params;
+    const { world, allowed } = await getWorldAndPermission(worldId, session.user.id);
 
-    const campaign = await getCampaignByWorld(worldId);
-
-    if (!campaign) {
+    if (!world) {
       return NextResponse.json(
         { success: false, error: "Mundo não encontrado" },
         { status: 404 }
       );
     }
 
-    if (campaign.masterId !== session.user.id) {
+    if (!allowed) {
       return NextResponse.json(
         { success: false, error: "Sem permissão para acessar este mundo" },
         { status: 403 }
@@ -89,7 +95,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 
 /**
  * POST /api/worlds/:worldId/npcs
- * Cria um NPC no mundo (apenas o mestre da campanha).
+ * Cria um NPC no mundo.
  */
 export async function POST(request: NextRequest, { params }: RouteContext) {
   try {
@@ -103,19 +109,18 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     }
 
     const { worldId } = await params;
+    const { world, allowed } = await getWorldAndPermission(worldId, session.user.id);
 
-    const campaign = await getCampaignByWorld(worldId);
-
-    if (!campaign) {
+    if (!world) {
       return NextResponse.json(
         { success: false, error: "Mundo não encontrado" },
         { status: 404 }
       );
     }
 
-    if (campaign.masterId !== session.user.id) {
+    if (!allowed) {
       return NextResponse.json(
-        { success: false, error: "Apenas o mestre da campanha pode criar NPCs" },
+        { success: false, error: "Sem permissão para modificar este mundo" },
         { status: 403 }
       );
     }

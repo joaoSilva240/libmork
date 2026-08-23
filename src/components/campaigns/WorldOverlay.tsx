@@ -31,7 +31,7 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose }: WorldO
       setIsLoading(true);
       setError(null);
       try {
-        let response = await fetch(`/api/campaigns/${campaignId}/worlds/${worldId}/npcs`);
+        let response = await fetch(`/api/worlds/${worldId}/npcs`);
         let data = await response.json();
 
         if (!response.ok) {
@@ -54,7 +54,7 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose }: WorldO
     };
 
     void load();
-  }, [campaignId, worldId, activeTab]);
+  }, [worldId, activeTab]);
 
   // Load Encounters
   useEffect(() => {

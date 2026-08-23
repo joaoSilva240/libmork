@@ -25,7 +25,7 @@ export default function MasterLayout({
         </div>
         <LogoutButton />
       </header>
-      <main className="container mx-auto p-4">{children}</main>
+      <main className="mx-auto max-w-[1800px] p-4">{children}</main>
     </div>
   );
 }

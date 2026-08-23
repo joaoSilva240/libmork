@@ -22,6 +22,41 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<RosterActor | null>(null);
+  const [deskActors, setDeskActors] = useState<RosterActor[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const saved = localStorage.getItem(`carousel-desk-${campaignId}`);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const saveDeskActors = (newActors: RosterActor[]) => {
+    setDeskActors(newActors);
+    try {
+      localStorage.setItem(`carousel-desk-${campaignId}`, JSON.stringify(newActors));
+    } catch {}
+  };
+
+  const handleDropActor = (e: React.DragEvent) => {
+    e.preventDefault();
+    try {
+      const dataStr = e.dataTransfer.getData("application/json");
+      if (!dataStr) return;
+      const actor: RosterActor = JSON.parse(dataStr);
+      if (actor && actor.id) {
+        if (!deskActors.some((a) => a.id === actor.id && a.kind === actor.kind)) {
+          saveDeskActors([...deskActors, actor]);
+        }
+      }
+    } catch {}
+  };
+
+  const handleRemoveDeskActor = (actorId: string, kind: string) => {
+    const updated = deskActors.filter((a) => !(a.id === actorId && a.kind === kind));
+    saveDeskActors(updated);
+  };
 
   const loadRoster = useCallback(async () => {
     try {
@@ -276,8 +311,16 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
       </div>
 
       {/* Carrossel de personagens fixo na parte inferior */}
-      <div className="h-48 rounded-b-lg border border-gray-800 bg-gray-900/50 p-2">
-        <CharacterCarousel actors={actors} onSelect={setSelected} />
+      <div
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={handleDropActor}
+        className="h-48 rounded-b-lg border border-gray-800 bg-gray-900/50 p-2"
+      >
+        <CharacterCarousel
+          actors={deskActors}
+          onSelect={setSelected}
+          onRemove={handleRemoveDeskActor}
+        />
       </div>
 
       {selected && (

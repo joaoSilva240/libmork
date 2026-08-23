@@ -18,7 +18,7 @@ import {
 } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { getCampaignAsMaster } from "@/lib/auth/campaign-access";
-import { eq, inArray, and } from "drizzle-orm";
+import { eq, inArray, and, or, isNull } from "drizzle-orm";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const campaignWorlds = await db
       .select()
       .from(worlds)
-      .where(eq(worlds.campaignId, id));
+      .where(or(eq(worlds.campaignId, id), isNull(worlds.campaignId)));
 
     const worldNpcs = campaignWorlds.length
       ? await db
