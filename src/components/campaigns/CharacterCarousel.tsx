@@ -69,7 +69,7 @@ export function CharacterCarousel({
   }
 
   return (
-    <div className="relative flex h-full items-center overflow-hidden">
+    <div className="relative flex h-full items-center">
       {sortedActors.length > 3 && (
         <button
           onClick={() => scroll("left")}
@@ -81,7 +81,7 @@ export function CharacterCarousel({
 
       <div
         ref={scrollRef}
-        className="flex items-center gap-4 overflow-x-auto px-6 py-2 scrollbar-hide w-full"
+        className="flex items-center gap-4 overflow-x-auto px-6 py-4 scrollbar-hide w-full"
         style={{ scrollbarWidth: "none" }}
       >
         {sortedActors.map((actor) => {

@@ -508,7 +508,7 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
       <div
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDropActor}
-        className="h-48 rounded-b-lg border border-gray-800 bg-gray-900/50 p-2"
+        className="min-h-[220px] h-56 rounded-b-lg border border-gray-800 bg-gray-900/50 p-2 overflow-visible"
       >
         <CharacterCarousel
           actors={deskActors.length > 0 ? deskActors : actors}
