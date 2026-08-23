@@ -37,6 +37,19 @@ export interface RollDataPayload {
   timestamp?: string;
 }
 
+import type { CombatSessionState, PendingDefenseReaction } from "@/lib/engine";
+
+export interface DefenseReactionRequestPayload extends PendingDefenseReaction {
+  campaignId: string;
+}
+
+export interface DefenseReactionResponsePayload {
+  campaignId: string;
+  reactionId: string;
+  targetId: string;
+  reaction: "dodge" | "block";
+}
+
 interface SocketContextValue {
   socket: Socket | null;
   isConnected: boolean;
@@ -45,8 +58,16 @@ interface SocketContextValue {
   leaveCampaign: (campaignId: string) => void;
   updateActorStatus: (payload: ActorStatusPayload) => void;
   rollDice: (rollPayload: RollDataPayload) => void;
+  updateCombatState: (combatState: CombatSessionState) => void;
+  requestInitiativeRoll: (campaignId: string) => void;
+  requestDefenseReaction: (payload: DefenseReactionRequestPayload) => void;
+  respondDefenseReaction: (payload: DefenseReactionResponsePayload) => void;
   subscribeActorStatus: (handler: (payload: ActorStatusPayload) => void) => () => void;
   subscribeDiceRoll: (handler: (roll: RollDataPayload) => void) => () => void;
+  subscribeCombatState: (handler: (state: CombatSessionState) => void) => () => void;
+  subscribeInitiativeRequest: (handler: (payload: { campaignId: string }) => void) => () => void;
+  subscribeDefenseRequest: (handler: (payload: DefenseReactionRequestPayload) => void) => () => void;
+  subscribeDefenseResponse: (handler: (payload: DefenseReactionResponsePayload) => void) => () => void;
 }
 
 const SocketContext = createContext<SocketContextValue | undefined>(undefined);
@@ -58,6 +79,10 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   const socketRef = useRef<Socket | null>(null);
   const statusSubscribersRef = useRef<Set<(payload: ActorStatusPayload) => void>>(new Set());
   const rollSubscribersRef = useRef<Set<(roll: RollDataPayload) => void>>(new Set());
+  const combatSubscribersRef = useRef<Set<(state: CombatSessionState) => void>>(new Set());
+  const initRequestSubscribersRef = useRef<Set<(payload: { campaignId: string }) => void>>(new Set());
+  const defenseRequestSubscribersRef = useRef<Set<(payload: DefenseReactionRequestPayload) => void>>(new Set());
+  const defenseResponseSubscribersRef = useRef<Set<(payload: DefenseReactionResponsePayload) => void>>(new Set());
 
   useEffect(() => {
     // Inicializa a conexão Socket.IO na mesma origem
@@ -96,6 +121,22 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
     socketInstance.on("dice-rolled", (rollData: RollDataPayload) => {
       rollSubscribersRef.current.forEach((handler) => handler(rollData));
+    });
+
+    socketInstance.on("combat-state-updated", (state: CombatSessionState) => {
+      combatSubscribersRef.current.forEach((handler) => handler(state));
+    });
+
+    socketInstance.on("initiative-roll-requested", (payload: { campaignId: string }) => {
+      initRequestSubscribersRef.current.forEach((handler) => handler(payload));
+    });
+
+    socketInstance.on("defense-reaction-requested", (payload: DefenseReactionRequestPayload) => {
+      defenseRequestSubscribersRef.current.forEach((handler) => handler(payload));
+    });
+
+    socketInstance.on("defense-reaction-responded", (payload: DefenseReactionResponsePayload) => {
+      defenseResponseSubscribersRef.current.forEach((handler) => handler(payload));
     });
 
     return () => {
@@ -147,6 +188,46 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     [socket]
   );
 
+  const updateCombatState = useCallback(
+    (combatState: CombatSessionState) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("update-combat-state", combatState);
+      }
+    },
+    [socket]
+  );
+
+  const requestInitiativeRoll = useCallback(
+    (campaignId: string) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("request-initiative-roll", { campaignId });
+      }
+    },
+    [socket]
+  );
+
+  const requestDefenseReaction = useCallback(
+    (payload: DefenseReactionRequestPayload) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("request-defense-reaction", payload);
+      }
+    },
+    [socket]
+  );
+
+  const respondDefenseReaction = useCallback(
+    (payload: DefenseReactionResponsePayload) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("respond-defense-reaction", payload);
+      }
+    },
+    [socket]
+  );
+
   const subscribeActorStatus = useCallback((handler: (payload: ActorStatusPayload) => void) => {
     statusSubscribersRef.current.add(handler);
     return () => {
@@ -161,6 +242,34 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  const subscribeCombatState = useCallback((handler: (state: CombatSessionState) => void) => {
+    combatSubscribersRef.current.add(handler);
+    return () => {
+      combatSubscribersRef.current.delete(handler);
+    };
+  }, []);
+
+  const subscribeInitiativeRequest = useCallback((handler: (payload: { campaignId: string }) => void) => {
+    initRequestSubscribersRef.current.add(handler);
+    return () => {
+      initRequestSubscribersRef.current.delete(handler);
+    };
+  }, []);
+
+  const subscribeDefenseRequest = useCallback((handler: (payload: DefenseReactionRequestPayload) => void) => {
+    defenseRequestSubscribersRef.current.add(handler);
+    return () => {
+      defenseRequestSubscribersRef.current.delete(handler);
+    };
+  }, []);
+
+  const subscribeDefenseResponse = useCallback((handler: (payload: DefenseReactionResponsePayload) => void) => {
+    defenseResponseSubscribersRef.current.add(handler);
+    return () => {
+      defenseResponseSubscribersRef.current.delete(handler);
+    };
+  }, []);
+
   return (
     <SocketContext.Provider
       value={{
@@ -171,8 +280,16 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         leaveCampaign,
         updateActorStatus,
         rollDice,
+        updateCombatState,
+        requestInitiativeRoll,
+        requestDefenseReaction,
+        respondDefenseReaction,
         subscribeActorStatus,
         subscribeDiceRoll,
+        subscribeCombatState,
+        subscribeInitiativeRequest,
+        subscribeDefenseRequest,
+        subscribeDefenseResponse,
       }}
     >
       {children}

@@ -8,6 +8,8 @@ import { InfiniteCanvas } from "@/components/campaigns/InfiniteCanvas";
 import { CharacterCarousel } from "@/components/campaigns/CharacterCarousel";
 import { EncounterModal } from "@/components/campaigns/EncounterModal";
 import { useSocket, type RollDataPayload } from "@/context/SocketContext";
+import { CombatTrackerModal } from "@/components/combat/CombatTrackerModal";
+import type { CombatSessionState } from "@/lib/engine";
 
 type RosterData = {
   players: RosterPlayer[];
@@ -15,12 +17,14 @@ type RosterData = {
 };
 
 export function MasterRoster({ campaignId }: { campaignId: string }) {
-  const { isConnected, presenceList, joinCampaign, subscribeActorStatus, subscribeDiceRoll } = useSocket();
+  const { isConnected, presenceList, joinCampaign, subscribeActorStatus, subscribeDiceRoll, subscribeCombatState } = useSocket();
   const [roster, setRoster] = useState<RosterData>({ players: [], npcs: [] });
   const [worlds, setWorlds] = useState<World[]>([]);
   const [selectedWorldId, setSelectedWorldId] = useState<string>("");
   const [activeEncounter, setActiveEncounter] = useState<Encounter | null>(null);
   const [showEncounterModal, setShowEncounterModal] = useState(false);
+  const [combatState, setCombatState] = useState<CombatSessionState | null>(null);
+  const [showCombatTrackerModal, setShowCombatTrackerModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<RosterActor | null>(null);
@@ -232,10 +236,15 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
 
     void checkActive();
 
+    const unsubscribeCombat = subscribeCombatState((state) => {
+      setCombatState(state);
+    });
+
     return () => {
       cancelled = true;
+      unsubscribeCombat();
     };
-  }, [campaignId, selectedWorldId]);
+  }, [campaignId, selectedWorldId, subscribeCombatState]);
 
   const handleEndEncounter = async () => {
     if (!activeEncounter) return;
@@ -429,6 +438,12 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
         </div>
 
         <div className="flex gap-2">
+          <button
+            onClick={() => setShowCombatTrackerModal(true)}
+            className="rounded bg-purple-600/80 px-2 py-1 text-xs font-semibold text-purple-100 hover:bg-purple-600 border border-purple-500/40"
+          >
+            ⚔️ Painel de Iniciativa {combatState?.active ? "(Rodada " + combatState.round + ")" : ""}
+          </button>
           {activeEncounter ? (
             <button
               onClick={handleEndEncounter}
@@ -479,6 +494,25 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
           onEncounterStarted={() => {
             void checkActiveEncounter();
           }}
+        />
+      )}
+
+      {showCombatTrackerModal && (
+        <CombatTrackerModal
+          campaignId={campaignId}
+          combatState={combatState}
+          availableActors={(deskActors.length > 0 ? deskActors : actors).map((a) => ({
+            id: a.id,
+            name: a.name,
+            type: a.kind === "npc" ? "npc" : "character",
+            vigor: (a as unknown as { attributes?: { vigor?: number } }).attributes?.vigor ?? 10,
+            destreza: (a as unknown as { attributes?: { destreza?: number } }).attributes?.destreza ?? 10,
+            level: a.level ?? 1,
+            hpCurrent: a.hitPoints ?? 15,
+            hpMax: a.hitPointsMax ?? 15,
+            avatarUrl: a.imageUrl,
+          }))}
+          onClose={() => setShowCombatTrackerModal(false)}
         />
       )}
     </div>

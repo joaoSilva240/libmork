@@ -17,7 +17,10 @@ import {
   InventoryFilledIcon,
   SettingsFilledIcon,
 } from "@/components/ui/Icons";
-import { useSocket } from "@/context/SocketContext";
+import { useSocket, type DefenseReactionRequestPayload } from "@/context/SocketContext";
+import { DefenseReactionModal } from "@/components/combat/DefenseReactionModal";
+import { DeathSaveModal } from "@/components/combat/DeathSaveModal";
+import type { CombatSessionState } from "@/lib/engine";
 
 type TabType = "status" | "skills" | "inventory" | "settings";
 
@@ -40,7 +43,15 @@ const ATTRIBUTE_ICONS: Record<Attribute, string> = {
 export function CharacterDetail() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { updateActorStatus, rollDice, isConnected } = useSocket();
+  const {
+    updateActorStatus,
+    rollDice,
+    isConnected,
+    subscribeInitiativeRequest,
+    subscribeDefenseRequest,
+    subscribeCombatState,
+    respondDefenseReaction,
+  } = useSocket();
 
   const [character, setCharacter] = useState<Character | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,6 +59,12 @@ export function CharacterDetail() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>("status");
   const [isMutatingHpMp, setIsMutatingHpMp] = useState(false);
+
+  // Combate & Interações ao vivo
+  const [combatState, setCombatState] = useState<CombatSessionState | null>(null);
+  const [showInitiativeModal, setShowInitiativeModal] = useState(false);
+  const [manualInitiative, setManualInitiative] = useState("");
+  const [defenseRequestPayload, setDefenseRequestPayload] = useState<DefenseReactionRequestPayload | null>(null);
 
   // Rolagem de Dados
   const [activeRollResult, setActiveRollResult] = useState<{
@@ -86,10 +103,27 @@ export function CharacterDetail() {
 
     void loadCharacter();
 
+    const unsubInit = subscribeInitiativeRequest(() => {
+      setShowInitiativeModal(true);
+    });
+
+    const unsubDefense = subscribeDefenseRequest((payload) => {
+      if (character && payload.targetId === character.id) {
+        setDefenseRequestPayload(payload);
+      }
+    });
+
+    const unsubCombat = subscribeCombatState((state) => {
+      setCombatState(state);
+    });
+
     return () => {
       cancelled = true;
+      unsubInit();
+      unsubDefense();
+      unsubCombat();
     };
-  }, [params.id]);
+  }, [params.id, character, subscribeInitiativeRequest, subscribeDefenseRequest, subscribeCombatState]);
 
   const handleDelete = async () => {
     if (!window.confirm("Tem certeza que deseja excluir este personagem?")) {
@@ -148,6 +182,85 @@ export function CharacterDetail() {
     } finally {
       setIsMutatingHpMp(false);
     }
+  };
+
+  const handleRespondDefense = async (
+    reaction: "dodge" | "block",
+    details: string,
+    damageTaken: number
+  ) => {
+    if (!character || !defenseRequestPayload) return;
+
+    if (damageTaken > 0) {
+      await handleModifyHpMp(-damageTaken, 0);
+    }
+
+    rollDice({
+      campaignId: defenseRequestPayload.campaignId,
+      actorId: character.id,
+      actorName: character.name,
+      rollType: "defesa",
+      formula: reaction === "dodge" ? "Esquiva (Estática)" : "Bloqueio (Mitigação)",
+      result: damageTaken,
+      diceDetail: details,
+    });
+
+    respondDefenseReaction({
+      campaignId: defenseRequestPayload.campaignId,
+      reactionId: defenseRequestPayload.id,
+      targetId: character.id,
+      reaction,
+    });
+
+    setDefenseRequestPayload(null);
+  };
+
+  const handleSendInitiative = (val?: number) => {
+    if (!character) return;
+    const finalVal = val ?? (Number(manualInitiative) || Math.floor(Math.random() * 20) + 1);
+
+    rollDice({
+      campaignId: "global",
+      actorId: character.id,
+      actorName: character.name,
+      rollType: "iniciativa",
+      formula: "1d20 + Iniciativa",
+      result: finalVal,
+      diceDetail: `Rolou ${finalVal} para Iniciativa`,
+    });
+
+    setShowInitiativeModal(false);
+    setManualInitiative("");
+  };
+
+  const handlePhoenixRebirth = async (newLevel: number, newHpMax: number, newManaMax: number) => {
+    if (!character) return;
+    try {
+      const res = await fetch(`/api/characters/${character.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          level: newLevel,
+          hitPointsMax: newHpMax,
+          hitPointsCurrent: Math.floor(newHpMax * 0.5),
+          manaPointsMax: newManaMax,
+          manaPointsCurrent: Math.floor(newManaMax * 0.5),
+        }),
+      });
+
+      if (res.ok) {
+        const updated = await res.json();
+        setCharacter(updated.data);
+      }
+    } catch {
+      setError("Erro ao processar Renascimento Fênix.");
+    }
+  };
+
+  const handlePermanentDeath = async (shadowPoints: number) => {
+    if (!character) return;
+    alert(`Personagem finalizado com Morte Definitiva. Você recebeu ${shadowPoints} Pontos de Sombra!`);
+    router.push("/player");
   };
 
   const handleRollAttribute = (attr: Attribute) => {
@@ -233,6 +346,18 @@ export function CharacterDetail() {
           </span>
         </div>
       </header>
+
+      {/* Banner de Combate Ativo */}
+      {combatState?.active && combatState.combatants.length > 0 && (
+        <div className="bg-purple-950/80 border-b border-purple-800/60 px-4 py-2 text-xs flex items-center justify-between">
+          <span className="font-bold text-purple-300 flex items-center gap-1.5">
+            ⚔️ Combate Rodada {combatState.round}
+          </span>
+          <span className="text-gray-300">
+            Turno: <strong className="text-white">{combatState.combatants[combatState.currentTurnIndex]?.name}</strong>
+          </span>
+        </div>
+      )}
 
       {/* Main Tab Content */}
       <main className="p-4 space-y-4">
@@ -564,6 +689,82 @@ export function CharacterDetail() {
           </button>
         </div>
       </nav>
+
+      {/* Pop-up Requisitado pelo Mestre: Rolar Iniciativa (RF-039) */}
+      {showInitiativeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md">
+          <div className="flex w-full max-w-xs flex-col rounded-3xl border border-purple-600 bg-gray-950 p-6 text-center shadow-2xl space-y-4">
+            <span className="text-4xl">⚔️</span>
+            <h3 className="text-lg font-bold text-white">REQUISITADO PELO MESTRE</h3>
+            <p className="text-xs text-purple-300">Role seu teste de Iniciativa para a rodada de combate!</p>
+
+            <div className="space-y-2">
+              <button
+                onClick={() => {
+                  const mod = Math.floor(((character?.attributes?.destreza ?? 10) - 10) / 2);
+                  const die = Math.floor(Math.random() * 20) + 1;
+                  handleSendInitiative(die + mod);
+                }}
+                className="w-full rounded-2xl bg-purple-600 py-3 text-sm font-bold text-white shadow-lg hover:bg-purple-500"
+              >
+                🎲 Rolar Digitalmente (1d20 + Mod)
+              </button>
+
+              <div className="flex items-center gap-2 pt-2 border-t border-gray-800">
+                <input
+                  type="number"
+                  placeholder="Ou digite o dado físico..."
+                  value={manualInitiative}
+                  onChange={(e) => setManualInitiative(e.target.value)}
+                  className="w-full rounded-xl border border-gray-800 bg-gray-900 px-3 py-2 text-center text-xs text-white"
+                />
+                <button
+                  onClick={() => handleSendInitiative()}
+                  disabled={!manualInitiative}
+                  className="rounded-xl bg-purple-900 px-3 py-2 text-xs font-bold text-purple-200 disabled:opacity-40"
+                >
+                  Enviar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Reação Defensiva quando Atacado (RF-066) */}
+      {defenseRequestPayload && character && (
+        <DefenseReactionModal
+          requestPayload={defenseRequestPayload}
+          targetVigor={character.attributes.vigor}
+          targetDestreza={character.attributes.destreza}
+          targetLevel={character.level}
+          onRespond={handleRespondDefense}
+          onClose={() => setDefenseRequestPayload(null)}
+        />
+      )}
+
+      {/* Overlay de Morte / Caveira a 0 HP (RF-042, RF-043, RF-044) */}
+      {character && character.hitPointsCurrent <= 0 && (
+        <DeathSaveModal
+          characterName={character.name}
+          level={character.level}
+          vigor={character.attributes.vigor}
+          inteligencia={character.attributes.inteligencia}
+          onRollDeathSave={(_success, _die, _dc, details) => {
+            rollDice({
+              campaignId: character.id,
+              actorId: character.id,
+              actorName: character.name,
+              rollType: "salvaguarda_morte",
+              formula: "1d20 seco",
+              result: _die,
+              diceDetail: details,
+            });
+          }}
+          onPhoenixRebirth={handlePhoenixRebirth}
+          onPermanentDeath={handlePermanentDeath}
+        />
+      )}
     </div>
   );
 }

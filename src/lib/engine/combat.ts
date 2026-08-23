@@ -9,6 +9,209 @@ import { getModifier, getBlockValue } from "./attributes";
 /** Tipo de reação defensiva (D-41) */
 export type DefenseReaction = "dodge" | "block";
 
+/** Dados de um combatente na ordem de iniciativa */
+export interface Combatant {
+  id: string;
+  name: string;
+  type: "character" | "npc";
+  characterId?: string;
+  npcId?: string;
+  initiative: number;
+  actionsRemaining: number;
+  maxActions: number;
+  hpCurrent: number;
+  hpMax: number;
+  vigor: number;
+  destreza: number;
+  level: number;
+  avatarUrl?: string | null;
+  isFallen?: boolean;
+  deathSavesSuccess?: number;
+  deathSavesFailure?: number;
+  isDead?: boolean;
+}
+
+/** Solicitação pendente de reação defensiva */
+export interface PendingDefenseReaction {
+  id: string;
+  attackerId: string;
+  attackerName: string;
+  targetId: string;
+  targetName: string;
+  rawDamage: number;
+  attackRoll: number;
+  isPhysical: boolean;
+  actionName?: string;
+}
+
+/** Estado completo de uma sessão de combate */
+export interface CombatSessionState {
+  id: string;
+  campaignId: string;
+  active: boolean;
+  round: number;
+  currentTurnIndex: number;
+  combatants: Combatant[];
+  pendingReaction: PendingDefenseReaction | null;
+  logs: Array<{ id: string; timestamp: string; message: string }>;
+}
+
+/**
+ * Cria uma nova sessão de combate ordenando combatentes por iniciativa descendente (RF-039).
+ */
+export function createCombatSession(
+  campaignId: string,
+  rawCombatants: Array<Omit<Combatant, "actionsRemaining" | "maxActions">>
+): CombatSessionState {
+  const sorted = [...rawCombatants].sort((a, b) => b.initiative - a.initiative);
+
+  const combatants: Combatant[] = sorted.map((c) => ({
+    ...c,
+    actionsRemaining: 3,
+    maxActions: 3,
+    deathSavesSuccess: c.deathSavesSuccess ?? 0,
+    deathSavesFailure: c.deathSavesFailure ?? 0,
+  }));
+
+  return {
+    id: `combat_${Date.now()}`,
+    campaignId,
+    active: true,
+    round: 1,
+    currentTurnIndex: 0,
+    combatants,
+    pendingReaction: null,
+    logs: [
+      {
+        id: `log_${Date.now()}`,
+        timestamp: new Date().toLocaleTimeString(),
+        message: "Combate iniciado! Ordem de iniciativa definida.",
+      },
+    ],
+  };
+}
+
+/**
+ * Avança o turno no combate (RF-040, RF-062).
+ * Reinicia as 3 ações do próximo combatente e incrementa o round se der a volta.
+ */
+export function advanceCombatTurn(session: CombatSessionState): CombatSessionState {
+  if (!session.active || session.combatants.length === 0) return session;
+
+  let nextIndex = session.currentTurnIndex + 1;
+  let newRound = session.round;
+
+  if (nextIndex >= session.combatants.length) {
+    nextIndex = 0;
+    newRound += 1;
+  }
+
+  const updatedCombatants = session.combatants.map((c, idx) => {
+    if (idx === nextIndex) {
+      return { ...c, actionsRemaining: c.maxActions || 3 };
+    }
+    return c;
+  });
+
+  const nextCombatant = updatedCombatants[nextIndex];
+
+  return {
+    ...session,
+    round: newRound,
+    currentTurnIndex: nextIndex,
+    combatants: updatedCombatants,
+    logs: [
+      {
+        id: `log_${Date.now()}_${Math.random()}`,
+        timestamp: new Date().toLocaleTimeString(),
+        message: `Turno de ${nextCombatant.name} (Rodada ${newRound}). Ações: ${nextCombatant.actionsRemaining}/3`,
+      },
+      ...session.logs.slice(0, 49),
+    ],
+  };
+}
+
+/**
+ * Consome ações do turno do combatente atual (RF-040, RF-062).
+ */
+export function spendCombatActions(
+  session: CombatSessionState,
+  combatantId: string,
+  actionCost: number
+): { session: CombatSessionState; success: boolean; message: string } {
+  const currentCombatant = session.combatants[session.currentTurnIndex];
+  if (!currentCombatant || currentCombatant.id !== combatantId) {
+    return { session, success: false, message: "Não é o turno deste combatente." };
+  }
+
+  if (currentCombatant.actionsRemaining < actionCost) {
+    return {
+      session,
+      success: false,
+      message: `Ações insuficientes (${currentCombatant.actionsRemaining}/${actionCost} necessárias).`,
+    };
+  }
+
+  const updatedCombatants = session.combatants.map((c) => {
+    if (c.id === combatantId) {
+      return { ...c, actionsRemaining: Math.max(0, c.actionsRemaining - actionCost) };
+    }
+    return c;
+  });
+
+  return {
+    session: { ...session, combatants: updatedCombatants },
+    success: true,
+    message: `${currentCombatant.name} usou ${actionCost} ação(ões). Restam: ${currentCombatant.actionsRemaining - actionCost}`,
+  };
+}
+
+/**
+ * Processa a rolagem de salvaguarda de morte (RF-042).
+ * Dificuldade = 10 - mod Vigor.
+ * 3 Sucessos -> Estabilizado (remove Caído).
+ * 3 Falhas -> Morto.
+ */
+export function processDeathSaveRoll(
+  currentSuccesses: number,
+  currentFailures: number,
+  dieRoll: number,
+  vigorMod: number
+): {
+  success: boolean;
+  dieRoll: number;
+  dc: number;
+  newSuccesses: number;
+  newFailures: number;
+  isStabilized: boolean;
+  isDead: boolean;
+  details: string;
+} {
+  const dc = 10 - vigorMod;
+  const isSuccess = dieRoll >= dc;
+
+  const newSuccesses = isSuccess ? currentSuccesses + 1 : currentSuccesses;
+  const newFailures = !isSuccess ? currentFailures + 1 : currentFailures;
+
+  const isStabilized = newSuccesses >= 3;
+  const isDead = newFailures >= 3;
+
+  const details = isSuccess
+    ? `D20 [${dieRoll}] >= CD ${dc}: Sucesso no teste de morte (${newSuccesses}/3)!`
+    : `D20 [${dieRoll}] < CD ${dc}: Falha no teste de morte (${newFailures}/3)!`;
+
+  return {
+    success: isSuccess,
+    dieRoll,
+    dc,
+    newSuccesses,
+    newFailures,
+    isStabilized,
+    isDead,
+    details,
+  };
+}
+
 /**
  * Calcula o dano efetivo após reação defensiva (D-19, D-24).
  *

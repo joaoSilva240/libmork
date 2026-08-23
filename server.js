@@ -90,6 +90,27 @@ app.prepare().then(() => {
       io.to(`campaign:${rollData.campaignId}`).emit("dice-rolled", rollData);
     });
 
+    // Eventos do Motor de Combate (Fase 4 - RF-039, RF-040, RF-041, RF-047, RF-066)
+    socket.on("update-combat-state", (combatState) => {
+      if (!combatState || !combatState.campaignId) return;
+      io.to(`campaign:${combatState.campaignId}`).emit("combat-state-updated", combatState);
+    });
+
+    socket.on("request-initiative-roll", (payload) => {
+      if (!payload || !payload.campaignId) return;
+      io.to(`campaign:${payload.campaignId}`).emit("initiative-roll-requested", payload);
+    });
+
+    socket.on("request-defense-reaction", (reactionPrompt) => {
+      if (!reactionPrompt || !reactionPrompt.campaignId) return;
+      io.to(`campaign:${reactionPrompt.campaignId}`).emit("defense-reaction-requested", reactionPrompt);
+    });
+
+    socket.on("respond-defense-reaction", (responsePayload) => {
+      if (!responsePayload || !responsePayload.campaignId) return;
+      io.to(`campaign:${responsePayload.campaignId}`).emit("defense-reaction-responded", responsePayload);
+    });
+
     // Sair explicitamente de uma campanha
     socket.on("leave-campaign", ({ campaignId }) => {
       if (!campaignId) return;
