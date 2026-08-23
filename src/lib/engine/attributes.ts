@@ -8,8 +8,6 @@ import {
   ATTRIBUTE_BASE_VALUE,
   ATTRIBUTE_FREE_POINTS,
   ATTRIBUTES,
-  BASE_TRAINED_SKILLS,
-  INTELLIGENCE_PER_EXTRA_SKILL,
 } from "@/lib/utils/constants";
 import type { Attribute } from "@/lib/utils/constants";
 
@@ -50,10 +48,10 @@ export function getBlockValue(vigor: number, level: number): number {
 
 /**
  * Calcula o número de perícias treinadas disponíveis (D-40).
- * Fórmula: 3 + (pontos em Inteligência ÷ 2, arredondado para baixo)
+ * Fórmula: igual ao cálculo de mitigação (Inteligência ÷ 2, arredondado para baixo × Nível)
  */
-export function getTrainedSkillSlots(inteligencia: number): number {
-  return BASE_TRAINED_SKILLS + Math.floor(inteligencia / INTELLIGENCE_PER_EXTRA_SKILL);
+export function getTrainedSkillSlots(inteligencia: number, level: number = 1): number {
+  return Math.floor(inteligencia / 2) * level;
 }
 
 /**
@@ -64,7 +62,7 @@ export function getDerivedStats(attributes: AttributeMap, level: number) {
     hitPointsMax: getMaxHitPoints(attributes.vigor, level),
     manaPointsMax: getMaxManaPoints(attributes.inteligencia, level),
     block: getBlockValue(attributes.vigor, level),
-    trainedSkillSlots: getTrainedSkillSlots(attributes.inteligencia),
+    trainedSkillSlots: getTrainedSkillSlots(attributes.inteligencia, level),
     modifiers: Object.fromEntries(
       ATTRIBUTES.map((attr) => [attr, getModifier(attributes[attr])]),
     ) as Record<Attribute, number>,

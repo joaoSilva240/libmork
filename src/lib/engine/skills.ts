@@ -32,6 +32,7 @@ export function getSkillTestModifier(
 export function canTrainMoreSkills(
   currentTrainedCount: number,
   inteligencia: number,
+  level: number = 1,
 ): boolean {
-  return currentTrainedCount < getTrainedSkillSlots(inteligencia);
+  return currentTrainedCount < getTrainedSkillSlots(inteligencia, level);
 }
