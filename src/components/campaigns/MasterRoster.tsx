@@ -58,7 +58,7 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
     saveDeskActors(updated);
   };
 
-  const loadRoster = useCallback(async () => {
+  const handleRosterChanged = useCallback(async () => {
     try {
       const response = await fetch(`/api/campaigns/${campaignId}/roster`);
       const data = await response.json();
@@ -69,10 +69,50 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
       }
 
       setRoster(data.data);
+
+      const playersList: RosterPlayer[] = data.data.players || [];
+      const npcsList: Npc[] = data.data.npcs || [];
+
+      setDeskActors((prev) => {
+        const updated = prev.map((actor) => {
+          if (actor.kind === "character") {
+            const freshPlayer = playersList.find((p) => p.id === actor.id);
+            if (freshPlayer) {
+              return {
+                ...actor,
+                level: freshPlayer.level,
+                xp: freshPlayer.xp,
+                hitPoints: freshPlayer.hitPointsCurrent,
+                hitPointsMax: freshPlayer.hitPointsMax,
+                manaPoints: freshPlayer.manaPointsCurrent,
+                manaPointsMax: freshPlayer.manaPointsMax,
+                conditions: freshPlayer.conditions,
+              };
+            }
+          } else if (actor.kind === "npc") {
+            const freshNpc = npcsList.find((n) => n.id === actor.id);
+            if (freshNpc) {
+              return {
+                ...actor,
+                level: freshNpc.level,
+                xp: freshNpc.xp,
+                hitPoints: freshNpc.hitPoints,
+                hitPointsMax: freshNpc.hitPointsMax,
+                manaPoints: freshNpc.manaPoints,
+                manaPointsMax: freshNpc.manaPointsMax,
+              };
+            }
+          }
+          return actor;
+        });
+
+        try {
+          localStorage.setItem(`carousel-desk-${campaignId}`, JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
     } catch {
       setError("Erro de conexão. Tente novamente.");
-    } finally {
-      setIsLoading(false);
     }
   }, [campaignId]);
 
@@ -328,7 +368,7 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
           campaignId={campaignId}
           actor={selected}
           onClose={() => setSelected(null)}
-          onChanged={loadRoster}
+          onChanged={handleRosterChanged}
         />
       )}
 

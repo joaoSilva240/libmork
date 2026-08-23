@@ -42,6 +42,7 @@ export type ContentCategory = "items" | "spells" | "abilities" | "skills";
 
 export type ManagedContentItem = {
   id: string;
+  junctionId?: string;
   name: string;
   category: ContentCategory;
   description?: string | null;
@@ -81,37 +82,40 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
   const [managedContents, setManagedContents] = useState<ManagedContentItem[]>([]);
   const [contentSearch, setContentSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<ContentCategory | "all">("all");
-  const [inventoryItems, setInventoryItems] = useState<ManagedContentItem[]>(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      const saved = localStorage.getItem(`inventory-${actor.kind}-${actor.id}`);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [inventoryItems, setInventoryItems] = useState<ManagedContentItem[]>([]);
 
-  // Carregar Conteúdos Gerenciados Selecionados
+  // Carregar Conteúdos Gerenciados da Campanha e Inventário da Ficha do DB
   useEffect(() => {
     let cancelled = false;
 
-    const loadManagedContents = async () => {
+    const loadAll = async () => {
       try {
         const categories: ContentCategory[] = ["items", "spells", "abilities", "skills"];
-        const promises = categories.map((cat) =>
+        
+        // 1. Conteúdos da campanha
+        const managedPromises = categories.map((cat) =>
           fetch(`/api/campaigns/${campaignId}/content/${cat}`).then((r) => r.json())
         );
 
-        const results = await Promise.all(promises);
+        // 2. Inventário do personagem do DB se for character
+        const inventoryPromises = actor.kind === "character"
+          ? categories.map((cat) => fetch(`/api/characters/${actor.id}/content/${cat}`).then((r) => r.json()))
+          : [];
+
+        const [managedResults, inventoryResults] = await Promise.all([
+          Promise.all(managedPromises),
+          Promise.all(inventoryPromises),
+        ]);
 
         if (cancelled) return;
 
-        const allItems: ManagedContentItem[] = [];
+        // Processar Conteúdos da Campanha
+        const allManaged: ManagedContentItem[] = [];
         categories.forEach((cat, idx) => {
-          const resData = results[idx];
+          const resData = managedResults[idx];
           if (resData && resData.success && Array.isArray(resData.data)) {
             resData.data.forEach((item: { id: string; name: string; description?: string | null }) => {
-              allItems.push({
+              allManaged.push({
                 id: item.id,
                 name: item.name,
                 category: cat,
@@ -120,35 +124,86 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
             });
           }
         });
+        setManagedContents(allManaged);
 
-        setManagedContents(allItems);
+        // Processar Inventário Vinculado no DB
+        if (actor.kind === "character") {
+          const allInventory: ManagedContentItem[] = [];
+          categories.forEach((cat, idx) => {
+            const resData = inventoryResults[idx];
+            if (resData && resData.success && resData.data?.linked) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              resData.data.linked.forEach((linkItem: any) => {
+                allInventory.push({
+                  id: linkItem.content.id,
+                  junctionId: linkItem.junction.id,
+                  name: linkItem.content.name,
+                  category: cat,
+                  description: linkItem.content.description ?? null,
+                });
+              });
+            }
+          });
+          setInventoryItems(allInventory);
+        }
       } catch {
         // Erro silencioso em conteúdos opcionais
       }
     };
 
-    void loadManagedContents();
+    void loadAll();
 
     return () => {
       cancelled = true;
     };
-  }, [campaignId]);
+  }, [campaignId, actor.id, actor.kind]);
 
-  const saveInventory = (newItems: ManagedContentItem[]) => {
-    setInventoryItems(newItems);
-    try {
-      localStorage.setItem(`inventory-${actor.kind}-${actor.id}`, JSON.stringify(newItems));
-    } catch {}
-  };
-
-  const handleAddToInventory = (item: ManagedContentItem) => {
-    if (!inventoryItems.some((i) => i.id === item.id && i.category === item.category)) {
-      saveInventory([...inventoryItems, item]);
+  const handleAddToInventory = async (item: ManagedContentItem) => {
+    if (inventoryItems.some((i) => i.id === item.id && i.category === item.category)) {
+      return;
     }
+
+    if (actor.kind === "character") {
+      try {
+        const response = await fetch(`/api/characters/${actor.id}/content/${item.category}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contentId: item.id }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.data) {
+          const newItem: ManagedContentItem = {
+            ...item,
+            junctionId: data.data.id,
+          };
+          setInventoryItems((prev) => [...prev, newItem]);
+          onChanged();
+          return;
+        }
+      } catch {
+        setError("Erro ao vincular item ao banco de dados.");
+        return;
+      }
+    }
+
+    setInventoryItems((prev) => [...prev, item]);
   };
 
-  const handleRemoveFromInventory = (itemId: string, category: ContentCategory) => {
-    saveInventory(inventoryItems.filter((i) => !(i.id === itemId && i.category === category)));
+  const handleRemoveFromInventory = async (itemId: string, category: ContentCategory, junctionId?: string) => {
+    if (actor.kind === "character" && junctionId) {
+      try {
+        await fetch(`/api/characters/${actor.id}/content/${category}/${junctionId}`, {
+          method: "DELETE",
+        });
+        onChanged();
+      } catch {
+        setError("Erro ao desvincular item no banco de dados.");
+      }
+    }
+
+    setInventoryItems((prev) => prev.filter((i) => !(i.id === itemId && i.category === category)));
   };
 
   const handleDropToInventory = (e: React.DragEvent) => {
@@ -504,7 +559,7 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
                           )}
                         </div>
                         <button
-                          onClick={() => handleRemoveFromInventory(item.id, item.category)}
+                          onClick={() => handleRemoveFromInventory(item.id, item.category, item.junctionId)}
                           className="ml-2 rounded text-gray-500 hover:text-red-400"
                           title="Remover do personagem"
                         >

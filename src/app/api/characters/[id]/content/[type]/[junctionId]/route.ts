@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { characters } from "@/lib/db/schema";
+import { characters, characterCampaigns, campaigns } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { contentTypeSchema } from "@/lib/validators/content";
 import {
@@ -20,6 +20,32 @@ import { eq, and } from "drizzle-orm";
 type RouteContext = {
   params: Promise<{ id: string; type: string; junctionId: string }>;
 };
+
+async function canManageCharacterContent(characterId: string, userId: string): Promise<boolean> {
+  const [character] = await db
+    .select()
+    .from(characters)
+    .where(eq(characters.id, characterId))
+    .limit(1);
+
+  if (!character) return false;
+
+  if (character.ownerId === userId) return true;
+
+  const [masterLink] = await db
+    .select()
+    .from(characterCampaigns)
+    .innerJoin(campaigns, eq(characterCampaigns.campaignId, campaigns.id))
+    .where(
+      and(
+        eq(characterCampaigns.characterId, characterId),
+        eq(campaigns.masterId, userId)
+      )
+    )
+    .limit(1);
+
+  return !!masterLink;
+}
 
 const patchSchemas: Record<
   "skills" | "spells" | "items" | "conditions",
@@ -62,15 +88,11 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       );
     }
 
-    const [character] = await db
-      .select()
-      .from(characters)
-      .where(and(eq(characters.id, id), eq(characters.ownerId, session.user.id)))
-      .limit(1);
+    const canManage = await canManageCharacterContent(id, session.user.id);
 
-    if (!character) {
+    if (!canManage) {
       return NextResponse.json(
-        { success: false, error: "Personagem não encontrado" },
+        { success: false, error: "Sem permissão ou personagem não encontrado" },
         { status: 404 }
       );
     }
@@ -160,15 +182,11 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       );
     }
 
-    const [character] = await db
-      .select()
-      .from(characters)
-      .where(and(eq(characters.id, id), eq(characters.ownerId, session.user.id)))
-      .limit(1);
+    const canManage = await canManageCharacterContent(id, session.user.id);
 
-    if (!character) {
+    if (!canManage) {
       return NextResponse.json(
-        { success: false, error: "Personagem não encontrado" },
+        { success: false, error: "Sem permissão ou personagem não encontrado" },
         { status: 404 }
       );
     }
