@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { ContentType } from "@/lib/validators/content";
+import { useSocket } from "@/context/SocketContext";
+import { TargetSelectionModal } from "@/components/combat/TargetSelectionModal";
+import type { Combatant } from "@/lib/engine";
 
 const TYPE_LABELS: Record<ContentType, string> = {
   skills: "Perícias",
@@ -43,6 +46,13 @@ export function CharacterContent({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
+  const { rollDice, requestDefenseReaction, updateActorStatus } = useSocket();
+  const [selectedActionItem, setSelectedActionItem] = useState<{
+    name: string;
+    isHealing: boolean;
+    rollExpr?: string;
+  } | null>(null);
+  const [combatantsList, setCombatantsList] = useState<Combatant[]>([]);
 
   const loadContent = useCallback(async () => {
     try {
@@ -96,19 +106,86 @@ export function CharacterContent({
     };
   }, [characterId, activeType]);
 
+  const handleActionClick = (row: LinkedRow) => {
+    const name = String(row.content.name || "Ação");
+    const desc = String(row.content.description || "").toLowerCase();
+    const isHealing = name.toLowerCase().includes("cura") || name.toLowerCase().includes("poção") || desc.includes("cura") || desc.includes("recupera");
+    const expr = (row.content.rollExpression as string) || (activeType === "spells" ? "1d20 + 3" : "1d20");
+
+    setSelectedActionItem({
+      name,
+      isHealing,
+      rollExpr: expr,
+    });
+
+    // Mock combatants or build from available actors
+    setCombatantsList([
+      { id: "monstruo_target", name: "Inimigo Monstro", type: "npc", initiative: 12, actionsRemaining: 3, maxActions: 3, hpCurrent: 30, hpMax: 30, vigor: 12, destreza: 14, level: 2 },
+    ]);
+  };
+
+  const handleConfirmTarget = (target: Combatant) => {
+    if (!selectedActionItem) return;
+
+    if (selectedActionItem.isHealing) {
+      const healAmount = 10;
+      updateActorStatus({
+        campaignId: characterId,
+        actorId: target.id,
+        currentHp: Math.min(target.hpMax, target.hpCurrent + healAmount),
+      });
+
+      rollDice({
+        campaignId: characterId,
+        actorId: characterId,
+        actorName: "Jogador",
+        rollType: `Cura: ${selectedActionItem.name}`,
+        formula: "1d8 + 2",
+        result: healAmount,
+        diceDetail: `Curou +${healAmount} HP em ${target.name}`,
+      });
+    } else {
+      const die = Math.floor(Math.random() * 20) + 1;
+      const dmg = Math.floor(Math.random() * 8) + 3;
+
+      requestDefenseReaction({
+        campaignId: characterId,
+        id: `react_${Date.now()}`,
+        attackerId: characterId,
+        attackerName: "Jogador",
+        targetId: target.id,
+        targetName: target.name,
+        rawDamage: dmg,
+        attackRoll: die + 3,
+        isPhysical: true,
+        actionName: selectedActionItem.name,
+      });
+
+      rollDice({
+        campaignId: characterId,
+        actorId: characterId,
+        actorName: "Jogador",
+        rollType: `Ataque: ${selectedActionItem.name}`,
+        formula: selectedActionItem.rollExpr || "1d20 + 3",
+        result: die + 3,
+        diceDetail: `Ataque contra ${target.name} [Dado: ${die} + 3 = ${die + 3}] (Dano declarado: ${dmg})`,
+      });
+    }
+
+    setSelectedActionItem(null);
+  };
+
   const handleUnlink = async (junctionId: string) => {
     setError(null);
     setIsBusy(true);
     try {
-      const response = await fetch(
-        `/api/characters/${characterId}/content/${activeType}/${junctionId}`,
-        { method: "DELETE" }
-      );
-
-      const result = await response.json();
+      const response = await fetch(`/api/characters/${characterId}/content/${activeType}/${junctionId}`, {
+        method: "DELETE",
+      });
 
       if (!response.ok) {
-        setError(result.error || "Erro ao desvincular conteúdo");
+        const result = await response.json();
+        setError(result.error || "Erro ao remover vínculo");
         return;
       }
 
@@ -239,18 +316,42 @@ export function CharacterContent({
                       )}
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleUnlink(row.junction.id)}
-                    disabled={isBusy}
-                    className="ml-4 shrink-0 text-xs font-semibold text-red-400 hover:text-red-300 disabled:opacity-50"
-                  >
-                    Remover
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {activeType !== "conditions" && (
+                      <button
+                        onClick={() => handleActionClick(row)}
+                        disabled={isTurnLocked || isBusy}
+                        className="rounded-lg bg-purple-600 px-2.5 py-1 text-xs font-bold text-white hover:bg-purple-500 transition shadow disabled:opacity-40 flex items-center gap-1"
+                        title="Usar em combate com automação de alvo, dano/cura e defesa do monstro"
+                      >
+                        <span>🎲 Usar</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleUnlink(row.junction.id)}
+                      disabled={isBusy}
+                      className="shrink-0 text-xs font-semibold text-red-400 hover:text-red-300 disabled:opacity-50"
+                    >
+                      Remover
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
           )}
         </div>
+      )}
+
+      {selectedActionItem && (
+        <TargetSelectionModal
+          actionName={selectedActionItem.name}
+          isHealing={selectedActionItem.isHealing}
+          combatants={combatantsList}
+          myCharacterId={characterId}
+          isOpen={Boolean(selectedActionItem)}
+          onClose={() => setSelectedActionItem(null)}
+          onConfirmTarget={handleConfirmTarget}
+        />
       )}
     </div>
   );

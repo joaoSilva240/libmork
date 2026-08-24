@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { npcs, npcCampaigns, campaigns } from "@/lib/db/schema";
+import { npcs, npcCampaigns, campaigns, npcPins } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { canManageNpc } from "@/lib/auth/campaign-access";
 import { updateNpcSchema } from "@/lib/validators/npc";
@@ -17,7 +17,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 /**
  * GET /api/npcs/:id
- * Obtém um NPC com as campanhas em que está incluído.
+ * Obtém um NPC com as campanhas em que está incluído e seus pins de ação.
  */
 export async function GET(request: NextRequest, { params }: RouteContext) {
   try {
@@ -41,6 +41,12 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       );
     }
 
+    const pins = await db
+      .select()
+      .from(npcPins)
+      .where(eq(npcPins.npcId, id))
+      .orderBy(npcPins.createdAt);
+
     const links = await db
       .select()
       .from(npcCampaigns)
@@ -55,7 +61,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 
     return NextResponse.json({
       success: true,
-      data: { ...npc, includedCampaigns },
+      data: { ...npc, pins, includedCampaigns },
     });
   } catch (error) {
     console.error("Erro ao obter NPC:", error);

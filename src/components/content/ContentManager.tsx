@@ -92,10 +92,11 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
   const [editData, setEditData] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
 
-  // Overlay de Criação, Busca e Importação D&D 5e
+  // Overlay de Criação, Busca, Filtro de Itens e Importação D&D 5e
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchContent, setSearchContent] = useState("");
   const [isImportingDnd, setIsImportingDnd] = useState(false);
+  const [itemSubCategory, setItemSubCategory] = useState<"all" | "weapons" | "armors" | "magic" | "consumables">("all");
 
   const handleImportDndContent = async () => {
     setError(null);
@@ -377,35 +378,63 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 pb-3">
-        <div className="flex flex-wrap gap-2">
-          {CONTENT_TYPE_ORDER.map((type) => (
-            <button
-              key={type}
-              onClick={() => {
-                setActiveType(type);
-                setFormData({});
-                setEditingId(null);
-                setSearchContent("");
-              }}
-              className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
-                activeType === type
-                  ? "bg-purple-600 text-white shadow"
-                  : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
-              }`}
-            >
-              {TYPE_CONFIGS[type].label}
-            </button>
-          ))}
+      <div className="space-y-3 border-b border-gray-800 pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap gap-2">
+            {CONTENT_TYPE_ORDER.map((type) => (
+              <button
+                key={type}
+                onClick={() => {
+                  setActiveType(type);
+                  setFormData({});
+                  setEditingId(null);
+                  setSearchContent("");
+                  setItemSubCategory("all");
+                }}
+                className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+                  activeType === type
+                    ? "bg-purple-600 text-white shadow"
+                    : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                }`}
+              >
+                {TYPE_CONFIGS[type].label}
+              </button>
+            ))}
+          </div>
+
+          <input
+            type="text"
+            placeholder={`Buscar ${config.label.toLowerCase()} por nome...`}
+            value={searchContent}
+            onChange={(e) => setSearchContent(e.target.value)}
+            className="w-full sm:w-64 rounded-xl border border-gray-800 bg-gray-900 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
+          />
         </div>
 
-        <input
-          type="text"
-          placeholder={`Buscar ${config.label.toLowerCase()} por nome...`}
-          value={searchContent}
-          onChange={(e) => setSearchContent(e.target.value)}
-          className="w-full sm:w-64 rounded-xl border border-gray-800 bg-gray-900 px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
-        />
+        {/* Subcategorias quando a aba de Itens estiver ativa */}
+        {activeType === "items" && (
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {[
+              ["all", "Todos os Itens"],
+              ["weapons", "⚔️ Armas"],
+              ["armors", "🛡️ Armaduras & Escudos"],
+              ["magic", "✨ Itens Mágicos"],
+              ["consumables", "🧪 Consumíveis & Diversos"],
+            ].map(([subKey, subLabel]) => (
+              <button
+                key={subKey}
+                onClick={() => setItemSubCategory(subKey as typeof itemSubCategory)}
+                className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition ${
+                  itemSubCategory === subKey
+                    ? "bg-purple-950 text-purple-300 border border-purple-800/80"
+                    : "bg-gray-950 text-gray-400 border border-gray-800 hover:text-white"
+                }`}
+              >
+                {subLabel}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {error && (
@@ -435,11 +464,30 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {items
-              .filter((item) =>
-                String(item.name || "")
-                  .toLowerCase()
-                  .includes(searchContent.toLowerCase())
-              )
+              .filter((item) => {
+                const name = String(item.name || "").toLowerCase();
+                const desc = String(item.description || "").toLowerCase();
+                const matchSearch = name.includes(searchContent.toLowerCase()) || desc.includes(searchContent.toLowerCase());
+                if (!matchSearch) return false;
+
+                if (activeType !== "items" || itemSubCategory === "all") return true;
+
+                const text = `${name} ${desc}`;
+                if (itemSubCategory === "weapons") {
+                  return /sword|bow|axe|blade|dagger|spear|mace|staff|hammer|weapon|arma|espada|machado|arco|adaga|lança|clava|cajado|martelo|cimitarra/i.test(text);
+                }
+                if (itemSubCategory === "armors") {
+                  return /armor|shield|chain|plate|leather|helm|escudo|armadura|cota|couro|elmo/i.test(text);
+                }
+                if (itemSubCategory === "magic") {
+                  return Boolean(item.qualityDescription || item.counterpointDescription || /magic|ring|wand|scroll|potion|mágico|anel|vara|pergaminho|poção/i.test(text));
+                }
+                if (itemSubCategory === "consumables") {
+                  return /potion|food|ration|herb|poção|comida|ração|erva|kit|tocha|corda/i.test(text);
+                }
+
+                return true;
+              })
               .map((item) => (
                 <div key={item.id as string} className="rounded-xl border border-gray-800 bg-gray-950 p-3">
                   <div className="flex items-start justify-between">

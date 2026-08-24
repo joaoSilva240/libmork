@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useSocket } from "@/context/SocketContext";
+import { getModifier, getBlockValue } from "@/lib/engine/attributes";
+import { getDefenseValue } from "@/lib/engine/combat";
 
 export type RosterCondition = {
   junctionId: string;
@@ -63,12 +65,35 @@ type ActorOverlayProps = {
   onChanged: () => void;
 };
 
+export type NpcPinItem = {
+  id: string;
+  pinType: string;
+  label: string;
+  rollExpression?: string | null;
+  manaCost?: number | null;
+  circle?: number | null;
+};
+
+export type NpcFullData = {
+  attributes: Record<string, number>;
+  pins: NpcPinItem[];
+  block: number;
+  level: number;
+  xpReward: number;
+  hitPoints: number;
+  hitPointsMax: number;
+  manaPoints: number;
+  manaPointsMax: number;
+};
+
 export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOverlayProps) {
   const { updateActorStatus, rollDice } = useSocket();
   const [panel, setPanel] = useState<Panel>("inventory");
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  const [npcFullData, setNpcFullData] = useState<NpcFullData | null>(null);
 
   const [rollExpression, setRollExpression] = useState("1d20");
   const [rollReason, setRollReason] = useState("");
@@ -130,7 +155,18 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
         });
         setManagedContents(allManaged);
 
-        // Processar Inventário Vinculado no DB
+        // Buscar Ficha Completa e Pins do NPC
+        if (actor.kind === "npc") {
+          try {
+            const npcRes = await fetch(`/api/npcs/${actor.id}`);
+            const npcData = await npcRes.json();
+            if (npcRes.ok && npcData.data) {
+              setNpcFullData(npcData.data);
+            }
+          } catch {
+            // Silencioso se opcional
+          }
+        }
         if (actor.kind === "character") {
           const allInventory: ManagedContentItem[] = [];
           categories.forEach((cat, idx) => {
@@ -506,6 +542,196 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
   const inputClass =
     "w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent disabled:opacity-50";
 
+  if (actor.kind === "npc") {
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3"
+        onClick={onClose}
+      >
+        <div
+          className="flex max-h-[85vh] w-full max-w-4xl flex-col rounded-xl border border-gray-800 bg-gray-900 p-4"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Cabeçalho do NPC */}
+          <div className="mb-3 flex items-center justify-between border-b border-gray-800 pb-3">
+            <div className="flex items-center gap-3">
+              {actor.imageUrl ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={actor.imageUrl}
+                  alt={actor.name}
+                  className="h-12 w-12 rounded-lg object-cover border border-purple-800/60"
+                />
+              ) : (
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-800 text-lg font-bold text-gray-400 border border-gray-700">
+                  {actor.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-white">{actor.name}</h2>
+                  <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-red-950 text-red-300 border border-red-800/60">
+                    {actor.npcType === "enemy" ? "Inimigo (NPC)" : "NPC Comum"}
+                  </span>
+                </div>
+                <div className="flex gap-2 text-xs text-gray-400">
+                  <span>Nível {actor.level}</span>
+                  <span>•</span>
+                  <span className="text-rose-400 font-bold">HP {actor.hitPoints}/{actor.hitPointsMax}</span>
+                  <span>•</span>
+                  <span className="text-blue-400 font-bold">Mana {actor.manaPoints}/{actor.manaPointsMax}</span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={onClose}
+              className="rounded-lg px-2 py-1 text-sm text-gray-400 hover:text-white"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Ficha Completa do NPC estilo Ficha de Personagem */}
+          <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+            {/* Status & Defesas Derivadas */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <div className="rounded-xl border border-gray-800 bg-gray-950 p-2.5 text-center">
+                <div className="text-[10px] font-bold text-gray-400 uppercase">Defesa Estática (Esquiva)</div>
+                <div className="text-sm font-extrabold text-amber-300 mt-0.5">
+                  {getDefenseValue(npcFullData?.attributes?.destreza ?? 10)}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-gray-800 bg-gray-950 p-2.5 text-center">
+                <div className="text-[10px] font-bold text-gray-400 uppercase">Mitigação Bloqueio</div>
+                <div className="text-sm font-extrabold text-blue-300 mt-0.5">
+                  {getBlockValue(npcFullData?.attributes?.vigor ?? 10, actor.level)}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-gray-800 bg-gray-950 p-2.5 text-center">
+                <div className="text-[10px] font-bold text-gray-400 uppercase">Recompensa XP</div>
+                <div className="text-sm font-extrabold text-purple-300 mt-0.5">
+                  +{npcFullData?.xpReward ?? actor.xpReward ?? 0} XP
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-gray-800 bg-gray-950 p-2.5 text-center">
+                <div className="text-[10px] font-bold text-gray-400 uppercase">Nível do Inimigo</div>
+                <div className="text-sm font-extrabold text-gray-200 mt-0.5">
+                  Nível {actor.level}
+                </div>
+              </div>
+            </div>
+
+            {/* Atributos do NPC */}
+            <div className="rounded-xl border border-gray-800 bg-gray-950 p-3 space-y-2">
+              <h4 className="text-xs font-bold text-gray-300 uppercase tracking-wider">Atributos do Inimigo</h4>
+              <div className="grid grid-cols-5 gap-2 text-center text-xs">
+                {[
+                  ["forca", "Força", "⚔️"],
+                  ["destreza", "Destreza", "🏹"],
+                  ["vigor", "Vigor", "🛡️"],
+                  ["inteligencia", "Inteligência", "🧠"],
+                  ["empatia", "Empatia", "💬"],
+                ].map(([attrKey, label, icon]) => {
+                  const val = npcFullData?.attributes?.[attrKey] ?? 10;
+                  const mod = getModifier(val);
+                  return (
+                    <div key={attrKey} className="rounded-lg border border-gray-800 bg-gray-900 p-2">
+                      <div className="text-[10px] text-gray-400">{icon} {label}</div>
+                      <div className="text-sm font-bold text-white mt-0.5">{val}</div>
+                      <div className="text-[10px] text-purple-300 font-semibold">{mod >= 0 ? `+${mod}` : mod}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Ações & Ataques Configurados (Pins da API / Ficha) */}
+            <div className="rounded-xl border border-purple-900/60 bg-purple-950/20 p-3 space-y-2">
+              <h4 className="text-xs font-bold text-purple-300 uppercase tracking-wider flex items-center justify-between">
+                <span>Ataques & Habilidades Configuradas</span>
+                <span className="text-[10px] text-purple-400 font-normal">
+                  {npcFullData?.pins?.length ?? 0} ação(ões)
+                </span>
+              </h4>
+
+              {!npcFullData?.pins || npcFullData.pins.length === 0 ? (
+                <div className="py-3 text-center text-xs text-gray-400">
+                  Nenhum ataque ou habilidade configurada para este NPC.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {npcFullData.pins.map((pin) => (
+                    <div key={pin.id} className="flex items-center justify-between rounded-xl border border-gray-800 bg-gray-900 p-2.5 text-xs">
+                      <div>
+                        <div className="font-bold text-white">{pin.label}</div>
+                        <div className="text-[10px] text-purple-300 font-mono">
+                          {pin.rollExpression || "1d20"}
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const expr = pin.rollExpression || "1d20";
+                          const die = Math.floor(Math.random() * 20) + 1;
+                          rollDice({
+                            campaignId,
+                            actorId: actor.id,
+                            actorName: actor.name,
+                            rollType: `Ataque: ${pin.label}`,
+                            formula: expr,
+                            result: die,
+                            diceDetail: `Rolou ${pin.label} [${die}]`,
+                          });
+                        }}
+                        className="rounded-lg bg-purple-600 px-3 py-1.5 font-bold text-white hover:bg-purple-500 transition shadow"
+                      >
+                        🎲 Rolar
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Alteração Rápida de HP / Mana */}
+            <div className="rounded-xl border border-gray-800 bg-gray-950 p-3 space-y-2">
+              <h4 className="text-xs font-bold text-gray-300 uppercase tracking-wider">Ajuste Rápido de Vida / Mana</h4>
+              <div className="flex flex-wrap gap-2">
+                {DELTA_QUICK.map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => {
+                      const newHp = Math.max(0, Math.min(actor.hitPointsMax, actor.hitPoints + d));
+                      updateActorStatus({
+                        campaignId,
+                        actorId: actor.id,
+                        currentHp: newHp,
+                      });
+                      onChanged();
+                    }}
+                    className={`rounded-lg px-2.5 py-1 text-xs font-bold transition border ${
+                      d > 0
+                        ? "bg-emerald-950 border-emerald-800 text-emerald-300 hover:bg-emerald-900"
+                        : "bg-rose-950 border-rose-800 text-rose-300 hover:bg-rose-900"
+                    }`}
+                  >
+                    {d > 0 ? `+${d}` : d} HP
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3"
@@ -515,29 +741,34 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
         className="flex max-h-[85vh] w-full max-w-4xl flex-col rounded-xl border border-gray-800 bg-gray-900 p-4"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Cabeçalho do Personagem */}
+        {/* Cabeçalho do Jogador */}
         <div className="mb-3 flex items-center justify-between border-b border-gray-800 pb-3">
           <div className="flex items-center gap-3">
             {actor.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
+              /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 src={actor.imageUrl}
                 alt={actor.name}
-                className="h-12 w-12 rounded-lg object-cover"
+                className="h-12 w-12 rounded-lg object-cover border border-purple-800/60"
               />
             ) : (
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-800 text-lg font-bold text-gray-400">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-800 text-lg font-bold text-gray-400 border border-gray-700">
                 {actor.name.charAt(0).toUpperCase()}
               </div>
             )}
             <div>
-              <h2 className="text-lg font-bold text-white">{actor.name}</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-white">{actor.name}</h2>
+                <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-purple-950 text-purple-300 border border-purple-800/60">
+                  Jogador
+                </span>
+              </div>
               <div className="flex gap-2 text-xs text-gray-400">
                 <span>Nível {actor.level}</span>
                 <span>•</span>
-                <span>HP {actor.hitPoints}/{actor.hitPointsMax}</span>
+                <span className="text-rose-400 font-bold">HP {actor.hitPoints}/{actor.hitPointsMax}</span>
                 <span>•</span>
-                <span>Mana {actor.manaPoints}/{actor.manaPointsMax}</span>
+                <span className="text-blue-400 font-bold">Mana {actor.manaPoints}/{actor.manaPointsMax}</span>
               </div>
             </div>
           </div>
@@ -550,8 +781,9 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
           </button>
         </div>
 
-        {/* Corpo principal com 2 colunas */}
+        {/* Corpo principal com 2 colunas para Jogadores */}
         <div className="flex flex-1 gap-4 overflow-hidden">
+            {/* Corpo principal com 2 colunas para Jogadores */}
           {/* Coluna Esquerda: Ações & Inventário do Personagem */}
           <div className="flex flex-1 flex-col overflow-hidden">
             {/* Abas */}
