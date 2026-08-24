@@ -135,7 +135,9 @@ export function CharacterDetail() {
 
     async function loadCharacter() {
       try {
-        const response = await fetch(`/api/characters/${params.id}`);
+        const response = await fetch(`/api/characters/${params.id}`, {
+          credentials: "include"
+        });
         const data = await response.json();
 
         if (cancelled) return;
@@ -148,7 +150,9 @@ export function CharacterDetail() {
         setCharacter(data.data);
 
         // Buscar Pontos de Sombra do Usuário
-        const meRes = await fetch("/api/auth/me");
+        const meRes = await fetch("/api/auth/me", {
+          credentials: "include"
+        });
         if (meRes.ok) {
           const meData = await meRes.json();
           if (meData.user?.shadowPoints !== undefined) {
@@ -258,6 +262,7 @@ export function CharacterDetail() {
           ...(payload.currentMana === undefined ? {} : { manaPointsCurrent: payload.currentMana }),
           reason: "atualização de combate",
         }),
+        credentials: "include",
       });
     });
 
@@ -341,6 +346,7 @@ export function CharacterDetail() {
     try {
       const response = await fetch(`/api/characters/${params.id}`, {
         method: "DELETE",
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -360,7 +366,10 @@ export function CharacterDetail() {
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-      const response = await fetch("/api/auth/logout", { method: "POST" });
+      const response = await fetch("/api/auth/logout", { 
+        method: "POST",
+        credentials: "include"
+      });
       if (!response.ok) throw new Error("logout failed");
       router.push("/login");
       router.refresh();
@@ -393,6 +402,7 @@ export function CharacterDetail() {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ hitPointsCurrent: updatedTarget.hpCurrent, reason: "reação defensiva" }),
+          credentials: "include",
         });
         if (!response.ok) setError("HP atualizado em tempo real, mas a persistência falhou.");
       } catch {
@@ -474,6 +484,7 @@ export function CharacterDetail() {
           manaPointsMax: newManaMax,
           manaPointsCurrent: Math.floor(newManaMax * 0.5),
         }),
+        credentials: "include",
       });
 
       if (res.ok) {

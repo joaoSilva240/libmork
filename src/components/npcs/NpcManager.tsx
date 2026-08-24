@@ -99,7 +99,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
     setShowLibraryModal(true);
     setError(null);
     try {
-      const response = await fetch("/api/npcs");
+      const response = await fetch("/api/npcs", { credentials: "include" });
       const data = await response.json();
       if (response.ok && data.data) {
         setLibraryNpcs(data.data);
@@ -124,6 +124,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
           sourceNpcId: selectedSourceNpcId,
           quantity: importQuantity,
         }),
+        credentials: "include",
       });
 
       const data = await response.json();
@@ -155,6 +156,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
           sourceNpcId: npc.id,
           quantity: 1,
         }),
+        credentials: "include",
       });
 
       const data = await response.json();
@@ -184,7 +186,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
 
     (async () => {
       try {
-        const response = await fetch(`/api/worlds/${worldId}/npcs`);
+        const response = await fetch(`/api/worlds/${worldId}/npcs`, { credentials: "include" });
         const data = await response.json();
 
         if (cancelled) return;
@@ -233,6 +235,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
             ATTRIBUTES.map((attr) => [attr, Number(formData.attributes[attr]) || 0])
           ),
         }),
+        credentials: "include",
       });
 
       const data = await response.json();
@@ -251,6 +254,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
           const imageResponse = await fetch(`/api/npcs/${created.id}/image`, {
             method: "POST",
             body: imageForm,
+            credentials: "include",
           });
           const imageData = await imageResponse.json();
 
@@ -327,6 +331,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
             ATTRIBUTES.map((attr) => [attr, Number(editForm.attributes[attr]) || 0])
           ),
         }),
+        credentials: "include",
       });
 
       const data = await response.json();
@@ -353,6 +358,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
       const response = await fetch(`/api/npcs/${npcId}/image`, {
         method: "POST",
         body: imageForm,
+        credentials: "include",
       });
       const data = await response.json();
 
@@ -376,6 +382,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
     try {
       const response = await fetch(`/api/worlds/${worldId}/npcs/${npcId}`, {
         method: "DELETE",
+        credentials: "include",
       });
 
       const data = await response.json();
@@ -393,7 +400,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
 
   const loadPins = async (npcId: string) => {
     try {
-      const response = await fetch(`/api/worlds/${worldId}/npcs/${npcId}/pins`);
+      const response = await fetch(`/api/worlds/${worldId}/npcs/${npcId}/pins`, { credentials: "include" });
       const data = await response.json();
 
       if (!response.ok) {
@@ -410,8 +417,8 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
   const loadContentOptions = async () => {
     try {
       const [skillsResponse, spellsResponse] = await Promise.all([
-        fetch("/api/content/skills"),
-        fetch("/api/content/spells"),
+        fetch("/api/content/skills", { credentials: "include" }),
+        fetch("/api/content/spells", { credentials: "include" }),
       ]);
 
       const skillsData = await skillsResponse.json();
@@ -468,6 +475,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
+        credentials: "include",
       });
 
       const data = await response.json();
@@ -491,7 +499,10 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
     try {
       const response = await fetch(
         `/api/worlds/${worldId}/npcs/${npcId}/pins/${pinId}`,
-        { method: "DELETE" }
+        { 
+          method: "DELETE",
+          credentials: "include"
+        }
       );
 
       const data = await response.json();

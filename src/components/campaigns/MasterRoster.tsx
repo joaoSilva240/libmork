@@ -70,7 +70,9 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
 
   const handleRosterChanged = useCallback(async () => {
     try {
-      const response = await fetch(`/api/campaigns/${campaignId}/roster`);
+      const response = await fetch(`/api/campaigns/${campaignId}/roster`, {
+        credentials: "include"
+      });
       const data = await response.json();
 
       if (!response.ok) {
@@ -149,7 +151,9 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
       return;
     }
     try {
-      const res = await fetch(`/api/campaigns/${campaignId}/worlds/${selectedWorldId}/encounters`);
+      const res = await fetch(`/api/campaigns/${campaignId}/worlds/${selectedWorldId}/encounters`, {
+        credentials: "include"
+      });
       const data = await res.json();
       if (res.ok && data.data) {
         const active = (data.data as Encounter[]).find((e) => e.isActive);
@@ -166,9 +170,9 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
     const loadData = async () => {
       try {
         const [rosterRes, campaignWorldsRes, globalWorldsRes] = await Promise.all([
-          fetch(`/api/campaigns/${campaignId}/roster`),
-          fetch(`/api/campaigns/${campaignId}/worlds`),
-          fetch(`/api/worlds`),
+          fetch(`/api/campaigns/${campaignId}/roster`, { credentials: "include" }),
+          fetch(`/api/campaigns/${campaignId}/worlds`, { credentials: "include" }),
+          fetch(`/api/worlds`, { credentials: "include" }),
         ]);
 
         const rosterData = await rosterRes.json();
@@ -223,7 +227,9 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
         return;
       }
       try {
-        const res = await fetch(`/api/campaigns/${campaignId}/worlds/${selectedWorldId}/encounters`);
+        const res = await fetch(`/api/campaigns/${campaignId}/worlds/${selectedWorldId}/encounters`, {
+          credentials: "include"
+        });
         const data = await res.json();
         if (cancelled) return;
         if (res.ok && data.data) {
@@ -273,6 +279,7 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ isActive: false }),
+          credentials: "include",
         });
         setActiveEncounter(null);
       }

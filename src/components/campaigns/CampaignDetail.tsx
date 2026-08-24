@@ -36,7 +36,9 @@ export function CampaignDetail() {
 
   const loadWorlds = useCallback(async () => {
     try {
-      const response = await fetch(`/api/campaigns/${params.id}/worlds`);
+      const response = await fetch(`/api/campaigns/${params.id}/worlds`, {
+        credentials: "include"
+      });
       const data = await response.json();
 
       if (!response.ok) {
@@ -53,7 +55,9 @@ export function CampaignDetail() {
   useEffect(() => {
     async function loadData() {
       try {
-        const response = await fetch(`/api/campaigns/${params.id}`);
+        const response = await fetch(`/api/campaigns/${params.id}`, {
+          credentials: "include"
+        });
         const data = await response.json();
 
         if (!response.ok) {
@@ -82,6 +86,7 @@ export function CampaignDetail() {
     try {
       const response = await fetch(`/api/campaigns/${params.id}`, {
         method: "DELETE",
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -111,6 +116,7 @@ export function CampaignDetail() {
           name: newWorldName,
           description: newWorldDescription || null,
         }),
+        credentials: "include",
       });
 
       const data = await response.json();
@@ -138,6 +144,7 @@ export function CampaignDetail() {
     try {
       const response = await fetch(`/api/campaigns/${params.id}/worlds/${worldId}`, {
         method: "DELETE",
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -170,6 +177,7 @@ export function CampaignDetail() {
           name: editWorldName,
           description: editWorldDescription || null,
         }),
+        credentials: "include",
       });
 
       const data = await response.json();

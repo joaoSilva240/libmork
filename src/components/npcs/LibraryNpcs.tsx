@@ -125,7 +125,7 @@ export function LibraryNpcs() {
     setError(null);
     setIsLoadingCatalog(true);
     try {
-      const res = await fetch("/api/npcs/dnd-catalog");
+      const res = await fetch("/api/npcs/dnd-catalog", { credentials: "include" });
       const data = await res.json();
       if (res.ok && data.results) {
         setDndCatalogList(data.results);
@@ -158,6 +158,7 @@ export function LibraryNpcs() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ monsterIndexes: Array.from(selectedDndIndexes) }),
+        credentials: "include",
       });
       const data = await response.json();
       if (!response.ok) {
@@ -186,6 +187,7 @@ export function LibraryNpcs() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ importAll: true }),
+        credentials: "include",
       });
       const data = await response.json();
       if (!response.ok) {
@@ -204,7 +206,7 @@ export function LibraryNpcs() {
 
   const loadNpcs = async () => {
     try {
-      const response = await fetch("/api/npcs");
+      const response = await fetch("/api/npcs", { credentials: "include" });
       const data = await response.json();
 
       if (!response.ok) {
@@ -225,7 +227,7 @@ export function LibraryNpcs() {
 
     const load = async () => {
       try {
-        const response = await fetch("/api/npcs");
+        const response = await fetch("/api/npcs", { credentials: "include" });
         const data = await response.json();
 
         if (cancelled) return;
@@ -250,8 +252,8 @@ export function LibraryNpcs() {
     const loadOptionsData = async () => {
       try {
         const [campaignsResponse, classesResponse] = await Promise.all([
-          fetch("/api/campaigns"),
-          fetch("/api/classes"),
+          fetch("/api/campaigns", { credentials: "include" }),
+          fetch("/api/classes", { credentials: "include" }),
         ]);
         const campaignsData = await campaignsResponse.json();
         const classesData = await classesResponse.json();
@@ -291,6 +293,7 @@ export function LibraryNpcs() {
     const response = await fetch(`/api/npcs/${npcId}/image`, {
       method: "POST",
       body: formData,
+      credentials: "include",
     });
 
     const data = await response.json();
@@ -312,6 +315,7 @@ export function LibraryNpcs() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(toPayload(form)),
+        credentials: "include",
       });
 
       const data = await response.json();
@@ -356,7 +360,7 @@ export function LibraryNpcs() {
     setEditDetail(null);
 
     try {
-      const response = await fetch(`/api/npcs/${npc.id}`);
+      const response = await fetch(`/api/npcs/${npc.id}`, { credentials: "include" });
       const data = await response.json();
 
       if (response.ok) {
@@ -378,6 +382,7 @@ export function LibraryNpcs() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(toPayload(editForm)),
+        credentials: "include",
       });
 
       const data = await response.json();
@@ -411,7 +416,10 @@ export function LibraryNpcs() {
   const handleDuplicate = async (npcId: string) => {
     setError(null);
     try {
-      const response = await fetch(`/api/npcs/${npcId}/duplicate`, { method: "POST" });
+      const response = await fetch(`/api/npcs/${npcId}/duplicate`, { 
+        method: "POST",
+        credentials: "include"
+      });
       const data = await response.json();
 
       if (!response.ok) {
@@ -432,7 +440,10 @@ export function LibraryNpcs() {
 
     setError(null);
     try {
-      const response = await fetch(`/api/npcs/${npcId}`, { method: "DELETE" });
+      const response = await fetch(`/api/npcs/${npcId}`, { 
+        method: "DELETE",
+        credentials: "include"
+      });
       const data = await response.json();
 
       if (!response.ok) {
@@ -462,6 +473,7 @@ export function LibraryNpcs() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ npcId }),
+        credentials: "include",
       });
 
       const data = await response.json();
@@ -486,6 +498,7 @@ export function LibraryNpcs() {
     try {
       const response = await fetch(`/api/campaigns/${campaignId}/npcs/${npcId}`, {
         method: "DELETE",
+        credentials: "include",
       });
 
       const data = await response.json();

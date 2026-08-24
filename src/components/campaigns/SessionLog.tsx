@@ -19,7 +19,9 @@ export function SessionLog({ campaignId }: SessionLogProps) {
 
   const loadLogs = useCallback(async () => {
     try {
-      const response = await fetch(`/api/campaigns/${campaignId}/logs?limit=100`);
+      const response = await fetch(`/api/campaigns/${campaignId}/logs?limit=100`, {
+        credentials: "include"
+      });
       const data = await response.json();
 
       if (!response.ok) {
@@ -41,7 +43,9 @@ export function SessionLog({ campaignId }: SessionLogProps) {
 
     const load = async () => {
       try {
-        const response = await fetch(`/api/campaigns/${campaignId}/logs?limit=100`);
+        const response = await fetch(`/api/campaigns/${campaignId}/logs?limit=100`, {
+          credentials: "include"
+        });
         const data = await response.json();
 
         if (cancelled) return;
@@ -92,6 +96,7 @@ export function SessionLog({ campaignId }: SessionLogProps) {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ result }),
+        credentials: "include",
       });
 
       const data = await response.json();

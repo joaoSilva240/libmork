@@ -60,7 +60,7 @@ export function ClassManager() {
 
   const loadClasses = useCallback(async () => {
     try {
-      const response = await fetch("/api/classes");
+      const response = await fetch("/api/classes", { credentials: "include" });
       const data = await response.json();
 
       if (!response.ok) {
@@ -81,7 +81,7 @@ export function ClassManager() {
 
     (async () => {
       try {
-        const response = await fetch("/api/classes");
+        const response = await fetch("/api/classes", { credentials: "include" });
         const data = await response.json();
 
         if (cancelled) return;
@@ -110,7 +110,7 @@ export function ClassManager() {
 
   const loadBenefits = useCallback(async (classId: string) => {
     try {
-      const response = await fetch(`/api/classes/${classId}/benefits`);
+      const response = await fetch(`/api/classes/${classId}/benefits`, { credentials: "include" });
       const data = await response.json();
 
       if (!response.ok) {
@@ -166,6 +166,7 @@ export function ClassManager() {
           initialItems: toInitialItems(draftItems),
           proficiencies,
         }),
+        credentials: "include",
       });
 
       const data = await response.json();
@@ -209,6 +210,7 @@ export function ClassManager() {
           initialItems: toInitialItems(editItems),
           proficiencies: editProficiencies,
         }),
+        credentials: "include",
       });
 
       const data = await response.json();

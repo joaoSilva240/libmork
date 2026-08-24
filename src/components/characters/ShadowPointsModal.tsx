@@ -63,6 +63,7 @@ export function ShadowPointsModal({
           bonusType,
           target: target.trim(),
         }),
+        credentials: "include",
       });
 
       const data = await res.json();

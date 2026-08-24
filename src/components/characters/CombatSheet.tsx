@@ -23,7 +23,9 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
   useEffect(() => {
     const load = async () => {
       try {
-        const response = await fetch(`/api/characters/${characterId}`);
+        const response = await fetch(`/api/characters/${characterId}`, {
+          credentials: "include"
+        });
         const result = await response.json();
 
         if (!response.ok) {

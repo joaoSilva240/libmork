@@ -11,18 +11,38 @@ export function CampaignList() {
 
   useEffect(() => {
     async function loadCampaigns() {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
       try {
-        const response = await fetch("/api/campaigns");
-        const data = await response.json();
+        const response = await fetch("/api/campaigns", {
+          credentials: "include",
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+
+          if (response.status === 401) {
+            window.location.href = '/login';
+            return;
+          }
+
           setError(data.error || "Erro ao carregar campanhas");
+          setIsLoading(false);
           return;
         }
 
+        const data = await response.json();
         setCampaigns(data.data);
-      } catch {
-        setError("Erro de conexão. Tente novamente.");
+      } catch (err: any) {
+        clearTimeout(timeoutId);
+        if (err.name === 'AbortError') {
+          setError("Tempo esgotado. Verifique sua conexão.");
+        } else {
+          setError("Erro de conexão. Tente novamente.");
+        }
       } finally {
         setIsLoading(false);
       }

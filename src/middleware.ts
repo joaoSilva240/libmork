@@ -13,7 +13,11 @@ export async function middleware(request: NextRequest) {
   
   // Verificar se o usuário tem um cookie de sessão
   const sessionCookie = request.cookies.get('libmork_session');
-  const isAuthenticated = !!sessionCookie;
+  // Validate token format: 64 hex characters (32 bytes)
+  const isAuthenticated = !!(
+    sessionCookie?.value && 
+    /^[a-f0-9]{64}$/i.test(sessionCookie.value)
+  );
 
   // Verificar se a rota atual é protegida
   const isProtectedRoute = protectedRoutes.some((route) =>

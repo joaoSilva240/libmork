@@ -23,7 +23,9 @@ export function ShareLink({ characterId }: { characterId: string }) {
 
     (async () => {
       try {
-        const response = await fetch(`/api/characters/${characterId}/share`);
+        const response = await fetch(`/api/characters/${characterId}/share`, {
+          credentials: "include"
+        });
         const data = await response.json();
 
         if (cancelled) return;
@@ -56,6 +58,7 @@ export function ShareLink({ characterId }: { characterId: string }) {
     try {
       const response = await fetch(`/api/characters/${characterId}/share`, {
         method: "POST",
+        credentials: "include",
       });
 
       const data = await response.json();
@@ -82,6 +85,7 @@ export function ShareLink({ characterId }: { characterId: string }) {
     try {
       const response = await fetch(`/api/characters/${characterId}/share`, {
         method: "DELETE",
+        credentials: "include",
       });
 
       const data = await response.json();

@@ -65,6 +65,7 @@ export function CharacterForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, attributes }),
+        credentials: "include",
       });
 
       const data = await response.json();

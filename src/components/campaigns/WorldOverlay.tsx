@@ -36,7 +36,9 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
     setShowLibraryModal(true);
     setError(null);
     try {
-      const response = await fetch("/api/npcs");
+      const response = await fetch("/api/npcs", {
+        credentials: "include"
+      });
       const data = await response.json();
       if (response.ok && data.data) {
         setLibraryNpcs(data.data);
@@ -61,6 +63,7 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
           sourceNpcId: selectedSourceNpcId,
           quantity: importQuantity,
         }),
+        credentials: "include",
       });
 
       const data = await response.json();
@@ -92,8 +95,8 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
       setError(null);
       try {
         const [worldNpcsRes, campaignNpcsRes] = await Promise.all([
-          fetch(`/api/worlds/${worldId}/npcs`),
-          fetch(`/api/campaigns/${campaignId}/npcs`),
+          fetch(`/api/worlds/${worldId}/npcs`, { credentials: "include" }),
+          fetch(`/api/campaigns/${campaignId}/npcs`, { credentials: "include" }),
         ]);
 
         const worldNpcsData = await worldNpcsRes.json();
@@ -126,11 +129,15 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
       setIsLoading(true);
       setError(null);
       try {
-        let response = await fetch(`/api/campaigns/${campaignId}/worlds/${worldId}/encounters`);
+        let response = await fetch(`/api/campaigns/${campaignId}/worlds/${worldId}/encounters`, {
+          credentials: "include"
+        });
         let data = await response.json();
 
         if (!response.ok) {
-          response = await fetch(`/api/worlds/${worldId}`);
+          response = await fetch(`/api/worlds/${worldId}`, {
+            credentials: "include"
+          });
           data = await response.json();
           if (response.ok && data.data) {
             setEncounters(data.data.encounters || []);
@@ -158,6 +165,7 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
       if (currentlyIncluded) {
         const response = await fetch(`/api/campaigns/${campaignId}/npcs/${npcId}`, {
           method: "DELETE",
+          credentials: "include",
         });
 
         if (!response.ok) {

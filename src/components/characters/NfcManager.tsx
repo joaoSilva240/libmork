@@ -22,7 +22,9 @@ export function NfcManager({ characterId }: { characterId: string }) {
 
     (async () => {
       try {
-        const response = await fetch(`/api/characters/${characterId}/nfc`);
+        const response = await fetch(`/api/characters/${characterId}/nfc`, {
+          credentials: "include"
+        });
         const data = await response.json();
 
         if (cancelled) return;
@@ -55,6 +57,7 @@ export function NfcManager({ characterId }: { characterId: string }) {
     try {
       const response = await fetch(`/api/characters/${characterId}/nfc`, {
         method: "POST",
+        credentials: "include",
       });
 
       const data = await response.json();
@@ -82,6 +85,7 @@ export function NfcManager({ characterId }: { characterId: string }) {
     try {
       const response = await fetch(`/api/characters/${characterId}/nfc`, {
         method: "DELETE",
+        credentials: "include",
       });
 
       const data = await response.json();

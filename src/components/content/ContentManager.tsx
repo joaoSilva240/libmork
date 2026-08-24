@@ -160,6 +160,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
 
     fetch(`/api/content/${activeType}/${spellId}/translate`, {
       method: "POST",
+      credentials: "include",
     })
       .then((res) => {
         if (!res.ok) throw new Error("Erro na requisição de tradução");
@@ -206,6 +207,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ contentType: activeType }),
+        credentials: "include",
       });
       const data = await response.json();
       if (!response.ok) {
@@ -225,7 +227,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
 
   const loadItems = async () => {
     try {
-      const response = await fetch(`${basePath}/${activeType}`);
+      const response = await fetch(`${basePath}/${activeType}`, { credentials: "include" });
       const data = await response.json();
 
       if (!response.ok) {
@@ -248,7 +250,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await fetch(`${basePath}/${activeType}`);
+        const response = await fetch(`${basePath}/${activeType}`, { credentials: "include" });
         const data = await response.json();
 
         if (cancelled) return;
@@ -301,6 +303,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildPayload(formData)),
+        credentials: "include",
       });
 
       const data = await response.json();
@@ -338,6 +341,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildPayload(editData)),
+        credentials: "include",
       });
 
       const data = await response.json();
@@ -366,6 +370,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
     try {
       const response = await fetch(`${basePath}/${activeType}/${id}`, {
         method: "DELETE",
+        credentials: "include",
       });
 
       const data = await response.json();

@@ -40,7 +40,7 @@ export function LibraryWorlds() {
   const loadWorlds = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/worlds");
+      const res = await fetch("/api/worlds", { credentials: "include" });
       const data = await res.json();
       if (res.ok) {
         setWorlds(data.data || []);
@@ -57,7 +57,9 @@ export function LibraryWorlds() {
   const loadWorldDetails = useCallback(async (worldId: string) => {
     setIsDetailsLoading(true);
     try {
-      const res = await fetch(`/api/worlds/${worldId}`);
+      const res = await fetch(`/api/worlds/${worldId}`, {
+        credentials: "include"
+      });
       const data = await res.json();
       if (res.ok) {
         setSelectedWorld(data.data);
@@ -75,7 +77,9 @@ export function LibraryWorlds() {
     const load = async () => {
       setIsLoading(true);
       try {
-        const res = await fetch("/api/worlds");
+        const res = await fetch("/api/worlds", {
+          credentials: "include"
+        });
         const data = await res.json();
         if (cancelled) return;
         if (res.ok) {
@@ -114,6 +118,7 @@ export function LibraryWorlds() {
           name: newWorldName,
           description: newWorldDescription || null,
         }),
+        credentials: "include",
       });
 
       const data = await res.json();
@@ -137,7 +142,10 @@ export function LibraryWorlds() {
     if (!window.confirm("Deseja realmente excluir este mundo?")) return;
 
     try {
-      const res = await fetch(`/api/worlds/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/worlds/${id}`, { 
+        method: "DELETE",
+        credentials: "include"
+      });
       if (res.ok) {
         if (selectedWorld?.id === id) setSelectedWorld(null);
         await loadWorlds();
@@ -161,6 +169,7 @@ export function LibraryWorlds() {
           type: estType,
           description: estDescription || null,
         }),
+        credentials: "include",
       });
 
       if (res.ok) {
@@ -180,6 +189,7 @@ export function LibraryWorlds() {
     try {
       const res = await fetch(`/api/worlds/${selectedWorld.id}/establishments/${estId}`, {
         method: "DELETE",
+        credentials: "include",
       });
       if (res.ok) {
         void loadWorldDetails(selectedWorld.id);
@@ -203,6 +213,7 @@ export function LibraryWorlds() {
           name: encName,
           description: encDescription || null,
         }),
+        credentials: "include",
       });
 
       if (res.ok) {

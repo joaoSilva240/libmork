@@ -129,7 +129,9 @@ export function CharacterContent({
 
   const loadContent = useCallback(async () => {
     try {
-      const response = await fetch(`/api/characters/${characterId}/content/${activeType}`);
+      const response = await fetch(`/api/characters/${characterId}/content/${activeType}`, {
+        credentials: "include"
+      });
       const result = await response.json();
 
       if (!response.ok) {
@@ -152,7 +154,9 @@ export function CharacterContent({
       setIsLoading(true);
       setError(null);
       try {
-        const response = await fetch(`/api/characters/${characterId}/content/${activeType}`);
+        const response = await fetch(`/api/characters/${characterId}/content/${activeType}`, {
+          credentials: "include"
+        });
         const result = await response.json();
 
         if (cancelled) return;
@@ -325,6 +329,7 @@ export function CharacterContent({
     try {
       const response = await fetch(`/api/characters/${characterId}/content/${activeType}/${junctionId}`, {
         method: "DELETE",
+        credentials: "include",
       });
 
       if (!response.ok) {

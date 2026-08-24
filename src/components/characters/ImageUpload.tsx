@@ -37,6 +37,7 @@ export function ImageUpload({
       const response = await fetch(`/api/characters/${characterId}/image`, {
         method: "POST",
         body: formData,
+        credentials: "include",
       });
 
       const data = await response.json();
