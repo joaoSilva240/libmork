@@ -58,8 +58,12 @@ function LoginForm() {
         return;
       }
 
-      // Só aceitar destinos internos; o fallback mantém o fluxo por papel.
-      router.push(redirect || (data.data?.role === "master" ? "/master" : "/player"));
+      // NAVEGAÇÃO COMPLETA DE DOCUMENTO:
+      // O uso de window.location.href em vez de router.push é essencial para garantir
+      // que navegadores móveis (iOS Safari e Android Chrome) descarreguem os cookies de sessão HTTP-only
+      // no cookie jar do dispositivo antes de realizar a requisição da página inicial (/player ou /master).
+      const targetUrl = data.data?.redirect || redirect || (data.data?.role === "master" ? "/master" : "/player");
+      window.location.href = targetUrl;
     } catch {
       setErrors({ general: 'Erro de conexão. Tente novamente.' });
     } finally {

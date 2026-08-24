@@ -67,8 +67,10 @@ export default function RegisterPage() {
         return;
       }
 
-      // Sucesso: redirecionar conforme o papel do usuário
-      router.push(data.data?.role === "master" ? "/master" : "/player");
+      // NAVEGAÇÃO COMPLETA DE DOCUMENTO:
+      // O uso de window.location.href em vez de router.push é essencial para navegar em dispositivos móveis.
+      const targetUrl = data.data?.redirect || (data.data?.role === "master" ? "/master" : "/player");
+      window.location.href = targetUrl;
     } catch {
       setErrors({ general: 'Erro de conexão. Tente novamente.' });
     } finally {

@@ -56,17 +56,20 @@ export async function POST(request: NextRequest) {
       .returning();
 
     // Cria a sessão
-    await createSession(newUser.id, request);
-
-    return NextResponse.json({
+    const destination = newUser.role === "master" ? "/master" : "/player";
+    const jsonResponse = NextResponse.json({
       success: true,
       data: {
         id: newUser.id,
         email: newUser.email,
         displayName: newUser.displayName,
         role: newUser.role,
+        redirect: destination,
       },
     });
+
+    await createSession(newUser.id, request, jsonResponse);
+    return jsonResponse;
   } catch (error) {
     console.error("Erro ao registrar usuário:", error);
     return NextResponse.json(

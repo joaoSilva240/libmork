@@ -150,8 +150,20 @@ export async function POST(request: NextRequest) {
       return response;
     }
 
+    const destination = redirect || (user.role === "master" ? "/master" : "/player");
+    const jsonResponse = NextResponse.json({
+      success: true,
+      data: {
+        id: user.id,
+        email: user.email,
+        displayName: user.displayName,
+        role: user.role,
+        redirect: destination,
+      },
+    });
+
     try {
-      await createSession(user.id, request);
+      await createSession(user.id, request, jsonResponse);
     } catch {
       logOperationalFailure("session_create");
       return NextResponse.json(
@@ -160,15 +172,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        id: user.id,
-        email: user.email,
-        displayName: user.displayName,
-        role: user.role,
-      },
-    });
+    return jsonResponse;
   } catch {
     logOperationalFailure(stage);
     if (!isJson) return formErrorResponse(request, redirect);

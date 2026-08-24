@@ -24,28 +24,35 @@ const SESSION_DURATION_DAYS = 30;
  * trusted and use the production fallback instead.
  */
 function shouldUseSecureCookie(request?: NextRequest): boolean {
-  const productionFallback = process.env.NODE_ENV === "production";
+  if (process.env.COOKIE_SECURE === "false") return false;
+  if (process.env.COOKIE_SECURE === "true") return true;
 
-  if (!request) {
-    return productionFallback;
-  }
+  if (request) {
+    const forwardedProtocol = request.headers
+      .get("x-forwarded-proto")
+      ?.split(",", 1)[0]
+      ?.trim()
+      .toLowerCase();
 
-  const forwardedProtocol = request.headers.get("x-forwarded-proto");
-  if (forwardedProtocol !== null) {
     if (forwardedProtocol === "https") return true;
     if (forwardedProtocol === "http") return false;
-    return productionFallback;
+
+    try {
+      const protocol = new URL(request.url).protocol;
+      if (protocol === "https:") return true;
+      if (protocol === "http:") return false;
+    } catch {
+      // ignore parsing error
+    }
   }
 
-  try {
-    const protocol = new URL(request.url).protocol;
-    if (protocol === "https:") return true;
-    if (protocol === "http:") return false;
-  } catch {
-    // Use the conservative environment fallback for an invalid request URL.
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (appUrl) {
+    if (appUrl.startsWith("https://")) return true;
+    if (appUrl.startsWith("http://")) return false;
   }
 
-  return productionFallback;
+  return false;
 }
 
 /**
