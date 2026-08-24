@@ -1,5 +1,6 @@
 "use client";
 
+import { getTechnicalLabel, formatTechnicalField } from "@/lib/content/pf2e-item-formatter";
 import { useEffect, useState } from "react";
 import { ATTRIBUTES, SPELL_USE_TYPES } from "@/lib/utils/constants";
 import type { ContentType } from "@/lib/validators/content";
@@ -682,11 +683,15 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
                              .map((field) => [field, getTechnicalValue(system, field)] as const)
                              .filter(([, value]) => value !== null && value !== undefined && value !== "")
                              .slice(0, 3);
-                           return technical.map(([field, value]) => (
-                             <p key={`technical-${field}`} className="text-gray-300">
-                               <strong className="text-gray-400">{field}:</strong> {typeof value === "object" ? JSON.stringify(value) : String(value)}
-                             </p>
-                           ));
+                           return technical.map(([field, value]) => {
+                             const formatted = formatTechnicalField(field, value, modalLanguage);
+                             if (!formatted) return null;
+                             return (
+                               <p key={`technical-${field}`} className="text-gray-300 text-xs">
+                                 <strong className="text-gray-400">{getTechnicalLabel(field, modalLanguage)}:</strong> {formatted}
+                               </p>
+                             );
+                           });
                          })()}
                         {Boolean(item.description) && (
                           <p className="text-gray-400 text-[11px] line-clamp-2 mt-1">
@@ -1046,7 +1051,9 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
           const raw = system[key];
           const value = raw && typeof raw === "object" && "value" in raw ? (raw as Record<string, unknown>).value : raw;
           if (value === null || value === undefined || value === "") return null;
-          return <span><strong className="text-purple-400">{label}:</strong> {typeof value === "object" ? JSON.stringify(value) : String(value)}</span>;
+          const formatted = formatTechnicalField(key, value, modalLanguage);
+          if (!formatted) return null;
+          return <span><strong className="text-purple-400">{getTechnicalLabel(key, modalLanguage)}:</strong> {formatted}</span>;
         };
         return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md" onClick={() => setSelectedSpell(null)}>
           <div role="dialog" aria-modal="true" aria-labelledby="item-details-title" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-purple-800 bg-gray-950 p-6 text-gray-100 shadow-2xl" onClick={(event) => event.stopPropagation()}>
@@ -1056,7 +1063,9 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
               <button type="button" aria-label="Fechar detalhes do item" onClick={() => setSelectedSpell(null)} className="rounded-lg px-2 py-1 text-gray-400 hover:bg-gray-800 hover:text-white">✕</button>
             </div>
             <div className="space-y-5 pt-5">
-              <div className="flex flex-wrap gap-x-5 gap-y-2 border-b border-purple-900/20 pb-3 text-xs text-gray-300">{display("level", "Nível")}{display("price", "Preço")}{display("bulk", "Bulk/Peso")}{display("quantity", "Quantidade")}{display("usage", "Uso")}{display("category", "Categoria")}{display("group", "Grupo")}{display("damage", "Dano")}{display("traits", "Traços")}{display("ac", "CA")}{display("resiliency", "Resistências")}</div>
+              <div className="flex flex-wrap gap-x-5 gap-y-2 border-b border-purple-900/20 pb-3 text-xs text-gray-300">
+                {ITEM_TECHNICAL_FIELDS.map(field => display(field, field))}
+              </div>
                {getItemField("description") ? <section><h4 className="mb-1 text-sm font-semibold text-purple-300">Descrição</h4><p className="whitespace-pre-wrap text-sm leading-6 text-gray-300">{String(getItemField("description"))}</p></section> : null}
                {getItemField("qualityDescription") ? <section><h4 className="mb-1 text-sm font-semibold text-purple-300">Qualidade</h4><p className="whitespace-pre-wrap text-sm leading-6 text-gray-300">{String(getItemField("qualityDescription"))}</p></section> : null}
                {getItemField("counterpointDescription") ? <section><h4 className="mb-1 text-sm font-semibold text-purple-300">Contraponto</h4><p className="whitespace-pre-wrap text-sm leading-6 text-gray-300">{String(getItemField("counterpointDescription"))}</p></section> : null}

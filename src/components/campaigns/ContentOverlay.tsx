@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { Campaign, Spell } from "@/types";
+import { formatTechnicalField, getTechnicalLabel } from "@/lib/content/pf2e-item-formatter";
 
 type ContentOverlayProps = {
   campaignId: string;
@@ -457,15 +458,29 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
     }
 
     if (activeTab === "items") {
-      const translation = item.translation && typeof item.translation === "object" ? item.translation as Record<string, unknown> : null;
+      const translation = item.translation && typeof selectedItem?.translation === "object" ? item.translation as Record<string, unknown> : null;
       const getItemField = (key: string) => modalLanguage === "pt" && translation?.[key] ? translation[key] : item[key];
       const sourceData = item.sourceData && typeof item.sourceData === "object" ? item.sourceData as Record<string, unknown> : {};
       const system = sourceData.system && typeof sourceData.system === "object" ? sourceData.system as Record<string, unknown> : {};
       const technical = ["level", "price", "bulk", "quantity", "usage", "category", "group", "damage", "traits", "ac", "resiliency"];
+
       return (
         <div className="space-y-3 text-sm">
           <div className="flex flex-wrap gap-x-4 gap-y-2 border-b border-purple-900/20 pb-3 text-xs text-gray-300">
-            {technical.map((key) => { const raw = system[key]; const value = raw && typeof raw === "object" && "value" in raw ? (raw as Record<string, unknown>).value : raw; return value === null || value === undefined || value === "" ? null : <span key={key}><strong className="text-purple-400">{key}:</strong> {typeof value === "object" ? JSON.stringify(value) : String(value)}</span>; })}
+            {technical.map((key) => {
+              const raw = system[key];
+              const value = raw && typeof raw === "object" && "value" in raw ? (raw as Record<string, unknown>).value : raw;
+              if (value === null || value === undefined || value === "") return null;
+              
+              const formattedValue = formatTechnicalField(key, value, modalLanguage);
+              if (!formattedValue) return null;
+              
+              return (
+                <span key={key}>
+                  <strong className="text-purple-400">{getTechnicalLabel(key, modalLanguage)}:</strong> {formattedValue}
+                </span>
+              );
+            })}
           </div>
            {getItemField("description") !== null && getItemField("description") !== undefined && (
             <div>
@@ -605,46 +620,58 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
                      .filter(([, value]) => value !== null && value !== undefined && value !== "")
                      .slice(0, 3);
 
-                   return (
-                    <div
-                      key={item.id}
-                      className={`${activeTab === "items" ? "flex flex-col" : "flex items-center gap-2"} rounded-lg border p-2 transition-colors ${
-                        selectedItem?.id === item.id
-                          ? "border-purple-600 bg-purple-900/20"
-                          : "border-gray-800 bg-gray-900 hover:border-gray-700"
-                      }`}
-                    >
-                      {activeTab === "items" && (
-                        <div className="mb-2 flex items-start gap-3">
-                          {item.imageUrl && !failedImages.has(item.id) ? (
-                            <img
-                              src={String(item.imageUrl)}
-                              alt={`Imagem de ${item.name}`}
-                              width={72}
-                              height={72}
-                              loading="lazy"
-                              className="h-[72px] w-[72px] shrink-0 rounded-lg border border-purple-900/60 object-cover"
-                              onError={() => setFailedImages((previous) => new Set(previous).add(item.id))}
-                            />
-                          ) : (
-                            <div aria-label={`Imagem indisponível para ${item.name}`} className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-lg border border-gray-800 bg-gray-950 text-2xl text-gray-600">✦</div>
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <button
-                              onClick={() => setSelectedItem(item)}
-                              onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedItem(item); } }}
-                              aria-label={`Ver detalhes de ${item.name}`}
-                              className="text-left text-sm font-bold text-white hover:text-purple-300"
-                            >
-                              {item.name}
-                            </button>
-                            {isGlobal && <span className="ml-2 rounded bg-gray-800 px-1.5 py-0.5 text-xs text-gray-400">Global</span>}
-                            {technical.length > 0 && <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-gray-400">{technical.map(([key, value]) => <span key={key}><strong className="text-purple-300">{key}:</strong> {typeof value === "object" ? JSON.stringify(value) : String(value)}</span>)}</div>}
-                            {item.description !== null && item.description !== undefined && <p className="mt-1 line-clamp-2 text-[11px] text-gray-400">{String(item.description)}</p>}
-                          </div>
-                        </div>
-                      )}
-                      <input
+                    return (
+                     <div
+                       key={item.id}
+                       className={`${activeTab === "items" ? "flex flex-col" : "flex items-center gap-2"} rounded-lg border p-2 transition-colors ${
+                         selectedItem?.id === item.id
+                           ? "border-purple-600 bg-purple-900/20"
+                           : "border-gray-800 bg-gray-900 hover:border-gray-700"
+                       }`}
+                     >
+                       {activeTab === "items" && (
+                         <div className="mb-2 flex items-start gap-3">
+                           {item.imageUrl && !failedImages.has(item.id) ? (
+                             <img
+                               src={String(item.imageUrl)}
+                               alt={`Imagem de ${item.name}`}
+                               width={72}
+                               height={72}
+                               loading="lazy"
+                               className="h-[72px] w-[72px] shrink-0 rounded-lg border border-purple-900/60 object-cover"
+                               onError={() => setFailedImages((previous) => new Set(previous).add(item.id))}
+                             />
+                           ) : (
+                             <div aria-label={`Imagem indisponível para ${item.name}`} className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-lg border border-gray-800 bg-gray-950 text-2xl text-gray-600">✦</div>
+                           )}
+                           <div className="min-w-0 flex-1">
+                             <button
+                               onClick={() => setSelectedItem(item)}
+                               onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedItem(item); } }}
+                               aria-label={`Ver detalhes de ${item.name}`}
+                               className="text-left text-sm font-bold text-white hover:text-purple-300"
+                             >
+                               {item.name}
+                             </button>
+                             {isGlobal && <span className="ml-2 rounded bg-gray-800 px-1.5 py-0.5 text-xs text-gray-400">Global</span>}
+                             {technical.length > 0 && (
+                               <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-gray-400">
+                                 {technical.map(([key, value]) => {
+                                   const formatted = formatTechnicalField(key, value, modalLanguage);
+                                   if (!formatted) return null;
+                                   return (
+                                     <span key={key}>
+                                       <strong className="text-purple-300">{getTechnicalLabel(key, modalLanguage)}:</strong> {formatted}
+                                     </span>
+                                   );
+                                 })}
+                                </div>
+                             )}
+                             {item.description !== null && item.description !== undefined && <p className="mt-1 line-clamp-2 text-[11px] text-gray-400">{String(item.description)}</p>}
+                           </div>
+                         </div>
+                       )}
+                       <input
                         type="checkbox"
                         checked={isEnabled}
                         onChange={() => toggleItemEnabled(item, isEnabled)}
