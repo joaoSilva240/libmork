@@ -11,6 +11,7 @@ import { ShareLink } from "@/components/characters/ShareLink";
 import { ImageUpload } from "@/components/characters/ImageUpload";
 import { CharacterContent } from "@/components/characters/CharacterContent";
 import { NfcManager } from "@/components/characters/NfcManager";
+import { DecorativeFrame } from "@/components/ui/DecorativeFrame";
 import {
   StatusFilledIcon,
   SkillsFilledIcon,
@@ -646,9 +647,10 @@ export function CharacterDetail() {
 
         {/* TAB 1: STATUS */}
         {activeTab === "status" && (
-          <div className="space-y-4 animate-in fade-in duration-200">
+          <div className="space-y-8 animate-in fade-in duration-200">
             {/* Header Hero Card */}
-            <div className="relative overflow-hidden rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900 to-gray-950 p-4 shadow-lg">
+            <DecorativeFrame className="rounded-2xl shadow-lg" innerClassName="p-4">
+            <div className="relative overflow-hidden">
               <div className="flex items-center gap-4">
                 {character.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -686,11 +688,12 @@ export function CharacterDetail() {
                 </div>
               </div>
             </div>
+            </DecorativeFrame>
 
             {/* Combat Stats: HP, Mana, Bloqueio */}
-            <div className="grid grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-3 gap-6">
               {/* HP Card */}
-              <div className="flex flex-col justify-between rounded-2xl border border-red-900/60 bg-red-950/20 p-3 shadow-sm">
+              <DecorativeFrame className="flex flex-col justify-between rounded-2xl shadow-sm" innerClassName="p-3">
                 <div>
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider">VIDA (HP)</span>
@@ -706,10 +709,10 @@ export function CharacterDetail() {
                     <div className="h-full bg-red-500 transition-all duration-300" style={{ width: `${hpPercent}%` }} />
                   </div>
                 </div>
-              </div>
+              </DecorativeFrame>
 
               {/* Mana Card */}
-              <div className="flex flex-col justify-between rounded-2xl border border-blue-900/60 bg-blue-950/20 p-3 shadow-sm">
+              <DecorativeFrame className="flex flex-col justify-between rounded-2xl shadow-sm" innerClassName="p-3">
                 <div>
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">MANA (MP)</span>
@@ -725,10 +728,10 @@ export function CharacterDetail() {
                     <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${manaPercent}%` }} />
                   </div>
                 </div>
-              </div>
+              </DecorativeFrame>
 
               {/* Bloqueio / Defesa Card */}
-              <div className="flex flex-col justify-between rounded-2xl border border-gray-800 bg-gray-900/60 p-3 shadow-sm">
+              <DecorativeFrame className="flex flex-col justify-between rounded-2xl shadow-sm" innerClassName="p-3">
                 <div>
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">BLOQUEIO</span>
                   <p className="mt-1 text-2xl font-black text-white">{stats.block}</p>
@@ -736,11 +739,11 @@ export function CharacterDetail() {
                 <div className="mt-2">
                   <p className="text-[10px] text-gray-500 leading-tight">Mitigação tática com Vigor</p>
                 </div>
-              </div>
+              </DecorativeFrame>
             </div>
 
             {/* Atributos do Personagem com Rolagem Instantânea */}
-            <div className="rounded-2xl border border-gray-800 bg-gray-900/80 p-4 shadow-sm">
+            <DecorativeFrame className="rounded-2xl shadow-sm" innerClassName="p-4">
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-gray-300">Atributos Principais</h3>
                 <span className="text-[10px] text-purple-400 font-medium">Toque para rolar d20</span>
@@ -780,14 +783,14 @@ export function CharacterDetail() {
                   );
                 })}
               </div>
-            </div>
+            </DecorativeFrame>
           </div>
         )}
 
         {/* TAB 2: PERÍCIAS */}
         {activeTab === "skills" && (
-          <div className="space-y-4 animate-in fade-in duration-200">
-            <div className="rounded-2xl border border-purple-900/60 bg-purple-950/20 p-4">
+          <div className="space-y-8 animate-in fade-in duration-200">
+            <DecorativeFrame className="rounded-2xl shadow-sm" innerClassName="p-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-purple-300">
                 Perícias & Treinamento
               </h3>
@@ -795,7 +798,7 @@ export function CharacterDetail() {
                 Slots de perícias treinadas disponíveis por Inteligência:{" "}
                 <span className="font-bold text-purple-400">{stats.trainedSkillSlots}</span>
               </p>
-            </div>
+            </DecorativeFrame>
 
             {/* Gerenciador completo de Perícias */}
               <CharacterContent characterId={character.id} campaignId={character.campaignId} characterManaCurrent={character.manaPointsCurrent} characterManaMax={character.manaPointsMax} combatState={combatState} onCombatStateChange={handleCombatStateChange} onActorStatusChange={handleActorStatusChange} onActionResult={handleActionResult} combatants={combatState?.combatants ?? []} defaultType="skills" allowedTypes={["skills"]} isTurnLocked={isTurnLocked} onPersistActorStatus={async (actor, hp, mana) => { if (actor.characterId !== character.id && actor.id !== character.id && actor.type !== "npc" && !actor.npcId) return; const response = await fetch(`/api/campaigns/${character.campaignId}/actors/${actor.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hitPointsCurrent: hp, ...(mana == null ? {} : { manaPointsCurrent: mana }), reason: "combate" }) }); if (!response.ok) setError("Estado atualizado em tempo real, mas a persistência falhou."); }} />
@@ -812,8 +815,8 @@ export function CharacterDetail() {
 
         {/* TAB 4: CONFIGURAÇÕES */}
         {activeTab === "settings" && (
-          <div className="space-y-4 animate-in fade-in duration-200">
-            <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 space-y-4">
+          <div className="space-y-8 animate-in fade-in duration-200">
+            <DecorativeFrame className="rounded-2xl shadow-sm" innerClassName="p-4 space-y-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-gray-300">
                 Gerenciamento da Ficha
               </h3>
@@ -865,7 +868,7 @@ export function CharacterDetail() {
                   {isDeleting ? "Excluindo Ficha..." : "🗑️ Excluir Personagem"}
                 </button>
               </div>
-            </div>
+            </DecorativeFrame>
           </div>
         )}
       </main>

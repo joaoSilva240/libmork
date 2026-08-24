@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { ContentType } from "@/lib/validators/content";
 import { useSocket } from "@/context/SocketContext";
 import { TargetSelectionModal } from "@/components/combat/TargetSelectionModal";
+import { DecorativeFrame } from "@/components/ui/DecorativeFrame";
 import type { CombatSessionState, Combatant } from "@/lib/engine";
 import { applyHealing, applyResolvedDamage, getExpression, hydrateCombatantMana, rollExpression, spendCombatActions, spendSpell } from "@/lib/engine";
 
@@ -368,7 +369,7 @@ export function CharacterContent({
   const displayTypes = allowedTypes ? TYPE_ORDER.filter((t) => allowedTypes.includes(t)) : TYPE_ORDER;
 
   return (
-    <div className="rounded-2xl border border-gray-800 bg-gray-900/80 p-4">
+    <DecorativeFrame className="rounded-2xl shadow-sm" innerClassName="p-4">
       {displayTypes.length > 1 && (
         <div className="mb-4 flex flex-wrap gap-1.5 border-b border-gray-800 pb-3">
           {displayTypes.map((type) => (
@@ -496,6 +497,6 @@ export function CharacterContent({
           onConfirmTarget={handleConfirmTarget}
         />
       )}
-    </div>
+    </DecorativeFrame>
   );
 }
