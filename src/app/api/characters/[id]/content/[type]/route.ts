@@ -146,10 +146,13 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       success: true,
       data: { linked, available },
     });
-  } catch (error) {
+    } catch (error) {
     console.error("Erro ao listar conteúdo da ficha:", error);
+    const message = error instanceof Error && /column .*translation.* does not exist/i.test(error.message)
+      ? "Schema desatualizado: aplique a migration 0007_add_item_translation.sql (npm run db:migrate) e tente novamente."
+      : "Erro interno do servidor";
     return NextResponse.json(
-      { success: false, error: "Erro interno do servidor" },
+      { success: false, error: message },
       { status: 500 }
     );
   }

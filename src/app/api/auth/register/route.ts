@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       .returning();
 
     // Cria a sessão
-    await createSession(newUser.id);
+    await createSession(newUser.id, request);
 
     return NextResponse.json({
       success: true,

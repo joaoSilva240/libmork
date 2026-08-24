@@ -18,6 +18,66 @@ export function rollDice(count: number, sides: number): number[] {
   return Array.from({ length: count }, () => rollDie(sides));
 }
 
+export type ExpressionValue = string | number | null | undefined | Record<string, unknown>;
+
+/**
+ * Obtém uma fórmula dos formatos usados pelos importadores. A busca é limitada
+ * a dados JSON e nunca interpreta código ou expressões JavaScript.
+ */
+export function getExpression(value: unknown): string | number | null {
+  if (typeof value === "string") return value.trim() || null;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  for (const key of ["formula", "expression", "rollExpression", "value", "damage"]) {
+    const candidate = getExpression(record[key]);
+    if (candidate !== null) return candidate;
+  }
+  // Alguns importadores guardam o efeito dentro de dados/effect/amount.
+  for (const key of ["data", "effect", "amount", "effects", "result"]) {
+    const candidate = getExpression(record[key]);
+    if (candidate !== null) return candidate;
+  }
+  return null;
+}
+
+/** Rola apenas expressões seguras no formato NdM (+/- inteiros). */
+export function rollExpression(expression: unknown, fallback = 0): {
+  formula: string;
+  total: number;
+  detail: string;
+  missing: boolean;
+  valid: boolean;
+} {
+  const normalized = getExpression(expression);
+  const missing = normalized === null;
+  const formula = missing ? String(fallback) : String(normalized);
+  if (typeof normalized === "number") {
+    return { formula, total: normalized, detail: `${formula} = ${normalized}`, missing: false, valid: true };
+  }
+  if (!/^[0-9dD+\-\s]+$/.test(formula)) {
+    return { formula, total: fallback, detail: `Fórmula inválida; fallback seguro: ${fallback}`, missing, valid: false };
+  }
+  const parts = formula.match(/[+-]?\s*(?:\d+[dD]\d+|\d+)/g) ?? [];
+  if (!parts.length) return { formula, total: fallback, detail: `Fórmula ausente; fallback seguro: ${fallback}`, missing: true, valid: false };
+  let total = 0;
+  const details: string[] = [];
+  for (const part of parts) {
+    const sign = part.trim().startsWith("-") ? -1 : 1;
+    const value = part.replace(/^[+\-]\s*/, "");
+    const dice = value.match(/^(\d+)[dD](\d+)$/);
+    if (dice) {
+      const rolls = rollDice(Number(dice[1]), Number(dice[2]));
+      total += sign * rolls.reduce((sum, roll) => sum + roll, 0);
+      details.push(`${sign < 0 ? "-" : ""}[${rolls.join(", ")}]`);
+    } else {
+      total += sign * Number(value);
+      details.push(`${sign < 0 ? "-" : ""}${value}`);
+    }
+  }
+  return { formula, total, detail: `${formula} = ${total} (${details.join(" ")})`, missing: false, valid: true };
+}
+
 /**
  * Rola 1d20 + modificador (motor d20_mod — D-02).
  * Retorna o resultado total e os componentes.

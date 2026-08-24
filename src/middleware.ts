@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { getPublicOrigin, getSafeRedirect } from '@/lib/auth/redirect';
 
 // Rotas que requerem autenticação
 const protectedRoutes = ['/player', '/master'];
@@ -24,14 +25,18 @@ export async function middleware(request: NextRequest) {
 
   // Se tentar acessar rota protegida sem estar autenticado
   if (isProtectedRoute && !isAuthenticated) {
-    const url = new URL('/login', request.url);
-    url.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(url);
+    const originalPath = getSafeRedirect(
+      `${pathname}${request.nextUrl.search}`,
+    );
+    const loginPath = originalPath
+      ? `/login?redirect=${encodeURIComponent(originalPath)}`
+      : '/login';
+    return NextResponse.redirect(new URL(loginPath, getPublicOrigin(request)), 307);
   }
 
   // Se tentar acessar rota de autenticação estando autenticado
   if (isAuthRoute && isAuthenticated) {
-    return NextResponse.redirect(new URL('/player', request.url));
+    return NextResponse.redirect(new URL('/player', getPublicOrigin(request)), 307);
   }
 
   return NextResponse.next();

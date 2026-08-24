@@ -89,6 +89,8 @@ export type Character = {
   deathFailures: number;
   createdAt: Date;
   updatedAt: Date;
+  /** Campanha ativa usada pelo realtime; nunca é o id do personagem. */
+  campaignId?: string | null;
 };
 
 export type Campaign = {
@@ -154,10 +156,19 @@ export type Spell = {
   circle: number;
   manaCost: number;
   description: string | null;
-  useType: SpellUseType;
+  useType: string;
   duration: string | null;
   extraEffect: string | null;
   actionCostOverride: number | null;
+  imageUrl: string | null;
+  range: string | null;
+  target: string | null;
+  area: string | null;
+  damage: any | null;
+  damageType: string | null;
+  structuredEffects: any | null;
+  castingTime: string | null;
+  translation: any | null;
 };
 
 export type Item = {
@@ -167,6 +178,10 @@ export type Item = {
   description: string | null;
   qualityDescription: string | null;
   counterpointDescription: string | null;
+  sourceKey: string | null;
+  imageUrl: string | null;
+  sourceData: Record<string, unknown> | null;
+  translation: Record<string, unknown> | null;
 };
 
 export type Condition = {

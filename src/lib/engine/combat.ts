@@ -21,6 +21,9 @@ export interface Combatant {
   maxActions: number;
   hpCurrent: number;
   hpMax: number;
+  manaCurrent?: number;
+  manaMax?: number;
+  defenseReaction?: DefenseReaction;
   vigor: number;
   destreza: number;
   level: number;
@@ -54,6 +57,8 @@ export interface CombatSessionState {
   combatants: Combatant[];
   pendingReaction: PendingDefenseReaction | null;
   logs: Array<{ id: string; timestamp: string; message: string }>;
+  revision?: number;
+  updatedAt?: number;
 }
 
 /**
@@ -140,9 +145,19 @@ export function spendCombatActions(
   combatantId: string,
   actionCost: number
 ): { session: CombatSessionState; success: boolean; message: string } {
+  if (!session.active) {
+    return { session, success: false, message: "Não há combate ativo." };
+  }
+  if (!Number.isInteger(actionCost) || actionCost <= 0) {
+    return { session, success: false, message: "O custo de ações deve ser um inteiro positivo." };
+  }
   const currentCombatant = session.combatants[session.currentTurnIndex];
   if (!currentCombatant || currentCombatant.id !== combatantId) {
     return { session, success: false, message: "Não é o turno deste combatente." };
+  }
+
+  if (currentCombatant.isDead || currentCombatant.isFallen || currentCombatant.hpCurrent <= 0) {
+    return { session, success: false, message: "Combatentes caídos ou mortos não podem agir." };
   }
 
   if (currentCombatant.actionsRemaining < actionCost) {
@@ -299,6 +314,43 @@ export function resolveAttack(params: {
  */
 export function getDefenseValue(destreza: number): number {
   return 10 + getModifier(destreza);
+}
+
+export function applyHpChange(combatant: Combatant, delta: number): Combatant {
+  const hpMax = Math.max(0, combatant.hpMax);
+  const hpCurrent = Math.max(0, Math.min(hpMax, combatant.hpCurrent + delta));
+  return { ...combatant, hpCurrent, isFallen: hpCurrent <= 0 && !combatant.isDead };
+}
+
+/** Applies an absolute healing amount while preserving the combatant bounds. */
+export function applyHealing(combatant: Combatant, amount: number): Combatant {
+  return applyHpChange(combatant, Math.max(0, amount));
+}
+
+export function applyManaChange(combatant: Combatant, delta: number): Combatant {
+  if (combatant.manaCurrent == null || combatant.manaMax == null) return combatant;
+  return { ...combatant, manaCurrent: Math.max(0, Math.min(Math.max(0, combatant.manaMax), combatant.manaCurrent + delta)) };
+}
+
+export function hydrateCombatantMana(
+  combatant: Combatant,
+  manaCurrent: number | null | undefined,
+  manaMax: number | null | undefined,
+): Combatant {
+  if (!Number.isFinite(manaCurrent) || !Number.isFinite(manaMax)) return combatant;
+  const safeCurrent = manaCurrent as number;
+  const safeMax = Math.max(0, manaMax as number);
+
+  const hasMana = combatant.manaCurrent != null && combatant.manaMax != null;
+  const shouldHydrate = !hasMana || (combatant.manaCurrent != null && safeCurrent > combatant.manaCurrent);
+
+  if (!shouldHydrate) return combatant;
+
+  return {
+    ...combatant,
+    manaMax: safeMax,
+    manaCurrent: Math.max(0, Math.min(safeMax, safeCurrent)),
+  };
 }
 
 /**

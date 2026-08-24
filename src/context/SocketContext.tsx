@@ -34,6 +34,12 @@ export interface RollDataPayload {
   result: number;
   diceDetail?: string; // ex: "Rolou [15] + 3 = 18"
   isManual?: boolean;
+  damage?: number;
+  damageRoll?: string;
+  damageTaken?: number;
+  hit?: boolean;
+  details?: string;
+  actionId?: string;
   timestamp?: string;
 }
 

@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import type { ContentType } from "@/lib/validators/content";
 import { useSocket } from "@/context/SocketContext";
 import { TargetSelectionModal } from "@/components/combat/TargetSelectionModal";
-import type { Combatant } from "@/lib/engine";
+import type { CombatSessionState, Combatant } from "@/lib/engine";
+import { applyHealing, applyResolvedDamage, getExpression, hydrateCombatantMana, rollExpression, spendCombatActions, spendSpell } from "@/lib/engine";
 
 const TYPE_LABELS: Record<ContentType, string> = {
   skills: "Perícias",
@@ -25,11 +26,68 @@ type LinkedRow = {
   content: Record<string, unknown>;
 };
 
+const SAFE_FORMULA = /^(?:\s*[+-]?\s*(?:\d+[dD]\d+|\d+)\s*)+$/;
+
+function explicitFormula(value: unknown): string | number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const candidate = value.trim();
+    return candidate && SAFE_FORMULA.test(candidate) ? candidate : null;
+  }
+  if (!value || typeof value !== "object") return null;
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const result = explicitFormula(item);
+      if (result !== null) return result;
+    }
+    return null;
+  }
+  const record = value as Record<string, unknown>;
+  for (const key of ["formula", "expression", "rollExpression", "value", "damage", "amount", "data", "effect", "effects", "result", "system", "sourceData", "translation"]) {
+    const result = explicitFormula(record[key]);
+    if (result !== null) return result;
+  }
+  return null;
+}
+
+function normalizeActionDamage(content: Record<string, unknown>): string | number | null {
+  // Keep this order aligned with the persisted content schema. Narrative text is
+  // deliberately never searched as a free-form formula.
+  const direct = explicitFormula(content.damage);
+  if (direct !== null) return direct;
+
+  const structured = content.structuredEffects ?? content.effects;
+  if (structured && typeof structured === "object") {
+    const result = explicitFormula(structured);
+    if (result !== null) return result;
+  }
+
+  const extra = explicitFormula(content.extraEffect);
+  if (extra !== null) return extra;
+  const description = explicitFormula(content.description);
+  if (description !== null) return description;
+
+  for (const source of [content.translation, content.sourceData, content.source]) {
+    const result = explicitFormula(source);
+    if (result !== null) return result;
+  }
+  return null;
+}
+
 type CharacterContentProps = {
   characterId: string;
   defaultType?: ContentType;
   allowedTypes?: ContentType[];
   isTurnLocked?: boolean;
+  campaignId?: string | null;
+  combatants?: Combatant[];
+  combatState?: CombatSessionState | null;
+  onCombatStateChange?: (state: CombatSessionState) => void;
+  onPersistActorStatus?: (actor: Combatant, hp: number, mana?: number) => Promise<void>;
+  onActorStatusChange?: (actor: Combatant) => void;
+  onActionResult?: (result: { title: string; formula: string; result: number; detail: string }) => void;
+  characterManaCurrent?: number | null;
+  characterManaMax?: number | null;
 };
 
 export function CharacterContent({
@@ -37,6 +95,15 @@ export function CharacterContent({
   defaultType = "skills",
   allowedTypes,
   isTurnLocked = false,
+  campaignId,
+  combatants = [],
+  combatState = null,
+  onCombatStateChange,
+  onPersistActorStatus,
+  onActorStatusChange,
+  onActionResult,
+  characterManaCurrent,
+  characterManaMax,
 }: CharacterContentProps) {
   const [activeType, setActiveType] = useState<ContentType>(defaultType);
   const [data, setData] = useState<{ linked: LinkedRow[]; available: Record<string, unknown>[] }>({
@@ -47,12 +114,17 @@ export function CharacterContent({
   const [error, setError] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const { rollDice, requestDefenseReaction, updateActorStatus } = useSocket();
+  const actorSocketId = (actor: Combatant) => actor.characterId ?? actor.npcId ?? actor.id;
   const [selectedActionItem, setSelectedActionItem] = useState<{
     name: string;
     isHealing: boolean;
     rollExpr?: string;
+    damageExpr?: string;
+    isPhysical: boolean;
+    manaCost?: number;
+    circle?: number;
+    actionCostOverride?: number | null;
   } | null>(null);
-  const [combatantsList, setCombatantsList] = useState<Combatant[]>([]);
 
   const loadContent = useCallback(async () => {
     try {
@@ -107,68 +179,139 @@ export function CharacterContent({
   }, [characterId, activeType]);
 
   const handleActionClick = (row: LinkedRow) => {
+    if (!campaignId || combatants.length === 0) {
+      setError("Nenhum combate ativo: inicie um combate antes de usar esta ação.");
+      return;
+    }
     const name = String(row.content.name || "Ação");
     const desc = String(row.content.description || "").toLowerCase();
     const isHealing = name.toLowerCase().includes("cura") || name.toLowerCase().includes("poção") || desc.includes("cura") || desc.includes("recupera");
-    const expr = (row.content.rollExpression as string) || (activeType === "spells" ? "1d20 + 3" : "1d20");
+    const exprValue = getExpression(row.content.rollExpression);
+    const expr = exprValue === null ? (activeType === "spells" ? "1d20" : undefined) : String(exprValue);
+    const damageValue = normalizeActionDamage(row.content);
+    const damageExpr = damageValue === null ? undefined : String(damageValue);
 
     setSelectedActionItem({
       name,
       isHealing,
       rollExpr: expr,
+      damageExpr,
+      isPhysical: !String(row.content.damageType || "").toLowerCase().match(/magic|mágic|mental|fire|fogo|cold|gelo/),
+      manaCost: Number(row.content.manaCost) || undefined,
+      circle: Number(row.content.circle) || undefined,
+      actionCostOverride: typeof row.content.actionCostOverride === "number" ? row.content.actionCostOverride : null,
     });
 
-    // Mock combatants or build from available actors
-    setCombatantsList([
-      { id: "monstruo_target", name: "Inimigo Monstro", type: "npc", initiative: 12, actionsRemaining: 3, maxActions: 3, hpCurrent: 30, hpMax: 30, vigor: 12, destreza: 14, level: 2 },
-    ]);
   };
 
   const handleConfirmTarget = (target: Combatant) => {
-    if (!selectedActionItem) return;
+    if (!selectedActionItem || !combatState || !campaignId) return;
+    const attacker = combatState.combatants[combatState.currentTurnIndex];
+    if (!attacker || (attacker.id !== characterId && attacker.characterId !== characterId)) {
+      setError("Seu personagem não está no turno atual do combate.");
+      return;
+    }
+
+    const hydratedCombatState = { ...combatState, combatants: combatState.combatants.map((combatant) => combatant.id === attacker.id ? hydrateCombatantMana(combatant, characterManaCurrent, characterManaMax) : combatant) };
+    const isSpell = activeType === "spells";
+    const spent = isSpell && selectedActionItem.circle
+      ? spendSpell(hydratedCombatState, attacker.id, selectedActionItem.circle, selectedActionItem.manaCost ?? 0, selectedActionItem.actionCostOverride)
+      : spendCombatActions(hydratedCombatState, attacker.id, 1);
+    if (!spent.success) {
+      setError(spent.message);
+      return;
+    }
+    onCombatStateChange?.(spent.session);
+    const updatedAttacker = spent.session.combatants.find((c) => c.id === attacker.id);
+    if (updatedAttacker) {
+      onActorStatusChange?.(updatedAttacker);
+      void onPersistActorStatus?.(updatedAttacker, updatedAttacker.hpCurrent, updatedAttacker.manaCurrent);
+    }
 
     if (selectedActionItem.isHealing) {
-      const healAmount = 10;
+      const healed = rollExpression(selectedActionItem.rollExpr, 0);
+      const healAmount = Math.max(0, healed.total);
+      const currentTarget = spent.session.combatants.find((combatant) => combatant.id === target.id);
+      if (!currentTarget) {
+        setError("Alvo não está mais no combate ativo.");
+        return;
+      }
+      const healedTarget = applyHealing(currentTarget, healAmount);
+      const healedState = {
+        ...spent.session,
+        combatants: spent.session.combatants.map((combatant) => combatant.id === healedTarget.id ? healedTarget : combatant),
+      };
+      onCombatStateChange?.(healedState);
       updateActorStatus({
-        campaignId: characterId,
-        actorId: target.id,
-        currentHp: Math.min(target.hpMax, target.hpCurrent + healAmount),
+        campaignId: campaignId!,
+        actorId: actorSocketId(healedTarget),
+        currentHp: healedTarget.hpCurrent,
+        maxHp: healedTarget.hpMax,
       });
+      onActorStatusChange?.(healedTarget);
+      if (healedTarget.type === "npc") void onPersistActorStatus?.(healedTarget, healedTarget.hpCurrent);
 
       rollDice({
-        campaignId: characterId,
+        campaignId: campaignId!,
         actorId: characterId,
         actorName: "Jogador",
         rollType: `Cura: ${selectedActionItem.name}`,
-        formula: "1d8 + 2",
+        formula: healed.formula,
         result: healAmount,
         diceDetail: `Curou +${healAmount} HP em ${target.name}`,
       });
+      onActionResult?.({ title: selectedActionItem.name, formula: healed.formula, result: healAmount, detail: `${healed.detail}; Curou +${healAmount} HP em ${target.name}` });
     } else {
-      const die = Math.floor(Math.random() * 20) + 1;
-      const dmg = Math.floor(Math.random() * 8) + 3;
+      const attack = rollExpression((selectedActionItem.rollExpr || "1d20") as string, 1);
+      const damage = rollExpression(selectedActionItem.damageExpr, 0);
+      const damageConfigured = !damage.missing && damage.valid;
+      const damageNotice = damage.missing
+        ? "Dano não configurado (nenhuma fórmula foi encontrada)."
+        : damage.valid ? "" : "Fórmula de dano inválida; nenhum dano foi aplicado.";
 
-      requestDefenseReaction({
-        campaignId: characterId,
+      const currentTarget = spent.session.combatants.find((combatant) => combatant.id === target.id);
+      if (!currentTarget) {
+        setError("Alvo não está mais no combate ativo.");
+        return;
+      }
+      if (currentTarget.type === "npc" && !damage.missing && damage.valid) {
+        const resolved = applyResolvedDamage(spent.session, currentTarget.id, Math.max(0, damage.total), attack.total, currentTarget.defenseReaction ?? "dodge", selectedActionItem.isPhysical);
+        onCombatStateChange?.(resolved.session);
+         const updatedTarget = resolved.session.combatants.find((c) => c.id === currentTarget.id);
+          if (updatedTarget) {
+            updateActorStatus({
+              campaignId,
+              actorId: actorSocketId(updatedTarget),
+              currentHp: updatedTarget.hpCurrent,
+              maxHp: updatedTarget.hpMax,
+            });
+            onActorStatusChange?.(updatedTarget);
+            if (updatedTarget.type === "npc") void onPersistActorStatus?.(updatedTarget, updatedTarget.hpCurrent);
+          }
+          onActionResult?.({ title: selectedActionItem.name, formula: `${attack.formula} · dano ${damage.formula}`, result: resolved.result.damageTaken, detail: `${attack.detail}; ${damage.detail}; ${resolved.result.details}${damageNotice}` });
+      } else if (currentTarget.type !== "npc" && damageConfigured) requestDefenseReaction({
+        campaignId,
         id: `react_${Date.now()}`,
-        attackerId: characterId,
+        attackerId: attacker.id,
         attackerName: "Jogador",
-        targetId: target.id,
-        targetName: target.name,
-        rawDamage: dmg,
-        attackRoll: die + 3,
-        isPhysical: true,
+        targetId: currentTarget.id,
+        targetName: currentTarget.name,
+        rawDamage: Math.max(0, damage.total),
+        attackRoll: attack.total,
+        isPhysical: selectedActionItem.isPhysical,
         actionName: selectedActionItem.name,
       });
+      if (currentTarget.type !== "npc") onActionResult?.({ title: selectedActionItem.name, formula: `${attack.formula} · dano ${damage.formula}`, result: damageConfigured ? damage.total : 0, detail: `${attack.detail}; ${damageConfigured ? `dano bruto ${damage.total} enviado para reação defensiva.` : "nenhum dano aplicado."} ${damageNotice}` });
+      if (currentTarget.type === "npc" && !damageConfigured) onActionResult?.({ title: selectedActionItem.name, formula: attack.formula, result: 0, detail: `${attack.detail}; ${damageNotice}` });
 
       rollDice({
-        campaignId: characterId,
+        campaignId: campaignId!,
         actorId: characterId,
         actorName: "Jogador",
         rollType: `Ataque: ${selectedActionItem.name}`,
-        formula: selectedActionItem.rollExpr || "1d20 + 3",
-        result: die + 3,
-        diceDetail: `Ataque contra ${target.name} [Dado: ${die} + 3 = ${die + 3}] (Dano declarado: ${dmg})`,
+        formula: attack.formula,
+        result: attack.total,
+        diceDetail: `Ataque contra ${target.name}: ${attack.detail}; dano: ${damage.total}`,
       });
     }
 
@@ -346,7 +489,7 @@ export function CharacterContent({
         <TargetSelectionModal
           actionName={selectedActionItem.name}
           isHealing={selectedActionItem.isHealing}
-          combatants={combatantsList}
+            combatants={combatants}
           myCharacterId={characterId}
           isOpen={Boolean(selectedActionItem)}
           onClose={() => setSelectedActionItem(null)}

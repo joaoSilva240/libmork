@@ -62,7 +62,7 @@ type ActorOverlayProps = {
   campaignId: string;
   actor: RosterActor;
   onClose: () => void;
-  onChanged: () => void;
+  onChanged: () => void | Promise<void>;
 };
 
 export type NpcPinItem = {
@@ -419,16 +419,23 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
       setManaDelta("");
       setModifyReason("");
       setSuccess(`Elementos de ${actor.name} atualizados.`);
-      
+      const updatedActor = data.data;
+      const currentHp = actor.kind === "character" ? updatedActor.hitPointsCurrent : updatedActor.hitPoints;
+      const currentMana = actor.kind === "character" ? updatedActor.manaPointsCurrent : updatedActor.manaPoints;
+      const maxHp = actor.kind === "character" ? updatedActor.hitPointsMax : updatedActor.hitPointsMax;
+      const maxMana = actor.kind === "character" ? updatedActor.manaPointsMax : updatedActor.manaPointsMax;
+
       // Notificar a sala por WebSocket (RF-025, RF-049)
       updateActorStatus({
         campaignId,
         actorId: actor.id,
-        currentHp: actor.hitPoints + (hp || 0),
-        currentMana: actor.manaPoints + (mana || 0),
+        currentHp,
+        currentMana,
+        maxHp,
+        maxMana,
       });
 
-      onChanged();
+      await onChanged();
     } catch {
       setError("Erro de conexão. Tente novamente.");
     } finally {
@@ -707,13 +714,21 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
                     key={d}
                     type="button"
                     onClick={() => {
-                      const newHp = Math.max(0, Math.min(actor.hitPointsMax, actor.hitPoints + d));
-                      updateActorStatus({
-                        campaignId,
-                        actorId: actor.id,
-                        currentHp: newHp,
-                      });
-                      onChanged();
+                       void (async () => {
+                         const response = await fetch(actorEndpoint(), {
+                           method: "PATCH",
+                           headers: { "Content-Type": "application/json" },
+                           body: JSON.stringify({ hpDelta: d }),
+                         });
+                         const data = await response.json();
+                         if (!response.ok) {
+                           setError(data.error || "Erro ao modificar HP");
+                           return;
+                         }
+                         const updatedActor = data.data;
+                         updateActorStatus({ campaignId, actorId: actor.id, currentHp: actor.kind === "character" ? updatedActor.hitPointsCurrent : updatedActor.hitPoints, currentMana: actor.kind === "character" ? updatedActor.manaPointsCurrent : updatedActor.manaPoints, maxHp: updatedActor.hitPointsMax, maxMana: updatedActor.manaPointsMax });
+                         await onChanged();
+                       })().catch(() => setError("Erro de conexão."));
                     }}
                     className={`rounded-lg px-2.5 py-1 text-xs font-bold transition border ${
                       d > 0

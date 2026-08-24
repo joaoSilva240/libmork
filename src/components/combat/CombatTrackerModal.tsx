@@ -17,6 +17,8 @@ interface CombatTrackerModalProps {
     level: number;
     hpCurrent: number;
     hpMax: number;
+    manaCurrent?: number;
+    manaMax?: number;
     avatarUrl?: string | null;
   }>;
   onClose: () => void;
@@ -45,6 +47,8 @@ export function CombatTrackerModal({
       initiative: Number(initiatives[actor.id]) || 1,
       hpCurrent: actor.hpCurrent,
       hpMax: actor.hpMax,
+      manaCurrent: actor.manaCurrent,
+      manaMax: actor.manaMax,
       vigor: actor.vigor,
       destreza: actor.destreza,
       level: actor.level,

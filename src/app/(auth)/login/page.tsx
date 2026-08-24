@@ -1,12 +1,18 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Input, Button, Form } from '@/components/ui';
+import { getSafeRedirect } from '@/lib/auth/redirect';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = getSafeRedirect(searchParams.get('redirect'));
+  const loginFailedMessage = searchParams.get('error') === 'login_failed'
+    ? 'E-mail ou senha inválidos. Se o problema persistir, verifique o cadastro.'
+    : undefined;
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -51,8 +57,8 @@ export default function LoginPage() {
         return;
       }
 
-      // Sucesso: redirecionar conforme o papel do usuário
-      router.push(data.data?.role === "master" ? "/master" : "/player");
+      // Só aceitar destinos internos; o fallback mantém o fluxo por papel.
+      router.push(redirect || (data.data?.role === "master" ? "/master" : "/player"));
     } catch {
       setErrors({ general: 'Erro de conexão. Tente novamente.' });
     } finally {
@@ -72,7 +78,13 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <Form onSubmit={handleSubmit} error={errors.general}>
+        <Form
+          method="post"
+          action="/api/auth/login"
+          onSubmit={handleSubmit}
+          error={errors.general || loginFailedMessage}
+        >
+          <input type="hidden" name="redirect" value={redirect || ''} />
           <Input
             label="E-mail"
             name="email"
@@ -110,5 +122,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }

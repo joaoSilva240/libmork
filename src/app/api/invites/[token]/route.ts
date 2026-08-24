@@ -5,9 +5,7 @@
 // =============================================================================
 
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { campaigns, campaignInvites } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { getPublicInvite } from "@/lib/server/public-invite";
 
 type RouteContext = { params: Promise<{ token: string }> };
 
@@ -18,43 +16,18 @@ type RouteContext = { params: Promise<{ token: string }> };
 export async function GET(request: NextRequest, { params }: RouteContext) {
   try {
     const { token } = await params;
+    const result = await getPublicInvite(token);
 
-    const [invite] = await db
-      .select()
-      .from(campaignInvites)
-      .where(
-        and(eq(campaignInvites.token, token), eq(campaignInvites.revoked, false))
-      )
-      .limit(1);
-
-    if (!invite) {
+    if (!result.invite) {
       return NextResponse.json(
-        { success: false, error: "Convite inválido ou revogado" },
-        { status: 404 }
-      );
-    }
-
-    const [campaign] = await db
-      .select()
-      .from(campaigns)
-      .where(eq(campaigns.id, invite.campaignId))
-      .limit(1);
-
-    if (!campaign) {
-      return NextResponse.json(
-        { success: false, error: "Campanha não encontrada" },
+        { success: false, error: result.error === "campaign-not-found" ? "Campanha não encontrada" : "Convite inválido ou revogado" },
         { status: 404 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      data: {
-        campaignId: campaign.id,
-        campaignName: campaign.name,
-        rulesEngine: campaign.rulesEngine,
-        pvpEnabled: campaign.pvpEnabled,
-      },
+      data: result.invite,
     });
   } catch (error) {
     console.error("Erro ao obter convite:", error);

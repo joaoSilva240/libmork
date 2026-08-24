@@ -5,6 +5,8 @@
 // =============================================================================
 
 import { cookies } from "next/headers";
+import type { NextRequest } from "next/server";
+import type { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { sessions, users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -14,11 +16,49 @@ const SESSION_COOKIE_NAME = "libmork_session";
 const SESSION_DURATION_DAYS = 30;
 
 /**
+ * Determines whether the session cookie must use the Secure attribute.
+ *
+ * A reverse proxy may terminate TLS before forwarding the request to Next.js,
+ * so x-forwarded-proto takes precedence when it contains one of the two
+ * explicitly supported protocol values. Invalid or composite values are not
+ * trusted and use the production fallback instead.
+ */
+function shouldUseSecureCookie(request?: NextRequest): boolean {
+  const productionFallback = process.env.NODE_ENV === "production";
+
+  if (!request) {
+    return productionFallback;
+  }
+
+  const forwardedProtocol = request.headers.get("x-forwarded-proto");
+  if (forwardedProtocol !== null) {
+    if (forwardedProtocol === "https") return true;
+    if (forwardedProtocol === "http") return false;
+    return productionFallback;
+  }
+
+  try {
+    const protocol = new URL(request.url).protocol;
+    if (protocol === "https:") return true;
+    if (protocol === "http:") return false;
+  } catch {
+    // Use the conservative environment fallback for an invalid request URL.
+  }
+
+  return productionFallback;
+}
+
+/**
  * Cria uma nova sessão para o usuário e define o cookie HTTP-only (D-44).
  * @param userId ID do usuário
+ * @param request Request original, used to determine the external protocol
  * @returns Token da sessão
  */
-export async function createSession(userId: string): Promise<string> {
+export async function createSession(
+  userId: string,
+  request?: NextRequest,
+  response?: NextResponse,
+): Promise<string> {
   const token = generateToken(32);
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + SESSION_DURATION_DAYS);
@@ -29,14 +69,25 @@ export async function createSession(userId: string): Promise<string> {
     expiresAt,
   });
 
-  const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE_NAME, token, {
+  const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureCookie(request),
     sameSite: "lax",
     expires: expiresAt,
     path: "/",
-  });
+  } as const;
+
+  try {
+    if (response) {
+      response.cookies.set(SESSION_COOKIE_NAME, token, cookieOptions);
+    } else {
+      const cookieStore = await cookies();
+      cookieStore.set(SESSION_COOKIE_NAME, token, cookieOptions);
+    }
+  } catch (error) {
+    await db.delete(sessions).where(eq(sessions.token, token));
+    throw error;
+  }
 
   return token;
 }

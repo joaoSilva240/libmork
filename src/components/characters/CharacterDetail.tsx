@@ -32,7 +32,7 @@ import { DuelArenaModal } from "@/components/combat/DuelArenaModal";
 import type { CombatSessionState } from "@/lib/engine";
 import type { DuelSessionState } from "@/lib/engine/duel";
 import { createDuelSession, startDuelSession } from "@/lib/engine/duel";
-import { spendCombatActions } from "@/lib/engine";
+import { applyHpChange, spendCombatActions } from "@/lib/engine";
 
 type TabType = "status" | "skills" | "inventory" | "settings";
 
@@ -63,6 +63,7 @@ export function CharacterDetail() {
     subscribeInitiativeRequest,
     subscribeDefenseRequest,
     subscribeCombatState,
+    subscribeActorStatus,
     subscribeDuelInvite,
     subscribeDuelResponse,
     subscribeDuelState,
@@ -77,7 +78,7 @@ export function CharacterDetail() {
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>("status");
-  const [isMutatingHpMp, setIsMutatingHpMp] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Combate & Interações ao vivo
   const [combatState, setCombatState] = useState<CombatSessionState | null>(null);
@@ -103,9 +104,30 @@ export function CharacterDetail() {
   } | null>(null);
 
   const characterRef = useRef<Character | null>(null);
+  const combatStateRef = useRef<CombatSessionState | null>(null);
+  const combatRevisionRef = useRef(0);
+  const syncCharacterFromCombatState = (state: CombatSessionState) => {
+    const current = characterRef.current;
+    if (!current) return;
+    const self = state.combatants.find((combatant) =>
+      combatant.id === current.id || combatant.characterId === current.id || combatant.npcId === current.id
+    );
+    if (!self) return;
+    setCharacter((prev) => prev ? {
+      ...prev,
+      hitPointsCurrent: self.hpCurrent,
+      hitPointsMax: self.hpMax,
+      ...(self.manaCurrent == null ? {} : { manaPointsCurrent: self.manaCurrent }),
+      ...(self.manaMax == null ? {} : { manaPointsMax: self.manaMax }),
+    } : prev);
+  };
   useEffect(() => {
     characterRef.current = character;
   }, [character]);
+
+  useEffect(() => {
+    combatStateRef.current = combatState;
+  }, [combatState]);
 
   useEffect(() => {
     let cancelled = false;
@@ -154,7 +176,7 @@ export function CharacterDetail() {
     if (!character?.id) return;
 
     joinCampaign({
-      campaignId: character.id,
+      campaignId: character.campaignId ?? "",
       user: { id: character.id, name: character.name },
       actorId: character.id,
       role: "player",
@@ -171,7 +193,71 @@ export function CharacterDetail() {
     });
 
     const unsubCombat = subscribeCombatState((state) => {
+      if (state.campaignId !== characterRef.current?.campaignId) return;
+      if ((state.revision ?? 0) < combatRevisionRef.current) return;
+      combatRevisionRef.current = state.revision ?? combatRevisionRef.current;
       setCombatState(state);
+      syncCharacterFromCombatState(state);
+    });
+
+    const unsubActorStatus = subscribeActorStatus((payload) => {
+      const current = characterRef.current;
+      if (!current || payload.campaignId !== current.campaignId || payload.actorId !== current.id) return;
+      setCharacter((prev) => prev ? {
+        ...prev,
+        ...(payload.currentHp === undefined ? {} : { hitPointsCurrent: Math.max(0, Math.min(payload.maxHp ?? prev.hitPointsMax, payload.currentHp)) }),
+        ...(payload.maxHp === undefined ? {} : { hitPointsMax: Math.max(0, payload.maxHp) }),
+        ...(payload.currentMana === undefined ? {} : { manaPointsCurrent: Math.max(0, Math.min(payload.maxMana ?? prev.manaPointsMax, payload.currentMana)) }),
+        ...(payload.maxMana === undefined ? {} : { manaPointsMax: Math.max(0, payload.maxMana) }),
+      } : prev);
+
+      const combat = combatStateRef.current;
+      if (combat && combat.active) {
+        const combatant = combat.combatants.find((c) => c.id === current.id || c.characterId === current.id);
+        if (combatant) {
+          const nextHp = payload.currentHp !== undefined ? Math.max(0, Math.min(payload.maxHp ?? combatant.hpMax, payload.currentHp)) : combatant.hpCurrent;
+          const nextHpMax = payload.maxHp !== undefined ? Math.max(0, payload.maxHp) : combatant.hpMax;
+          const nextMana = payload.currentMana !== undefined ? Math.max(0, Math.min(payload.maxMana ?? (combatant.manaMax ?? 0), payload.currentMana)) : combatant.manaCurrent;
+          const nextManaMax = payload.maxMana !== undefined ? Math.max(0, payload.maxMana) : combatant.manaMax;
+
+          const updatedCombatants = combat.combatants.map((c) => {
+            if (c.id === combatant.id) {
+              return {
+                ...c,
+                hpCurrent: nextHp,
+                hpMax: nextHpMax,
+                manaCurrent: nextMana,
+                manaMax: nextManaMax,
+                isFallen: nextHp <= 0 && !c.isDead,
+              };
+            }
+            return c;
+          });
+
+          const nextRevision = (combat.revision ?? 0) + 1;
+          combatRevisionRef.current = nextRevision;
+
+          const nextState = {
+            ...combat,
+            combatants: updatedCombatants,
+            revision: nextRevision,
+            updatedAt: Date.now(),
+          };
+
+          setCombatState(nextState);
+          updateCombatState(nextState);
+        }
+      }
+
+      void fetch(`/api/campaigns/${current.campaignId}/actors/${current.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...(payload.currentHp === undefined ? {} : { hitPointsCurrent: payload.currentHp }),
+          ...(payload.currentMana === undefined ? {} : { manaPointsCurrent: payload.currentMana }),
+          reason: "atualização de combate",
+        }),
+      });
     });
 
     const unsubDuelInvite = subscribeDuelInvite((payload) => {
@@ -224,6 +310,7 @@ export function CharacterDetail() {
       unsubInit();
       unsubDefense();
       unsubCombat();
+      unsubActorStatus();
       unsubDuelInvite();
       unsubDuelResponse();
       unsubDuelState();
@@ -236,6 +323,7 @@ export function CharacterDetail() {
     subscribeInitiativeRequest,
     subscribeDefenseRequest,
     subscribeCombatState,
+    subscribeActorStatus,
     subscribeDuelInvite,
     subscribeDuelResponse,
     subscribeDuelState,
@@ -268,37 +356,16 @@ export function CharacterDetail() {
     }
   };
 
-  const handleModifyHpMp = async (hpDelta: number, manaDelta: number) => {
-    if (!character || isMutatingHpMp) return;
-    setIsMutatingHpMp(true);
-
-    const newHp = Math.max(0, Math.min(character.hitPointsMax, character.hitPointsCurrent + hpDelta));
-    const newMana = Math.max(0, Math.min(character.manaPointsMax, character.manaPointsCurrent + manaDelta));
-
-    // Atualização otimista local
-    setCharacter((prev) =>
-      prev
-        ? {
-            ...prev,
-            hitPointsCurrent: newHp,
-            manaPointsCurrent: newMana,
-          }
-        : prev
-    );
-
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
     try {
-      // Usar a rota de atualização do personagem se disponível ou a rota da campanha
-      // Atualização via socket para a mesa em tempo real
-      updateActorStatus({
-        campaignId: character.id,
-        actorId: character.id,
-        currentHp: newHp,
-        currentMana: newMana,
-      });
+      const response = await fetch("/api/auth/logout", { method: "POST" });
+      if (!response.ok) throw new Error("logout failed");
+      router.push("/login");
+      router.refresh();
     } catch {
-      // ignore
-    } finally {
-      setIsMutatingHpMp(false);
+      setError("Não foi possível encerrar a sessão.");
+      setIsLoggingOut(false);
     }
   };
 
@@ -309,8 +376,28 @@ export function CharacterDetail() {
   ) => {
     if (!character || !defenseRequestPayload) return;
 
-    if (damageTaken > 0) {
-      await handleModifyHpMp(-damageTaken, 0);
+    const currentTarget = combatState?.combatants.find((combatant) => combatant.id === character.id);
+    const updatedTarget = currentTarget ? applyHpChange(currentTarget, -damageTaken) : null;
+    if (updatedTarget && combatState) {
+      const nextState = {
+        ...combatState,
+        combatants: combatState.combatants.map((combatant) => combatant.id === updatedTarget.id ? updatedTarget : combatant),
+        pendingReaction: null,
+      };
+      // O estado realtime é a fonte da verdade; persiste o mesmo resultado uma vez.
+      updateCombatState(nextState);
+      setCharacter((prev) => prev ? { ...prev, hitPointsCurrent: updatedTarget.hpCurrent } : prev);
+      try {
+        const response = await fetch(`/api/campaigns/${character.campaignId}/actors/${character.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ hitPointsCurrent: updatedTarget.hpCurrent, reason: "reação defensiva" }),
+        });
+        if (!response.ok) setError("HP atualizado em tempo real, mas a persistência falhou.");
+      } catch {
+        setError("HP atualizado em tempo real, mas a persistência falhou.");
+      }
+      updateActorStatus({ campaignId: character.campaignId ?? "", actorId: character.id, currentHp: updatedTarget.hpCurrent });
     }
 
     rollDice({
@@ -333,12 +420,34 @@ export function CharacterDetail() {
     setDefenseRequestPayload(null);
   };
 
+  const handleCombatStateChange = (state: CombatSessionState) => {
+    if (state.campaignId !== character?.campaignId) return;
+    syncCharacterFromCombatState(state);
+    setCombatState(state);
+    updateCombatState(state);
+  };
+
+  const handleActorStatusChange = (actor: { characterId?: string; npcId?: string; id: string; hpCurrent: number; hpMax: number; manaCurrent?: number; manaMax?: number }) => {
+    if (actor.characterId !== character?.id && actor.npcId !== character?.id && actor.id !== character?.id) return;
+    setCharacter((prev) => prev ? {
+      ...prev,
+      hitPointsCurrent: actor.hpCurrent,
+      hitPointsMax: actor.hpMax,
+      ...(actor.manaCurrent == null ? {} : { manaPointsCurrent: actor.manaCurrent }),
+      ...(actor.manaMax == null ? {} : { manaPointsMax: actor.manaMax }),
+    } : prev);
+  };
+
+  const handleActionResult = (result: { title: string; formula: string; result: number; detail: string }) => {
+    setActiveRollResult(result);
+  };
+
   const handleSendInitiative = (val?: number) => {
     if (!character) return;
     const finalVal = val ?? (Number(manualInitiative) || Math.floor(Math.random() * 20) + 1);
 
     rollDice({
-      campaignId: "global",
+      campaignId: character.campaignId ?? "",
       actorId: character.id,
       actorName: character.name,
       rollType: "iniciativa",
@@ -424,7 +533,7 @@ export function CharacterDetail() {
     });
 
     rollDice({
-      campaignId: character.id,
+      campaignId: character.campaignId ?? "",
       actorId: character.id,
       actorName: character.name,
       rollType: `Atributo: ${label}`,
@@ -481,20 +590,10 @@ export function CharacterDetail() {
     <div className="relative mx-auto min-h-screen max-w-md bg-gray-950 text-gray-100 pb-24 shadow-2xl font-sans">
       {/* Top Header Mobile Bar */}
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-gray-800/80 bg-gray-900/90 px-4 py-3 backdrop-blur-md">
-        <Link href="/player" className="flex items-center gap-1.5 text-xs font-semibold text-gray-400 hover:text-white">
-          <span>‹</span> Meus Personagens
+        <Link href="/player" className="text-sm font-bold text-gray-200 hover:text-white">
+          Libmork — Jogador
         </Link>
-
-        <div className="flex items-center gap-2">
-          <span
-            className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-              isConnected ? "bg-emerald-950 text-emerald-400 border border-emerald-800/60" : "bg-gray-800 text-gray-400"
-            }`}
-          >
-            <span className={`h-1.5 w-1.5 rounded-full ${isConnected ? "bg-emerald-400 animate-pulse" : "bg-gray-500"}`} />
-            {isConnected ? "Mesa Ao Vivo" : "Offline"}
-          </span>
-        </div>
+        <span aria-label={isConnected ? "Conectado à mesa" : "Desconectado da mesa"} title={isConnected ? "Conectado à mesa" : "Desconectado da mesa"} className={`h-2.5 w-2.5 rounded-full ${isConnected ? "bg-emerald-400" : "bg-red-500"}`} />
       </header>
 
       {/* Banner de Combate Ativo */}
@@ -511,29 +610,6 @@ export function CharacterDetail() {
 
       {/* Main Tab Content */}
       <main className="p-4 space-y-4">
-        {/* Barra de Ações Rápidas da Fase 5 (Pontos de Sombra e Duelo P2P) */}
-        <div className="flex items-center justify-between gap-2">
-          {userShadowPoints > 0 && (
-            <button
-              type="button"
-              onClick={() => setShowShadowModal(true)}
-              className="flex-1 rounded-xl border border-purple-800/80 bg-purple-950/60 px-3 py-1.5 text-xs font-bold text-purple-300 hover:bg-purple-900/60 transition flex items-center justify-center gap-1.5 shadow-sm"
-            >
-              <span>🔮</span>
-              <span>Gastar Sombra ({userShadowPoints})</span>
-            </button>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setShowDuelInviteModal(true)}
-            className="flex-1 rounded-xl border border-rose-800/80 bg-rose-950/60 px-3 py-1.5 text-xs font-bold text-rose-300 hover:bg-rose-900/60 transition flex items-center justify-center gap-1.5 shadow-sm"
-          >
-            <span>⚔️</span>
-            <span>Duelo P2P</span>
-          </button>
-        </div>
-
         {isTurnLocked && (
           <div className="flex items-center justify-center gap-1.5 rounded-full border border-amber-800/60 bg-amber-950/40 px-3 py-1 text-xs font-bold text-amber-300 shadow-sm w-fit mx-auto">
             🔒 <span>Turno de {currentCombatant?.name}</span>
@@ -629,20 +705,6 @@ export function CharacterDetail() {
                   <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-900">
                     <div className="h-full bg-red-500 transition-all duration-300" style={{ width: `${hpPercent}%` }} />
                   </div>
-                  <div className="flex gap-1 pt-1">
-                    <button
-                      onClick={() => handleModifyHpMp(-1, 0)}
-                      className="flex-1 rounded-md bg-red-900/60 py-1 text-[10px] font-bold text-red-200 hover:bg-red-800 active:scale-95"
-                    >
-                      -1
-                    </button>
-                    <button
-                      onClick={() => handleModifyHpMp(1, 0)}
-                      className="flex-1 rounded-md bg-red-900/60 py-1 text-[10px] font-bold text-red-200 hover:bg-red-800 active:scale-95"
-                    >
-                      +1
-                    </button>
-                  </div>
                 </div>
               </div>
 
@@ -661,20 +723,6 @@ export function CharacterDetail() {
                 <div className="mt-2 space-y-2">
                   <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-900">
                     <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${manaPercent}%` }} />
-                  </div>
-                  <div className="flex gap-1 pt-1">
-                    <button
-                      onClick={() => handleModifyHpMp(0, -1)}
-                      className="flex-1 rounded-md bg-blue-900/60 py-1 text-[10px] font-bold text-blue-200 hover:bg-blue-800 active:scale-95"
-                    >
-                      -1
-                    </button>
-                    <button
-                      onClick={() => handleModifyHpMp(0, 1)}
-                      className="flex-1 rounded-md bg-blue-900/60 py-1 text-[10px] font-bold text-blue-200 hover:bg-blue-800 active:scale-95"
-                    >
-                      +1
-                    </button>
                   </div>
                 </div>
               </div>
@@ -750,7 +798,7 @@ export function CharacterDetail() {
             </div>
 
             {/* Gerenciador completo de Perícias */}
-            <CharacterContent characterId={character.id} defaultType="skills" allowedTypes={["skills"]} isTurnLocked={isTurnLocked} />
+              <CharacterContent characterId={character.id} campaignId={character.campaignId} characterManaCurrent={character.manaPointsCurrent} characterManaMax={character.manaPointsMax} combatState={combatState} onCombatStateChange={handleCombatStateChange} onActorStatusChange={handleActorStatusChange} onActionResult={handleActionResult} combatants={combatState?.combatants ?? []} defaultType="skills" allowedTypes={["skills"]} isTurnLocked={isTurnLocked} onPersistActorStatus={async (actor, hp, mana) => { if (actor.characterId !== character.id && actor.id !== character.id && actor.type !== "npc" && !actor.npcId) return; const response = await fetch(`/api/campaigns/${character.campaignId}/actors/${actor.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hitPointsCurrent: hp, ...(mana == null ? {} : { manaPointsCurrent: mana }), reason: "combate" }) }); if (!response.ok) setError("Estado atualizado em tempo real, mas a persistência falhou."); }} />
           </div>
         )}
 
@@ -758,7 +806,7 @@ export function CharacterDetail() {
         {activeTab === "inventory" && (
           <div className="space-y-4 animate-in fade-in duration-200">
             {/* Conteúdo da Ficha (Itens, Magias, Habilidades, Condições) */}
-            <CharacterContent characterId={character.id} defaultType="items" allowedTypes={["items", "spells", "conditions"]} isTurnLocked={isTurnLocked} />
+              <CharacterContent characterId={character.id} campaignId={character.campaignId} characterManaCurrent={character.manaPointsCurrent} characterManaMax={character.manaPointsMax} combatState={combatState} onCombatStateChange={handleCombatStateChange} onActorStatusChange={handleActorStatusChange} onActionResult={handleActionResult} combatants={combatState?.combatants ?? []} defaultType="items" allowedTypes={["items", "spells", "conditions"]} isTurnLocked={isTurnLocked} onPersistActorStatus={async (actor, hp, mana) => { if (actor.characterId !== character.id && actor.id !== character.id && actor.type !== "npc" && !actor.npcId) return; const response = await fetch(`/api/campaigns/${character.campaignId}/actors/${actor.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hitPointsCurrent: hp, ...(mana == null ? {} : { manaPointsCurrent: mana }), reason: "combate" }) }); if (!response.ok) setError("Estado atualizado em tempo real, mas a persistência falhou."); }} />
           </div>
         )}
 
@@ -769,6 +817,17 @@ export function CharacterDetail() {
               <h3 className="text-xs font-bold uppercase tracking-wider text-gray-300">
                 Gerenciamento da Ficha
               </h3>
+
+              <div className="flex flex-col gap-2 border-b border-gray-800 pb-4">
+                <button type="button" onClick={() => setShowDuelInviteModal(true)} className="w-full rounded-xl border border-rose-800/80 bg-rose-950/40 py-2.5 text-xs font-bold text-rose-300 hover:bg-rose-900/60">
+                  ⚔️ Duelo P2P
+                </button>
+                {userShadowPoints > 0 && (
+                  <button type="button" onClick={() => setShowShadowModal(true)} className="w-full rounded-xl border border-purple-800/80 bg-purple-950/40 py-2.5 text-xs font-bold text-purple-300 hover:bg-purple-900/60">
+                    🔮 Gastar Sombra ({userShadowPoints})
+                  </button>
+                )}
+              </div>
 
               {/* Upload de Foto */}
               <div className="border-b border-gray-800 pb-4">
@@ -795,6 +854,9 @@ export function CharacterDetail() {
 
               {/* Exclusão do Personagem */}
               <div className="pt-2">
+                <button type="button" onClick={() => void handleLogout()} disabled={isLoggingOut} className="mb-2 w-full rounded-xl border border-gray-700 bg-gray-800 py-2.5 text-xs font-bold text-gray-200 hover:bg-gray-700 disabled:opacity-50">
+                  {isLoggingOut ? "Saindo..." : "Sair"}
+                </button>
                 <button
                   onClick={handleDelete}
                   disabled={isDeleting}
@@ -883,7 +945,7 @@ export function CharacterDetail() {
         <>
           <ShadowPointsModal
             characterId={character.id}
-            campaignId={character.id}
+            campaignId={character.campaignId ?? ""}
             userShadowPoints={userShadowPoints}
             isOpen={showShadowModal}
             onClose={() => setShowShadowModal(false)}
@@ -893,7 +955,7 @@ export function CharacterDetail() {
           />
 
           <DuelInviteModal
-            campaignId={character.id}
+            campaignId={character.campaignId ?? ""}
             challengerId={character.id}
             challengerName={character.name}
             roster={[{ id: character.id, name: character.name }]}
@@ -977,7 +1039,7 @@ export function CharacterDetail() {
           inteligencia={character.attributes.inteligencia}
           onRollDeathSave={(_success, _die, _dc, details) => {
             rollDice({
-              campaignId: character.id,
+      campaignId: character.campaignId ?? "",
               actorId: character.id,
               actorName: character.name,
               rollType: "salvaguarda_morte",

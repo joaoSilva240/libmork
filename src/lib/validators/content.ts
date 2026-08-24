@@ -25,10 +25,19 @@ export const spellSchema = z.object({
   circle: z.number().int().min(1).max(9).default(1),
   manaCost: z.number().int().min(0).default(0),
   description: z.string().max(5000).optional().nullable(),
-  useType: z.enum(SPELL_USE_TYPES).default("somatic"),
+  useType: z.string().default("somatic"),
   duration: z.string().max(100).optional().nullable(),
   extraEffect: z.string().max(5000).optional().nullable(),
   actionCostOverride: z.number().int().min(0).max(3).optional().nullable(),
+  imageUrl: z.url().refine((value) => /^https?:\/\//i.test(value), "URL deve usar HTTP ou HTTPS").optional().nullable(),
+  range: z.string().max(250).optional().nullable(),
+  target: z.string().optional().nullable(),
+  area: z.string().max(250).optional().nullable(),
+  damage: z.any().optional().nullable(),
+  damageType: z.string().max(100).optional().nullable(),
+  structuredEffects: z.any().optional().nullable(),
+  castingTime: z.string().max(100).optional().nullable(),
+  translation: z.any().optional().nullable(),
 });
 
 /**
@@ -39,6 +48,9 @@ export const itemSchema = z.object({
   description: z.string().max(5000).optional().nullable(),
   qualityDescription: z.string().max(5000).optional().nullable(),
   counterpointDescription: z.string().max(5000).optional().nullable(),
+  imageUrl: z.url().optional().nullable(),
+  sourceData: z.record(z.string(), z.unknown()).optional().nullable(),
+  translation: z.any().optional().nullable(),
 });
 
 /**
@@ -58,10 +70,19 @@ export const updateSpellSchema = z.object({
   circle: z.number().int().min(1).max(9).optional(),
   manaCost: z.number().int().min(0).optional(),
   description: z.string().max(5000).optional().nullable(),
-  useType: z.enum(SPELL_USE_TYPES).optional(),
+  useType: z.string().optional(),
   duration: z.string().max(100).optional().nullable(),
   extraEffect: z.string().max(5000).optional().nullable(),
   actionCostOverride: z.number().int().min(0).max(3).optional().nullable(),
+  imageUrl: z.url().refine((value) => /^https?:\/\//i.test(value), "URL deve usar HTTP ou HTTPS").optional().nullable(),
+  range: z.string().max(250).optional().nullable(),
+  target: z.string().optional().nullable(),
+  area: z.string().max(250).optional().nullable(),
+  damage: z.any().optional().nullable(),
+  damageType: z.string().max(100).optional().nullable(),
+  structuredEffects: z.any().optional().nullable(),
+  castingTime: z.string().max(100).optional().nullable(),
+  translation: z.any().optional().nullable(),
 });
 
 /** Tipos de conteúdo suportados */

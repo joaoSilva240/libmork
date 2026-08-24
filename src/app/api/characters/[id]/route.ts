@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { characters } from "@/lib/db/schema";
+import { characters, characterCampaigns } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { updateCharacterSchema } from "@/lib/validators/character";
 import { eq, and } from "drizzle-orm";
@@ -46,9 +46,15 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       );
     }
 
+    const [campaignLink] = await db
+      .select({ campaignId: characterCampaigns.campaignId })
+      .from(characterCampaigns)
+      .where(eq(characterCampaigns.characterId, id))
+      .limit(1);
+
     return NextResponse.json({
       success: true,
-      data: character,
+      data: { ...character, campaignId: campaignLink?.campaignId ?? null },
     });
   } catch (error) {
     console.error("Erro ao obter personagem:", error);

@@ -552,6 +552,8 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
             level: a.level ?? 1,
             hpCurrent: a.hitPoints ?? 15,
             hpMax: a.hitPointsMax ?? 15,
+            manaCurrent: Number.isFinite(a.manaPoints) ? Math.max(0, a.manaPoints) : undefined,
+            manaMax: Number.isFinite(a.manaPointsMax) ? Math.max(0, a.manaPointsMax) : undefined,
             avatarUrl: a.imageUrl,
           }))}
           onClose={() => setShowCombatTrackerModal(false)}

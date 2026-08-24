@@ -40,7 +40,14 @@ export function canCastSpell(
  * Verifica se o personagem tem mana suficiente para conjurar a magia.
  */
 export function hasEnoughMana(currentMana: number, manaCost: number): boolean {
-  return currentMana >= manaCost;
+  return Number.isFinite(currentMana) && Number.isFinite(manaCost) && manaCost >= 0 && currentMana >= manaCost;
+}
+
+export function resolveSpellCost(actionsRemaining: number, currentMana: number, circle: number, manaCost: number, actionCostOverride?: number | null) {
+  const actionCost = getSpellActionCost(circle, actionCostOverride);
+  if (!Number.isInteger(actionsRemaining) || actionsRemaining < actionCost) return { valid: false, actionCost, manaAfter: currentMana, actionsAfter: actionsRemaining, message: "Ações insuficientes." };
+  if (!hasEnoughMana(currentMana, manaCost)) return { valid: false, actionCost, manaAfter: currentMana, actionsAfter: actionsRemaining, message: "Mana insuficiente." };
+  return { valid: true, actionCost, manaAfter: currentMana - manaCost, actionsAfter: actionsRemaining - actionCost, message: "Magia validada." };
 }
 
 /**

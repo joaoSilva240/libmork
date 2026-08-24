@@ -9,4 +9,5 @@ export * from "./attributes";
 export * from "./dice";
 export * from "./combat";
 export * from "./spells";
+export * from "./combat-actions";
 export * from "./skills";

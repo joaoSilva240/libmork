@@ -12,6 +12,7 @@ import {
   campaignLogs,
   characterConditions,
   conditions,
+  characterCampaigns,
 } from "@/lib/db/schema";
 import { XP_PER_LEVEL, REFERENCE_MAX_LEVEL } from "@/lib/utils/constants";
 import { eq, inArray, and } from "drizzle-orm";
@@ -88,6 +89,10 @@ export async function applyCharacterUpdate(
   if (!character) {
     return { error: "Personagem não encontrado" as const };
   }
+
+  const [membership] = await db.select({ characterId: characterCampaigns.characterId }).from(characterCampaigns)
+    .where(and(eq(characterCampaigns.characterId, characterId), eq(characterCampaigns.campaignId, campaignId))).limit(1);
+  if (!membership) return { error: "Personagem não pertence à campanha" as const };
 
   const logs: unknown[] = [];
 
