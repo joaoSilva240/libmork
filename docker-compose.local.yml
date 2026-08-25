@@ -1,0 +1,46 @@
+# =============================================================================
+# Libmork — Local Docker Compose (Build Local)
+# =============================================================================
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: libmork:local
+    container_name: libmork-app-local
+    restart: unless-stopped
+    ports:
+      - "3210:3000"
+    environment:
+      # --- Banco de Dados (PostgreSQL externo — D-34) ---
+      - DATABASE_URL=${DATABASE_URL:-postgresql://casaos:casaos@100.122.171.83:5432/libmork}
+
+      # --- Autenticação (Cookies HTTP-only) ---
+      - AUTH_SECRET=${AUTH_SECRET:-900747650a3d4a6bb19cd6ef7e55c74f1c681f7bfc572f65d640b4a9104ca6ce}
+
+      # --- Aplicação ---
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3210}
+      - NODE_ENV=production
+
+      # --- Tradução via 9Router (OpenAI-compatible) ---
+      - NINEROUTER_URL=${NINEROUTER_URL:-http://100.83.170.1:20128/v1}
+      - NINEROUTER_KEY=${NINEROUTER_KEY:-}
+      - NINEROUTER_MODEL=${NINEROUTER_MODEL:-ollama/gpt-oss:120b}
+
+      # --- Upload de Imagens ---
+      - UPLOAD_DIR=/app/uploads
+      - MAX_IMAGE_SIZE_MB=5
+    volumes:
+      # Volume de imagens de personagens e NPCs (D-33, RF-063)
+      - libmork-uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3210"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  libmork-uploads:
+    driver: local
