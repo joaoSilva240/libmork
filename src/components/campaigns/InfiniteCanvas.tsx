@@ -10,12 +10,14 @@ type StickyNote = {
   height: number;
   content: string;
   color: string;
+  bgIcon?: string;
 };
 
 type InfiniteCanvasProps = {
   campaignId: string;
 };
 
+const CHARACTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
 const COLORS = ["#fef08a", "#bfdbfe", "#d9f99d", "#fecaca", "#e9d5ff", "#fed7aa"];
 
 export function InfiniteCanvas({ campaignId }: InfiniteCanvasProps) {
@@ -145,6 +147,7 @@ export function InfiniteCanvas({ campaignId }: InfiniteCanvasProps) {
       height: 150,
       content: "",
       color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      bgIcon: CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)],
     };
     saveNotes([...notes, newNote]);
     setEditingId(newNote.id);
@@ -264,7 +267,7 @@ export function InfiniteCanvas({ campaignId }: InfiniteCanvasProps) {
         {notes.map((note) => (
           <div
             key={note.id}
-            className="sticky-note absolute shadow-lg"
+            className="sticky-note absolute shadow-lg overflow-hidden"
             style={{
               left: note.x * zoom + viewOffset.x,
               top: note.y * zoom + viewOffset.y,
@@ -276,7 +279,15 @@ export function InfiniteCanvas({ campaignId }: InfiniteCanvasProps) {
             onMouseDown={(e) => handleNoteMouseDown(e, note.id)}
             onDoubleClick={() => startEdit(note)}
           >
-            <div className="flex h-full flex-col p-2">
+            {/* Marca d'água de fundo Fantasy (opacidade ~30%) */}
+            <div
+              className="font-fantasy absolute inset-0 flex items-center justify-center text-gray-900/30 select-none pointer-events-none overflow-hidden"
+              style={{ fontSize: `${Math.min(note.width, note.height) * zoom * 0.55}px` }}
+            >
+              {note.bgIcon || CHARACTERS[(note.id.charCodeAt(0) || 0) % CHARACTERS.length]}
+            </div>
+
+            <div className="relative z-10 flex h-full flex-col p-2">
               <div className="mb-1 flex items-center justify-between">
                 <div className="h-1 w-8 rounded bg-black/10" />
                 <button

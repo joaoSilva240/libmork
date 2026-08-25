@@ -10,11 +10,12 @@ interface SpinnerProps {
 
 const CHARACTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
 
+// Aumentado em ~50% no tamanho da fonte e dimensões mantendo max-w-full max-h-full overflow-hidden
 const sizeMap: Record<NonNullable<SpinnerProps['size']>, string> = {
-  sm: 'text-base w-4 h-4',
-  md: 'text-xl w-6 h-6',
-  lg: 'text-3xl w-10 h-10',
-  xl: 'text-5xl w-14 h-14',
+  sm: 'text-xl w-6 h-6 leading-none max-w-full max-h-full overflow-hidden flex items-center justify-center',
+  md: 'text-3xl w-9 h-9 leading-none max-w-full max-h-full overflow-hidden flex items-center justify-center',
+  lg: 'text-5xl w-15 h-15 leading-none max-w-full max-h-full overflow-hidden flex items-center justify-center',
+  xl: 'text-7xl w-21 h-21 leading-none max-w-full max-h-full overflow-hidden flex items-center justify-center',
 };
 
 export function Spinner({
@@ -27,7 +28,7 @@ export function Spinner({
   useEffect(() => {
     const interval = setInterval(() => {
       setIndex((prevIndex) => (prevIndex + 1) % CHARACTERS.length);
-    }, 1000);
+    }, 250);
 
     return () => clearInterval(interval);
   }, []);
@@ -36,7 +37,7 @@ export function Spinner({
 
   return (
     <span
-      className={`font-fantasy flex items-center justify-center select-none ${sizeClass} ${className}`}
+      className={`font-fantasy inline-flex items-center justify-center leading-none text-white select-none max-w-full max-h-full overflow-hidden ${sizeClass} ${className}`}
       style={color ? { color } : undefined}
     >
       {CHARACTERS[index]}
