@@ -1,8 +1,7 @@
 # =============================================================================
-# Libmork — Docker Compose
+# Libmork — Docker Compose (ZimaOS / CasaOS Compatible)
 # =============================================================================
-# O banco PostgreSQL é EXTERNO (D-34) — não incluído aqui.
-# Configure DATABASE_URL no .env.local apontando para o banco externo.
+# O banco PostgreSQL é EXTERNO (D-34) — configure a DATABASE_URL no ZimaOS.
 # =============================================================================
 
 services:
@@ -12,8 +11,25 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
-    env_file:
-      - .env.local
+    environment:
+      # --- Banco de Dados (PostgreSQL externo — D-34) ---
+      - DATABASE_URL=${DATABASE_URL:-postgresql://casaos:casaos@100.122.171.83:5432/libmork}
+
+      # --- Autenticação (Cookies HTTP-only) ---
+      - AUTH_SECRET=${AUTH_SECRET:-900747650a3d4a6bb19cd6ef7e55c74f1c681f7bfc572f65d640b4a9104ca6ce}
+
+      # --- Aplicação ---
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      - NODE_ENV=production
+
+      # --- Tradução via 9Router (OpenAI-compatible) ---
+      - NINEROUTER_URL=${NINEROUTER_URL:-http://100.83.170.1:20128/v1}
+      - NINEROUTER_KEY=${NINEROUTER_KEY:-}
+      - NINEROUTER_MODEL=${NINEROUTER_MODEL:-ollama/gpt-oss:120b}
+
+      # --- Upload de Imagens ---
+      - UPLOAD_DIR=/app/uploads
+      - MAX_IMAGE_SIZE_MB=5
     volumes:
       # Volume de imagens de personagens e NPCs (D-33, RF-063)
       - libmork-uploads:/app/uploads
