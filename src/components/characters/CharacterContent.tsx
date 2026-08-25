@@ -375,7 +375,7 @@ export function CharacterContent({
   const displayTypes = allowedTypes ? TYPE_ORDER.filter((t) => allowedTypes.includes(t)) : TYPE_ORDER;
 
   return (
-    <DecorativeFrame className="rounded-2xl shadow-sm h-full" innerClassName="p-4 flex flex-col">
+    <div className="h-full flex flex-col">
       {isTurnLocked && (
         <div className="mb-2 flex items-center justify-center gap-1.5 rounded-full border border-amber-800/60 bg-amber-950/40 px-3 py-0.5 text-xs font-bold text-amber-300 w-fit mx-auto">
           🔒 <span>Bloqueado (Fora do turno)</span>
@@ -529,6 +529,6 @@ export function CharacterContent({
           ))}
         </div>
       )}
-    </DecorativeFrame>
+    </div>
   );
 }
