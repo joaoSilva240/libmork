@@ -67,8 +67,6 @@ export default function RegisterPage() {
         return;
       }
 
-      // NAVEGAÇÃO COMPLETA DE DOCUMENTO:
-      // O uso de window.location.href em vez de router.push é essencial para navegar em dispositivos móveis.
       const targetUrl = data.data?.redirect || (data.data?.role === "master" ? "/master" : "/player");
       window.location.href = targetUrl;
     } catch {
@@ -79,13 +77,13 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen flex items-center justify-center bg-dominant-deep text-secondary-pure px-4 py-8">
+      <div className="max-w-md w-full space-y-8 bg-secondary-card p-8 rounded-xl border border-dominant-border shadow-xl">
         <div>
-          <h1 className="text-3xl font-bold text-center text-gray-900">
+          <h1 className="text-3xl font-bold text-center text-secondary-pure">
             Criar Conta
           </h1>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="mt-2 text-center text-sm text-secondary-muted">
             Crie sua conta no Libmork para começar a jogar
           </p>
         </div>
@@ -140,7 +138,7 @@ export default function RegisterPage() {
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-secondary-muted mb-1">
               Tipo de conta
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -149,8 +147,8 @@ export default function RegisterPage() {
                 onClick={() => setFormData((prev) => ({ ...prev, role: "player" }))}
                 className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
                   formData.role === "player"
-                    ? "border-blue-600 bg-blue-600 text-white"
-                    : "border-gray-300 bg-white text-gray-700 hover:border-blue-400"
+                    ? "border-accent bg-accent text-secondary-pure"
+                    : "border-secondary-border bg-dominant-dark text-secondary-muted hover:border-accent-vibrant hover:text-secondary-pure"
                 }`}
               >
                 Jogador
@@ -160,8 +158,8 @@ export default function RegisterPage() {
                 onClick={() => setFormData((prev) => ({ ...prev, role: "master" }))}
                 className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
                   formData.role === "master"
-                    ? "border-purple-600 bg-purple-600 text-white"
-                    : "border-gray-300 bg-white text-gray-700 hover:border-purple-400"
+                    ? "border-accent bg-accent text-secondary-pure shadow-[0_0_10px_rgba(147,51,234,0.3)]"
+                    : "border-secondary-border bg-dominant-dark text-secondary-muted hover:border-accent-vibrant hover:text-secondary-pure"
                 }`}
               >
                 Mestre
@@ -169,14 +167,14 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <Button type="submit" className="w-full" isLoading={isLoading}>
+          <Button type="submit" variant="primary" className="w-full" isLoading={isLoading}>
             Criar Conta
           </Button>
         </Form>
 
-        <p className="text-center text-sm text-gray-600">
+        <p className="text-center text-sm text-secondary-muted">
           Já tem uma conta?{' '}
-          <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
+          <Link href="/login" className="font-medium text-accent hover:text-accent-hover transition-colors">
             Fazer login
           </Link>
         </p>

@@ -1,5 +1,52 @@
 @import "tailwindcss";
 
+:root,
+[data-theme="default-dark"] {
+  /* 60% Dominante - Preto e Tons Escuros de Fundo/Estrutura Base */
+  --dominant-pure: #000000;
+  --dominant-deep: #09090b;
+  --dominant-dark: #121217;
+  --dominant-container: #1a1a24;
+  --dominant-border: #272730;
+
+  /* 30% Secundário - Branco e Neutros de Alto Contraste para Leitura, Cards e Superfícies Elevadas */
+  --secondary-pure: #ffffff;
+  --secondary-offwhite: #f4f4f7;
+  --secondary-muted: #a1a1aa;
+  --secondary-border: #3f3f4e;
+  --secondary-card: #1c1c26;
+
+  /* 10% Accent / Destaque - Roxo e Variações Interativas/Foco/Ações */
+  --accent-primary: #9333ea;
+  --accent-vibrant: #a855f7;
+  --accent-hover: #c084fc;
+  --accent-dark: #7e22ce;
+  --accent-glow: rgba(147, 51, 234, 0.15);
+}
+
+@theme {
+  --color-dominant: var(--dominant-deep);
+  --color-dominant-pure: var(--dominant-pure);
+  --color-dominant-deep: var(--dominant-deep);
+  --color-dominant-dark: var(--dominant-dark);
+  --color-dominant-container: var(--dominant-container);
+  --color-dominant-border: var(--dominant-border);
+
+  --color-secondary: var(--secondary-pure);
+  --color-secondary-pure: var(--secondary-pure);
+  --color-secondary-offwhite: var(--secondary-offwhite);
+  --color-secondary-muted: var(--secondary-muted);
+  --color-secondary-border: var(--secondary-border);
+  --color-secondary-card: var(--secondary-card);
+
+  --color-accent: var(--accent-primary);
+  --color-accent-primary: var(--accent-primary);
+  --color-accent-vibrant: var(--accent-vibrant);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-dark: var(--accent-dark);
+  --color-accent-glow: var(--accent-glow);
+}
+
 @font-face {
   font-family: 'FantasyClipart';
   src: url('/fonts/FantasyClipart.ttf') format('truetype');
@@ -12,6 +59,18 @@
   font-family: 'FantasyClipart', sans-serif;
 }
 
+@font-face {
+  font-family: 'FourthEditionDings';
+  src: url('/fonts/FourthEditionDings.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.font-dings {
+  font-family: 'FourthEditionDings', sans-serif;
+}
+
 /* Hide scrollbar for Chrome, Safari and Opera */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
@@ -22,4 +81,3 @@
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
-

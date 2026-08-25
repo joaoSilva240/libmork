@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/Icons";
 import {
   useSocket,
+  DICE_ROLL_LOADING_DELAY,
   type DefenseReactionRequestPayload,
   type DuelInviteRequestPayload,
 } from "@/context/SocketContext";
@@ -46,12 +47,12 @@ const ATTRIBUTE_LABELS: Record<Attribute, string> = {
   empatia: "Empatia",
 };
 
-const ATTRIBUTE_ICONS: Record<Attribute, string> = {
-  forca: "⚔️",
-  destreza: "🏹",
-  vigor: "🛡️",
-  inteligencia: "🧠",
-  empatia: "💬",
+const ATTRIBUTE_DINGS_LETTERS: Record<Attribute, string> = {
+  forca: "F",
+  destreza: "R",
+  vigor: "J",
+  inteligencia: "P",
+  empatia: "K",
 };
 
 export function CharacterDetail() {
@@ -104,6 +105,7 @@ export function CharacterDetail() {
     result: number;
     detail: string;
   } | null>(null);
+  const [isRollingDice, setIsRollingDice] = useState(false);
 
   const characterRef = useRef<Character | null>(null);
   const combatStateRef = useRef<CombatSessionState | null>(null);
@@ -456,20 +458,26 @@ export function CharacterDetail() {
 
   const handleSendInitiative = (val?: number) => {
     if (!character) return;
-    const finalVal = val ?? (Number(manualInitiative) || Math.floor(Math.random() * 20) + 1);
+    
+    setIsRollingDice(true);
+    
+    setTimeout(() => {
+      const finalVal = val ?? (Number(manualInitiative) || Math.floor(Math.random() * 20) + 1);
 
-    rollDice({
-      campaignId: character.campaignId ?? "",
-      actorId: character.id,
-      actorName: character.name,
-      rollType: "iniciativa",
-      formula: "1d20 + Iniciativa",
-      result: finalVal,
-      diceDetail: `Rolou ${finalVal} para Iniciativa`,
-    });
+      rollDice({
+        campaignId: character.campaignId ?? "",
+        actorId: character.id,
+        actorName: character.name,
+        rollType: "iniciativa",
+        formula: "1d20 + Iniciativa",
+        result: finalVal,
+        diceDetail: `Rolou ${finalVal} para Iniciativa`,
+      });
 
-    setShowInitiativeModal(false);
-    setManualInitiative("");
+      setShowInitiativeModal(false);
+      setManualInitiative("");
+      setIsRollingDice(false);
+    }, DICE_ROLL_LOADING_DELAY);
   };
 
   const handlePhoenixRebirth = async (newLevel: number, newHpMax: number, newManaMax: number) => {
@@ -526,51 +534,59 @@ export function CharacterDetail() {
       alert("🔒 Fora do seu turno");
       return;
     }
-    const stats = getDerivedStats(character.attributes, character.level);
-    const mod = stats.modifiers[attr];
-    const array = new Uint32Array(1);
-    if (typeof window !== "undefined" && window.crypto) {
-      window.crypto.getRandomValues(array);
-    }
-    const d20 = (array[0] % 20) + 1;
-    const total = d20 + mod;
-    const label = ATTRIBUTE_LABELS[attr];
-    const formula = `1d20 + ${label} (${mod >= 0 ? `+${mod}` : mod})`;
-    const detail = `Dado [${d20}] ${mod >= 0 ? `+ ${mod}` : `- ${Math.abs(mod)}`} = ${total}`;
+    
+    // Set loading state and roll after 3 seconds
+    setIsRollingDice(true);
+    
+    setTimeout(() => {
+      const stats = getDerivedStats(character.attributes, character.level);
+      const mod = stats.modifiers[attr];
+      const array = new Uint32Array(1);
+      if (typeof window !== "undefined" && window.crypto) {
+        window.crypto.getRandomValues(array);
+      }
+      const d20 = (array[0] % 20) + 1;
+      const total = d20 + mod;
+      const label = ATTRIBUTE_LABELS[attr];
+      const formula = `1d20 + ${label} (${mod >= 0 ? `+${mod}` : mod})`;
+      const detail = `Dado [${d20}] ${mod >= 0 ? `+ ${mod}` : `- ${Math.abs(mod)}`} = ${total}`;
 
-    setActiveRollResult({
-      title: `Teste de ${label}`,
-      formula,
-      result: total,
-      detail,
-    });
+      setActiveRollResult({
+        title: `Teste de ${label}`,
+        formula,
+        result: total,
+        detail,
+      });
 
-    rollDice({
-      campaignId: character.campaignId ?? "",
-      actorId: character.id,
-      actorName: character.name,
-      rollType: `Atributo: ${label}`,
-      formula,
-      result: total,
-      diceDetail: detail,
-      isManual: false,
-    });
+      rollDice({
+        campaignId: character.campaignId ?? "",
+        actorId: character.id,
+        actorName: character.name,
+        rollType: `Atributo: ${label}`,
+        formula,
+        result: total,
+        diceDetail: detail,
+        isManual: false,
+      });
 
-    // Dedução automática de ação de combate se for o turno do personagem (RF-040, RF-062)
-    if (combatState?.active && combatState.combatants.length > 0) {
-      const current = combatState.combatants[combatState.currentTurnIndex];
-      if (current && (current.id === character.id || current.characterId === character.id)) {
-        const spent = spendCombatActions(combatState, current.id, 1);
-        if (spent.success) {
-          updateCombatState(spent.session);
+      // Dedução automática de ação de combate se for o turno do personagem (RF-040, RF-062)
+      if (combatState?.active && combatState.combatants.length > 0) {
+        const current = combatState.combatants[combatState.currentTurnIndex];
+        if (current && (current.id === character.id || current.characterId === character.id)) {
+          const spent = spendCombatActions(combatState, current.id, 1);
+          if (spent.success) {
+            updateCombatState(spent.session);
+          }
         }
       }
-    }
+      
+      setIsRollingDice(false);
+    }, DICE_ROLL_LOADING_DELAY);
   };
 
   if (isLoading) {
     return (
-      <div className="flex h-[80vh] flex-col items-center justify-center space-y-3">
+      <div className="flex flex-1 items-center justify-center min-h-[400px] flex-col space-y-3">
         <Spinner size="xl" />
         <p className="text-xs text-gray-400 font-medium">Carregando ficha...</p>
       </div>
@@ -622,12 +638,23 @@ export function CharacterDetail() {
       )}
 
       {/* Main Tab Content */}
-      <main className="p-4 space-y-4">
+      <main className="p-4 pb-24 space-y-4 min-h-[calc(100vh-120px)] flex flex-col">
         {isTurnLocked && (
           <div className="flex items-center justify-center gap-1.5 rounded-full border border-amber-800/60 bg-amber-950/40 px-3 py-1 text-xs font-bold text-amber-300 shadow-sm w-fit mx-auto">
             🔒 <span>Turno de {currentCombatant?.name}</span>
           </div>
         )}
+        
+        {/* Loading Spinner for Dice Roll */}
+        {isRollingDice && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-purple-600/50 bg-gray-900 p-6 text-center shadow-2xl animate-in fade-in">
+              <Spinner size="md" />
+              <p className="mt-3 text-xs text-purple-300 font-medium">Rolando dados...</p>
+            </div>
+          </div>
+        )}
+        
         {/* Modal de Resultado de Rolagem de Dados */}
         {activeRollResult && (
           <div
@@ -638,15 +665,12 @@ export function CharacterDetail() {
               className="w-full max-w-xs rounded-2xl border border-purple-600/50 bg-gray-900 p-5 text-center shadow-2xl animate-in fade-in zoom-in"
               onClick={(e) => e.stopPropagation()}
             >
-              <span className="text-2xl mb-1 block">🎲</span>
               <h4 className="text-sm font-bold text-white">{activeRollResult.title}</h4>
               <p className="text-xs text-purple-300 font-semibold mb-3">{activeRollResult.formula}</p>
-              
               <div className="my-2 rounded-xl bg-purple-950/80 border border-purple-800/60 py-4">
                 <span className="text-4xl font-black text-purple-400">{activeRollResult.result}</span>
               </div>
               <p className="text-[11px] text-gray-400 mb-4">{activeRollResult.detail}</p>
-              
               <button
                 onClick={() => setActiveRollResult(null)}
                 className="w-full rounded-xl bg-purple-600 py-2 text-xs font-bold text-white hover:bg-purple-700"
@@ -659,7 +683,7 @@ export function CharacterDetail() {
 
         {/* TAB 1: STATUS */}
         {activeTab === "status" && (
-          <div className="space-y-8 animate-in fade-in duration-200">
+          <div className="space-y-8 animate-in fade-in duration-200 flex-1 flex flex-col justify-end">
             {/* Header Hero Card */}
             <DecorativeFrame className="rounded-2xl shadow-lg" innerClassName="p-4">
             <div className="relative overflow-hidden">
@@ -762,38 +786,38 @@ export function CharacterDetail() {
               </div>
 
               <div className="space-y-2">
-                {ATTRIBUTES.map((attr) => {
-                  const mod = stats.modifiers[attr];
-                  const value = character.attributes[attr];
-                  return (
-                    <button
-                      key={attr}
-                      onClick={() => handleRollAttribute(attr)}
-                      disabled={isTurnLocked}
-                      className={`flex w-full items-center justify-between rounded-xl border border-gray-800/80 bg-gray-950 p-2.5 transition-all ${
-                        isTurnLocked
-                          ? "opacity-50 cursor-not-allowed border-gray-900 bg-gray-950/40"
-                          : "hover:border-purple-600/60 hover:bg-purple-950/20 active:scale-[0.99]"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-lg">{ATTRIBUTE_ICONS[attr]}</span>
-                        <span className="text-xs font-semibold text-gray-200">{ATTRIBUTE_LABELS[attr]}</span>
-                      </div>
+{ATTRIBUTES.map((attr) => {
+                   const mod = stats.modifiers[attr];
+                   const value = character.attributes[attr];
+                   return (
+                     <button
+                       key={attr}
+                       onClick={() => handleRollAttribute(attr)}
+                       disabled={isTurnLocked || isRollingDice}
+                       className={`flex w-full items-center justify-between rounded-xl border border-gray-800/80 bg-gray-950 p-2.5 transition-all ${
+                         isTurnLocked || isRollingDice
+                           ? "opacity-50 cursor-not-allowed border-gray-900 bg-gray-950/40"
+                           : "hover:border-purple-600/60 hover:bg-purple-950/20 active:scale-[0.99]"
+                       }`}
+                     >
+                       <div className="flex items-center gap-2.5">
+                         <span className="text-[1.575rem] font-dings leading-none">{ATTRIBUTE_DINGS_LETTERS[attr]}</span>
+                         <span className="text-xs font-semibold text-gray-200">{ATTRIBUTE_LABELS[attr]}</span>
+                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-white">{value}</span>
-                        <span
-                          className={`min-w-8 rounded-md py-0.5 px-1.5 text-center text-xs font-black ${
-                            mod >= 0 ? "bg-emerald-950 text-emerald-400 border border-emerald-800/60" : "bg-rose-950 text-rose-400 border border-rose-800/60"
-                          }`}
-                        >
-                          {mod >= 0 ? `+${mod}` : mod}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
+                       <div className="flex items-center gap-2">
+                         <span className="text-xs font-bold text-white">{value}</span>
+                         <span
+                           className={`min-w-8 rounded-md py-0.5 px-1.5 text-center text-xs font-black ${
+                             mod >= 0 ? "bg-emerald-950 text-emerald-400 border border-emerald-800/60" : "bg-rose-950 text-rose-400 border border-rose-800/60"
+                           }`}
+                         >
+                           {mod >= 0 ? `+${mod}` : mod}
+                         </span>
+                       </div>
+                     </button>
+                   );
+                 })}
               </div>
             </DecorativeFrame>
           </div>
@@ -801,7 +825,7 @@ export function CharacterDetail() {
 
         {/* TAB 2: PERÍCIAS */}
         {activeTab === "skills" && (
-          <div className="space-y-8 animate-in fade-in duration-200">
+          <div className="space-y-8 animate-in fade-in duration-200 flex-1 flex flex-col justify-end">
             <DecorativeFrame className="rounded-2xl shadow-sm" innerClassName="p-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-purple-300">
                 Perícias & Treinamento
@@ -819,7 +843,7 @@ export function CharacterDetail() {
 
         {/* TAB 3: INVENTÁRIO */}
         {activeTab === "inventory" && (
-          <div className="space-y-4 animate-in fade-in duration-200">
+          <div className="space-y-4 animate-in fade-in duration-200 flex-1 flex flex-col justify-end">
             {/* Conteúdo da Ficha (Itens, Magias, Habilidades, Condições) */}
               <CharacterContent characterId={character.id} campaignId={character.campaignId} characterManaCurrent={character.manaPointsCurrent} characterManaMax={character.manaPointsMax} combatState={combatState} onCombatStateChange={handleCombatStateChange} onActorStatusChange={handleActorStatusChange} onActionResult={handleActionResult} combatants={combatState?.combatants ?? []} defaultType="items" allowedTypes={["items", "spells", "conditions"]} isTurnLocked={isTurnLocked} onPersistActorStatus={async (actor, hp, mana) => { if (actor.characterId !== character.id && actor.id !== character.id && actor.type !== "npc" && !actor.npcId) return; const response = await fetch(`/api/campaigns/${character.campaignId}/actors/${actor.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hitPointsCurrent: hp, ...(mana == null ? {} : { manaPointsCurrent: mana }), reason: "combate" }) }); if (!response.ok) setError("Estado atualizado em tempo real, mas a persistência falhou."); }} />
           </div>
@@ -827,7 +851,7 @@ export function CharacterDetail() {
 
         {/* TAB 4: CONFIGURAÇÕES */}
         {activeTab === "settings" && (
-          <div className="space-y-8 animate-in fade-in duration-200">
+          <div className="space-y-8 animate-in fade-in duration-200 flex-1 flex flex-col justify-end">
             <DecorativeFrame className="rounded-2xl shadow-sm" innerClassName="p-4 space-y-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-gray-300">
                 Gerenciamento da Ficha

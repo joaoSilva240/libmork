@@ -177,7 +177,7 @@ export function CampaignCharacters({ campaignId }: { campaignId: string }) {
       )}
 
       {isLoading ? (
-        <div className="flex justify-center py-8">
+        <div className="flex items-center justify-center min-h-[200px]">
           <Spinner size="md" />
         </div>
       ) : (

@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/Button";
 
 export function LogoutButton() {
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogout = async () => {
@@ -18,12 +17,14 @@ export function LogoutButton() {
   };
 
   return (
-    <button
+    <Button
       onClick={handleLogout}
       disabled={isLoading}
-      className="rounded-lg border border-gray-700 px-3 py-1.5 text-sm font-medium text-gray-300 transition-colors hover:border-red-600 hover:text-red-400 disabled:opacity-50"
+      isLoading={isLoading}
+      variant="danger"
+      className="text-xs px-3 py-1.5 font-medium"
     >
-      {isLoading ? "Saindo..." : "Sair"}
-    </button>
+      Sair
+    </Button>
   );
 }

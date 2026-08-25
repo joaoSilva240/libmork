@@ -205,7 +205,6 @@ export function LibraryWorlds() {
     setIsCreatingEnc(true);
 
     try {
-      // Usamos a rota de encontros por mundo
       const res = await fetch(`/api/campaigns/global/worlds/${selectedWorld.id}/encounters`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -233,18 +232,18 @@ export function LibraryWorlds() {
   );
 
   const inputClass =
-    "rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent disabled:opacity-50";
+    "rounded-lg border border-secondary-border bg-dominant-dark px-3 py-2 text-sm text-secondary-pure focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent-vibrant disabled:opacity-50 placeholder-secondary-muted/60";
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       {/* Coluna Esquerda: Form de criar e lista de mundos */}
       <div className="space-y-4">
-        <div className="rounded-lg border border-gray-800 bg-gray-900 p-4">
-          <h3 className="mb-3 font-semibold text-white">Criar Novo Mundo</h3>
+        <div className="rounded-lg border border-secondary-border bg-secondary-card p-4 shadow-md">
+          <h3 className="mb-3 font-semibold text-secondary-pure">Criar Novo Mundo</h3>
           <Form onSubmit={handleCreateWorld} error={undefined}>
             <div className="space-y-3">
               <div>
-                <label className="mb-1 block text-xs text-gray-300">Nome do Mundo</label>
+                <label className="mb-1 block text-xs text-secondary-muted">Nome do Mundo</label>
                 <input
                   type="text"
                   value={newWorldName}
@@ -256,7 +255,7 @@ export function LibraryWorlds() {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-300">Descrição</label>
+                <label className="mb-1 block text-xs text-secondary-muted">Descrição</label>
                 <textarea
                   value={newWorldDescription}
                   onChange={(e) => setNewWorldDescription(e.target.value)}
@@ -273,10 +272,10 @@ export function LibraryWorlds() {
           </Form>
         </div>
 
-        <div className="rounded-lg border border-gray-800 bg-gray-900 p-4">
+        <div className="rounded-lg border border-secondary-border bg-secondary-card p-4 shadow-md">
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="font-semibold text-white">Mundos Criados</h3>
-            <span className="text-xs text-gray-400">{filteredWorlds.length} mundos</span>
+            <h3 className="font-semibold text-secondary-pure">Mundos Criados</h3>
+            <span className="text-xs text-secondary-muted">{filteredWorlds.length} mundos</span>
           </div>
 
           <input
@@ -288,17 +287,17 @@ export function LibraryWorlds() {
           />
 
           {error && (
-            <div className="mb-3 rounded-lg border border-red-800 bg-red-900/30 p-2 text-xs text-red-300">
+            <div className="mb-3 rounded-lg border border-accent-vibrant/40 bg-accent-dark/30 p-2 text-xs text-secondary-pure">
               {error}
             </div>
           )}
 
           {isLoading ? (
-            <div className="flex justify-center py-6">
+            <div className="flex items-center justify-center w-full min-h-[200px]">
               <Spinner size="md" />
             </div>
           ) : filteredWorlds.length === 0 ? (
-            <p className="text-center text-sm text-gray-500 py-4">Nenhum mundo encontrado.</p>
+            <p className="text-center text-sm text-secondary-muted py-4">Nenhum mundo encontrado.</p>
           ) : (
             <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
               {filteredWorlds.map((world) => (
@@ -306,22 +305,22 @@ export function LibraryWorlds() {
                   key={world.id}
                   className={`flex items-center justify-between rounded-lg border p-3 cursor-pointer transition-colors ${
                     selectedWorld?.id === world.id
-                      ? "border-purple-600 bg-purple-950/30"
-                      : "border-gray-800 bg-gray-950 hover:border-gray-700"
+                      ? "border-accent bg-accent-dark/30 shadow-[0_0_10px_rgba(147,51,234,0.2)]"
+                      : "border-secondary-border bg-dominant-dark hover:border-accent-vibrant/50"
                   }`}
                   onClick={() => void loadWorldDetails(world.id)}
                 >
                   <div>
-                    <h4 className="font-bold text-white text-sm">{world.name}</h4>
+                    <h4 className="font-bold text-secondary-pure text-sm">{world.name}</h4>
                     {world.description && (
-                      <p className="text-xs text-gray-400 line-clamp-1">{world.description}</p>
+                      <p className="text-xs text-secondary-muted line-clamp-1">{world.description}</p>
                     )}
                   </div>
 
                   <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                     <button
                       onClick={() => handleDeleteWorld(world.id)}
-                      className="text-xs text-red-400 hover:text-red-300"
+                      className="text-xs text-accent-vibrant hover:text-accent-hover transition-colors"
                     >
                       Excluir
                     </button>
@@ -334,46 +333,46 @@ export function LibraryWorlds() {
       </div>
 
       {/* Coluna Direita: Detalhes do Mundo selecionado (Encontros, Estabelecimentos, NPCs) */}
-      <div className="rounded-lg border border-gray-800 bg-gray-900 p-4">
+      <div className="rounded-lg border border-secondary-border bg-secondary-card p-4 shadow-md">
         {selectedWorld ? (
           <div>
-            <div className="mb-3 border-b border-gray-800 pb-3">
-              <h3 className="text-lg font-bold text-white">{selectedWorld.name}</h3>
+            <div className="mb-3 border-b border-secondary-border pb-3">
+              <h3 className="text-lg font-bold text-secondary-pure">{selectedWorld.name}</h3>
               {selectedWorld.description && (
-                <p className="text-xs text-gray-400 mt-1">{selectedWorld.description}</p>
+                <p className="text-xs text-secondary-muted mt-1">{selectedWorld.description}</p>
               )}
             </div>
 
             {/* Abas internas do mundo */}
-            <div className="mb-4 flex gap-2 border-b border-gray-800 pb-2">
+            <div className="mb-4 flex gap-2 border-b border-secondary-border pb-2">
               <button
                 onClick={() => setActiveSubTab("details")}
-                className={`rounded px-3 py-1 text-xs font-semibold ${
-                  activeSubTab === "details" ? "bg-purple-600 text-white" : "bg-gray-800 text-gray-400"
+                className={`rounded px-3 py-1 text-xs font-semibold transition-colors ${
+                  activeSubTab === "details" ? "bg-accent text-secondary-pure" : "bg-dominant-dark text-secondary-muted hover:text-secondary-pure"
                 }`}
               >
                 Geral
               </button>
               <button
                 onClick={() => setActiveSubTab("establishments")}
-                className={`rounded px-3 py-1 text-xs font-semibold ${
-                  activeSubTab === "establishments" ? "bg-purple-600 text-white" : "bg-gray-800 text-gray-400"
+                className={`rounded px-3 py-1 text-xs font-semibold transition-colors ${
+                  activeSubTab === "establishments" ? "bg-accent text-secondary-pure" : "bg-dominant-dark text-secondary-muted hover:text-secondary-pure"
                 }`}
               >
                 🏬 Estabelecimentos ({selectedWorld.establishments?.length || 0})
               </button>
               <button
                 onClick={() => setActiveSubTab("encounters")}
-                className={`rounded px-3 py-1 text-xs font-semibold ${
-                  activeSubTab === "encounters" ? "bg-purple-600 text-white" : "bg-gray-800 text-gray-400"
+                className={`rounded px-3 py-1 text-xs font-semibold transition-colors ${
+                  activeSubTab === "encounters" ? "bg-accent text-secondary-pure" : "bg-dominant-dark text-secondary-muted hover:text-secondary-pure"
                 }`}
               >
                 ⚔️ Encontros ({selectedWorld.encounters?.length || 0})
               </button>
               <button
                 onClick={() => setActiveSubTab("npcs")}
-                className={`rounded px-3 py-1 text-xs font-semibold ${
-                  activeSubTab === "npcs" ? "bg-purple-600 text-white" : "bg-gray-800 text-gray-400"
+                className={`rounded px-3 py-1 text-xs font-semibold transition-colors ${
+                  activeSubTab === "npcs" ? "bg-accent text-secondary-pure" : "bg-dominant-dark text-secondary-muted hover:text-secondary-pure"
                 }`}
               >
                 👥 NPCs ({selectedWorld.npcs?.length || 0})
@@ -381,22 +380,22 @@ export function LibraryWorlds() {
             </div>
 
             {isDetailsLoading ? (
-              <div className="flex justify-center py-8">
+              <div className="flex items-center justify-center w-full min-h-[200px]">
                 <Spinner size="md" />
               </div>
             ) : activeSubTab === "details" ? (
-              <div className="space-y-3 text-xs text-gray-300">
-                <p><span className="font-semibold text-gray-400">ID:</span> {selectedWorld.id}</p>
-                <p><span className="font-semibold text-gray-400">Criado em:</span> {new Date(selectedWorld.createdAt).toLocaleDateString("pt-BR")}</p>
-                <p><span className="font-semibold text-gray-400">Total de Locais:</span> {selectedWorld.establishments?.length || 0}</p>
-                <p><span className="font-semibold text-gray-400">Total de Encontros:</span> {selectedWorld.encounters?.length || 0}</p>
-                <p><span className="font-semibold text-gray-400">Total de NPCs:</span> {selectedWorld.npcs?.length || 0}</p>
+              <div className="space-y-3 text-xs text-secondary-muted">
+                <p><span className="font-semibold text-secondary-pure">ID:</span> {selectedWorld.id}</p>
+                <p><span className="font-semibold text-secondary-pure">Criado em:</span> {new Date(selectedWorld.createdAt).toLocaleDateString("pt-BR")}</p>
+                <p><span className="font-semibold text-secondary-pure">Total de Locais:</span> {selectedWorld.establishments?.length || 0}</p>
+                <p><span className="font-semibold text-secondary-pure">Total de Encontros:</span> {selectedWorld.encounters?.length || 0}</p>
+                <p><span className="font-semibold text-secondary-pure">Total de NPCs:</span> {selectedWorld.npcs?.length || 0}</p>
               </div>
             ) : activeSubTab === "establishments" ? (
               <div className="space-y-4">
                 <Form onSubmit={handleCreateEstablishment} error={undefined}>
-                  <div className="space-y-2 rounded-lg border border-gray-800 bg-gray-950 p-3">
-                    <h4 className="font-semibold text-xs text-white">+ Novo Estabelecimento</h4>
+                  <div className="space-y-2 rounded-lg border border-secondary-border bg-dominant-dark p-3">
+                    <h4 className="font-semibold text-xs text-secondary-pure">+ Novo Estabelecimento</h4>
                     <div className="grid grid-cols-2 gap-2">
                       <input
                         type="text"
@@ -435,12 +434,12 @@ export function LibraryWorlds() {
 
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {selectedWorld.establishments?.map((est) => (
-                    <div key={est.id} className="flex items-center justify-between rounded border border-gray-800 bg-gray-950 p-2 text-xs">
+                    <div key={est.id} className="flex items-center justify-between rounded border border-secondary-border bg-dominant-dark p-2 text-xs">
                       <div>
-                        <p className="font-bold text-white">{est.name} <span className="text-[10px] text-purple-400 font-normal">({est.type})</span></p>
-                        {est.description && <p className="text-[10px] text-gray-400">{est.description}</p>}
+                        <p className="font-bold text-secondary-pure">{est.name} <span className="text-[10px] text-accent-vibrant font-normal">({est.type})</span></p>
+                        {est.description && <p className="text-[10px] text-secondary-muted">{est.description}</p>}
                       </div>
-                      <button onClick={() => handleDeleteEstablishment(est.id)} className="text-[10px] text-red-400 hover:text-red-300">
+                      <button onClick={() => handleDeleteEstablishment(est.id)} className="text-[10px] text-accent-vibrant hover:text-accent-hover transition-colors">
                         Excluir
                       </button>
                     </div>
@@ -450,8 +449,8 @@ export function LibraryWorlds() {
             ) : activeSubTab === "encounters" ? (
               <div className="space-y-4">
                 <Form onSubmit={handleCreateEncounter} error={undefined}>
-                  <div className="space-y-2 rounded-lg border border-gray-800 bg-gray-950 p-3">
-                    <h4 className="font-semibold text-xs text-white">+ Novo Encontro (Combate)</h4>
+                  <div className="space-y-2 rounded-lg border border-secondary-border bg-dominant-dark p-3">
+                    <h4 className="font-semibold text-xs text-secondary-pure">+ Novo Encontro (Combate)</h4>
                     <input
                       type="text"
                       placeholder="Nome do Encontro (Ex.: Emboscada de Goblins)"
@@ -477,16 +476,16 @@ export function LibraryWorlds() {
 
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {selectedWorld.encounters?.map((enc) => (
-                    <div key={enc.id} className="rounded border border-gray-800 bg-gray-950 p-2 text-xs">
+                    <div key={enc.id} className="rounded border border-secondary-border bg-dominant-dark p-2 text-xs">
                       <div className="flex justify-between items-center">
-                        <p className="font-bold text-white">{enc.name}</p>
+                        <p className="font-bold text-secondary-pure">{enc.name}</p>
                         {enc.isActive && (
-                          <span className="rounded bg-green-950 text-green-300 text-[9px] px-1.5 py-0.5 border border-green-800">
+                          <span className="rounded bg-accent-dark/60 text-accent-hover text-[9px] px-1.5 py-0.5 border border-accent-vibrant/40 font-semibold">
                             ATIVO
                           </span>
                         )}
                       </div>
-                      {enc.description && <p className="text-[10px] text-gray-400 mt-1">{enc.description}</p>}
+                      {enc.description && <p className="text-[10px] text-secondary-muted mt-1">{enc.description}</p>}
                     </div>
                   ))}
                 </div>
@@ -494,15 +493,15 @@ export function LibraryWorlds() {
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {selectedWorld.npcs?.length === 0 ? (
-                  <p className="text-xs text-gray-500 text-center py-4">Nenhum NPC vinculado a este mundo.</p>
+                  <p className="text-xs text-secondary-muted text-center py-4">Nenhum NPC vinculado a este mundo.</p>
                 ) : (
                   selectedWorld.npcs?.map((npc) => (
-                    <div key={npc.id} className="flex justify-between items-center rounded border border-gray-800 bg-gray-950 p-2 text-xs">
+                    <div key={npc.id} className="flex justify-between items-center rounded border border-secondary-border bg-dominant-dark p-2 text-xs">
                       <div>
-                        <p className="font-bold text-white">{npc.name} <span className="text-[10px] text-gray-400 font-normal">Nv {npc.level}</span></p>
-                        <p className="text-[10px] text-gray-400">HP {npc.hitPoints}/{npc.hitPointsMax} · Mana {npc.manaPoints}/{npc.manaPointsMax}</p>
+                        <p className="font-bold text-secondary-pure">{npc.name} <span className="text-[10px] text-secondary-muted font-normal">Nv {npc.level}</span></p>
+                        <p className="text-[10px] text-secondary-muted">HP {npc.hitPoints}/{npc.hitPointsMax} · Mana {npc.manaPoints}/{npc.manaPointsMax}</p>
                       </div>
-                      <span className="rounded bg-gray-900 px-1.5 py-0.5 text-[10px] text-purple-300">
+                      <span className="rounded bg-dominant-container px-1.5 py-0.5 text-[10px] text-accent-vibrant font-medium border border-accent-vibrant/30">
                         {npc.npcType === "enemy" ? "Inimigo" : "NPC"}
                       </span>
                     </div>
@@ -512,7 +511,7 @@ export function LibraryWorlds() {
             )}
           </div>
         ) : (
-          <div className="flex h-full flex-col items-center justify-center py-12 text-center text-gray-500">
+          <div className="flex h-full flex-col items-center justify-center py-12 text-center text-secondary-muted">
             <p className="text-sm">Selecione um mundo da lista à esquerda para administrar seus encontros, estabelecimentos e NPCs.</p>
           </div>
         )}

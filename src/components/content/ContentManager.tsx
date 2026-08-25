@@ -560,7 +560,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
         </h3>
 
         {isLoading ? (
-          <div className="flex justify-center py-12">
+          <div className="flex items-center justify-center w-full min-h-[300px]">
             <Spinner size="lg" />
           </div>
         ) : items.length === 0 ? (

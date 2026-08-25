@@ -12,23 +12,20 @@ services:
     restart: unless-stopped
     ports:
       - "3210:3000"
+    env_file:
+      - path: .env.local
+        required: false
+      - path: .env
+        required: false
     environment:
-      # --- Banco de Dados (PostgreSQL externo — D-34) ---
-      - DATABASE_URL=${DATABASE_URL:-postgresql://casaos:casaos@100.122.171.83:5432/libmork}
-
-      # --- Autenticação (Cookies HTTP-only) ---
+      # Fallbacks caso as variáveis não estejam definidas em .env.local
+      - DATABASE_URL=${DATABASE_URL:-postgresql://casaos:casaos@10.147.17.1:5432/libmork}
       - AUTH_SECRET=${AUTH_SECRET:-900747650a3d4a6bb19cd6ef7e55c74f1c681f7bfc572f65d640b4a9104ca6ce}
-
-      # --- Aplicação ---
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3210}
       - NODE_ENV=production
-
-      # --- Tradução via 9Router (OpenAI-compatible) ---
       - NINEROUTER_URL=${NINEROUTER_URL:-http://100.83.170.1:20128/v1}
       - NINEROUTER_KEY=${NINEROUTER_KEY:-}
       - NINEROUTER_MODEL=${NINEROUTER_MODEL:-ollama/gpt-oss:120b}
-
-      # --- Upload de Imagens ---
       - UPLOAD_DIR=/app/uploads
       - MAX_IMAGE_SIZE_MB=5
     volumes:

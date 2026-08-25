@@ -7,7 +7,7 @@ import type { RosterActor, RosterPlayer } from "@/components/campaigns/ActorOver
 import { InfiniteCanvas } from "@/components/campaigns/InfiniteCanvas";
 import { CharacterCarousel } from "@/components/campaigns/CharacterCarousel";
 import { EncounterModal } from "@/components/campaigns/EncounterModal";
-import { useSocket, type RollDataPayload } from "@/context/SocketContext";
+import { useSocket, type RollDataPayload, DICE_ROLL_LOADING_DELAY } from "@/context/SocketContext";
 import { CombatTrackerModal } from "@/components/combat/CombatTrackerModal";
 import type { CombatSessionState } from "@/lib/engine";
 import { advanceCombatTurn, spendCombatActions } from "@/lib/engine";
@@ -19,7 +19,7 @@ type RosterData = {
 };
 
 export function MasterRoster({ campaignId }: { campaignId: string }) {
-  const { isConnected, presenceList, joinCampaign, subscribeActorStatus, subscribeDiceRoll, subscribeCombatState } = useSocket();
+  const { isConnected, presenceList, joinCampaign, subscribeActorStatus, subscribeDiceRoll, subscribeCombatState, requestInitiativeRollDelayed } = useSocket();
   const [roster, setRoster] = useState<RosterData>({ players: [], npcs: [] });
   const [worlds, setWorlds] = useState<World[]>([]);
   const [selectedWorldId, setSelectedWorldId] = useState<string>("");
@@ -32,6 +32,7 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
   const [selected, setSelected] = useState<RosterActor | null>(null);
   const [recentRolls, setRecentRolls] = useState<RollDataPayload[]>([]);
   const [showRollFeed, setShowRollFeed] = useState(false);
+  const [isRollingDice, setIsRollingDice] = useState(false);
 
   const [deskActors, setDeskActors] = useState<RosterActor[]>(() => {
     if (typeof window === "undefined") return [];
@@ -335,7 +336,7 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
 
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center py-12">
+      <div className="flex flex-1 items-center justify-center min-h-[300px]">
         <Spinner size="lg" />
       </div>
     );
@@ -394,7 +395,7 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
             onClick={() => setShowRollFeed(!showRollFeed)}
             className="flex items-center gap-1.5 rounded-lg border border-purple-700/60 bg-purple-950/40 px-2.5 py-1 text-xs font-semibold text-purple-300 hover:bg-purple-900/50"
           >
-            🎲 Rolagens {recentRolls.length > 0 && `(${recentRolls.length})`}
+            Rolagens {recentRolls.length > 0 && `(${recentRolls.length})`}
           </button>
 
           <span className="text-xs text-gray-400">
@@ -566,6 +567,16 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
           }))}
           onClose={() => setShowCombatTrackerModal(false)}
         />
+      )}
+
+      {/* Loading Overlay for Dice Roll */}
+      {isRollingDice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-purple-600/50 bg-gray-900 p-6 text-center shadow-2xl animate-in fade-in">
+            <Spinner size="md" />
+            <p className="mt-3 text-xs text-purple-300 font-medium">Rolando dados...</p>
+          </div>
+        </div>
       )}
     </div>
   );

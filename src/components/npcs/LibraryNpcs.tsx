@@ -729,7 +729,7 @@ export function LibraryNpcs() {
       {/* Área Principal de NPCs (Full Width) */}
       <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
         {isLoading ? (
-          <div className="flex justify-center py-12">
+          <div className="flex items-center justify-center min-h-[200px]">
             <Spinner size="lg" />
           </div>
         ) : npcs.length === 0 ? (
@@ -953,7 +953,7 @@ export function LibraryNpcs() {
               </div>
 
               {isLoadingCatalog ? (
-                <div className="flex justify-center py-12">
+                <div className="flex items-center justify-center min-h-[200px]">
                   <Spinner size="lg" />
                 </div>
               ) : (

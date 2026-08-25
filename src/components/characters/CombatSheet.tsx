@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { Character, Skill, Spell } from "@/types";
 import { Spinner } from "@/components/ui";
+import { useSocket, DICE_ROLL_LOADING_DELAY } from "@/context/SocketContext";
 
 type CombatSheetProps = {
   characterId: string;
@@ -20,6 +21,8 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"attacks" | "skills" | "spells">("attacks");
+  const [isRollingDice, setIsRollingDice] = useState(false);
+  const { rollDice } = useSocket();
 
   useEffect(() => {
     const load = async () => {
@@ -46,7 +49,7 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center p-6">
+      <div className="flex items-center justify-center min-h-[150px]">
         <Spinner size="md" />
       </div>
     );
@@ -63,6 +66,25 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
   const { character, skills, spells } = data;
   const hpPercent = Math.min(100, Math.max(0, (character.hitPointsCurrent / Math.max(character.hitPointsMax, 1)) * 100));
   const manaPercent = Math.min(100, Math.max(0, (character.manaPointsCurrent / Math.max(character.manaPointsMax, 1)) * 100));
+  const currentCampaignId = character.campaignId ?? "";
+
+  // Helper function to roll dice with 3-second delay
+  const rollWithLoading = (rollType: string, formula: string, result: number, detail: string) => {
+    if (!currentCampaignId) return;
+    setIsRollingDice(true);
+    setTimeout(() => {
+      rollDice({
+        campaignId: currentCampaignId,
+        actorId: characterId,
+        actorName: character.name,
+        rollType,
+        formula,
+        result,
+        diceDetail: detail,
+      });
+      setIsRollingDice(false);
+    }, DICE_ROLL_LOADING_DELAY);
+  };
 
   return (
     <div className="rounded-xl border border-red-900/50 bg-gray-950 p-4 shadow-2xl text-white">
@@ -165,18 +187,72 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
                 <p className="font-bold text-white">Ataque Básico / Cuerpo a Cuerpo</p>
                 <p className="text-gray-400 text-[10px]">1d20 + Força</p>
               </div>
-              <span className="rounded bg-red-900/60 px-2 py-1 font-bold text-red-300">
-                1d20 + {character.attributes.forca}
-              </span>
+              {isRollingDice ? (
+                <div className="flex items-center gap-2">
+                  <Spinner size="sm" />
+                  <span className="text-xs text-purple-300">Rolando...</span>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    setIsRollingDice(true);
+                    setTimeout(() => {
+                      const d20 = Math.floor(Math.random() * 20) + 1;
+                      const total = d20 + character.attributes.forca;
+                      rollDice({
+                        campaignId: character.campaignId ?? "",
+                        actorId: characterId,
+                        actorName: character.name,
+                        rollType: "ataque",
+                        formula: "1d20 + Força",
+                        result: total,
+                        diceDetail: `Rolou [${d20}] + ${character.attributes.forca} = ${total}`,
+                      });
+                      setIsRollingDice(false);
+                    }, DICE_ROLL_LOADING_DELAY);
+                  }}
+                  disabled={isRollingDice}
+                  className="rounded bg-red-900/60 px-2 py-1 font-bold text-red-300 hover:bg-red-800 transition disabled:opacity-50"
+                >
+                  🎲 Rolar
+                </button>
+              )}
             </div>
             <div className="rounded-lg border border-gray-800 bg-gray-900 p-2 flex justify-between items-center">
               <div>
                 <p className="font-bold text-white">Ataque à Distância</p>
                 <p className="text-gray-400 text-[10px]">1d20 + Destreza</p>
               </div>
-              <span className="rounded bg-red-900/60 px-2 py-1 font-bold text-red-300">
-                1d20 + {character.attributes.destreza}
-              </span>
+              {isRollingDice ? (
+                <div className="flex items-center gap-2">
+                  <Spinner size="sm" />
+                  <span className="text-xs text-purple-300">Rolando...</span>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    setIsRollingDice(true);
+                    setTimeout(() => {
+                      const d20 = Math.floor(Math.random() * 20) + 1;
+                      const total = d20 + character.attributes.destreza;
+                      rollDice({
+                        campaignId: character.campaignId ?? "",
+                        actorId: characterId,
+                        actorName: character.name,
+                        rollType: "ataque",
+                        formula: "1d20 + Destreza",
+                        result: total,
+                        diceDetail: `Rolou [${d20}] + ${character.attributes.destreza} = ${total}`,
+                      });
+                      setIsRollingDice(false);
+                    }, DICE_ROLL_LOADING_DELAY);
+                  }}
+                  disabled={isRollingDice}
+                  className="rounded bg-red-900/60 px-2 py-1 font-bold text-red-300 hover:bg-red-800 transition disabled:opacity-50"
+                >
+                  🎲 Rolar
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -185,17 +261,66 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
           skills.length === 0 ? (
             <p className="text-gray-500 text-center py-4">Nenhuma habilidade treinada</p>
           ) : (
-            skills.map((s) => (
-              <div key={s.id} className="rounded-lg border border-gray-800 bg-gray-900 p-2 flex justify-between items-center">
-                <div>
-                  <p className="font-bold text-white">{s.name}</p>
-                  <p className="text-gray-400 text-[10px]">{s.keyAttribute}</p>
+            <div className="space-y-2">
+              {skills.map((s) => (
+                <div key={s.id} className="rounded-lg border border-gray-800 bg-gray-900 p-2 flex justify-between items-center">
+                  <div>
+                    <p className="font-bold text-white">{s.name}</p>
+                    <p className="text-gray-400 text-[10px]">{s.keyAttribute}</p>
+                  </div>
+                  {isRollingDice ? (
+                    <div className="flex items-center gap-2">
+                      <Spinner size="sm" />
+                      <span className="text-xs text-purple-300">Rolando...</span>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setIsRollingDice(true);
+                        const rollExpr = s.rollExpression || "1d20";
+                        setTimeout(() => {
+                          const match = rollExpr.trim().match(/^(\d+)d(\d+)(?:\s*([+-])\s*(\d+))?$/i);
+                          let result = 0;
+                          let detail = rollExpr;
+                          if (match) {
+                            const count = parseInt(match[1], 10);
+                            const sides = parseInt(match[2], 10);
+                            const sign = match[3] === "-" ? -1 : 1;
+                            const mod = match[4] ? parseInt(match[4], 10) * sign : 0;
+                            let sum = 0;
+                            const rolls: number[] = [];
+                            for (let i = 0; i < count; i++) {
+                              const r = Math.floor(Math.random() * sides) + 1;
+                              rolls.push(r);
+                              sum += r;
+                            }
+                            result = sum + mod;
+                            detail = `Rolou [${rolls.join(", ")}]${mod !== 0 ? (mod > 0 ? ` + ${mod}` : ` - ${Math.abs(mod)}`) : ""} = ${result}`;
+                          } else {
+                            result = Math.floor(Math.random() * 20) + 1;
+                            detail = `Rolou [${result}]`;
+                          }
+                          rollDice({
+                            campaignId: character.campaignId ?? "",
+                            actorId: characterId,
+                            actorName: character.name,
+                            rollType: `habilidade`,
+                            formula: rollExpr,
+                            result,
+                            diceDetail: detail,
+                          });
+                          setIsRollingDice(false);
+                        }, DICE_ROLL_LOADING_DELAY);
+                      }}
+                      disabled={isRollingDice}
+                      className="rounded bg-gray-800 px-2 py-1 text-xs text-gray-300 hover:bg-gray-700 transition disabled:opacity-50"
+                    >
+                      🎲 Rolar
+                    </button>
+                  )}
                 </div>
-                <span className="rounded bg-gray-800 px-2 py-1 text-gray-300">
-                  {s.rollExpression || "1d20"}
-                </span>
-              </div>
-            ))
+              ))}
+            </div>
           )
         )}
 
@@ -203,17 +328,45 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
           spells.length === 0 ? (
             <p className="text-gray-500 text-center py-4">Nenhuma magia aprendida</p>
           ) : (
-            spells.map((sp) => (
-              <div key={sp.id} className="rounded-lg border border-gray-800 bg-gray-900 p-2 flex justify-between items-center">
-                <div>
-                  <p className="font-bold text-white">{sp.name}</p>
-                  <p className="text-gray-400 text-[10px]">Custo: {sp.manaCost} Mana · Círculo {sp.circle}</p>
+            <div className="space-y-2">
+              {spells.map((sp) => (
+                <div key={sp.id} className="rounded-lg border border-gray-800 bg-gray-900 p-2 flex justify-between items-center">
+                  <div>
+                    <p className="font-bold text-white">{sp.name}</p>
+                    <p className="text-gray-400 text-[10px]">Custo: {sp.manaCost} Mana · Círculo {sp.circle}</p>
+                  </div>
+                  {isRollingDice ? (
+                    <div className="flex items-center gap-2">
+                      <Spinner size="sm" />
+                      <span className="text-xs text-purple-300">Rolando...</span>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setIsRollingDice(true);
+                        setTimeout(() => {
+                          const d20 = Math.floor(Math.random() * 20) + 1;
+                          rollDice({
+                            campaignId: character.campaignId ?? "",
+                            actorId: characterId,
+                            actorName: character.name,
+                            rollType: "magia",
+                            formula: "1d20",
+                            result: d20,
+                            diceDetail: `Magia ${sp.name}: [${d20}]`,
+                          });
+                          setIsRollingDice(false);
+                        }, DICE_ROLL_LOADING_DELAY);
+                      }}
+                      disabled={isRollingDice}
+                      className="rounded bg-blue-900/60 px-2 py-1 font-semibold text-blue-300 hover:bg-blue-800 transition disabled:opacity-50"
+                    >
+                      🎲 Rolar
+                    </button>
+                  )}
                 </div>
-                <span className="rounded bg-blue-900/60 px-2 py-1 font-semibold text-blue-300">
-                  {sp.manaCost} MP
-                </span>
-              </div>
-            ))
+              ))}
+            </div>
           )
         )}
       </div>

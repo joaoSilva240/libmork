@@ -154,7 +154,7 @@ export function SessionLog({ campaignId }: SessionLogProps) {
 
       <div className="max-h-[70vh] flex-1 space-y-1.5 overflow-y-auto p-2">
         {isLoading && logs.length === 0 ? (
-          <div className="flex justify-center py-8">
+          <div className="flex items-center justify-center min-h-[150px]">
             <Spinner size="md" />
           </div>
         ) : logs.length === 0 ? (

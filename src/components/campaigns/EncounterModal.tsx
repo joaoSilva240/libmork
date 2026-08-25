@@ -207,7 +207,7 @@ export function EncounterModal({
         )}
 
         {isLoading ? (
-          <div className="flex justify-center py-8">
+          <div className="flex items-center justify-center min-h-[150px]">
             <Spinner size="md" />
           </div>
         ) : encounters.length === 0 ? (

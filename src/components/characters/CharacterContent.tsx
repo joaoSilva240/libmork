@@ -375,25 +375,7 @@ export function CharacterContent({
   const displayTypes = allowedTypes ? TYPE_ORDER.filter((t) => allowedTypes.includes(t)) : TYPE_ORDER;
 
   return (
-    <DecorativeFrame className="rounded-2xl shadow-sm" innerClassName="p-4">
-      {displayTypes.length > 1 && (
-        <div className="mb-4 flex flex-wrap gap-1.5 border-b border-gray-800 pb-3">
-          {displayTypes.map((type) => (
-            <button
-              key={type}
-              onClick={() => setActiveType(type)}
-              className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
-                activeType === type
-                  ? "bg-purple-600 text-white shadow-sm"
-                  : "bg-gray-800/80 text-gray-400 hover:bg-gray-700 hover:text-white"
-              }`}
-            >
-              {TYPE_LABELS[type]}
-            </button>
-          ))}
-        </div>
-      )}
-
+    <DecorativeFrame className="rounded-2xl shadow-sm h-full" innerClassName="p-4 flex flex-col">
       {isTurnLocked && (
         <div className="mb-2 flex items-center justify-center gap-1.5 rounded-full border border-amber-800/60 bg-amber-950/40 px-3 py-0.5 text-xs font-bold text-amber-300 w-fit mx-auto">
           🔒 <span>Bloqueado (Fora do turno)</span>
@@ -411,84 +393,110 @@ export function CharacterContent({
           <Spinner size="md" />
         </div>
       ) : (
-        <div className="w-full">
+        <div className="flex-1 flex flex-col overflow-y-auto max-h-[60vh]">
           <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-400">
-            Na ficha ({data.linked.length})
+            {activeType === "skills" ? "Todas as Perícias" : `Na ficha (${data.linked.length})`}
           </h4>
-          {data.linked.length === 0 ? (
-            <p className="py-4 text-center text-xs text-gray-500 italic">
-              Nenhum item ou elemento vinculado nesta categoria.
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {data.linked.map((row) => (
-                <div
-                  key={row.junction.id}
-                  className="flex items-center justify-between rounded-xl border border-gray-800 bg-gray-950 p-3 shadow-sm"
-                >
-                  <div>
-                    <p className="text-xs font-bold text-white">
-                      {row.content.name as string}
-                    </p>
-                    <div className="mt-1 flex flex-wrap gap-2">
-                      {activeType === "skills" && (
-                        <label className="flex items-center gap-1.5 text-xs font-medium text-gray-300">
-                          <input
-                            type="checkbox"
-                            checked={!!row.junction.trained}
-                            onChange={(e) =>
-                              handlePatchJunction(row.junction.id, {
-                                trained: e.target.checked,
-                              })
-                            }
-                            disabled={isTurnLocked}
-                            className="h-4 w-4 accent-purple-600 disabled:opacity-40"
-                          />
-                          <span className={row.junction.trained ? "text-purple-400 font-bold" : "text-gray-400"}>
-                            {row.junction.trained ? "Treinada" : "Não Treinada"}
-                          </span>
-                        </label>
-                      )}
-                      {activeType === "items" && (
-                        <span className="text-[11px] text-gray-400 font-medium">
-                          Quantidade: {row.junction.quantity || 1}
-                        </span>
-                      )}
-                      {activeType === "conditions" && row.junction.permanent && (
-                        <span className="rounded bg-red-950 px-2 py-0.5 text-[10px] font-bold text-red-300 border border-red-800/60">
-                          Permanente
-                        </span>
-                      )}
-                      {activeType === "spells" && (
-                        <span className="text-[11px] text-purple-300 font-medium">
-                          Círculo {String(row.content.circle)} · {String(row.content.manaCost)} Mana
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {activeType !== "conditions" && (
-                      <button
-                        onClick={() => handleActionClick(row)}
-                        disabled={isTurnLocked || isBusy}
-                        className="rounded-lg bg-purple-600 px-2.5 py-1 text-xs font-bold text-white hover:bg-purple-500 transition shadow disabled:opacity-40 flex items-center gap-1"
-                        title="Usar em combate com automação de alvo, dano/cura e defesa do monstro"
-                      >
-                        <span>🎲 Usar</span>
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleUnlink(row.junction.id)}
-                      disabled={isBusy}
-                      className="shrink-0 text-xs font-semibold text-red-400 hover:text-red-300 disabled:opacity-50"
+          {(() => {
+            // Para perícias, exibir todas (linked + available que não estão em linked)
+            const displayRows = activeType === "skills"
+              ? [
+                  ...data.linked,
+                  ...data.available
+                    .filter((avail) => !data.linked.some((linked) => linked.content.id === avail.id))
+                    .map((avail) => ({
+                      junction: { id: `available-${avail.id}`, trained: false },
+                      content: avail,
+                    })),
+                ]
+              : data.linked;
+
+            if (displayRows.length === 0) {
+              return (
+                <p className="py-4 text-center text-xs text-gray-500 italic">
+                  Nenhum item ou elemento vinculado nesta categoria.
+                </p>
+              );
+            }
+
+            return (
+              <div className="space-y-2 mt-auto pb-2">
+                {displayRows.map((row) => {
+                  const isLinked = data.linked.some((linked) => linked.content.id === row.content.id);
+                  const isAvailableOnly = !isLinked;
+
+                  return (
+                    <div
+                      key={row.junction.id}
+                      onClick={() => activeType === "skills" && !isTurnLocked && !isBusy ? handleActionClick(row) : undefined}
+                      className={`flex items-center justify-between rounded-xl border border-gray-800 bg-gray-950 p-3 shadow-sm ${
+                        activeType === "skills" 
+                          ? "cursor-pointer hover:border-purple-600 hover:bg-purple-950/20 transition-all active:scale-[0.98]" 
+                          : ""
+                      }`}
                     >
-                      Remover
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                      <div>
+                        <p className="text-xs font-bold text-white">
+                          {row.content.name as string}
+                        </p>
+                        <div className="mt-1 flex flex-wrap gap-2">
+                          {activeType === "skills" && (
+                            <label className="flex items-center gap-1.5 text-xs font-medium text-gray-300">
+                              <input
+                                type="checkbox"
+                                checked={!!row.junction.trained}
+                                disabled={true}
+                                className="h-4 w-4 accent-purple-600 opacity-60 cursor-not-allowed"
+                              />
+                              <span className={row.junction.trained ? "text-purple-400 font-bold" : "text-gray-400"}>
+                                {row.junction.trained ? "Treinada" : "Não Treinada"}
+                              </span>
+                            </label>
+                          )}
+                          {activeType === "items" && "quantity" in row.junction && (
+                            <span className="text-[11px] text-gray-400 font-medium">
+                              Quantidade: {row.junction.quantity || 1}
+                            </span>
+                          )}
+                          {activeType === "conditions" && "permanent" in row.junction && row.junction.permanent && (
+                            <span className="rounded bg-red-950 px-2 py-0.5 text-[10px] font-bold text-red-300 border border-red-800/60">
+                              Permanente
+                            </span>
+                          )}
+                          {activeType === "spells" && (
+                            <span className="text-[11px] text-purple-300 font-medium">
+                              Círculo {String(row.content.circle)} · {String(row.content.manaCost)} Mana
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {activeType !== "conditions" && activeType !== "skills" && (
+                          <button
+                            onClick={() => handleActionClick(row)}
+                            disabled={isTurnLocked || isBusy}
+                            className="rounded-lg bg-purple-600 px-2.5 py-1 text-xs font-bold text-white hover:bg-purple-500 transition shadow disabled:opacity-40 flex items-center gap-1"
+                            title="Usar em combate"
+                          >
+                            <span>Usar</span>
+                          </button>
+                        )}
+                        {activeType !== "skills" && (
+                          <button
+                            onClick={() => handleUnlink(row.junction.id)}
+                            disabled={isBusy}
+                            className="shrink-0 text-xs font-semibold text-red-400 hover:text-red-300 disabled:opacity-50"
+                          >
+                            Remover
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -496,12 +504,30 @@ export function CharacterContent({
         <TargetSelectionModal
           actionName={selectedActionItem.name}
           isHealing={selectedActionItem.isHealing}
-            combatants={combatants}
+          combatants={combatants}
           myCharacterId={characterId}
           isOpen={Boolean(selectedActionItem)}
           onClose={() => setSelectedActionItem(null)}
           onConfirmTarget={handleConfirmTarget}
         />
+      )}
+
+      {displayTypes.length > 1 && (
+        <div className="mt-auto flex justify-center items-center gap-2 pt-3 border-t border-gray-800 flex-wrap">
+          {displayTypes.map((type) => (
+            <button
+              key={type}
+              onClick={() => setActiveType(type)}
+              className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
+                activeType === type
+                  ? "bg-purple-600 text-white shadow-sm"
+                  : "bg-gray-800/80 text-gray-400 hover:bg-gray-700 hover:text-white"
+              }`}
+            >
+              {TYPE_LABELS[type]}
+            </button>
+          ))}
+        </div>
       )}
     </DecorativeFrame>
   );

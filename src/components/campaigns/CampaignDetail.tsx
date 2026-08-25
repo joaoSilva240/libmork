@@ -198,7 +198,7 @@ export function CampaignDetail() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-12">
+      <div className="flex flex-1 items-center justify-center min-h-[400px]">
         <Spinner size="lg" />
       </div>
     );

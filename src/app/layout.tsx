@@ -13,7 +13,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
+    <html lang="pt-BR" data-theme="default-dark" suppressHydrationWarning>
       <body className="antialiased" suppressHydrationWarning>
         <SocketProvider>{children}</SocketProvider>
       </body>

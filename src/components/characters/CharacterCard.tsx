@@ -8,7 +8,7 @@ export function CharacterCard({ character }: { character: Character }) {
   return (
     <Link
       href={`/player/characters/${character.id}`}
-      className="block rounded-lg border border-gray-800 bg-gray-900 p-4 transition-colors hover:border-blue-600"
+      className="block rounded-lg border border-secondary-border bg-secondary-card p-4 transition-colors hover:border-accent"
     >
       <div className="flex items-center gap-3">
         {character.imageUrl ? (
@@ -19,28 +19,28 @@ export function CharacterCard({ character }: { character: Character }) {
             className="h-14 w-14 rounded-full object-cover"
           />
         ) : (
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-800 text-xl font-bold text-gray-400">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-dominant-container text-xl font-bold text-secondary-muted">
             {character.name.charAt(0).toUpperCase()}
           </div>
         )}
         <div>
-          <h3 className="text-lg font-semibold text-white">{character.name}</h3>
-          <p className="text-sm text-gray-400">Nível {character.level}</p>
+          <h3 className="text-lg font-semibold text-secondary-pure">{character.name}</h3>
+          <p className="text-sm text-secondary-muted">Nível {character.level}</p>
         </div>
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-        <div className="text-gray-400">
-          <span className="text-red-400 font-semibold">HP:</span>{" "}
+        <div className="text-secondary-muted">
+          <span className="text-accent-vibrant font-semibold">HP:</span>{" "}
           {character.hitPointsCurrent}/{character.hitPointsMax}
         </div>
-        <div className="text-gray-400">
-          <span className="text-blue-400 font-semibold">Mana:</span>{" "}
+        <div className="text-secondary-muted">
+          <span className="text-accent-hover font-semibold">Mana:</span>{" "}
           {character.manaPointsCurrent}/{character.manaPointsMax}
         </div>
       </div>
 
-      <div className="mt-2 flex gap-2 text-xs text-gray-500">
+      <div className="mt-2 flex gap-2 text-xs text-secondary-muted">
         <span>Bloqueio: {stats.block}</span>
         <span>·</span>
         <span>XP: {character.xp}</span>

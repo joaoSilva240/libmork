@@ -3,6 +3,9 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 
+// 3-second loading delay constant (3000ms)
+export const DICE_ROLL_LOADING_DELAY = 3000;
+
 export interface PresenceUser {
   userId: string;
   userName: string;
@@ -84,6 +87,7 @@ interface SocketContextValue {
   rollDice: (rollPayload: RollDataPayload) => void;
   updateCombatState: (combatState: CombatSessionState) => void;
   requestInitiativeRoll: (campaignId: string) => void;
+  requestInitiativeRollDelayed: (campaignId: string, options?: { onComplete?: () => void }) => void;
   requestDefenseReaction: (payload: DefenseReactionRequestPayload) => void;
   respondDefenseReaction: (payload: DefenseReactionResponsePayload) => void;
   requestDuelInvite: (payload: DuelInviteRequestPayload) => void;
@@ -236,6 +240,19 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
           timestamp: rollPayload.timestamp || new Date().toISOString(),
         });
       }
+    },
+    [socket]
+  );
+
+  const requestInitiativeRollDelayed = useCallback(
+    (campaignId: string, options?: { onComplete?: () => void }) => {
+      setTimeout(() => {
+        const currentSocket = socketRef.current || socket;
+        if (currentSocket) {
+          currentSocket.emit("request-initiative-roll", { campaignId });
+        }
+        options?.onComplete?.();
+      }, DICE_ROLL_LOADING_DELAY);
     },
     [socket]
   );
@@ -402,6 +419,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         rollDice,
         updateCombatState,
         requestInitiativeRoll,
+        requestInitiativeRollDelayed,
         requestDefenseReaction,
         respondDefenseReaction,
         requestDuelInvite,

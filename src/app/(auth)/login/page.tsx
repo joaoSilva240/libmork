@@ -1,10 +1,17 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Input, Button, Form } from '@/components/ui';
 import { getSafeRedirect } from '@/lib/auth/redirect';
+
+const BUTTON_IMAGES = [
+  '/Buttons/Button 1.png',
+  '/Buttons/Button 2.png',
+  '/Buttons/Button 3.png',
+  '/Buttons/Button 4.png',
+];
 
 function LoginForm() {
   const router = useRouter();
@@ -19,6 +26,12 @@ function LoginForm() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [buttonImage, setButtonImage] = useState<string>(BUTTON_IMAGES[0]);
+
+  useEffect(() => {
+    const randomIndex = Math.floor(Math.random() * BUTTON_IMAGES.length);
+    setButtonImage(BUTTON_IMAGES[randomIndex]);
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -58,10 +71,6 @@ function LoginForm() {
         return;
       }
 
-      // NAVEGAÇÃO COMPLETA DE DOCUMENTO:
-      // O uso de window.location.href em vez de router.push é essencial para garantir
-      // que navegadores móveis (iOS Safari e Android Chrome) descarreguem os cookies de sessão HTTP-only
-      // no cookie jar do dispositivo antes de realizar a requisição da página inicial (/player ou /master).
       const targetUrl = data.data?.redirect || redirect || (data.data?.role === "master" ? "/master" : "/player");
       window.location.href = targetUrl;
     } catch {
@@ -72,15 +81,15 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-gray-50">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-dominant-deep text-secondary-pure">
       {/* Lado Esquerdo - Formulário de Login (50% em desktop) */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-12">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-12 bg-dominant-dark">
         <div className="max-w-md w-full space-y-8">
           <div>
-            <h1 className="text-3xl font-bold text-center text-gray-900">
+            <h1 className="text-3xl font-bold text-center text-secondary-pure">
               Login
             </h1>
-            <p className="mt-2 text-center text-sm text-gray-600">
+            <p className="mt-2 text-center text-sm text-secondary-muted">
               Entre na sua conta do Libmork
             </p>
           </div>
@@ -116,14 +125,19 @@ function LoginForm() {
               disabled={isLoading}
             />
 
-            <Button type="submit" className="w-full" isLoading={isLoading}>
+            <Button
+              type="submit"
+              className="w-full h-20 min-h-[70px]"
+              bgImage={buttonImage}
+              isLoading={isLoading}
+            >
               Entrar
             </Button>
           </Form>
 
-          <p className="text-center text-sm text-gray-600">
+          <p className="text-center text-sm text-secondary-muted">
             Não tem uma conta?{' '}
-            <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
+            <Link href="/register" className="font-medium text-accent hover:text-accent-hover transition-colors">
               Criar conta
             </Link>
           </p>
@@ -131,12 +145,13 @@ function LoginForm() {
       </div>
 
       {/* Lado Direito - Wallpaper (50% em desktop) */}
-      <div className="hidden lg:block lg:w-1/2 relative bg-gray-900">
+      <div className="hidden lg:block lg:w-1/2 relative bg-dominant-pure">
         <img
           src="/wallpaperflare-cropped.jpg"
           alt="Libmork Wallpaper"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover opacity-80"
         />
+        <div className="absolute inset-0 bg-gradient-to-r from-dominant-dark/80 to-transparent" />
       </div>
     </div>
   );

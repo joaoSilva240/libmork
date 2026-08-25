@@ -794,7 +794,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
           <h3 className="mb-3 font-semibold text-white">NPCs ({npcs.length})</h3>
 
           {isLoading ? (
-            <div className="flex justify-center py-8">
+            <div className="flex items-center justify-center min-h-[200px]">
               <Spinner size="md" />
             </div>
           ) : npcs.length === 0 ? (

@@ -7,6 +7,8 @@
 import React, { useState } from "react";
 import { Crosshair, Heart, Sparkles, X } from "lucide-react";
 import type { Combatant } from "@/lib/engine";
+import { useSocket, DICE_ROLL_LOADING_DELAY } from "@/context/SocketContext";
+import { Spinner } from "@/components/ui";
 
 type TargetSelectionModalProps = {
   actionName: string;
@@ -14,8 +16,9 @@ type TargetSelectionModalProps = {
   combatants: Combatant[];
   myCharacterId: string;
   isOpen: boolean;
-  onClose: () => void;
-  onConfirmTarget: (targetCombatant: Combatant) => void;
+  onClose?: () => void;
+  onConfirmTarget?: (targetCombatant: Combatant) => void;
+  isRolling?: boolean;
 };
 
 export function TargetSelectionModal({
@@ -26,6 +29,7 @@ export function TargetSelectionModal({
   isOpen,
   onClose,
   onConfirmTarget,
+  isRolling = false,
 }: TargetSelectionModalProps) {
   const [selectedId, setSelectedId] = useState<string>("");
 
@@ -36,14 +40,23 @@ export function TargetSelectionModal({
 
   const handleConfirm = () => {
     const target = targets.find((t) => t.id === selectedId || t.characterId === selectedId);
-    if (target) {
+    if (target && onConfirmTarget) {
       onConfirmTarget(target);
-      onClose();
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+      {/* Loading overlay when rolling dice */}
+      {isRolling && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-3xl">
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-purple-600/50 bg-gray-900 p-6 text-center shadow-2xl animate-in fade-in">
+            <Spinner size="md" />
+            <p className="mt-3 text-xs text-purple-300 font-medium">Rolando dados...</p>
+          </div>
+        </div>
+      )}
+      
       <div className="w-full max-w-md rounded-3xl border border-purple-800 bg-gray-950 p-6 text-gray-100 shadow-2xl space-y-5">
         <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
           <div className="flex items-center gap-3">
@@ -55,7 +68,11 @@ export function TargetSelectionModal({
               <p className="text-xs text-purple-300">Ação: <strong>{actionName}</strong></p>
             </div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
+          <button 
+            onClick={onClose} 
+            disabled={isRolling}
+            className="text-gray-400 hover:text-white disabled:opacity-50"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -116,20 +133,30 @@ export function TargetSelectionModal({
           <button
             type="button"
             onClick={onClose}
-            className="w-1/2 rounded-xl border border-gray-800 bg-gray-900 py-2.5 text-xs font-semibold text-gray-300 hover:bg-gray-800"
+            disabled={isRolling}
+            className="w-1/2 rounded-xl border border-gray-800 bg-gray-900 py-2.5 text-xs font-semibold text-gray-300 hover:bg-gray-800 disabled:opacity-50"
           >
             Cancelar
           </button>
           <button
             type="button"
             onClick={handleConfirm}
-            disabled={!selectedId}
+            disabled={!selectedId || isRolling}
             className={`w-1/2 rounded-xl py-2.5 text-xs font-bold text-white transition disabled:opacity-50 flex items-center justify-center gap-1.5 ${
               isHealing ? "bg-emerald-600 hover:bg-emerald-500" : "bg-rose-600 hover:bg-rose-500"
             }`}
           >
-            <Sparkles className="h-4 w-4" />
-            <span>Confirmar Alvo</span>
+            {isRolling ? (
+              <>
+                <Sparkles className="h-4 w-4 animate-spin" />
+                <span>Rolando...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4" />
+                <span>Confirmar Alvo</span>
+              </>
+            )}
           </button>
         </div>
       </div>

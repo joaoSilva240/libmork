@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Character } from "@/types";
 import type { PublicInvite } from "@/lib/server/public-invite";
+import { Button } from "@/components/ui";
 
 type SessionUser = {
   id: string;
@@ -121,32 +122,42 @@ export function InviteClient({ invite, token }: InviteClientProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 py-8">
+    <div className="min-h-screen bg-dominant-deep py-8 text-secondary-pure">
       <div className="mx-auto max-w-lg px-4">
-        <div className="rounded-lg border border-gray-800 bg-gray-900 p-6">
-          <p className="mb-2 text-sm uppercase tracking-wider text-purple-400">Convite de campanha</p>
-          <h1 className="text-2xl font-bold text-white">{invite.campaignName}</h1>
-          <p className="mt-1 text-sm text-gray-400">
+        <div className="rounded-lg border border-dominant-border bg-secondary-card p-6 shadow-xl">
+          <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-accent-vibrant">Convite de campanha</p>
+          <h1 className="text-2xl font-bold text-secondary-pure">{invite.campaignName}</h1>
+          <p className="mt-1 text-sm text-secondary-muted">
             Motor: {invite.rulesEngine === "d20_mod" ? "d20 + modificador" : "2d20 somado"}
             {invite.pvpEnabled ? " · PvP ativado" : ""}
           </p>
-          {error && <div className="mt-4 rounded-lg border border-red-800 bg-red-900/30 p-3 text-sm text-red-300">{error}</div>}
+          {error && <div className="mt-4 rounded-lg border border-accent-vibrant/40 bg-accent-dark/30 p-3 text-sm text-secondary-pure">{error}</div>}
           <div className="mt-6">
-            {isSessionLoading && <p className="mb-4 text-center text-sm text-gray-400">Verificando sessão...</p>}
+            {isSessionLoading && <p className="mb-4 text-center text-sm text-secondary-muted">Verificando sessão...</p>}
             {!user ? (
               <div className="text-center">
-                <p className="mb-4 text-gray-300">Entre na sua conta para aceitar o convite.</p>
-                <Link href={loginHref} className="inline-block rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700">Fazer login</Link>
+                <p className="mb-4 text-secondary-muted">Entre na sua conta para aceitar o convite.</p>
+                <Link href={loginHref} className="inline-block">
+                  <Button variant="primary" className="px-6 py-3 font-semibold">Fazer login</Button>
+                </Link>
               </div>
             ) : charactersError ? (
-              <div className="text-center"><p className="mb-4 text-red-300">{charactersError}</p><button type="button" onClick={retry} className="rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700">Tentar novamente</button></div>
+              <div className="text-center">
+                <p className="mb-4 text-accent-vibrant">{charactersError}</p>
+                <Button type="button" onClick={retry} variant="primary" className="px-6 py-3 font-semibold">Tentar novamente</Button>
+              </div>
             ) : characters.length === 0 ? (
-              <div className="text-center"><p className="mb-4 text-gray-300">Você ainda não tem personagens. Crie um para entrar na campanha.</p><Link href="/player/characters/new" className="inline-block rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700">Criar Personagem</Link></div>
+              <div className="text-center">
+                <p className="mb-4 text-secondary-muted">Você ainda não tem personagens. Crie um para entrar na campanha.</p>
+                <Link href="/player/characters/new" className="inline-block">
+                  <Button variant="primary" className="px-6 py-3 font-semibold">Criar Personagem</Button>
+                </Link>
+              </div>
             ) : (
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-300">Escolha o personagem que vai entrar na campanha</label>
-                <select value={selectedCharacterId} onChange={(event) => setSelectedCharacterId(event.target.value)} className="w-full rounded-lg border border-gray-700 bg-gray-950 px-4 py-2 text-white focus:border-transparent focus:ring-2 focus:ring-purple-600"><option value="">Selecione um personagem</option>{characters.map((character) => <option key={character.id} value={character.id}>{character.name} (Nível {character.level})</option>)}</select>
-                <button type="button" onClick={handleJoin} disabled={!selectedCharacterId || isJoining} className="mt-4 w-full rounded-lg bg-purple-600 px-6 py-3 font-semibold text-white hover:bg-purple-700 disabled:opacity-50">{isJoining ? "Entrando..." : "Entrar na Campanha"}</button>
+                <label className="mb-2 block text-sm font-medium text-secondary-muted">Escolha o personagem que vai entrar na campanha</label>
+                <select value={selectedCharacterId} onChange={(event) => setSelectedCharacterId(event.target.value)} className="w-full rounded-lg border border-secondary-border bg-dominant-dark px-4 py-2 text-secondary-pure focus:border-accent-vibrant focus:outline-none focus:ring-2 focus:ring-accent"><option value="">Selecione um personagem</option>{characters.map((character) => <option key={character.id} value={character.id}>{character.name} (Nível {character.level})</option>)}</select>
+                <Button type="button" onClick={handleJoin} disabled={!selectedCharacterId || isJoining} isLoading={isJoining} variant="master" className="mt-4 w-full py-3 font-semibold">Entrar na Campanha</Button>
               </div>
             )}
           </div>

@@ -599,7 +599,7 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
           {/* Lista */}
           <div className="w-1/2 overflow-y-auto rounded-lg border border-gray-800 bg-gray-950 p-2">
             {isLoading ? (
-              <div className="flex justify-center py-8">
+              <div className="flex items-center justify-center min-h-[200px]">
                 <Spinner size="md" />
               </div>
             ) : filteredItems.length === 0 ? (
