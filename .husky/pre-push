@@ -1,10 +1,12 @@
 #!/bin/sh
+set -e
+
 echo "========================================================"
 echo " Running pre-push hook: Local Docker Image Build & Update "
 echo "========================================================"
 
 # Captura a ID da imagem local legada antes do novo build
-OLD_IMAGE_ID=$(docker images -q libmork:local)
+OLD_IMAGE_ID=$(docker images -q libmork:local 2>/dev/null || true)
 
 echo "[pre-push] Parando container/compose local atual..."
 docker compose -f docker-compose.local.yml down
