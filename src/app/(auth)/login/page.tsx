@@ -72,59 +72,71 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold text-center text-gray-900">
-            Login
-          </h1>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Entre na sua conta do Libmork
+    <div className="min-h-screen flex flex-col lg:flex-row bg-gray-50">
+      {/* Lado Esquerdo - Formulário de Login (50% em desktop) */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-12">
+        <div className="max-w-md w-full space-y-8">
+          <div>
+            <h1 className="text-3xl font-bold text-center text-gray-900">
+              Login
+            </h1>
+            <p className="mt-2 text-center text-sm text-gray-600">
+              Entre na sua conta do Libmork
+            </p>
+          </div>
+
+          <Form
+            method="post"
+            action="/api/auth/login"
+            onSubmit={handleSubmit}
+            error={errors.general || loginFailedMessage}
+          >
+            <input type="hidden" name="redirect" value={redirect || ''} />
+            <Input
+              label="E-mail"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              error={errors.email}
+              required
+              autoComplete="email"
+              disabled={isLoading}
+            />
+
+            <Input
+              label="Senha"
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
+              error={errors.password}
+              required
+              autoComplete="current-password"
+              disabled={isLoading}
+            />
+
+            <Button type="submit" className="w-full" isLoading={isLoading}>
+              Entrar
+            </Button>
+          </Form>
+
+          <p className="text-center text-sm text-gray-600">
+            Não tem uma conta?{' '}
+            <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
+              Criar conta
+            </Link>
           </p>
         </div>
+      </div>
 
-        <Form
-          method="post"
-          action="/api/auth/login"
-          onSubmit={handleSubmit}
-          error={errors.general || loginFailedMessage}
-        >
-          <input type="hidden" name="redirect" value={redirect || ''} />
-          <Input
-            label="E-mail"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            error={errors.email}
-            required
-            autoComplete="email"
-            disabled={isLoading}
-          />
-
-          <Input
-            label="Senha"
-            name="password"
-            type="password"
-            value={formData.password}
-            onChange={handleChange}
-            error={errors.password}
-            required
-            autoComplete="current-password"
-            disabled={isLoading}
-          />
-
-          <Button type="submit" className="w-full" isLoading={isLoading}>
-            Entrar
-          </Button>
-        </Form>
-
-        <p className="text-center text-sm text-gray-600">
-          Não tem uma conta?{' '}
-          <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
-            Criar conta
-          </Link>
-        </p>
+      {/* Lado Direito - Wallpaper (50% em desktop) */}
+      <div className="hidden lg:block lg:w-1/2 relative bg-gray-900">
+        <img
+          src="/wallpaperflare-cropped.jpg"
+          alt="Libmork Wallpaper"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
       </div>
     </div>
   );
