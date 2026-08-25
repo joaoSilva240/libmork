@@ -54,3 +54,5 @@ next-env.d.ts
 # IDE
 .idea/
 .vscode/
+
+docker-compose.local.yml
