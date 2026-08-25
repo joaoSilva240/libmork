@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { Spinner } from "@/components/ui";
 
 type LinkedCharacter = {
   linkId: string;
@@ -177,7 +178,7 @@ export function CampaignCharacters({ campaignId }: { campaignId: string }) {
 
       {isLoading ? (
         <div className="flex justify-center py-8">
-          <div className="h-6 w-6 animate-spin rounded-full border-4 border-gray-700 border-t-purple-600" />
+          <Spinner size="md" />
         </div>
       ) : (
         <div>

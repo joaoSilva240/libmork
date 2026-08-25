@@ -5,6 +5,7 @@ import type { Encounter } from "@/types";
 import type { RosterActor } from "@/components/campaigns/ActorOverlay";
 import { useSocket } from "@/context/SocketContext";
 import { createCombatSession } from "@/lib/engine";
+import { Spinner } from "@/components/ui";
 
 type EncounterModalProps = {
   campaignId: string;
@@ -207,7 +208,7 @@ export function EncounterModal({
 
         {isLoading ? (
           <div className="flex justify-center py-8">
-            <div className="h-7 w-7 animate-spin rounded-full border-4 border-gray-700 border-t-purple-600" />
+            <Spinner size="md" />
           </div>
         ) : encounters.length === 0 ? (
           <div className="py-6 text-center text-xs text-gray-400">

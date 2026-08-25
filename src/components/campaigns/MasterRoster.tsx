@@ -11,6 +11,7 @@ import { useSocket, type RollDataPayload } from "@/context/SocketContext";
 import { CombatTrackerModal } from "@/components/combat/CombatTrackerModal";
 import type { CombatSessionState } from "@/lib/engine";
 import { advanceCombatTurn, spendCombatActions } from "@/lib/engine";
+import { Spinner } from "@/components/ui";
 
 type RosterData = {
   players: RosterPlayer[];
@@ -335,7 +336,7 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center py-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-700 border-t-purple-600" />
+        <Spinner size="lg" />
       </div>
     );
   }

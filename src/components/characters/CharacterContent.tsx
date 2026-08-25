@@ -5,6 +5,7 @@ import type { ContentType } from "@/lib/validators/content";
 import { useSocket } from "@/context/SocketContext";
 import { TargetSelectionModal } from "@/components/combat/TargetSelectionModal";
 import { DecorativeFrame } from "@/components/ui/DecorativeFrame";
+import { Spinner } from "@/components/ui";
 import type { CombatSessionState, Combatant } from "@/lib/engine";
 import { applyHealing, applyResolvedDamage, getExpression, hydrateCombatantMana, rollExpression, spendCombatActions, spendSpell } from "@/lib/engine";
 
@@ -407,7 +408,7 @@ export function CharacterContent({
 
       {isLoading ? (
         <div className="flex justify-center py-8">
-          <div className="h-6 w-6 animate-spin rounded-full border-4 border-gray-700 border-t-purple-600" />
+          <Spinner size="md" />
         </div>
       ) : (
         <div className="w-full">

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CampaignLog } from "@/types";
+import { Spinner } from "@/components/ui";
 
 const POLL_INTERVAL_MS = 4000;
 
@@ -154,7 +155,7 @@ export function SessionLog({ campaignId }: SessionLogProps) {
       <div className="max-h-[70vh] flex-1 space-y-1.5 overflow-y-auto p-2">
         {isLoading && logs.length === 0 ? (
           <div className="flex justify-center py-8">
-            <div className="h-6 w-6 animate-spin rounded-full border-4 border-gray-700 border-t-purple-600" />
+            <Spinner size="md" />
           </div>
         ) : logs.length === 0 ? (
           <p className="text-sm text-gray-500">

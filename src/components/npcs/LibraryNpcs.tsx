@@ -5,7 +5,7 @@ import type { Npc } from "@/types";
 import { ATTRIBUTES } from "@/lib/utils/constants";
 import type { Attribute } from "@/lib/utils/constants";
 import { getModifier } from "@/lib/engine/attributes";
-import { Button, Form, Input } from "@/components/ui";
+import { Button, Form, Input, Spinner } from "@/components/ui";
 
 type CampaignOption = { id: string; name: string };
 type ClassOption = { id: string; name: string };
@@ -730,7 +730,7 @@ export function LibraryNpcs() {
       <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
         {isLoading ? (
           <div className="flex justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-700 border-t-purple-600" />
+            <Spinner size="lg" />
           </div>
         ) : npcs.length === 0 ? (
           <div className="py-12 text-center text-sm text-gray-400 space-y-2">
@@ -954,7 +954,7 @@ export function LibraryNpcs() {
 
               {isLoadingCatalog ? (
                 <div className="flex justify-center py-12">
-                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-800 border-t-purple-600" />
+                  <Spinner size="lg" />
                 </div>
               ) : (
                 <div className="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 pr-1 min-h-[250px]">

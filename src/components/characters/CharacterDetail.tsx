@@ -12,6 +12,7 @@ import { ImageUpload } from "@/components/characters/ImageUpload";
 import { CharacterContent } from "@/components/characters/CharacterContent";
 import { NfcManager } from "@/components/characters/NfcManager";
 import { DecorativeFrame } from "@/components/ui/DecorativeFrame";
+import { Spinner } from "@/components/ui";
 import {
   StatusFilledIcon,
   SkillsFilledIcon,
@@ -570,7 +571,7 @@ export function CharacterDetail() {
   if (isLoading) {
     return (
       <div className="flex h-[80vh] flex-col items-center justify-center space-y-3">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-800 border-t-purple-600" />
+        <Spinner size="xl" />
         <p className="text-xs text-gray-400 font-medium">Carregando ficha...</p>
       </div>
     );

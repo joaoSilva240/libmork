@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Character } from "@/types";
 import { CharacterCard } from "@/components/characters/CharacterCard";
 import { LogoutButton } from "@/components/auth/LogoutButton";
+import { Spinner } from "@/components/ui";
  
 export function CharacterList() {
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -61,7 +62,7 @@ export function CharacterList() {
           <LogoutButton />
         </header>
         <div className="flex justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-700 border-t-blue-600" />
+          <Spinner size="lg" />
         </div>
       </div>
     );

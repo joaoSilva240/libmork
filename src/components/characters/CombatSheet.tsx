@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Character, Skill, Spell } from "@/types";
+import { Spinner } from "@/components/ui";
 
 type CombatSheetProps = {
   characterId: string;
@@ -46,7 +47,7 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
   if (isLoading) {
     return (
       <div className="flex justify-center p-6">
-        <div className="h-6 w-6 animate-spin rounded-full border-4 border-gray-700 border-t-purple-600" />
+        <Spinner size="md" />
       </div>
     );
   }

@@ -6,6 +6,7 @@ import { ATTRIBUTES } from "@/lib/utils/constants";
 import type { Attribute } from "@/lib/utils/constants";
 import type { AttributeMap } from "@/lib/engine/attributes";
 import { getDerivedStats } from "@/lib/engine/attributes";
+import { Spinner } from "@/components/ui/Spinner";
 
 const ATTRIBUTE_LABELS: Record<Attribute, string> = {
   forca: "Força",
@@ -61,7 +62,7 @@ export default function PublicSheetPage() {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-950">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-700 border-t-blue-600" />
+        <Spinner size="lg" />
       </div>
     );
   }

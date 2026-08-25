@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { RpgClass, InitialItem, Proficiencies } from "@/types";
 import { ATTRIBUTES } from "@/lib/utils/constants";
 import type { Attribute } from "@/lib/utils/constants";
-import { Button, Form, Input } from "@/components/ui";
+import { Button, Form, Input, Spinner } from "@/components/ui";
 
 type Benefit = {
   id: string;
@@ -455,7 +455,7 @@ export function ClassManager() {
 
           {isLoading ? (
             <div className="flex justify-center py-8">
-              <div className="h-6 w-6 animate-spin rounded-full border-4 border-gray-700 border-t-purple-600" />
+              <Spinner size="md" />
             </div>
           ) : classes.length === 0 ? (
             <p className="text-sm text-gray-400">Nenhuma classe cadastrada.</p>

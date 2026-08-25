@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Npc, Encounter } from "@/types";
+import { Spinner } from "@/components/ui";
 
 type WorldOverlayProps = {
   campaignId: string;
@@ -320,7 +321,7 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
           <div className="w-1/2 overflow-y-auto rounded-lg border border-gray-800 bg-gray-950 p-2">
             {isLoading ? (
               <div className="flex justify-center py-8">
-                <div className="h-6 w-6 animate-spin rounded-full border-4 border-gray-700 border-t-purple-600" />
+                <Spinner size="md" />
               </div>
             ) : activeTab === "npcs" ? (
               filteredNpcs.length === 0 ? (

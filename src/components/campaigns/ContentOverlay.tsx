@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Campaign, Spell } from "@/types";
 import { formatTechnicalField, getTechnicalLabel } from "@/lib/content/pf2e-item-formatter";
+import { Spinner } from "@/components/ui";
 
 type ContentOverlayProps = {
   campaignId: string;
@@ -599,7 +600,7 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
           <div className="w-1/2 overflow-y-auto rounded-lg border border-gray-800 bg-gray-950 p-2">
             {isLoading ? (
               <div className="flex justify-center py-8">
-                <div className="h-6 w-6 animate-spin rounded-full border-4 border-gray-700 border-t-purple-600" />
+                <Spinner size="md" />
               </div>
             ) : filteredItems.length === 0 ? (
               <p className="text-center text-sm text-gray-500">Nenhum item encontrado</p>

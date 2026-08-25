@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Npc } from "@/types";
-import { Button, Form, Input } from "@/components/ui";
+import { Button, Form, Input, Spinner } from "@/components/ui";
 import { ATTRIBUTES } from "@/lib/utils/constants";
 import type { Attribute } from "@/lib/utils/constants";
 import { getModifier } from "@/lib/engine/attributes";
@@ -795,7 +795,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
 
           {isLoading ? (
             <div className="flex justify-center py-8">
-              <div className="h-6 w-6 animate-spin rounded-full border-4 border-gray-700 border-t-purple-600" />
+              <Spinner size="md" />
             </div>
           ) : npcs.length === 0 ? (
             <p className="text-sm text-gray-400">Nenhum NPC neste mundo.</p>

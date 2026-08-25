@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import type { World, Encounter, Establishment, Npc } from "@/types";
-import { Button, Form } from "@/components/ui";
+import { Button, Form, Spinner } from "@/components/ui";
 
 type WorldFullDetails = World & {
   establishments?: Establishment[];
@@ -295,7 +295,7 @@ export function LibraryWorlds() {
 
           {isLoading ? (
             <div className="flex justify-center py-6">
-              <div className="h-6 w-6 animate-spin rounded-full border-4 border-gray-700 border-t-purple-600" />
+              <Spinner size="md" />
             </div>
           ) : filteredWorlds.length === 0 ? (
             <p className="text-center text-sm text-gray-500 py-4">Nenhum mundo encontrado.</p>
@@ -382,7 +382,7 @@ export function LibraryWorlds() {
 
             {isDetailsLoading ? (
               <div className="flex justify-center py-8">
-                <div className="h-6 w-6 animate-spin rounded-full border-4 border-gray-700 border-t-purple-600" />
+                <Spinner size="md" />
               </div>
             ) : activeSubTab === "details" ? (
               <div className="space-y-3 text-xs text-gray-300">

@@ -4,7 +4,7 @@ import { getTechnicalLabel, formatTechnicalField } from "@/lib/content/pf2e-item
 import { useEffect, useState } from "react";
 import { ATTRIBUTES, SPELL_USE_TYPES } from "@/lib/utils/constants";
 import type { ContentType } from "@/lib/validators/content";
-import { Button, Form, Input } from "@/components/ui";
+import { Button, Form, Input, Spinner } from "@/components/ui";
 import type { Spell } from "@/types";
 
 type FieldDef = {
@@ -561,7 +561,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
 
         {isLoading ? (
           <div className="flex justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-700 border-t-purple-600" />
+            <Spinner size="lg" />
           </div>
         ) : items.length === 0 ? (
           <div className="py-12 text-center text-sm text-gray-400 space-y-2">
