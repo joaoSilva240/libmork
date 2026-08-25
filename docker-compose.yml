@@ -7,9 +7,7 @@
 
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/joaosilva240/libmork:latest
     container_name: libmork-app
     restart: unless-stopped
     ports:
