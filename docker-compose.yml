@@ -3,6 +3,18 @@
 # =============================================================================
 # O banco PostgreSQL é EXTERNO (D-34) — configure a DATABASE_URL no ZimaOS.
 # =============================================================================
+# NOTA NINEROUTER / TAILSCALE (Task #010):
+# - NINEROUTER_URL padrão usa IP CGNAT Tailscale 100.83.170.1:20128 (rede 100.64/10).
+#   Bridge padrão do Docker NÃO roteia Tailnet; se o host ZimaOS/CasaOS NÃO estiver
+#   no Tailnet OU não expuser o daemon ao container, fetches darão ENOTFOUND/
+#   ETIMEDOUT/ECONNREFUSED. Evidência via GET /api/health/ninerouter.
+# - Compose v2+ aplica extra_hosts host-gateway para que fallback
+#   host.docker.internal:20128 funcione quando 9Router roda no MESMO host físico.
+# - Para produção acessível pela internet, prefira URL pública (Opção A):
+#     NINEROUTER_URL=https://ninerouter.seudominio.com/v1  (via Tailscale Funnel ou Cloudflare Tunnel)
+#   Alternativa privada sidecar: docker-compose.override.tailscale.yml (não ativo por padrão).
+#   Ver docs/deploy-zimaos.md para trade-offs.
+# =============================================================================
 
 services:
   app:
@@ -11,6 +23,9 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
+    # Permite fallback host.docker.internal quando 9Router está no mesmo host
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       # --- Banco de Dados (PostgreSQL externo — D-34) ---
       - DATABASE_URL=${DATABASE_URL:-postgresql://casaos:casaos@100.122.171.83:5432/libmork}
@@ -23,9 +38,17 @@ services:
       - NODE_ENV=production
 
       # --- Tradução via 9Router (OpenAI-compatible) ---
+      # Variáveis NINEROUTER_* devem ser configuradas via painel ZimaOS/CasaOS.
+      # - NINEROUTER_URL: URL pública (Funnel/Cloudflare) ou 100.83.170.1:20128/v1
+      # - NINEROUTER_KEY: chave Bearer do 9Router (não commitar)
+      # - NINEROUTER_MODEL: modelo Ollama ou OpenAI (ex: ollama/gpt-oss:120b)
+      # extra_hosts resolve host.docker.internal para acesso local quando 9Router roda no mesmo host.
       - NINEROUTER_URL=${NINEROUTER_URL:-http://100.83.170.1:20128/v1}
       - NINEROUTER_KEY=${NINEROUTER_KEY:-}
       - NINEROUTER_MODEL=${NINEROUTER_MODEL:-ollama/gpt-oss:120b}
+
+      # --- Diagnóstico opcional (Token para /api/health/ninerouter sem sessão) ---
+      - HEALTH_TOKEN=${HEALTH_TOKEN:-}
 
       # --- Upload de Imagens ---
       - UPLOAD_DIR=/app/uploads

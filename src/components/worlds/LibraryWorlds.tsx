@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import type { World, Encounter, Establishment, Npc } from "@/types";
 import { Button, Form, Spinner } from "@/components/ui";
+import { WorldImageUpload } from "@/components/worlds/WorldImageUpload";
 
 type WorldFullDetails = World & {
   establishments?: Establishment[];
@@ -22,6 +23,8 @@ export function LibraryWorlds() {
   const [isCreating, setIsCreating] = useState(false);
   const [newWorldName, setNewWorldName] = useState("");
   const [newWorldDescription, setNewWorldDescription] = useState("");
+  const [newWorldCoverUrl, setNewWorldCoverUrl] = useState("");
+  const [newWorldMapUrl, setNewWorldMapUrl] = useState("");
 
   // Formulários de sub-elementos do mundo selecionado
   const [activeSubTab, setActiveSubTab] = useState<"details" | "encounters" | "establishments" | "npcs">("details");
@@ -117,6 +120,8 @@ export function LibraryWorlds() {
         body: JSON.stringify({
           name: newWorldName,
           description: newWorldDescription || null,
+          coverUrl: newWorldCoverUrl || null,
+          mapUrl: newWorldMapUrl || null,
         }),
         credentials: "include",
       });
@@ -129,6 +134,8 @@ export function LibraryWorlds() {
 
       setNewWorldName("");
       setNewWorldDescription("");
+      setNewWorldCoverUrl("");
+      setNewWorldMapUrl("");
       await loadWorlds();
       void loadWorldDetails(data.data.id);
     } catch {
@@ -265,6 +272,28 @@ export function LibraryWorlds() {
                   className={`${inputClass} w-full`}
                 />
               </div>
+              <div>
+                <label className="mb-1 block text-xs text-secondary-muted">URL da Imagem de Capa (opcional)</label>
+                <input
+                  type="url"
+                  value={newWorldCoverUrl}
+                  onChange={(e) => setNewWorldCoverUrl(e.target.value)}
+                  placeholder="https://exemplo.com/capa.jpg"
+                  disabled={isCreating}
+                  className={`${inputClass} w-full`}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-secondary-muted">URL da Imagem de Mapa (opcional)</label>
+                <input
+                  type="url"
+                  value={newWorldMapUrl}
+                  onChange={(e) => setNewWorldMapUrl(e.target.value)}
+                  placeholder="https://exemplo.com/mapa.jpg"
+                  disabled={isCreating}
+                  className={`${inputClass} w-full`}
+                />
+              </div>
               <Button type="submit" variant="master" isLoading={isCreating} className="w-full">
                 Criar Mundo
               </Button>
@@ -303,27 +332,43 @@ export function LibraryWorlds() {
               {filteredWorlds.map((world) => (
                 <div
                   key={world.id}
-                  className={`flex items-center justify-between rounded-lg border p-3 cursor-pointer transition-colors ${
+                  className={`relative overflow-hidden rounded-lg border p-3 cursor-pointer transition-all bg-cover bg-center ${
                     selectedWorld?.id === world.id
-                      ? "border-accent bg-accent-dark/30 shadow-[0_0_10px_rgba(147,51,234,0.2)]"
-                      : "border-secondary-border bg-dominant-dark hover:border-accent-vibrant/50"
+                      ? "border-accent shadow-[0_0_10px_rgba(147,51,234,0.2)]"
+                      : "border-secondary-border hover:border-accent-vibrant/50"
                   }`}
+                  style={
+                    world.coverUrl
+                      ? { backgroundImage: `url(${world.coverUrl})` }
+                      : undefined
+                  }
                   onClick={() => void loadWorldDetails(world.id)}
                 >
-                  <div>
-                    <h4 className="font-bold text-secondary-pure text-sm">{world.name}</h4>
-                    {world.description && (
-                      <p className="text-xs text-secondary-muted line-clamp-1">{world.description}</p>
-                    )}
-                  </div>
+                  <div
+                    className={`absolute inset-0 transition-colors ${
+                      world.coverUrl
+                        ? "bg-gradient-to-r from-dominant-dark/95 via-dominant-dark/80 to-dominant-dark/60"
+                        : selectedWorld?.id === world.id
+                        ? "bg-accent-dark/30"
+                        : "bg-dominant-dark"
+                    }`}
+                  />
+                  <div className="relative z-10 flex items-center justify-between">
+                    <div>
+                      <h4 className="font-bold text-secondary-pure text-sm drop-shadow-sm">{world.name}</h4>
+                      {world.description && (
+                        <p className="text-xs text-secondary-muted line-clamp-1 drop-shadow-sm">{world.description}</p>
+                      )}
+                    </div>
 
-                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      onClick={() => handleDeleteWorld(world.id)}
-                      className="text-xs text-accent-vibrant hover:text-accent-hover transition-colors"
-                    >
-                      Excluir
-                    </button>
+                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => handleDeleteWorld(world.id)}
+                        className="text-xs text-accent-vibrant hover:text-accent-hover transition-colors drop-shadow-sm"
+                      >
+                        Excluir
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -384,12 +429,54 @@ export function LibraryWorlds() {
                 <Spinner size="md" />
               </div>
             ) : activeSubTab === "details" ? (
-              <div className="space-y-3 text-xs text-secondary-muted">
-                <p><span className="font-semibold text-secondary-pure">ID:</span> {selectedWorld.id}</p>
-                <p><span className="font-semibold text-secondary-pure">Criado em:</span> {new Date(selectedWorld.createdAt).toLocaleDateString("pt-BR")}</p>
-                <p><span className="font-semibold text-secondary-pure">Total de Locais:</span> {selectedWorld.establishments?.length || 0}</p>
-                <p><span className="font-semibold text-secondary-pure">Total de Encontros:</span> {selectedWorld.encounters?.length || 0}</p>
-                <p><span className="font-semibold text-secondary-pure">Total de NPCs:</span> {selectedWorld.npcs?.length || 0}</p>
+              <div className="space-y-4">
+                <div className="space-y-3 text-xs text-secondary-muted">
+                  <p><span className="font-semibold text-secondary-pure">ID:</span> {selectedWorld.id}</p>
+                  <p><span className="font-semibold text-secondary-pure">Criado em:</span> {new Date(selectedWorld.createdAt).toLocaleDateString("pt-BR")}</p>
+                  <p><span className="font-semibold text-secondary-pure">Total de Locais:</span> {selectedWorld.establishments?.length || 0}</p>
+                  <p><span className="font-semibold text-secondary-pure">Total de Encontros:</span> {selectedWorld.encounters?.length || 0}</p>
+                  <p><span className="font-semibold text-secondary-pure">Total de NPCs:</span> {selectedWorld.npcs?.length || 0}</p>
+                </div>
+
+                <div className="border-t border-secondary-border pt-3 space-y-4">
+                  <h4 className="font-semibold text-xs text-secondary-pure">Imagens do Mundo</h4>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <WorldImageUpload
+                      worldId={selectedWorld.id}
+                      type="cover"
+                      currentImageUrl={selectedWorld.coverUrl}
+                      label="Imagem de Capa"
+                      onUploaded={(url) => {
+                        setSelectedWorld((prev) => prev ? { ...prev, coverUrl: url } : null);
+                        setWorlds((prev) => prev.map((w) => w.id === selectedWorld.id ? { ...w, coverUrl: url } : w));
+                      }}
+                    />
+                    <WorldImageUpload
+                      worldId={selectedWorld.id}
+                      type="map"
+                      currentImageUrl={selectedWorld.mapUrl}
+                      label="Imagem de Mapa"
+                      onUploaded={(url) => {
+                        setSelectedWorld((prev) => prev ? { ...prev, mapUrl: url } : null);
+                        setWorlds((prev) => prev.map((w) => w.id === selectedWorld.id ? { ...w, mapUrl: url } : w));
+                      }}
+                    />
+                  </div>
+
+                  {selectedWorld.mapUrl && (
+                    <div className="mt-3">
+                      <p className="mb-1 text-xs font-semibold text-secondary-pure">Preview do Mapa:</p>
+                      <div className="relative max-h-60 overflow-hidden rounded-lg border border-secondary-border bg-dominant-dark">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={selectedWorld.mapUrl}
+                          alt={`Mapa de ${selectedWorld.name}`}
+                          className="w-full object-contain max-h-60"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             ) : activeSubTab === "establishments" ? (
               <div className="space-y-4">

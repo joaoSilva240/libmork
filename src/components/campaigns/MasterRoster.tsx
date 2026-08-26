@@ -1,28 +1,35 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Npc, World, Encounter } from "@/types";
 import { ActorOverlay } from "@/components/campaigns/ActorOverlay";
 import type { RosterActor, RosterPlayer } from "@/components/campaigns/ActorOverlay";
 import { InfiniteCanvas } from "@/components/campaigns/InfiniteCanvas";
 import { CharacterCarousel } from "@/components/campaigns/CharacterCarousel";
 import { EncounterModal } from "@/components/campaigns/EncounterModal";
-import { useSocket, type RollDataPayload, DICE_ROLL_LOADING_DELAY } from "@/context/SocketContext";
+import { useSocket, type RollDataPayload } from "@/context/SocketContext";
 import { CombatTrackerModal } from "@/components/combat/CombatTrackerModal";
 import type { CombatSessionState } from "@/lib/engine";
 import { advanceCombatTurn, spendCombatActions } from "@/lib/engine";
 import { Spinner } from "@/components/ui";
+import { MapEditor } from "@/components/campaigns/MapEditor";
+import { WorldSelectorModal } from "@/components/campaigns/WorldSelectorModal";
 
 type RosterData = {
   players: RosterPlayer[];
   npcs: Npc[];
 };
 
-export function MasterRoster({ campaignId }: { campaignId: string }) {
-  const { isConnected, presenceList, joinCampaign, subscribeActorStatus, subscribeDiceRoll, subscribeCombatState, requestInitiativeRollDelayed } = useSocket();
+type MasterRosterProps = {
+  campaignId: string;
+  selectedWorldId: string;
+  onWorldSelected?: (worldId: string) => void;
+};
+
+export function MasterRoster({ campaignId, selectedWorldId, onWorldSelected }: MasterRosterProps) {
+  const { isConnected, presenceList, joinCampaign, subscribeActorStatus, subscribeDiceRoll, subscribeCombatState } = useSocket();
   const [roster, setRoster] = useState<RosterData>({ players: [], npcs: [] });
   const [worlds, setWorlds] = useState<World[]>([]);
-  const [selectedWorldId, setSelectedWorldId] = useState<string>("");
   const [activeEncounter, setActiveEncounter] = useState<Encounter | null>(null);
   const [showEncounterModal, setShowEncounterModal] = useState(false);
   const [combatState, setCombatState] = useState<CombatSessionState | null>(null);
@@ -32,7 +39,9 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
   const [selected, setSelected] = useState<RosterActor | null>(null);
   const [recentRolls, setRecentRolls] = useState<RollDataPayload[]>([]);
   const [showRollFeed, setShowRollFeed] = useState(false);
-  const [isRollingDice, setIsRollingDice] = useState(false);
+  const [activeCenterView, setActiveCenterView] = useState<"canvas" | "map">("canvas");
+  const [showWorldSelector, setShowWorldSelector] = useState(false);
+  const [campaignWorldIds, setCampaignWorldIds] = useState<Set<string>>(new Set());
 
   const [deskActors, setDeskActors] = useState<RosterActor[]>(() => {
     if (typeof window === "undefined") return [];
@@ -44,10 +53,28 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
     }
   });
 
+  const [isCarouselCollapsed, setIsCarouselCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const saved = localStorage.getItem(`carousel-collapsed-${campaignId}`);
+      return saved === "true";
+    } catch {
+      return false;
+    }
+  });
+
   const saveDeskActors = (newActors: RosterActor[]) => {
     setDeskActors(newActors);
     try {
       localStorage.setItem(`carousel-desk-${campaignId}`, JSON.stringify(newActors));
+    } catch {}
+  };
+
+  const toggleCarousel = () => {
+    const newState = !isCarouselCollapsed;
+    setIsCarouselCollapsed(newState);
+    try {
+      localStorage.setItem(`carousel-collapsed-${campaignId}`, String(newState));
     } catch {}
   };
 
@@ -199,9 +226,13 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
 
         const combinedWorlds = Array.from(allWorldsMap.values());
         setWorlds(combinedWorlds);
-        if (combinedWorlds.length > 0 && !selectedWorldId) {
-          setSelectedWorldId(combinedWorlds[0].id);
+
+        // Atualizar IDs dos mundos da campanha
+        if (campaignWorldsRes.ok && campaignWorldsData.data) {
+          const campWorlds = campaignWorldsData.data as World[];
+          setCampaignWorldIds(new Set(campWorlds.map((w) => w.id)));
         }
+
       } catch {
         if (!cancelled) {
           setError("Erro de conexão. Tente novamente.");
@@ -218,7 +249,7 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [campaignId, selectedWorldId]);
+  }, [campaignId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -311,28 +342,55 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
     conditions: player.conditions,
   });
 
-  // Filtrar NPCs se houver mundo selecionado
-  const filteredNpcs = selectedWorldId
-    ? roster.npcs.filter((npc) => !npc.worldId || npc.worldId === selectedWorldId)
-    : roster.npcs;
+  const actors = useMemo<RosterActor[]>(
+    () => [
+      ...roster.players.map(toActor),
+      ...roster.npcs.map((npc) => ({
+        kind: "npc" as const,
+        id: npc.id,
+        name: npc.name,
+        imageUrl: npc.imageUrl,
+        level: npc.level,
+        xp: npc.xp,
+        hitPoints: npc.hitPoints,
+        hitPointsMax: npc.hitPointsMax,
+        manaPoints: npc.manaPoints,
+        manaPointsMax: npc.manaPointsMax,
+        npcType: npc.npcType,
+        xpReward: npc.xpReward,
+      })),
+    ],
+    [roster.npcs, roster.players]
+  );
 
-  const actors: RosterActor[] = [
-    ...roster.players.map(toActor),
-    ...filteredNpcs.map((npc) => ({
-      kind: "npc" as const,
-      id: npc.id,
-      name: npc.name,
-      imageUrl: npc.imageUrl,
-      level: npc.level,
-      xp: npc.xp,
-      hitPoints: npc.hitPoints,
-      hitPointsMax: npc.hitPointsMax,
-      manaPoints: npc.manaPoints,
-      manaPointsMax: npc.manaPointsMax,
-      npcType: npc.npcType,
-      xpReward: npc.xpReward,
-    })),
-  ];
+  const selectedWorld = worlds.find((w) => w.id === selectedWorldId);
+  const npcWorldIds = useMemo(
+    () => new Map(roster.npcs.map((npc) => [npc.id, npc.worldId])),
+    [roster.npcs]
+  );
+  const isActorVisible = useCallback(
+    (actor: RosterActor) =>
+      actor.kind === "character" ||
+      !selectedWorldId ||
+      npcWorldIds.get(actor.id) === selectedWorldId,
+    [npcWorldIds, selectedWorldId]
+  );
+  const visibleActors = useMemo(
+    () => actors.filter(isActorVisible),
+    [actors, isActorVisible]
+  );
+  const visibleDeskActors = useMemo(
+    () => deskActors.filter(isActorVisible),
+    [deskActors, isActorVisible]
+  );
+  const carouselActors = visibleDeskActors.length > 0 ? visibleDeskActors : visibleActors;
+
+  useEffect(() => {
+    if (selected && !isActorVisible(selected)) {
+      const clearSelection = window.setTimeout(() => setSelected(null), 0);
+      return () => window.clearTimeout(clearSelection);
+    }
+  }, [isActorVisible, selected]);
 
   if (isLoading) {
     return (
@@ -346,20 +404,72 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
     <div className="flex h-full flex-col">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 pb-2">
         <div className="flex items-center gap-3">
-          <h2 className="text-lg font-bold text-white">Mesa</h2>
-          {worlds.length > 0 && (
-            <select
-              value={selectedWorldId}
-              onChange={(e) => setSelectedWorldId(e.target.value)}
-              className="rounded-lg border border-gray-700 bg-gray-950 px-2 py-1 text-xs text-white focus:border-transparent focus:ring-1 focus:ring-purple-600"
+          <h2 className="text-lg font-bold text-white">
+            Mesa{selectedWorld ? ` — ${selectedWorld.name}` : ""}
+          </h2>
+
+          {/* Botão de Adicionar Mundo - Substitui o dropdown */}
+          <button
+            onClick={() => setShowWorldSelector(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-purple-700/60 bg-purple-950/40 px-3 py-1.5 text-xs font-semibold text-purple-300 hover:bg-purple-900/50 transition-colors"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-3.5 w-3.5"
             >
-              {worlds.map((w) => (
-                <option key={w.id} value={w.id}>
-                  🌍 {w.name}
-                </option>
-              ))}
-            </select>
-          )}
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="16" />
+              <line x1="8" y1="12" x2="16" y2="12" />
+            </svg>
+            <span>Adicionar Mundo</span>
+          </button>
+
+          {/* Alternador de Vista Central: Canva / Mapa */}
+          <div className="flex items-center rounded-lg border border-gray-700 bg-gray-950 p-0.5 text-xs">
+            <button
+              onClick={() => setActiveCenterView("canvas")}
+              className={`flex items-center gap-1 rounded-md px-2 py-1 font-medium transition-colors ${
+                activeCenterView === "canvas"
+                  ? "bg-purple-600 text-white"
+                  : "text-gray-400 hover:text-white"
+              }`}
+              title="Canva Infinito"
+            >
+              <span>🎨</span>
+              <span>Canva</span>
+            </button>
+            <button
+              onClick={() => setActiveCenterView("map")}
+              className={`flex items-center gap-1 rounded-md px-2 py-1 font-medium transition-colors ${
+                activeCenterView === "map"
+                  ? "bg-purple-600 text-white"
+                  : "text-gray-400 hover:text-white"
+              }`}
+              title="Mapa do Mundo"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-3.5 w-3.5"
+              >
+                <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
+                <line x1="9" y1="3" x2="9" y2="18" />
+                <line x1="15" y1="6" x2="15" y2="21" />
+              </svg>
+              <span>Mapa</span>
+            </button>
+          </div>
 
           {/* Status Socket WebSocket em tempo real */}
           <span className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
@@ -373,10 +483,10 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
         {/* Presença de Participantes da Mesa (RF-026, D-37) */}
         <div className="flex items-center gap-3">
           <div className="flex items-center -space-x-1 overflow-hidden">
-            {presenceList.map((p) => (
+            {presenceList.filter(p => p.online).map((p) => (
               <div
                 key={p.userId}
-                title={`${p.userName} (${p.role === "master" ? "Mestre" : "Jogador"}) — ${p.online ? "Online" : "Offline"}`}
+                title={`${p.userName} (${p.role === "master" ? "Mestre" : "Jogador"})`}
                 className="relative"
               >
                 <div className={`flex h-7 w-7 items-center justify-center rounded-full border border-gray-900 text-xs font-bold text-white ${
@@ -384,9 +494,7 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
                 }`}>
                   {p.userName.slice(0, 2).toUpperCase()}
                 </div>
-                <span className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-gray-950 ${
-                  p.online ? "bg-emerald-500" : "bg-gray-500"
-                }`} />
+                <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-gray-950 bg-emerald-500" />
               </div>
             ))}
           </div>
@@ -399,7 +507,7 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
           </button>
 
           <span className="text-xs text-gray-400">
-            {roster.players.length} jogadores · {filteredNpcs.length} NPCs
+            {roster.players.length} jogadores · {visibleActors.filter((actor) => actor.kind === "npc").length} NPCs
           </span>
         </div>
       </div>
@@ -449,9 +557,31 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
         </div>
       )}
 
-      {/* Canvas infinito com post-its vinculados ao mundo/campanha */}
-      <div className="mb-2 flex-1 overflow-hidden rounded-lg border border-gray-800">
-        <InfiniteCanvas campaignId={selectedWorldId ? `${campaignId}-${selectedWorldId}` : campaignId} />
+      {/* Contêiner Central: Canva Infinito ou Mapa do Mundo */}
+      <div className={`transition-all duration-300 mb-2 overflow-hidden rounded-lg border border-gray-800 bg-gray-950 ${
+        isCarouselCollapsed ? 'flex-1 h-[calc(100vh-12rem)]' : 'flex-1'
+      }`}>
+        {activeCenterView === "canvas" ? (
+          selectedWorldId ? (
+            <InfiniteCanvas campaignId={`${campaignId}-${selectedWorldId}`} />
+          ) : (
+            <div className="flex h-full items-center justify-center p-6 text-center text-sm text-gray-400">
+              Selecione um mundo para abrir o Canva.
+            </div>
+          )
+        ) : (
+          selectedWorldId ? (
+            <MapEditor
+              key={`map-${selectedWorldId}`}
+              worldId={selectedWorldId}
+              mapUrl={selectedWorld?.mapUrl || null}
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center p-6 text-center text-sm text-gray-400">
+              Selecione um mundo para abrir o mapa.
+            </div>
+          )
+        )}
       </div>
 
       {/* Barra de Ações sobre o Carrossel (Combate/Encontros) */}
@@ -502,30 +632,57 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
               </button>
             </>
           ) : (
-            <button
-              onClick={() => setShowEncounterModal(true)}
-              disabled={!selectedWorldId}
-              className="rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-bold text-white shadow hover:bg-purple-500 disabled:opacity-50"
-            >
-              ⚔️ Iniciar Encontro (Combate)
-            </button>
+            <>
+              <button
+                onClick={() => setShowEncounterModal(true)}
+                disabled={!selectedWorldId}
+                className="rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-bold text-white shadow hover:bg-purple-500 disabled:opacity-50"
+              >
+                ⚔️ Iniciar Encontro (Combate)
+              </button>
+
+              {/* Botão recolher/expandir movido para cá */}
+              <button
+                onClick={toggleCarousel}
+                className="flex items-center gap-1 rounded-lg border border-gray-700 bg-gray-800 px-2.5 py-1.5 text-xs font-semibold text-gray-300 hover:bg-gray-700 transition-colors"
+                title={isCarouselCollapsed ? "Expandir carrossel" : "Recolher carrossel"}
+              >
+                {isCarouselCollapsed ? (
+                  <>
+                    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    </svg>
+                    <span>Expandir</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                    <span>Recolher</span>
+                  </>
+                )}
+              </button>
+            </>
           )}
         </div>
       </div>
 
       {/* Carrossel de personagens fixo na parte inferior */}
-      <div
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={handleDropActor}
-        className="min-h-[220px] h-56 rounded-b-lg border border-gray-800 bg-gray-900/50 p-2 overflow-visible"
-      >
-        <CharacterCarousel
-          actors={deskActors.length > 0 ? deskActors : actors}
-          combatState={combatState}
-          onSelect={setSelected}
-          onRemove={handleRemoveDeskActor}
-        />
-      </div>
+      {!isCarouselCollapsed && (
+        <div
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={handleDropActor}
+          className="transition-all duration-300 h-56 min-h-[220px] rounded-b-lg border border-gray-800 bg-gray-900/50 p-2 overflow-visible"
+        >
+          <CharacterCarousel
+            actors={carouselActors}
+            combatState={combatState}
+            onSelect={setSelected}
+            onRemove={handleRemoveDeskActor}
+          />
+        </div>
+      )}
 
       {selected && (
         <ActorOverlay
@@ -540,10 +697,21 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
         <EncounterModal
           campaignId={campaignId}
           worldId={selectedWorldId}
-          actors={deskActors.length > 0 ? deskActors : actors}
+          actors={carouselActors}
           onClose={() => setShowEncounterModal(false)}
           onEncounterStarted={() => {
             void checkActiveEncounter();
+          }}
+        />
+      )}
+
+      {showWorldSelector && (
+        <WorldSelectorModal
+          campaignId={campaignId}
+          campaignWorldIds={campaignWorldIds}
+          onClose={() => setShowWorldSelector(false)}
+          onWorldSelected={(worldId) => {
+            onWorldSelected?.(worldId);
           }}
         />
       )}
@@ -552,7 +720,7 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
         <CombatTrackerModal
           campaignId={campaignId}
           combatState={combatState}
-          availableActors={(deskActors.length > 0 ? deskActors : actors).map((a) => ({
+          availableActors={carouselActors.map((a) => ({
             id: a.id,
             name: a.name,
             type: a.kind === "npc" ? "npc" : "character",
@@ -569,15 +737,6 @@ export function MasterRoster({ campaignId }: { campaignId: string }) {
         />
       )}
 
-      {/* Loading Overlay for Dice Roll */}
-      {isRollingDice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-purple-600/50 bg-gray-900 p-6 text-center shadow-2xl animate-in fade-in">
-            <Spinner size="md" />
-            <p className="mt-3 text-xs text-purple-300 font-medium">Rolando dados...</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

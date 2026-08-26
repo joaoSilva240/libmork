@@ -135,7 +135,9 @@ function getPf2eUseType(spell: Pf2eSpell): string {
   if (types.length === 0) {
     return "somatic";
   }
-  return types.join(",");
+  const joined = types.join(",");
+  // Defensive: ensure never exceeds varchar(250) even if future values are longer
+  return joined.length > 250 ? joined.slice(0, 250) : joined;
 }
 
 function getPf2eRange(spell: Pf2eSpell): string | null {
@@ -390,6 +392,7 @@ export async function POST(request: NextRequest) {
     let importedCount = 0;
     let importedSpellCount = 0;
     let importedDndCount = 0;
+    let spellFailed = 0;
 
     // 1. IMPORTAR MAGIAS PATHFINDER 2E
     if (!contentType || contentType === "spells" || contentType === "all") {
@@ -452,7 +455,9 @@ export async function POST(request: NextRequest) {
           const description = formatPf2eText(spell.entries).slice(0, 5000);
 
           const duration = getPf2eDuration(spell);
-          const useType = getPf2eUseType(spell);
+          let useType = getPf2eUseType(spell);
+          // Defensive truncation to guarantee varchar(250) compliance
+          if (useType.length > 250) useType = useType.slice(0, 250);
           const actionCostOverride = getPf2eActionCost(spell);
           const range = getPf2eRange(spell);
           const target = getPf2eTarget(spell);
@@ -471,48 +476,64 @@ export async function POST(request: NextRequest) {
           };
 
           if (existing) {
-            await db.update(spells).set({
-              circle,
-              manaCost: circle * 2,
-              description,
-              duration,
-              useType,
-              actionCostOverride,
-              imageUrl: existing.imageUrl || imageUrl || null,
-              range,
-              target,
-              area,
-              damage,
-              damageType,
-              structuredEffects: structuredEffectsData,
-              castingTime,
-            }).where(eq(spells.id, existing.id));
-            importedCount++;
-            importedSpellCount++;
+            try {
+              await db.update(spells).set({
+                circle,
+                manaCost: circle * 2,
+                description,
+                duration,
+                useType,
+                actionCostOverride,
+                imageUrl: existing.imageUrl || imageUrl || null,
+                range,
+                target,
+                area,
+                damage,
+                damageType,
+                structuredEffects: structuredEffectsData,
+                castingTime,
+              }).where(eq(spells.id, existing.id));
+              importedCount++;
+              importedSpellCount++;
+            } catch (err) {
+              spellFailed++;
+              console.error('Falha ao importar magia', name, err);
+              continue;
+            }
           } else {
-            await db.insert(spells).values({
-              name,
-              circle,
-              manaCost: circle * 2,
-              description,
-              duration,
-              useType,
-              actionCostOverride,
-              campaignId: null,
-              imageUrl,
-              range,
-              target,
-              area,
-              damage,
-              damageType,
-              structuredEffects: structuredEffectsData,
-              castingTime,
-              translation: null,
-            });
-            importedCount++;
-            importedSpellCount++;
+            try {
+              await db.insert(spells).values({
+                name,
+                circle,
+                manaCost: circle * 2,
+                description,
+                duration,
+                useType,
+                actionCostOverride,
+                campaignId: null,
+                imageUrl,
+                range,
+                target,
+                area,
+                damage,
+                damageType,
+                structuredEffects: structuredEffectsData,
+                castingTime,
+                translation: null,
+              });
+              importedCount++;
+              importedSpellCount++;
+            } catch (err) {
+              spellFailed++;
+              console.error('Falha ao importar magia', name, err);
+              continue;
+            }
           }
         }
+        if (spellFailed > 0) {
+          console.error(`Magias com falha: ${spellFailed} de ${uniqueSpells.length}`);
+        }
+        console.log(`Magias Pathfinder 2e processadas! Criadas/Atualizadas: ${importedSpellCount}, Falhas: ${spellFailed}`);
       } catch (err) {
         console.error("Erro ao importar magias Pathfinder 2e:", err);
       }
@@ -638,15 +659,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const failureSuffix = spellFailed > 0 ? `; ${spellFailed} falha(s) em magias` : "";
     const message = contentType === "spells"
-      ? `${importedSpellCount} magias Pathfinder 2e importadas com sucesso (${importedCount} registros cadastrados na Biblioteca Global)`
+      ? `${importedSpellCount} magias Pathfinder 2e importadas com sucesso (${importedCount} registros cadastrados na Biblioteca Global)${failureSuffix}`
       : contentType === "all"
-      ? `${importedSpellCount} magias Pathfinder 2e e ${importedDndCount} conteúdos D&D 5e importados com sucesso (${importedCount} registros cadastrados na Biblioteca Global)`
-      : `${importedDndCount} conteúdos importados com sucesso (${importedCount} registros cadastrados na Biblioteca Global)`;
+      ? `${importedSpellCount} magias Pathfinder 2e e ${importedDndCount} conteúdos D&D 5e importados com sucesso (${importedCount} registros cadastrados na Biblioteca Global)${failureSuffix}`
+      : `${importedDndCount} conteúdos importados com sucesso (${importedCount} registros cadastrados na Biblioteca Global)${failureSuffix}`;
 
     return NextResponse.json({
       success: true,
       message,
+      importedCount,
+      importedSpellCount,
+      spellFailed,
+      failures: spellFailed,
       sf2e: { created: sf2eCreated, updated: sf2eUpdated, failures: sf2eFailures, failedCategories: [...new Set(sf2eFailures.map((failure) => failure.category))] },
     });
   } catch (error) {

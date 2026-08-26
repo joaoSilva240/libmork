@@ -128,6 +128,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     // Inicializa a conexão Socket.IO na mesma origem
     const socketInstance = io({
       path: "/api/socket/io",
+      addTrailingSlash: false,
       transports: ["websocket", "polling"],
       autoConnect: true,
       withCredentials: true,

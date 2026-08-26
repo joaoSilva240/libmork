@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, description } = validation.data;
+    const { name, description, coverUrl, mapUrl } = validation.data;
 
     const [newWorld] = await db
       .insert(worlds)
@@ -68,6 +68,8 @@ export async function POST(request: NextRequest) {
         campaignId: body.campaignId || null,
         name,
         description: description ?? null,
+        coverUrl: coverUrl ?? null,
+        mapUrl: mapUrl ?? null,
       })
       .returning();
 

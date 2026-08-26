@@ -120,6 +120,8 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
   const [selectedSpell, setSelectedSpell] = useState<Item | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
   const [modalLanguage, setModalLanguage] = useState<"en" | "pt">("en");
+  const [translationError, setTranslationError] = useState<string | null>(null);
+  const [translationCode, setTranslationCode] = useState<string | null>(null);
 
   useEffect(() => {
     if (!selectedSpell || (activeType !== "spells" && activeType !== "items")) return;
@@ -132,10 +134,78 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
     return () => document.removeEventListener("keydown", handleEscape);
   }, [selectedSpell]);
 
+  // Helpers para traduzir — com feedback acionável e retry
+  const humanizeTranslationError = (code: string | null, rawError: string): string => {
+    if (!code) return rawError || "Erro desconhecido ao traduzir.";
+    if (code === "translation_provider_unconfigured") return "Tradução não configurada: defina NINEROUTER_KEY no .env ou variável ZimaOS.";
+    if (code === "translation_provider_timeout") return "Tradução indisponível: tempo esgotado ao contatar 9Router (modelo 120b lento, 25s). Tente novamente.";
+    if (code === "translation_provider_unreachable") return "Tradução indisponível: verifique conexão com 9Router (100.83.170.1 não alcançável do container). Tente novamente ou configure NINEROUTER_URL público (docs/deploy-zimaos.md).";
+    if (code.startsWith("translation_provider_http_")) {
+      const status = code.replace("translation_provider_http_", "");
+      const snippet = rawError.includes(":") ? rawError.split(":").slice(1).join(":").trim().slice(0, 200) : "";
+      return `Erro do provedor 9Router (HTTP ${status})${snippet ? `: ${snippet}` : ""}. Verifique KEY/modelo.`;
+    }
+    if (code === "translation_provider_empty") return "Tradução indisponível: resposta vazia do 9Router.";
+    if (code === "translation_provider_invalid_json") return "Tradução indisponível: resposta inválida (JSON) do 9Router.";
+    return rawError || `Erro: ${code}`;
+  };
+
+  const triggerTranslate = async (spellId: string, type: typeof activeType) => {
+    setTranslationError(null);
+    setTranslationCode(null);
+    setIsTranslating(true);
+    try {
+      const res = await fetch(`/api/content/${type}/${spellId}/translate`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = (await res.json().catch(() => ({}))) as { success?: boolean; translation?: unknown; error?: string; code?: string; details?: string };
+      if (!res.ok) {
+        const code = (data.code as string) || (data.error as string) || `translation_provider_http_${res.status}`;
+        const raw = (data.error as string) || `HTTP ${res.status}`;
+        // Normaliza code se vier como mensagem completa
+        const normalizedCode = code.startsWith("translation_provider_") ? code.split(":")[0].trim() : code.startsWith("translation_provider") ? code : `translation_provider_http_${res.status}`;
+        // Se error já contém code prefix, extrai
+        const finalCode = (data.code || (raw.startsWith("translation_provider_") ? raw.split(":")[0].trim() : normalizedCode)) as string;
+        const msg = humanizeTranslationError(finalCode, raw);
+        throw Object.assign(new Error(msg), { code: finalCode, raw });
+      }
+      if (data.success && data.translation) {
+        setItems((prevItems) =>
+          prevItems.map((item) => (item.id === spellId ? { ...item, translation: data.translation } : item))
+        );
+        setSelectedSpell((prev) => (prev && prev.id === spellId ? { ...prev, translation: data.translation } as Item : prev));
+        setModalLanguage("pt");
+        setTranslationError(null);
+        setTranslationCode(null);
+      } else {
+        throw new Error("Resposta sem tradução");
+      }
+    } catch (err) {
+      const e = err as { code?: string; message?: string; raw?: string };
+      const code = (e.code as string) || "translation_provider_unreachable";
+      const rawMsg = (e.raw as string) || (e.message as string) || "Erro desconhecido";
+      const human = e.message && e.message.includes("Tradução") ? e.message : humanizeTranslationError(code, rawMsg);
+      setTranslationCode(code);
+      setTranslationError(human);
+      console.error(`Erro ao traduzir ${type === "items" ? "item" : "magia"}:`, code, rawMsg);
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  const handleRetryTranslate = () => {
+    if (!selectedSpell) return;
+    const id = selectedSpell.id as string;
+    triggerTranslate(id, activeType);
+  };
+
   useEffect(() => {
     if (!selectedSpell || (activeType !== "spells" && activeType !== "items")) {
       Promise.resolve().then(() => {
         setIsTranslating(false);
+        setTranslationError(null);
+        setTranslationCode(null);
       });
       return;
     }
@@ -145,6 +215,8 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
     if (hasTranslation) {
       Promise.resolve().then(() => {
         setModalLanguage("pt");
+        setTranslationError(null);
+        setTranslationCode(null);
       });
       return;
     }
@@ -152,47 +224,52 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
     // No translation, trigger translation
     Promise.resolve().then(() => {
       setModalLanguage("en");
-      setIsTranslating(true);
+      setTranslationError(null);
+      setTranslationCode(null);
     });
 
     const spellId = spell.id as string;
     let active = true;
 
-    fetch(`/api/content/${activeType}/${spellId}/translate`, {
-      method: "POST",
-      credentials: "include",
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Erro na requisição de tradução");
-        return res.json();
-      })
-      .then((data) => {
+    // Usa helper com tratamento granular
+    (async () => {
+      setIsTranslating(true);
+      try {
+        const res = await fetch(`/api/content/${activeType}/${spellId}/translate`, {
+          method: "POST",
+          credentials: "include",
+        });
+        const data = (await res.json().catch(() => ({}))) as { success?: boolean; translation?: unknown; error?: string; code?: string; details?: string };
         if (!active) return;
+        if (!res.ok) {
+          const raw = (data.error as string) || `HTTP ${res.status}`;
+          const code = (data.code as string) || (raw.startsWith("translation_provider_") ? raw.split(":")[0].trim() : `translation_provider_http_${res.status}`);
+          const msg = humanizeTranslationError(code, raw);
+          setTranslationCode(code);
+          setTranslationError(msg);
+          console.error(`Erro ao traduzir ${activeType === "items" ? "item" : "magia"}:`, code, raw);
+          return;
+        }
         if (data.success && data.translation) {
-          // Update items array so it's cached locally
-          setItems((prevItems) =>
-            prevItems.map((item) =>
-              item.id === spellId ? { ...item, translation: data.translation } : item
-            )
-          );
-          // Update selectedSpell state
-          setSelectedSpell((prev) =>
-            prev && prev.id === spellId
-              ? { ...prev, translation: data.translation }
-              : prev
-          );
-          // Mude a linguagem do modal para PT-BR por padrão
+          setItems((prevItems) => prevItems.map((item) => (item.id === spellId ? { ...item, translation: data.translation } : item)));
+          setSelectedSpell((prev) => (prev && prev.id === spellId ? { ...prev, translation: data.translation } as Item : prev));
           setModalLanguage("pt");
+          setTranslationError(null);
+          setTranslationCode(null);
         }
-      })
-      .catch((err) => {
-        console.error(`Erro ao traduzir ${activeType === "items" ? "item" : "magia"}:`, err instanceof Error ? err.message : "erro desconhecido");
-      })
-      .finally(() => {
-        if (active) {
-          setIsTranslating(false);
-        }
-      });
+      } catch (err) {
+        if (!active) return;
+        const e = err as { code?: string; message?: string };
+        const code = (e.code as string) || "translation_provider_unreachable";
+        const raw = (e.message as string) || "Erro desconhecido";
+        const msg = raw.includes("Tradução") ? raw : humanizeTranslationError(code, raw);
+        setTranslationCode(code);
+        setTranslationError(msg);
+        console.error(`Erro ao traduzir ${activeType === "items" ? "item" : "magia"}:`, code, raw);
+      } finally {
+        if (active) setIsTranslating(false);
+      }
+    })();
 
     return () => {
       active = false;
@@ -966,6 +1043,27 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
                 </div>
               </div>
 
+              {translationError && (
+                <div className="mt-4 rounded-xl border border-red-800 bg-red-900/30 p-3 text-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <p className="font-bold text-red-300">Tradução indisponível</p>
+                      <p className="mt-1 text-xs leading-5 text-red-200">{translationError}</p>
+                      {translationCode && <p className="mt-1 text-[11px] font-mono text-red-300/70">{translationCode}</p>}
+                      <p className="mt-2 text-[11px] text-red-300/80">Dica: verifique se NINEROUTER_URL é pública (Funnel/Cloudflare) ou se o host está no Tailnet. Código tenta fallback host.docker.internal automaticamente quando 100.83.170.1 falha.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRetryTranslate}
+                      disabled={isTranslating}
+                      className="shrink-0 rounded-lg bg-red-700 px-3 py-2 text-xs font-bold text-white hover:bg-red-600 disabled:opacity-50"
+                    >
+                      {isTranslating ? "Tentando..." : "Tentar novamente"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-5 pt-5">
                 <div className="flex items-start gap-4">
                   {/* Lado Esquerdo (Box de Dano Compacto - D20) */}
@@ -1065,10 +1163,30 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
             <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
                <div className="flex items-center gap-3">{item.imageUrl && !failedImages.has(String(item.id)) ? <img src={String(item.imageUrl)} alt={`Imagem de ${String(item.name)}`} className="h-11 w-11 rounded-lg border border-purple-900/60 object-cover" onError={() => setFailedImages((previous) => new Set(previous).add(String(item.id)))} /> : <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-purple-900/60 bg-gray-900 text-xl text-gray-600">✦</div>}<h3 id="item-details-title" className="text-xl font-bold text-purple-200">{String(getItemField("name"))}</h3></div>
                <div className="flex items-center gap-2">{isTranslating && <span className="text-xs text-purple-400 animate-pulse">Traduzindo item...</span>}{translation && <div className="flex gap-1 rounded-lg border border-purple-800 bg-gray-900 p-0.5"><button type="button" onClick={() => setModalLanguage("pt")} className="rounded px-2 py-1 text-xs">PT</button><button type="button" onClick={() => setModalLanguage("en")} className="rounded px-2 py-1 text-xs">EN</button></div>}</div>
-              <button type="button" aria-label="Fechar detalhes do item" onClick={() => setSelectedSpell(null)} className="rounded-lg px-2 py-1 text-gray-400 hover:bg-gray-800 hover:text-white">✕</button>
-            </div>
-            <div className="space-y-5 pt-5">
-              <div className="flex flex-wrap gap-x-5 gap-y-2 border-b border-purple-900/20 pb-3 text-xs text-gray-300">
+               <button type="button" aria-label="Fechar detalhes do item" onClick={() => setSelectedSpell(null)} className="rounded-lg px-2 py-1 text-gray-400 hover:bg-gray-800 hover:text-white">✕</button>
+             </div>
+             {translationError && (
+               <div className="mt-4 rounded-xl border border-red-800 bg-red-900/30 p-3 text-sm">
+                 <div className="flex items-start justify-between gap-3">
+                   <div className="flex-1">
+                     <p className="font-bold text-red-300">Tradução indisponível</p>
+                     <p className="mt-1 text-xs leading-5 text-red-200">{translationError}</p>
+                     {translationCode && <p className="mt-1 text-[11px] font-mono text-red-300/70">{translationCode}</p>}
+                     <p className="mt-2 text-[11px] text-red-300/80">Dica: verifique NINEROUTER_URL público ou rota Tailscale. Fallback host.docker.internal tentado automaticamente.</p>
+                   </div>
+                   <button
+                     type="button"
+                     onClick={handleRetryTranslate}
+                     disabled={isTranslating}
+                     className="shrink-0 rounded-lg bg-red-700 px-3 py-2 text-xs font-bold text-white hover:bg-red-600 disabled:opacity-50"
+                   >
+                     {isTranslating ? "Tentando..." : "Tentar novamente"}
+                   </button>
+                 </div>
+               </div>
+             )}
+             <div className="space-y-5 pt-5">
+               <div className="flex flex-wrap gap-x-5 gap-y-2 border-b border-purple-900/20 pb-3 text-xs text-gray-300">
                 {ITEM_TECHNICAL_FIELDS.map(field => display(field, field))}
               </div>
                {getItemField("description") ? <section><h4 className="mb-1 text-sm font-semibold text-purple-300">Descrição</h4><p className="whitespace-pre-wrap text-sm leading-6 text-gray-300">{String(getItemField("description"))}</p></section> : null}

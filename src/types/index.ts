@@ -109,6 +109,22 @@ export type World = {
   campaignId: string | null;
   name: string;
   description: string | null;
+  coverUrl: string | null;
+  mapUrl: string | null;
+  createdAt: Date;
+};
+
+/**
+ * Pin de mapa interativo para o Escudo do Mestre.
+ * Cada pin representa um ponto de interesse no mapa com coordenadas geográficas.
+ */
+export type MapPin = {
+  id: string;
+  worldId: string;
+  lat: number;
+  lng: number;
+  title: string;
+  description: string;
   createdAt: Date;
 };
 

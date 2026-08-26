@@ -1,9 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Input, Button, Form } from '@/components/ui';
+
+const BUTTON_IMAGES = [
+  '/Buttons/Button 1.png',
+  '/Buttons/Button 2.png',
+  '/Buttons/Button 3.png',
+  '/Buttons/Button 4.png',
+];
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -16,6 +23,16 @@ export default function RegisterPage() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [buttonImage, setButtonImage] = useState<string>(BUTTON_IMAGES[0]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      const randomIndex = Math.floor(Math.random() * BUTTON_IMAGES.length);
+      setButtonImage(BUTTON_IMAGES[randomIndex]);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -77,7 +94,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-dominant-deep text-secondary-pure px-4 py-8">
+    <div className="min-h-dvh flex items-center justify-center bg-dominant-deep text-secondary-pure px-4 py-8">
       <div className="max-w-md w-full space-y-8 bg-secondary-card p-8 rounded-xl border border-dominant-border shadow-xl">
         <div>
           <h1 className="text-3xl font-bold text-center text-secondary-pure">
@@ -167,7 +184,12 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <Button type="submit" variant="primary" className="w-full" isLoading={isLoading}>
+          <Button
+            type="submit"
+            className="w-full h-20 min-h-[70px]"
+            bgImage={buttonImage}
+            isLoading={isLoading}
+          >
             Criar Conta
           </Button>
         </Form>

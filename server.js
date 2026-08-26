@@ -2,7 +2,7 @@ const { createServer } = require("http");
 const parse = require("url").parse;
 const next = require("next");
 const { Server } = require("socket.io");
-const cookie = require("cookie");
+const { parseCookie } = require("cookie");
 const net = require("net");
 
 const dev = process.env.NODE_ENV !== "production";
@@ -45,6 +45,8 @@ findAvailablePort(initialPort).then((port) => {
 
     const io = new Server(httpServer, {
       path: "/api/socket/io",
+      // Use the exact configured path for both polling and WebSocket upgrades.
+      // This avoids relying on a redirect for WebSocket requests.
       addTrailingSlash: false,
       cors: {
         origin: "*",
@@ -57,7 +59,7 @@ findAvailablePort(initialPort).then((port) => {
       try {
         const cookieHeader = socket.request.headers.cookie;
         if (cookieHeader) {
-          const cookies = cookie.parse(cookieHeader);
+          const cookies = parseCookie(cookieHeader);
           socket.data.sessionToken = cookies.libmork_session;
         }
         return nextMiddleware();

@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { campaigns, worlds } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
-import { updateWorldSchema } from "@/lib/validators/campaign";
+import { createWorldSchema } from "@/lib/validators/campaign";
 import { eq, and } from "drizzle-orm";
 
 type RouteContext = { params: Promise<{ id: string; worldId: string }> };
@@ -55,7 +55,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     }
 
     const body = await request.json();
-    const validation = updateWorldSchema.safeParse(body);
+    const validation = createWorldSchema.partial().safeParse(body);
 
     if (!validation.success) {
       return NextResponse.json(

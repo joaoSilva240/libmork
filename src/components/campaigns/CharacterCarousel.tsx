@@ -59,11 +59,8 @@ export function CharacterCarousel({
 
   if (actors.length === 0) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-gray-800 p-4 text-center">
+      <div className="flex h-full flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-gray-800 text-center p-4">
         <p className="text-xs font-semibold text-purple-400">⚡ Mesa Vazia</p>
-        <p className="text-xs text-gray-400">
-          Arraste e solte os personagens dos jogadores (na barra de convites) aqui para colocá-los na mesa.
-        </p>
       </div>
     );
   }
@@ -81,7 +78,7 @@ export function CharacterCarousel({
 
       <div
         ref={scrollRef}
-        className="flex items-center gap-4 overflow-x-auto px-6 py-4 scrollbar-hide w-full"
+        className="flex items-center gap-4 overflow-x-auto px-6 scrollbar-hide w-full py-4"
         style={{ scrollbarWidth: "none" }}
       >
         {sortedActors.map((actor) => {

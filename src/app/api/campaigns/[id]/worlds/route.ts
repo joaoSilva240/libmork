@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
 import { campaigns, worlds } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { createWorldSchema } from "@/lib/validators/campaign";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -69,7 +69,10 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 
 /**
  * POST /api/campaigns/:id/worlds
- * Cria um mundo em uma campanha (RF-013).
+ * Cria um mundo em uma campanha ou vincula um mundo existente (RF-013).
+ * Body pode ser:
+ * - { name, description?, coverUrl?, mapUrl? } → cria novo mundo
+ * - { worldId } → vincula mundo existente à campanha
  */
 export async function POST(request: NextRequest, { params }: RouteContext) {
   try {
@@ -93,6 +96,56 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     }
 
     const body = await request.json();
+
+    // Verificar se é um pedido para vincular um mundo existente
+    if (body.worldId) {
+      const { worldId } = body;
+
+      // Verificar se o mundo existe e é acessível (ou global ou do usuário)
+      const [existingWorld] = await db
+        .select()
+        .from(worlds)
+        .where(eq(worlds.id, worldId))
+        .limit(1);
+
+      if (!existingWorld) {
+        return NextResponse.json(
+          { success: false, error: "Mundo não encontrado" },
+          { status: 404 }
+        );
+      }
+
+      // Verificar se já está vinculado à campanha
+      const [existingLink] = await db
+        .select()
+        .from(worlds)
+        .where(and(eq(worlds.id, worldId), eq(worlds.campaignId, id)))
+        .limit(1);
+
+      if (existingLink) {
+        return NextResponse.json(
+          { success: false, error: "Este mundo já está vinculado à campanha" },
+          { status: 409 }
+        );
+      }
+
+      // Atualizar o mundo para vinculá-lo à campanha
+      const [updatedWorld] = await db
+        .update(worlds)
+        .set({ campaignId: id })
+        .where(eq(worlds.id, worldId))
+        .returning();
+
+      return NextResponse.json(
+        {
+          success: true,
+          data: updatedWorld,
+        },
+        { status: 200 }
+      );
+    }
+
+    // Caso contrário, criar um novo mundo
     const validation = createWorldSchema.safeParse(body);
 
     if (!validation.success) {
@@ -106,7 +159,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       );
     }
 
-    const { name, description } = validation.data;
+    const { name, description, coverUrl, mapUrl } = validation.data;
 
     const [newWorld] = await db
       .insert(worlds)
@@ -114,6 +167,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         campaignId: id,
         name,
         description: description ?? null,
+        coverUrl: coverUrl ?? null,
+        mapUrl: mapUrl ?? null,
       })
       .returning();
 
@@ -125,7 +180,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Erro ao criar mundo:", error);
+    console.error("Erro ao processar mundo:", error);
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

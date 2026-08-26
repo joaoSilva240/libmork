@@ -23,6 +23,11 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
+# The custom server imports Socket.IO directly; standalone tracing only
+# includes packages imported by the Next application graph.
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts
+
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
@@ -32,6 +37,9 @@ RUN mkdir -p /app/uploads && chown nextjs:nodejs /app/uploads
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# The standalone output contains Next's generated server.js. Replace it with
+# the custom server that owns the Socket.IO HTTP/WebSocket upgrade listener.
+COPY --from=builder --chown=nextjs:nodejs /app/server.js ./server.js
 
 USER nextjs
 

@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Campaign, World } from "@/types";
-import { Button, Form, Spinner } from "@/components/ui";
+import { Spinner } from "@/components/ui";
 import { CampaignInvites } from "@/components/campaigns/CampaignInvites";
 import { MasterRoster } from "@/components/campaigns/MasterRoster";
 import { SessionLog } from "@/components/campaigns/SessionLog";
@@ -20,21 +20,16 @@ export function CampaignDetail() {
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const [newWorldName, setNewWorldName] = useState("");
-  const [newWorldDescription, setNewWorldDescription] = useState("");
-  const [isCreatingWorld, setIsCreatingWorld] = useState(false);
   const [worldError, setWorldError] = useState<string | null>(null);
 
-  const [editingWorldId, setEditingWorldId] = useState<string | null>(null);
-  const [editWorldName, setEditWorldName] = useState("");
-  const [editWorldDescription, setEditWorldDescription] = useState("");
-  const [isSavingWorld, setIsSavingWorld] = useState(false);
-
   const [showContentOverlay, setShowContentOverlay] = useState(false);
-  const [selectedWorld, setSelectedWorld] = useState<{ id: string; name: string } | null>(null);
+  const [selectedWorldId, setSelectedWorldId] = useState<string>("");
+  const worldsRequestId = useRef(0);
+  const [overlayWorld, setOverlayWorld] = useState<{ id: string; name: string } | null>(null);
   const [rosterVersion, setRosterVersion] = useState(0);
 
   const loadWorlds = useCallback(async () => {
+    const requestId = ++worldsRequestId.current;
     try {
       const response = await fetch(`/api/campaigns/${params.id}/worlds`, {
         credentials: "include"
@@ -46,7 +41,16 @@ export function CampaignDetail() {
         return;
       }
 
-      setWorlds(data.data);
+      if (requestId !== worldsRequestId.current) return;
+
+      const nextWorlds = data.data as World[];
+      setWorlds(nextWorlds);
+      setSelectedWorldId((currentWorldId) => {
+        if (nextWorlds.some((world) => world.id === currentWorldId)) {
+          return currentWorldId;
+        }
+        return nextWorlds[0]?.id ?? "";
+      });
     } catch {
       setWorldError("Erro de conexão. Tente novamente.");
     }
@@ -103,99 +107,6 @@ export function CampaignDetail() {
     }
   };
 
-  const handleCreateWorld = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setWorldError(null);
-    setIsCreatingWorld(true);
-
-    try {
-      const response = await fetch(`/api/campaigns/${params.id}/worlds`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newWorldName,
-          description: newWorldDescription || null,
-        }),
-        credentials: "include",
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setWorldError(data.error || "Erro ao criar mundo");
-        return;
-      }
-
-      setNewWorldName("");
-      setNewWorldDescription("");
-      await loadWorlds();
-    } catch {
-      setWorldError("Erro de conexão. Tente novamente.");
-    } finally {
-      setIsCreatingWorld(false);
-    }
-  };
-
-  const handleDeleteWorld = async (worldId: string) => {
-    if (!window.confirm("Excluir este mundo?")) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/campaigns/${params.id}/worlds/${worldId}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        setWorldError(data.error || "Erro ao excluir mundo");
-        return;
-      }
-
-      await loadWorlds();
-    } catch {
-      setWorldError("Erro de conexão. Tente novamente.");
-    }
-  };
-
-  const startEditingWorld = (world: World) => {
-    setEditingWorldId(world.id);
-    setEditWorldName(world.name);
-    setEditWorldDescription(world.description ?? "");
-  };
-
-  const handleSaveWorld = async (worldId: string) => {
-    setWorldError(null);
-    setIsSavingWorld(true);
-
-    try {
-      const response = await fetch(`/api/campaigns/${params.id}/worlds/${worldId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: editWorldName,
-          description: editWorldDescription || null,
-        }),
-        credentials: "include",
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setWorldError(data.error || "Erro ao salvar mundo");
-        return;
-      }
-
-      setEditingWorldId(null);
-      await loadWorlds();
-    } catch {
-      setWorldError("Erro de conexão. Tente novamente.");
-    } finally {
-      setIsSavingWorld(false);
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="flex flex-1 items-center justify-center min-h-[400px]">
@@ -215,9 +126,6 @@ export function CampaignDetail() {
   if (!campaign) {
     return null;
   }
-
-  const inputClass =
-    "rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent disabled:opacity-50";
 
   return (
     <div>
@@ -265,100 +173,46 @@ export function CampaignDetail() {
                 {worlds.map((world) => (
                   <div
                     key={world.id}
-                    className="rounded-lg border border-gray-800 bg-gray-950 p-2"
+                    className={`relative overflow-hidden rounded-lg border p-2 bg-cover bg-center transition-colors ${
+                      selectedWorldId === world.id
+                        ? "border-purple-500 bg-purple-950/60 ring-1 ring-purple-400/60"
+                        : "border-gray-800 bg-gray-950"
+                    }`}
+                    style={
+                      world.coverUrl
+                        ? { backgroundImage: `url(${world.coverUrl})` }
+                        : undefined
+                    }
                   >
-                    {editingWorldId === world.id ? (
-                      <div className="space-y-2">
-                        <input
-                          type="text"
-                          value={editWorldName}
-                          onChange={(e) => setEditWorldName(e.target.value)}
-                          disabled={isSavingWorld}
-                          className={`${inputClass} w-full`}
-                        />
-                        <input
-                          type="text"
-                          value={editWorldDescription}
-                          onChange={(e) => setEditWorldDescription(e.target.value)}
-                          disabled={isSavingWorld}
-                          placeholder="Descrição (opcional)"
-                          className={`${inputClass} w-full`}
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleSaveWorld(world.id)}
-                            disabled={isSavingWorld}
-                            className="rounded bg-purple-600 px-2 py-1 text-xs font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
-                          >
-                            {isSavingWorld ? "..." : "Salvar"}
-                          </button>
-                          <button
-                            onClick={() => setEditingWorldId(null)}
-                            disabled={isSavingWorld}
-                            className="rounded bg-gray-800 px-2 py-1 text-xs text-gray-300 hover:bg-gray-700"
-                          >
-                            Cancelar
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <button
-                            onClick={() => setSelectedWorld({ id: world.id, name: world.name })}
-                            className="text-left text-sm font-semibold text-white hover:text-purple-300"
-                          >
-                            {world.name}
-                          </button>
-                          {world.description && (
-                            <p className="mt-0.5 text-xs text-gray-400">{world.description}</p>
-                          )}
-                        </div>
-                        <div className="flex shrink-0 flex-col items-end gap-1">
-                          <button
-                            onClick={() => startEditingWorld(world)}
-                            className="text-xs text-purple-400 hover:text-purple-300"
-                          >
-                            Editar
-                          </button>
-                          <button
-                            onClick={() => handleDeleteWorld(world.id)}
-                            className="text-xs text-red-400 hover:text-red-300"
-                          >
-                            Excluir
-                          </button>
-                        </div>
-                      </div>
+                    {world.coverUrl && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-gray-950/95 via-gray-950/85 to-gray-950/70" />
                     )}
+                    <div className="relative z-10">
+                      <div className="min-w-0">
+                        <button
+                          onClick={() => setSelectedWorldId(world.id)}
+                          className="text-left text-sm font-semibold text-white hover:text-purple-300 drop-shadow-sm"
+                        >
+                          {world.name}
+                        </button>
+                        {selectedWorldId === world.id && (
+                          <span className="mt-1 inline-block rounded-full bg-purple-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                            Selecionado
+                          </span>
+                        )}
+                        {world.description && (
+                          <p className="mt-0.5 text-xs text-gray-300 drop-shadow-sm">{world.description}</p>
+                        )}
+                        {world.mapUrl && (
+                          <p className="mt-1 text-[10px] text-purple-400">🗺️ Possui mapa</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
             )}
 
-            <Form onSubmit={handleCreateWorld} error={undefined}>
-              <div className="space-y-2">
-                <input
-                  type="text"
-                  placeholder="Nome do mundo"
-                  value={newWorldName}
-                  onChange={(e) => setNewWorldName(e.target.value)}
-                  required
-                  disabled={isCreatingWorld}
-                  className={`${inputClass} w-full`}
-                />
-                <input
-                  type="text"
-                  placeholder="Descrição (opcional)"
-                  value={newWorldDescription}
-                  onChange={(e) => setNewWorldDescription(e.target.value)}
-                  disabled={isCreatingWorld}
-                  className={`${inputClass} w-full`}
-                />
-                <Button type="submit" variant="master" isLoading={isCreatingWorld} className="w-full">
-                  Adicionar
-                </Button>
-              </div>
-            </Form>
           </div>
 
           <CampaignInvites key={`invites-${rosterVersion}`} campaignId={campaign.id} />
@@ -366,7 +220,12 @@ export function CampaignDetail() {
 
         {/* ===== Coluna central — Mesa (galeria de personagens) ===== */}
         <div className="flex h-[calc(100vh-12rem)] flex-col rounded-lg border border-gray-800 bg-gray-900 p-3">
-          <MasterRoster key={`roster-${rosterVersion}`} campaignId={campaign.id} />
+          <MasterRoster
+            key={`roster-${rosterVersion}`}
+            campaignId={campaign.id}
+            selectedWorldId={selectedWorldId}
+            onWorldSelected={setSelectedWorldId}
+          />
         </div>
 
         {/* ===== Coluna direita — Log da sessão ===== */}
@@ -381,12 +240,12 @@ export function CampaignDetail() {
         />
       )}
 
-      {selectedWorld && (
+      {overlayWorld && (
         <WorldOverlay
           campaignId={campaign.id}
-          worldId={selectedWorld.id}
-          worldName={selectedWorld.name}
-          onClose={() => setSelectedWorld(null)}
+          worldId={overlayWorld.id}
+          worldName={overlayWorld.name}
+          onClose={() => setOverlayWorld(null)}
           onChanged={() => setRosterVersion((v) => v + 1)}
         />
       )}
