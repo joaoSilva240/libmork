@@ -148,7 +148,8 @@ function getPf2eUseType(spell: Pf2eSpell): string {
   if (types.length === 0) {
     return "somatic";
   }
-  return types.join(",");
+  const joined = types.join(",");
+  return joined.length > 250 ? joined.slice(0, 250) : joined;
 }
 
 function getPf2eRange(spell: Pf2eSpell): string | null {
@@ -294,6 +295,7 @@ async function runImport() {
   
   let spellCreated = 0;
   let spellUpdated = 0;
+  let spellFailed = 0;
   let itemCreated = 0;
   let itemUpdated = 0;
   let skillCreated = 0;
@@ -371,7 +373,8 @@ async function runImport() {
       const description = formatPf2eText(spell.entries).slice(0, 5000);
 
       const duration = getPf2eDuration(spell);
-      const useType = getPf2eUseType(spell);
+      let useType = getPf2eUseType(spell);
+      if (useType.length > 250) useType = useType.slice(0, 250);
       const actionCostOverride = getPf2eActionCost(spell);
       const range = getPf2eRange(spell);
       const target = getPf2eTarget(spell);
@@ -390,47 +393,62 @@ async function runImport() {
       };
 
       if (existing) {
-        await db.update(spells).set({
-          circle,
-          manaCost: circle * 2,
-          description,
-          duration,
-          useType,
-          actionCostOverride,
-          imageUrl: existing.imageUrl || imageUrl || null,
-          range,
-          target,
-          area,
-          damage,
-          damageType,
-          structuredEffects: structuredEffectsData,
-          castingTime,
-        }).where(eq(spells.id, existing.id));
-        spellUpdated++;
+        try {
+          await db.update(spells).set({
+            circle,
+            manaCost: circle * 2,
+            description,
+            duration,
+            useType,
+            actionCostOverride,
+            imageUrl: existing.imageUrl || imageUrl || null,
+            range,
+            target,
+            area,
+            damage,
+            damageType,
+            structuredEffects: structuredEffectsData,
+            castingTime,
+          }).where(eq(spells.id, existing.id));
+          spellUpdated++;
+        } catch (err: any) {
+          spellFailed++;
+          console.error('Falha ao importar magia', name, err.message || err);
+          continue;
+        }
       } else {
-        await db.insert(spells).values({
-          name,
-          circle,
-          manaCost: circle * 2,
-          description,
-          duration,
-          useType,
-          actionCostOverride,
-          campaignId: null,
-          imageUrl,
-          range,
-          target,
-          area,
-          damage,
-          damageType,
-          structuredEffects: structuredEffectsData,
-          castingTime,
-          translation: null,
-        });
-        spellCreated++;
+        try {
+          await db.insert(spells).values({
+            name,
+            circle,
+            manaCost: circle * 2,
+            description,
+            duration,
+            useType,
+            actionCostOverride,
+            campaignId: null,
+            imageUrl,
+            range,
+            target,
+            area,
+            damage,
+            damageType,
+            structuredEffects: structuredEffectsData,
+            castingTime,
+            translation: null,
+          });
+          spellCreated++;
+        } catch (err: any) {
+          spellFailed++;
+          console.error('Falha ao importar magia', name, err.message || err);
+          continue;
+        }
       }
     }
-    console.log(`-> Magias Pathfinder 2e processadas! Criadas: ${spellCreated}, Atualizadas: ${spellUpdated}`);
+    if (spellFailed > 0) {
+      console.error(`Magias com falha: ${spellFailed} de ${uniqueSpells.length}`);
+    }
+    console.log(`-> Magias Pathfinder 2e processadas! Criadas: ${spellCreated}, Atualizadas: ${spellUpdated}, Falhas: ${spellFailed}`);
 
     // 2. IMPORTAR ITENS & EQUIPAMENTOS D&D 5E
     console.log("\n[2/4] Buscando Itens & Equipamentos D&D 5e...");
@@ -596,7 +614,7 @@ async function runImport() {
     console.log("Conexão fechada com sucesso.");
     
     console.log("\n=== RESUMO DA IMPORTAÇÃO ===");
-    console.log(`- Magias:   Criadas: ${spellCreated} | Atualizadas: ${spellUpdated}`);
+    console.log(`- Magias:   Criadas: ${spellCreated} | Atualizadas: ${spellUpdated} | Falhas: ${spellFailed}`);
     console.log(`- Itens:    Criados: ${itemCreated} | Atualizados: ${itemUpdated}`);
     console.log(`- Perícias: Criadas: ${skillCreated} | Atualizadas: ${skillUpdated}`);
     console.log(`- Condições:Criadas: ${conditionCreated} | Atualizadas: ${conditionUpdated}`);

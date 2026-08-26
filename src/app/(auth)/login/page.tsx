@@ -29,8 +29,12 @@ function LoginForm() {
   const [buttonImage, setButtonImage] = useState<string>(BUTTON_IMAGES[0]);
 
   useEffect(() => {
-    const randomIndex = Math.floor(Math.random() * BUTTON_IMAGES.length);
-    setButtonImage(BUTTON_IMAGES[randomIndex]);
+    const timeoutId = window.setTimeout(() => {
+      const randomIndex = Math.floor(Math.random() * BUTTON_IMAGES.length);
+      setButtonImage(BUTTON_IMAGES[randomIndex]);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,10 +85,10 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-dominant-deep text-secondary-pure">
+    <div className="min-h-dvh flex flex-col lg:flex-row bg-dominant-deep text-secondary-pure px-4 py-8 lg:px-0 lg:py-0">
       {/* Lado Esquerdo - Formulário de Login (50% em desktop) */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-12 bg-dominant-dark">
-        <div className="max-w-md w-full space-y-8">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-0 lg:p-12 bg-dominant-dark">
+        <div className="max-w-md w-full space-y-8 bg-secondary-card p-8 rounded-xl border border-dominant-border shadow-xl lg:bg-transparent lg:p-0 lg:rounded-none lg:border-0 lg:shadow-none">
           <div>
             <h1 className="text-3xl font-bold text-center text-secondary-pure">
               Login

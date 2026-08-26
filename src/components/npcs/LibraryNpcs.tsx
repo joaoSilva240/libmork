@@ -92,7 +92,11 @@ function toPayload(form: NpcFormState) {
   };
 }
 
-export function LibraryNpcs() {
+type LibraryNpcsProps = {
+  onRegisterActions?: (actions: { openCreate: () => void; openCatalog: () => void }) => void;
+};
+
+export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
   const [npcs, setNpcs] = useState<Npc[]>([]);
   const [campaigns, setCampaigns] = useState<CampaignOption[]>([]);
   const [classes, setClasses] = useState<ClassOption[]>([]);
@@ -112,6 +116,21 @@ export function LibraryNpcs() {
   const [isImportingDnd, setIsImportingDnd] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchNpc, setSearchNpc] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 15;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchNpc]);
+
+  const filteredNpcs = npcs.filter((n) =>
+    n.name.toLowerCase().includes(searchNpc.toLowerCase())
+  );
+  const totalPages = Math.ceil(filteredNpcs.length / pageSize) || 1;
+  const paginatedNpcs = filteredNpcs.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   // Catálogo Completo do D&D 5e (334 Monstros)
   const [showDndCatalogModal, setShowDndCatalogModal] = useState(false);
@@ -136,6 +155,15 @@ export function LibraryNpcs() {
       setIsLoadingCatalog(false);
     }
   };
+
+  useEffect(() => {
+    if (onRegisterActions) {
+      onRegisterActions({
+        openCreate: () => setShowCreateModal(true),
+        openCatalog: () => handleOpenDndCatalogModal(),
+      });
+    }
+  }, [onRegisterActions]);
 
   const handleToggleSelectDndMonster = (index: string) => {
     setSelectedDndIndexes((prev) => {
@@ -537,7 +565,7 @@ export function LibraryNpcs() {
           value={state.npcType}
           onChange={(e) => onChange({ ...state, npcType: e.target.value })}
           disabled={disabled}
-          className="w-full rounded-lg border border-gray-700 bg-gray-950 px-4 py-2 text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+          className="w-full rounded-xl border border-gray-800 bg-gray-900 px-3.5 py-2 text-xs text-white focus:border-purple-500 focus:outline-none transition"
         >
           <option value="common">Comum</option>
           <option value="enemy">Inimigo</option>
@@ -549,7 +577,7 @@ export function LibraryNpcs() {
           value={state.classId}
           onChange={(e) => onChange({ ...state, classId: e.target.value })}
           disabled={disabled}
-          className="w-full rounded-lg border border-gray-700 bg-gray-950 px-4 py-2 text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+          className="w-full rounded-xl border border-gray-800 bg-gray-900 px-3.5 py-2 text-xs text-white focus:border-purple-500 focus:outline-none transition"
         >
           <option value="">Sem classe</option>
           {classes.map((rpgClass) => (
@@ -676,233 +704,230 @@ export function LibraryNpcs() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-bold text-white">Biblioteca de NPCs & Monstros</h2>
-          <p className="text-sm text-gray-400">
-            Fichas completas de NPCs, prontas para incluir em qualquer campanha ou mundo.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setShowCreateModal(true)}
-            className="rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-purple-500 transition shadow-lg flex items-center gap-1.5"
-          >
-            <span>+</span>
-            <span>Criar Novo NPC</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleOpenDndCatalogModal}
-            disabled={isImportingDnd}
-            className="rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2.5 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg flex items-center gap-2 disabled:opacity-50"
-          >
-            <span>🐉</span>
-            <span>{isImportingDnd ? "Importando D&D 5e..." : "Catálogo D&D 5e (334 Monstros)"}</span>
-          </button>
-        </div>
-      </div>
-
       {error && (
         <div className="rounded-lg border border-red-800 bg-red-900/30 p-3 text-sm text-red-300">
           {error}
         </div>
       )}
 
-      {/* Busca e Barra Principal de Filtros */}
-      <div className="rounded-2xl border border-gray-800 bg-gray-900 p-3 flex items-center justify-between gap-3">
+      {/* Área Principal de NPCs (Full Width) */}
+      <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 shadow-xl flex flex-col max-h-[calc(100vh-16rem)]">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 shrink-0">
+          <h3 className="font-bold text-white text-lg flex items-center gap-2">
+            <span>NPCs Cadastrados</span>
+          </h3>
+          <div className="text-xs text-gray-400 font-semibold whitespace-nowrap">
+            Total: <span className="text-xs text-purple-400 font-bold bg-purple-950/60 border border-purple-900/60 px-2.5 py-1 rounded-lg">{filteredNpcs.length}</span>
+          </div>
+        </div>
+
         <input
           type="text"
           placeholder="Pesquisar NPC na biblioteca por nome..."
           value={searchNpc}
           onChange={(e) => setSearchNpc(e.target.value)}
-          className="w-full rounded-xl border border-gray-800 bg-gray-950 px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
+          className="w-full rounded-xl border border-gray-800 bg-gray-900 px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none transition mb-4 shrink-0"
         />
-        <div className="text-xs text-gray-400 font-semibold whitespace-nowrap px-2">
-          Total: <span className="text-purple-300 font-bold">{npcs.length}</span>
-        </div>
-      </div>
 
-      {/* Área Principal de NPCs (Full Width) */}
-      <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
         {isLoading ? (
-          <div className="flex items-center justify-center min-h-[200px]">
+          <div className="flex items-center justify-center min-h-[200px] flex-1">
             <Spinner size="lg" />
           </div>
-        ) : npcs.length === 0 ? (
-          <div className="py-12 text-center text-sm text-gray-400 space-y-2">
+        ) : filteredNpcs.length === 0 ? (
+          <div className="py-12 text-center text-sm text-gray-400 space-y-2 flex-1">
             <p>Nenhum NPC na biblioteca ainda.</p>
             <p className="text-xs text-gray-500">
               Clique em <strong>+ Criar Novo NPC</strong> ou use <strong>Catálogo D&D 5e</strong> para alimentar a biblioteca.
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {npcs
-              .filter((n) => n.name.toLowerCase().includes(searchNpc.toLowerCase()))
-              .map((npc) => (
-                <div key={npc.id} className="rounded-xl border border-gray-800 bg-gray-950 p-3">
-                  <div className="flex items-start gap-3 p-3">
-                    {npc.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={npc.imageUrl}
-                        alt={npc.name}
-                        className="h-14 w-14 shrink-0 rounded-lg object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-gray-800 text-xl font-bold text-gray-400">
-                        {npc.name.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <button
-                          onClick={() =>
-                            editingId === npc.id ? setEditingId(null) : startEditing(npc.id)
-                          }
-                          className="font-semibold text-white hover:text-purple-300"
-                        >
-                          {npc.name}
-                        </button>
-                        <span
-                          className={`rounded px-1.5 py-0.5 text-xs ${
-                            npc.npcType === "enemy"
-                              ? "bg-red-900/50 text-red-300"
-                              : "bg-gray-800 text-gray-300"
-                          }`}
-                        >
-                          {npc.npcType === "enemy" ? "Inimigo" : "Comum"}
-                        </span>
-                        <span className="rounded bg-purple-900/50 px-1.5 py-0.5 text-xs text-purple-300">
-                          Nível {npc.level}
-                        </span>
-                      </div>
-                      <div className="mt-1 flex flex-wrap gap-2 text-xs text-gray-400">
-                        <span>
-                          HP {npc.hitPoints}/{npc.hitPointsMax}
-                        </span>
-                        <span>
-                          Mana {npc.manaPoints}/{npc.manaPointsMax}
-                        </span>
-                        <span>XP {npc.xp}/100</span>
-                        <span>Recompensa +{npc.xpReward}</span>
-                      </div>
-                      <div className="mt-1 text-xs text-gray-500">
-                        {ATTRIBUTES.map(
-                          (attr) =>
-                            ` ${attr.charAt(0).toUpperCase()}: ${npc.attributes[attr]} (${getModifier(npc.attributes[attr]) >= 0 ? "+" : ""}${getModifier(npc.attributes[attr])})`
-                        ).join(" · ")}
-                      </div>
-                    </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1">
-                      <button
-                        onClick={() => handleDuplicate(npc.id)}
-                        className="text-xs text-purple-400 hover:text-purple-300"
-                      >
-                        Duplicar
-                      </button>
-                      <button
-                        onClick={() => handleDelete(npc.id)}
-                        className="text-xs text-red-400 hover:text-red-300"
-                      >
-                        Excluir
-                      </button>
-                    </div>
-                  </div>
-
-                  {editingId === npc.id && (
-                    <div className="space-y-3 border-t border-gray-800 p-3">
-                      <p className="text-sm font-semibold text-gray-300">Editar ficha</p>
-                      {renderFormFields(editForm, setEditForm, isSaving, "edit")}
-                      <div>
-                        <label className="mb-1 block text-sm font-medium text-gray-300">
-                          Trocar imagem
-                        </label>
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              handleEditImage(file);
-                            }
-                          }}
-                          disabled={isSaving}
-                          className="block w-full text-sm text-gray-400 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-800 file:px-3 file:py-1.5 file:text-white"
+          <>
+            <div className="flex-1 overflow-y-auto pr-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
+                {paginatedNpcs.map((npc) => (
+                  <div key={npc.id} className="rounded-xl border border-gray-800 bg-gray-950 p-3.5 hover:border-purple-600/60 hover:shadow-lg transition-all cursor-pointer">
+                    <div className="flex items-start gap-3">
+                      {npc.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={npc.imageUrl}
+                          alt={npc.name}
+                          className="h-14 w-14 shrink-0 rounded-lg object-cover"
                         />
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant="master"
-                          isLoading={isSaving}
-                          onClick={handleSaveEdit}
-                        >
-                          Salvar
-                        </Button>
-                        <Button type="button" variant="secondary" onClick={() => setEditingId(null)}>
-                          Fechar
-                        </Button>
-                      </div>
-
-                      <div className="rounded border border-gray-800 p-3">
-                        <p className="mb-2 text-sm font-semibold text-gray-300">Campanhas</p>
-                        {editDetail?.includedCampaigns?.length ? (
-                          <div className="mb-2 space-y-1">
-                            {editDetail.includedCampaigns.map((campaign) => (
-                              <div
-                                key={campaign.id}
-                                className="flex items-center justify-between rounded bg-gray-900 px-2 py-1 text-sm"
-                              >
-                                <span className="text-gray-300">{campaign.name}</span>
-                                <button
-                                  onClick={() => handleRemoveFromCampaign(npc.id, campaign.id)}
-                                  className="text-xs text-red-400 hover:text-red-300"
-                                >
-                                  Remover
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="mb-2 text-xs text-gray-500">
-                            Não incluído em nenhuma campanha.
-                          </p>
-                        )}
-                        <div className="flex items-end gap-2">
-                          <select
-                            value={includeCampaignId}
-                            onChange={(e) => setIncludeCampaignId(e.target.value)}
-                            disabled={isIncluding}
-                            className="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                          >
-                            <option value="">Selecione a campanha</option>
-                            {campaigns.map((campaign) => (
-                              <option key={campaign.id} value={campaign.id}>
-                                {campaign.name}
-                              </option>
-                            ))}
-                          </select>
+                      ) : (
+                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-gray-800 text-xl font-bold text-gray-400">
+                          {npc.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
                           <button
-                            onClick={() => handleInclude(npc.id)}
-                            disabled={isIncluding}
-                            className="rounded-lg bg-purple-600 px-3 py-2 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
+                            onClick={() =>
+                              editingId === npc.id ? setEditingId(null) : startEditing(npc.id)
+                            }
+                            className="font-semibold text-white hover:text-purple-300"
                           >
-                            {isIncluding ? "..." : "Incluir"}
+                            {npc.name}
                           </button>
+                          <span
+                            className={`rounded px-1.5 py-0.5 text-xs ${
+                              npc.npcType === "enemy"
+                                ? "bg-red-900/50 text-red-300"
+                                : "bg-gray-800 text-gray-300"
+                            }`}
+                          >
+                            {npc.npcType === "enemy" ? "Inimigo" : "Comum"}
+                          </span>
+                          <span className="rounded bg-purple-900/50 px-1.5 py-0.5 text-xs text-purple-300">
+                            Nível {npc.level}
+                          </span>
+                        </div>
+                        <div className="mt-1 flex flex-wrap gap-2 text-xs text-gray-400">
+                          <span>
+                            HP {npc.hitPoints}/{npc.hitPointsMax}
+                          </span>
+                          <span>
+                            Mana {npc.manaPoints}/{npc.manaPointsMax}
+                          </span>
+                          <span>XP {npc.xp}/100</span>
+                          <span>Recompensa +{npc.xpReward}</span>
+                        </div>
+                        <div className="mt-1 text-xs text-gray-500">
+                          {ATTRIBUTES.map(
+                            (attr) =>
+                              ` ${attr.charAt(0).toUpperCase()}: ${npc.attributes[attr]} (${getModifier(npc.attributes[attr]) >= 0 ? "+" : ""}${getModifier(npc.attributes[attr])})`
+                          ).join(" · ")}
                         </div>
                       </div>
+                      <div className="flex shrink-0 flex-col items-end gap-1">
+                        <button
+                          onClick={() => handleDuplicate(npc.id)}
+                          className="text-xs text-purple-400 hover:text-purple-300"
+                        >
+                          Duplicar
+                        </button>
+                        <button
+                          onClick={() => handleDelete(npc.id)}
+                          className="text-xs text-red-400 hover:text-red-300"
+                        >
+                          Excluir
+                        </button>
+                      </div>
                     </div>
-                  )}
-                </div>
-              ))}
+
+                    {editingId === npc.id && (
+                      <div className="space-y-3 border-t border-gray-800 p-3">
+                        <p className="text-sm font-semibold text-gray-300">Editar ficha</p>
+                        {renderFormFields(editForm, setEditForm, isSaving, "edit")}
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-gray-300">
+                            Trocar imagem
+                          </label>
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleEditImage(file);
+                              }
+                            }}
+                            disabled={isSaving}
+                            className="block w-full text-sm text-gray-400 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-800 file:px-3 file:py-1.5 file:text-white"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="master"
+                            isLoading={isSaving}
+                            onClick={handleSaveEdit}
+                          >
+                            Salvar
+                          </Button>
+                          <Button type="button" variant="secondary" onClick={() => setEditingId(null)}>
+                            Fechar
+                          </Button>
+                        </div>
+
+                        <div className="rounded border border-gray-800 p-3">
+                          <p className="mb-2 text-sm font-semibold text-gray-300">Campanhas</p>
+                          {editDetail?.includedCampaigns?.length ? (
+                            <div className="mb-2 space-y-1">
+                              {editDetail.includedCampaigns.map((campaign) => (
+                                <div
+                                  key={campaign.id}
+                                  className="flex items-center justify-between rounded bg-gray-900 px-2 py-1 text-sm"
+                                >
+                                  <span className="text-gray-300">{campaign.name}</span>
+                                  <button
+                                    onClick={() => handleRemoveFromCampaign(npc.id, campaign.id)}
+                                    className="text-xs text-red-400 hover:text-red-300"
+                                  >
+                                    Remover
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="mb-2 text-xs text-gray-500">
+                              Não incluído em nenhuma campanha.
+                            </p>
+                          )}
+                          <div className="flex items-end gap-2">
+                            <select
+                              value={includeCampaignId}
+                              onChange={(e) => setIncludeCampaignId(e.target.value)}
+                              disabled={isIncluding}
+                              className="flex-1 rounded-xl border border-gray-800 bg-gray-900 px-3.5 py-2 text-xs text-white focus:border-purple-500 focus:outline-none transition"
+                            >
+                              <option value="">Selecione a campanha</option>
+                              {campaigns.map((campaign) => (
+                                <option key={campaign.id} value={campaign.id}>
+                                  {campaign.name}
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              onClick={() => handleInclude(npc.id)}
+                              disabled={isIncluding}
+                              className="rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white hover:bg-purple-500 transition disabled:opacity-50"
+                            >
+                              {isIncluding ? "..." : "Incluir"}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
-          )}
-        </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-800 pt-3 mt-3 shrink-0">
+              <button
+                type="button"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                className="rounded-lg border border-gray-800 bg-gray-950 px-3 py-1 text-xs font-semibold text-gray-300 hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              >
+                Anterior
+              </button>
+              <span className="text-xs text-gray-400 font-semibold">
+                Página {currentPage} / {totalPages} ({filteredNpcs.length} NPCs)
+              </span>
+              <button
+                type="button"
+                disabled={currentPage >= totalPages}
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                className="rounded-lg border border-gray-800 bg-gray-950 px-3 py-1 text-xs font-semibold text-gray-300 hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              >
+                Próximo
+              </button>
+            </div>
+          </>
+        )}
+      </div>
 
         {/* Modal do Catálogo Completo D&D 5e (334 Monstros) */}
         {showDndCatalogModal && (
@@ -939,7 +964,7 @@ export function LibraryNpcs() {
                   placeholder="Pesquisar entre os 334 monstros (ex: Dragon, Goblin, Lich, Beholder)..."
                   value={searchDndCatalog}
                   onChange={(e) => setSearchDndCatalog(e.target.value)}
-                  className="w-full rounded-xl border border-gray-800 bg-gray-900 p-2.5 text-xs text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
+                  className="w-full rounded-xl border border-gray-800 bg-gray-900 px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none transition"
                 />
 
                 <button
@@ -998,7 +1023,7 @@ export function LibraryNpcs() {
                   <button
                     type="button"
                     onClick={() => setShowDndCatalogModal(false)}
-                    className="rounded-xl border border-gray-800 bg-gray-900 px-4 py-2 text-xs font-semibold text-gray-300 hover:bg-gray-800"
+                    className="rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg"
                   >
                     Fechar
                   </button>
@@ -1056,7 +1081,7 @@ export function LibraryNpcs() {
                   <button
                     type="button"
                     onClick={() => setShowCreateModal(false)}
-                    className="w-1/2 rounded-xl border border-gray-800 bg-gray-900 py-2.5 text-xs font-semibold text-gray-300 hover:bg-gray-800"
+                    className="w-1/2 rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2.5 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg"
                   >
                     Cancelar
                   </button>

@@ -125,6 +125,40 @@ docker compose build
 docker compose up -d
 ```
 
+### 🔧 ZimaOS / CasaOS + Tradução IA (NINEROUTER / 9Router)
+
+> **Diagnóstico:** `GET /api/health/ninerouter` (requer login ou header `x-health-token` com `HEALTH_TOKEN`) retorna `reachable`, `latencyMs`, `errorCode` (`ENETUNREACH`/`UND_ERR_CONNECT_TIMEOUT` indica CGNAT inalcançável do bridge). Veja `docs/deploy-zimaos.md` para o guia completo.
+
+A tradução de magias/itens via 9Router (OpenAI-compatible) falha em produção quando `NINEROUTER_URL=http://100.83.170.1:20128/v1` (IP Tailscale CGNAT `100.64/10`) não é roteável do container bridge padrão — o ZimaCube precisa estar no Tailnet ou expor o daemon. O `docker-compose.yml` já inclui `extra_hosts: ["host.docker.internal:host-gateway"]` e fallback automático para `host.docker.internal:20128` quando o IP Tailscale falha, mas isso só funciona se 9Router estiver no **mesmo host físico**. Para produção resiliente escolha uma das opções:
+
+| Opção | Como | Quando usar |
+|-------|------|-------------|
+| **A — URL pública (recomendada, menos lock-in)** | Publique o 9Router: `tailscale funnel 20128` **ou** `cloudflared tunnel --url http://100.83.170.1:20128` **ou** Nginx+TLS. Defina `NINEROUTER_URL=https://ninerouter.seudominio.com/v1` no painel ZimaOS/CasaOS (variáveis do app). | Produção acessível de qualquer host, sem sidecar, funciona mesmo se ZimaCube sair do Tailnet |
+| **B — Sidecar Tailscale (privada)** | `docker compose -f docker-compose.yml -f docker-compose.override.tailscale.yml up -d` com `TS_AUTHKEY` (ver `docker-compose.override.tailscale.yml`). Mantém tráfego privado no Tailnet (`network_mode: service:tailscale`). | Quer manter IP `100.83.170.1` privado sem domínio/TLS |
+| **C — Mesmo host (fallback automático)** | Rode 9Router no próprio ZimaCube/ZimaOS e mantenha `NINEROUTER_URL=http://100.83.170.1:20128/v1`; o código tenta automaticamente `host.docker.internal:20128/v1` em falha de rede (`warn: ninerouter fallback...`). | 9Router e app no mesmo hardware e sem querer expor para internet |
+
+> Código **não hardcoda** IP: respeita `NINEROUTER_URL` env. O fallback `100.83.170.1 → host.docker.internal` só ativa em `ETIMEDOUT`/`ENETUNREACH`/`ECONNREFUSED`/`UND_ERR_CONNECT_TIMEOUT`. Timeout 25s + 1 retry (backoff 2s) apenas para rede; erros `401/429/400` não retentam. Mensagens granulares (`translation_provider_unconfigured`, `timeout`, `unreachable`, `http_xxx`, `empty`, `invalid_json`) são exibidas na UI com botão **Retry** — não mais 500 opaco.
+
+---
+
+## 🚀 Configurar Tradução via IA (9Router)
+
+### Opção A (Recomendado) — Expor 9Router publicamente:
+
+```bash
+# Tailscale Funnel
+tailscale funnel 20128
+
+# Cloudflare Tunnel
+cloudflared tunnel --url http://100.83.170.1:20128
+```
+
+Configure `NINEROUTER_URL` apontando para seu domínio no painel ZimaOS/CasaOS.
+
+### Opção B (Privado) — Rodar 9Router no mesmo host:
+
+Aponte `NINEROUTER_URL=http://host.docker.internal:20128/v1` (requer `extra_hosts` no compose). O código tenta fallback automaticamente quando o IP Tailscale falha.
+
 ---
 
 ## 📜 Scripts Disponíveis

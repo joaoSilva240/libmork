@@ -1,0 +1,358 @@
+CREATE TABLE "campaign_invites" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"campaign_id" uuid NOT NULL,
+	"token" varchar(255) NOT NULL,
+	"revoked" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "campaign_invites_token_unique" UNIQUE("token")
+);
+--> statement-breakpoint
+CREATE TABLE "campaign_logs" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"campaign_id" uuid NOT NULL,
+	"actor_type" varchar(20) DEFAULT 'system' NOT NULL,
+	"actor_id" uuid,
+	"actor_name" varchar(100),
+	"action" varchar(40) NOT NULL,
+	"description" text,
+	"payload" jsonb DEFAULT '{}'::jsonb NOT NULL,
+	"created_by_id" uuid,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "campaigns" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"master_id" uuid NOT NULL,
+	"name" varchar(200) NOT NULL,
+	"rules_engine" varchar(20) DEFAULT 'd20_mod' NOT NULL,
+	"pvp_enabled" boolean DEFAULT false NOT NULL,
+	"difficulty_modifier_shadow_points" integer DEFAULT 0 NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "character_campaigns" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"character_id" uuid NOT NULL,
+	"campaign_id" uuid NOT NULL,
+	"approval_status" varchar(20) DEFAULT 'draft' NOT NULL,
+	"origin" varchar(30) DEFAULT 'player_created' NOT NULL,
+	"sessions_played" integer DEFAULT 0 NOT NULL,
+	"shadow_points_bonuses" jsonb DEFAULT '[]'::jsonb NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "character_conditions" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"character_id" uuid NOT NULL,
+	"condition_id" uuid NOT NULL,
+	"permanent" boolean DEFAULT false NOT NULL,
+	"applied_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "character_items" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"character_id" uuid NOT NULL,
+	"item_id" uuid NOT NULL,
+	"quantity" integer DEFAULT 1 NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "character_skills" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"character_id" uuid NOT NULL,
+	"skill_id" uuid NOT NULL,
+	"trained" boolean DEFAULT false NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "character_spells" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"character_id" uuid NOT NULL,
+	"spell_id" uuid NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "characters" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"owner_id" uuid NOT NULL,
+	"class_id" uuid,
+	"name" varchar(100) NOT NULL,
+	"image_url" varchar(500),
+	"hit_points_max" integer DEFAULT 15 NOT NULL,
+	"hit_points_current" integer DEFAULT 15 NOT NULL,
+	"mana_points_max" integer DEFAULT 5 NOT NULL,
+	"mana_points_current" integer DEFAULT 5 NOT NULL,
+	"attributes" jsonb DEFAULT '{"forca":8,"destreza":8,"vigor":8,"inteligencia":8,"empatia":8}'::jsonb NOT NULL,
+	"level" integer DEFAULT 1 NOT NULL,
+	"xp" integer DEFAULT 0 NOT NULL,
+	"block" integer DEFAULT 0 NOT NULL,
+	"death_status" varchar(20) DEFAULT 'alive' NOT NULL,
+	"death_successes" integer DEFAULT 0 NOT NULL,
+	"death_failures" integer DEFAULT 0 NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "class_level_benefits" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"class_id" uuid NOT NULL,
+	"level" integer NOT NULL,
+	"benefits" jsonb DEFAULT '{}'::jsonb NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "conditions" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"campaign_id" uuid,
+	"name" varchar(100) NOT NULL,
+	"description" text
+);
+--> statement-breakpoint
+CREATE TABLE "duel_participants" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"duel_id" uuid NOT NULL,
+	"character_id" uuid NOT NULL,
+	"invite_status" varchar(20) DEFAULT 'pending' NOT NULL,
+	"turn_order" integer,
+	"actions_remaining" integer DEFAULT 3 NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "duels" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"campaign_id" uuid NOT NULL,
+	"status" varchar(20) DEFAULT 'pending' NOT NULL,
+	"permanent_results" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"finished_at" timestamp
+);
+--> statement-breakpoint
+CREATE TABLE "encounter_participants" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"encounter_id" uuid NOT NULL,
+	"actor_type" varchar(20) NOT NULL,
+	"actor_id" uuid NOT NULL,
+	"initiative" integer,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "encounters" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"world_id" uuid NOT NULL,
+	"name" varchar(200) NOT NULL,
+	"description" text,
+	"is_active" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "establishments" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"world_id" uuid NOT NULL,
+	"name" varchar(100) NOT NULL,
+	"type" varchar(50) DEFAULT 'general' NOT NULL,
+	"description" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "items" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"campaign_id" uuid,
+	"name" varchar(100) NOT NULL,
+	"description" text,
+	"quality_description" text,
+	"counterpoint_description" text,
+	"source_key" varchar(500),
+	"image_url" varchar(500),
+	"source_data" jsonb,
+	"translation" jsonb,
+	CONSTRAINT "items_source_key_unique" UNIQUE("source_key")
+);
+--> statement-breakpoint
+CREATE TABLE "nfc_tags" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"character_id" uuid,
+	"ndef_url" varchar(500) NOT NULL,
+	"active" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "nfc_tags_ndef_url_unique" UNIQUE("ndef_url")
+);
+--> statement-breakpoint
+CREATE TABLE "npc_campaigns" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"npc_id" uuid NOT NULL,
+	"campaign_id" uuid NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "npc_pins" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"npc_id" uuid NOT NULL,
+	"pin_type" varchar(20) NOT NULL,
+	"content_id" uuid,
+	"label" varchar(100) NOT NULL,
+	"roll_expression" varchar(200),
+	"mana_cost" integer,
+	"circle" integer,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "npcs" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"world_id" uuid,
+	"owner_id" uuid,
+	"class_id" uuid,
+	"name" varchar(100) NOT NULL,
+	"npc_type" varchar(20) DEFAULT 'common' NOT NULL,
+	"hit_points" integer DEFAULT 10 NOT NULL,
+	"hit_points_max" integer DEFAULT 10 NOT NULL,
+	"mana_points" integer DEFAULT 0 NOT NULL,
+	"mana_points_max" integer DEFAULT 0 NOT NULL,
+	"attributes" jsonb DEFAULT '{"forca":10,"destreza":10,"vigor":10,"inteligencia":10,"empatia":10}'::jsonb NOT NULL,
+	"level" integer DEFAULT 1 NOT NULL,
+	"xp" integer DEFAULT 0 NOT NULL,
+	"block" integer DEFAULT 0 NOT NULL,
+	"image_url" varchar(500),
+	"xp_reward" integer DEFAULT 0 NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "public_share_links" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"character_id" uuid NOT NULL,
+	"token" varchar(255) NOT NULL,
+	"revoked" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "public_share_links_token_unique" UNIQUE("token")
+);
+--> statement-breakpoint
+CREATE TABLE "rpg_classes" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"name" varchar(100) NOT NULL,
+	"description" text,
+	"initial_items" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"proficiencies" jsonb DEFAULT '{}'::jsonb NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "sessions" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" uuid NOT NULL,
+	"token" varchar(255) NOT NULL,
+	"expires_at" timestamp NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "sessions_token_unique" UNIQUE("token")
+);
+--> statement-breakpoint
+CREATE TABLE "skills" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"campaign_id" uuid,
+	"name" varchar(100) NOT NULL,
+	"description" text,
+	"roll_expression" varchar(200),
+	"key_attribute" varchar(20) NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "spells" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"campaign_id" uuid,
+	"name" varchar(100) NOT NULL,
+	"circle" integer DEFAULT 1 NOT NULL,
+	"mana_cost" integer DEFAULT 0 NOT NULL,
+	"description" text,
+	"use_type" varchar(250) DEFAULT 'somatic' NOT NULL,
+	"duration" varchar(100),
+	"extra_effect" text,
+	"action_cost_override" integer,
+	"image_url" varchar(500),
+	"range" varchar(250),
+	"target" text,
+	"area" varchar(250),
+	"damage" jsonb,
+	"damage_type" varchar(100),
+	"structured_effects" jsonb,
+	"casting_time" varchar(100),
+	"translation" jsonb
+);
+--> statement-breakpoint
+CREATE TABLE "users" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"email" varchar(255) NOT NULL,
+	"password_hash" varchar(255),
+	"oauth_provider" varchar(20) DEFAULT 'local' NOT NULL,
+	"display_name" varchar(100) NOT NULL,
+	"role" varchar(20) DEFAULT 'player' NOT NULL,
+	"shadow_points" integer DEFAULT 0 NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "users_email_unique" UNIQUE("email")
+);
+--> statement-breakpoint
+CREATE TABLE "worlds" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"campaign_id" uuid,
+	"name" varchar(200) NOT NULL,
+	"description" text,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "campaign_invites" ADD CONSTRAINT "campaign_invites_campaign_id_campaigns_id_fk" FOREIGN KEY ("campaign_id") REFERENCES "public"."campaigns"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "campaign_logs" ADD CONSTRAINT "campaign_logs_campaign_id_campaigns_id_fk" FOREIGN KEY ("campaign_id") REFERENCES "public"."campaigns"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "campaign_logs" ADD CONSTRAINT "campaign_logs_created_by_id_users_id_fk" FOREIGN KEY ("created_by_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "campaigns" ADD CONSTRAINT "campaigns_master_id_users_id_fk" FOREIGN KEY ("master_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "character_campaigns" ADD CONSTRAINT "character_campaigns_character_id_characters_id_fk" FOREIGN KEY ("character_id") REFERENCES "public"."characters"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "character_campaigns" ADD CONSTRAINT "character_campaigns_campaign_id_campaigns_id_fk" FOREIGN KEY ("campaign_id") REFERENCES "public"."campaigns"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "character_conditions" ADD CONSTRAINT "character_conditions_character_id_characters_id_fk" FOREIGN KEY ("character_id") REFERENCES "public"."characters"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "character_conditions" ADD CONSTRAINT "character_conditions_condition_id_conditions_id_fk" FOREIGN KEY ("condition_id") REFERENCES "public"."conditions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "character_items" ADD CONSTRAINT "character_items_character_id_characters_id_fk" FOREIGN KEY ("character_id") REFERENCES "public"."characters"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "character_items" ADD CONSTRAINT "character_items_item_id_items_id_fk" FOREIGN KEY ("item_id") REFERENCES "public"."items"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "character_skills" ADD CONSTRAINT "character_skills_character_id_characters_id_fk" FOREIGN KEY ("character_id") REFERENCES "public"."characters"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "character_skills" ADD CONSTRAINT "character_skills_skill_id_skills_id_fk" FOREIGN KEY ("skill_id") REFERENCES "public"."skills"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "character_spells" ADD CONSTRAINT "character_spells_character_id_characters_id_fk" FOREIGN KEY ("character_id") REFERENCES "public"."characters"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "character_spells" ADD CONSTRAINT "character_spells_spell_id_spells_id_fk" FOREIGN KEY ("spell_id") REFERENCES "public"."spells"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "characters" ADD CONSTRAINT "characters_owner_id_users_id_fk" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "characters" ADD CONSTRAINT "characters_class_id_rpg_classes_id_fk" FOREIGN KEY ("class_id") REFERENCES "public"."rpg_classes"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "class_level_benefits" ADD CONSTRAINT "class_level_benefits_class_id_rpg_classes_id_fk" FOREIGN KEY ("class_id") REFERENCES "public"."rpg_classes"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "conditions" ADD CONSTRAINT "conditions_campaign_id_campaigns_id_fk" FOREIGN KEY ("campaign_id") REFERENCES "public"."campaigns"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "duel_participants" ADD CONSTRAINT "duel_participants_duel_id_duels_id_fk" FOREIGN KEY ("duel_id") REFERENCES "public"."duels"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "duel_participants" ADD CONSTRAINT "duel_participants_character_id_characters_id_fk" FOREIGN KEY ("character_id") REFERENCES "public"."characters"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "duels" ADD CONSTRAINT "duels_campaign_id_campaigns_id_fk" FOREIGN KEY ("campaign_id") REFERENCES "public"."campaigns"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "encounter_participants" ADD CONSTRAINT "encounter_participants_encounter_id_encounters_id_fk" FOREIGN KEY ("encounter_id") REFERENCES "public"."encounters"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "encounters" ADD CONSTRAINT "encounters_world_id_worlds_id_fk" FOREIGN KEY ("world_id") REFERENCES "public"."worlds"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "establishments" ADD CONSTRAINT "establishments_world_id_worlds_id_fk" FOREIGN KEY ("world_id") REFERENCES "public"."worlds"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "items" ADD CONSTRAINT "items_campaign_id_campaigns_id_fk" FOREIGN KEY ("campaign_id") REFERENCES "public"."campaigns"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "nfc_tags" ADD CONSTRAINT "nfc_tags_character_id_characters_id_fk" FOREIGN KEY ("character_id") REFERENCES "public"."characters"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "npc_campaigns" ADD CONSTRAINT "npc_campaigns_npc_id_npcs_id_fk" FOREIGN KEY ("npc_id") REFERENCES "public"."npcs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "npc_campaigns" ADD CONSTRAINT "npc_campaigns_campaign_id_campaigns_id_fk" FOREIGN KEY ("campaign_id") REFERENCES "public"."campaigns"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "npc_pins" ADD CONSTRAINT "npc_pins_npc_id_npcs_id_fk" FOREIGN KEY ("npc_id") REFERENCES "public"."npcs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "npcs" ADD CONSTRAINT "npcs_world_id_worlds_id_fk" FOREIGN KEY ("world_id") REFERENCES "public"."worlds"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "npcs" ADD CONSTRAINT "npcs_owner_id_users_id_fk" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "npcs" ADD CONSTRAINT "npcs_class_id_rpg_classes_id_fk" FOREIGN KEY ("class_id") REFERENCES "public"."rpg_classes"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "public_share_links" ADD CONSTRAINT "public_share_links_character_id_characters_id_fk" FOREIGN KEY ("character_id") REFERENCES "public"."characters"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "skills" ADD CONSTRAINT "skills_campaign_id_campaigns_id_fk" FOREIGN KEY ("campaign_id") REFERENCES "public"."campaigns"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "spells" ADD CONSTRAINT "spells_campaign_id_campaigns_id_fk" FOREIGN KEY ("campaign_id") REFERENCES "public"."campaigns"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "worlds" ADD CONSTRAINT "worlds_campaign_id_campaigns_id_fk" FOREIGN KEY ("campaign_id") REFERENCES "public"."campaigns"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "idx_campaign_invite_campaign" ON "campaign_invites" USING btree ("campaign_id");--> statement-breakpoint
+CREATE INDEX "idx_campaign_log_campaign" ON "campaign_logs" USING btree ("campaign_id","created_at");--> statement-breakpoint
+CREATE UNIQUE INDEX "idx_char_campaign_unique" ON "character_campaigns" USING btree ("character_id","campaign_id");--> statement-breakpoint
+CREATE INDEX "idx_char_campaign_campaign" ON "character_campaigns" USING btree ("campaign_id");--> statement-breakpoint
+CREATE INDEX "idx_char_condition" ON "character_conditions" USING btree ("character_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "idx_char_item_unique" ON "character_items" USING btree ("character_id","item_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "idx_char_skill_unique" ON "character_skills" USING btree ("character_id","skill_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "idx_char_spell_unique" ON "character_spells" USING btree ("character_id","spell_id");--> statement-breakpoint
+CREATE INDEX "idx_character_owner" ON "characters" USING btree ("owner_id");--> statement-breakpoint
+CREATE INDEX "idx_class_level" ON "class_level_benefits" USING btree ("class_id","level");--> statement-breakpoint
+CREATE INDEX "idx_condition_campaign" ON "conditions" USING btree ("campaign_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "idx_duel_participant_unique" ON "duel_participants" USING btree ("duel_id","character_id");--> statement-breakpoint
+CREATE INDEX "idx_duel_participant_duel" ON "duel_participants" USING btree ("duel_id");--> statement-breakpoint
+CREATE INDEX "idx_duel_campaign" ON "duels" USING btree ("campaign_id");--> statement-breakpoint
+CREATE INDEX "idx_encounter_participant_encounter" ON "encounter_participants" USING btree ("encounter_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "idx_encounter_participant_unique" ON "encounter_participants" USING btree ("encounter_id","actor_type","actor_id");--> statement-breakpoint
+CREATE INDEX "idx_encounter_world" ON "encounters" USING btree ("world_id");--> statement-breakpoint
+CREATE INDEX "idx_establishment_world" ON "establishments" USING btree ("world_id");--> statement-breakpoint
+CREATE INDEX "idx_item_campaign" ON "items" USING btree ("campaign_id");--> statement-breakpoint
+CREATE INDEX "idx_item_category" ON "items" USING btree ("source_key");--> statement-breakpoint
+CREATE UNIQUE INDEX "idx_npc_campaign_unique" ON "npc_campaigns" USING btree ("npc_id","campaign_id");--> statement-breakpoint
+CREATE INDEX "idx_npc_campaign_campaign" ON "npc_campaigns" USING btree ("campaign_id");--> statement-breakpoint
+CREATE INDEX "idx_npc_pin_npc" ON "npc_pins" USING btree ("npc_id");--> statement-breakpoint
+CREATE INDEX "idx_npc_world" ON "npcs" USING btree ("world_id");--> statement-breakpoint
+CREATE INDEX "idx_public_link_character" ON "public_share_links" USING btree ("character_id");--> statement-breakpoint
+CREATE INDEX "idx_skill_campaign" ON "skills" USING btree ("campaign_id");--> statement-breakpoint
+CREATE INDEX "idx_spell_campaign" ON "spells" USING btree ("campaign_id");--> statement-breakpoint
+CREATE INDEX "idx_world_campaign" ON "worlds" USING btree ("campaign_id");

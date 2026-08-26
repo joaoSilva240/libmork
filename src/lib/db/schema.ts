@@ -16,6 +16,7 @@ import {
   jsonb,
   uniqueIndex,
   index,
+  real,
 } from "drizzle-orm/pg-core";
 
 // =============================================================================
@@ -146,9 +147,31 @@ export const worlds = pgTable(
     campaignId: uuid("campaign_id").references(() => campaigns.id, { onDelete: "cascade" }),
     name: varchar("name", { length: 200 }).notNull(),
     description: text("description"),
+    coverUrl: text("cover_url"),
+    mapUrl: text("map_url"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [index("idx_world_campaign").on(table.campaignId)],
+);
+
+/**
+ * MAP_PIN — Marcadores interativos em mapas do mundo (RF-068).
+ * Cada pin tem coordenadas geográficas (lat/lng) e dados textuais.
+ */
+export const mapPins = pgTable(
+  "map_pins",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    worldId: uuid("world_id")
+      .notNull()
+      .references(() => worlds.id, { onDelete: "cascade" }),
+    lat: real("lat").notNull(),
+    lng: real("lng").notNull(),
+    title: varchar("title", { length: 200 }).notNull(),
+    description: text("description").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [index("idx_map_pin_world").on(table.worldId)],
 );
 
 /**
@@ -664,6 +687,7 @@ export const worldsRelations = relations(worlds, ({ one, many }) => ({
   npcs: many(npcs),
   encounters: many(encounters),
   establishments: many(establishments),
+  mapPins: many(mapPins),
 }));
 
 export const establishmentsRelations = relations(establishments, ({ one }) => ({
@@ -786,6 +810,10 @@ export const campaignInvitesRelations = relations(campaignInvites, ({ one }) => 
 
 export const nfcTagsRelations = relations(nfcTags, ({ one }) => ({
   character: one(characters, { fields: [nfcTags.characterId], references: [characters.id] }),
+}));
+
+export const mapPinsRelations = relations(mapPins, ({ one }) => ({
+  world: one(worlds, { fields: [mapPins.worldId], references: [worlds.id] }),
 }));
 
 export const duelsRelations = relations(duels, ({ one, many }) => ({

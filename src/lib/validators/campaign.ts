@@ -35,6 +35,8 @@ export type UpdateCampaignInput = z.infer<typeof updateCampaignSchema>;
 export const createWorldSchema = z.object({
   name: z.string().min(2, "Nome deve ter no mínimo 2 caracteres").max(200),
   description: z.string().max(5000).optional().nullable(),
+  coverUrl: z.string().url().or(z.string().startsWith("/")).optional().nullable(),
+  mapUrl: z.string().url().or(z.string().startsWith("/")).optional().nullable(),
 });
 
 export type CreateWorldInput = z.infer<typeof createWorldSchema>;
@@ -45,6 +47,8 @@ export type CreateWorldInput = z.infer<typeof createWorldSchema>;
 export const updateWorldSchema = z.object({
   name: z.string().min(2).max(200).optional(),
   description: z.string().max(5000).optional().nullable(),
+  coverUrl: z.string().url().or(z.string().startsWith("/")).optional().nullable(),
+  mapUrl: z.string().url().or(z.string().startsWith("/")).optional().nullable(),
 });
 
 export type UpdateWorldInput = z.infer<typeof updateWorldSchema>;

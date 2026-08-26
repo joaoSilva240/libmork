@@ -8,15 +8,19 @@
 
 const postgres = require("postgres");
 
+require("dotenv").config({ path: ".env.local" });
+
 async function setupDatabase() {
+  const databaseUrl = process.env.DATABASE_URL;
+
+  if (!databaseUrl) {
+    throw new Error(
+      "DATABASE_URL não definida. Configure essa variável no arquivo .env.local.",
+    );
+  }
+
   // Conecta no banco padrão primeiro
-  const sql = postgres({
-    host: "100.122.171.83",
-    port: 5432,
-    username: "casaos",
-    password: "casaos",
-    database: "casaos",
-  });
+  const sql = postgres(databaseUrl, { database: "postgres" });
 
   try {
     console.log("✓ Conectado ao PostgreSQL CasaOS");

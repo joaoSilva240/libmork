@@ -1,0 +1,68 @@
+# =============================================================================
+# Libmork — Tailscale Sidecar (Opção B — Privada, não ativa por padrão)
+# =============================================================================
+# Use quando quiser manter NINEROUTER_URL como IP CGNAT privado 100.83.170.1
+# sem expor para internet. Mantém tráfego no Tailnet.
+#
+# Trade-offs vs Opção A (URL pública com Funnel/Cloudflare):
+#   + Privado, sem domínio/TLS externo
+#   - Lock-in Tailscale, requer authkey, estado persistido, overhead de sidecar
+#   - ZimaOS pode precisar de TUN device privilegiado
+#
+# Uso:
+#   1) Crie uma auth key no painel Tailscale: https://login.tailscale.com/admin/settings/keys
+#      (Ephemeral, Tag opcional)
+#   2) export TS_AUTHKEY=tskey-auth-k...
+#   3) docker compose -f docker-compose.yml -f docker-compose.override.tailscale.yml up -d
+#   Alternativa: edite environment.TS_AUTHKEY abaixo ou use env_file.
+#
+# Como funciona:
+#   - Serviço `tailscale` roda o daemon e expõe /dev/net/tun via CAP_NET_ADMIN
+#   - App usa `network_mode: service:tailscale` — compartilha netns com o sidecar,
+#     logo consegue rotear 100.64/10 diretamente sem extra_hosts.
+#   - Alternativa é `network_mode: container:tailscale` (legado).
+#
+# Ver docs/deploy-zimaos.md para comparar com Opção A e C.
+# =============================================================================
+
+services:
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: libmork-tailscale
+    hostname: libmork-ts
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY:-}
+      - TS_EXTRA_ARGS=--advertise-tags=tag:libmork
+      - TS_STATE_DIR=/var/lib/tailscale
+      # Garante que container suba como exit-node? Não necessário para 100.83.170.1
+      - TS_USERSPACE=false
+    volumes:
+      - libmork-tailscale-state:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    # Opcional: expor porta para debug
+    # ports:
+    #   - "41641:41641/udp"
+
+  app:
+    # Compartilha stack de rede com o sidecar Tailscale — necessário para CGNAT roteável
+    network_mode: service:tailscale
+    # Quando network_mode é usado, `ports` e `extra_hosts` devem ir ao serviço que provê rede;
+    # por isso duplicamos ports no tailscale se precisar expor. Compose v2 permite declarar no app,
+    # mas alguns runtimes exigem mover. Mantemos aqui como comentário fallback:
+    # ports:
+    #   - "3000:3000"
+    depends_on:
+      - tailscale
+    # extra_hosts não é necessário quando em tailnet, mas mantém compat com host.docker.internal fallback
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  libmork-tailscale-state:
+    driver: local
