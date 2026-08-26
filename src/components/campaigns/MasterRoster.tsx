@@ -401,17 +401,17 @@ export function MasterRoster({ campaignId, selectedWorldId, onWorldSelected }: M
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 pb-2">
-        <div className="flex items-center gap-3">
-          <h2 className="text-lg font-bold text-white">
+    <div className="flex flex-col h-full min-h-0">
+      <div className="mb-1.5 flex flex-wrap items-center justify-between gap-1.5 border-b border-gray-800 pb-1.5 shrink-0 text-xs">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-bold text-white truncate">
             Mesa{selectedWorld ? ` — ${selectedWorld.name}` : ""}
           </h2>
 
           {/* Botão de Adicionar Mundo - Substitui o dropdown */}
           <button
             onClick={() => setShowWorldSelector(true)}
-            className="flex items-center gap-1.5 rounded-lg border border-purple-700/60 bg-purple-950/40 px-3 py-1.5 text-xs font-semibold text-purple-300 hover:bg-purple-900/50 transition-colors"
+            className="flex items-center gap-1 rounded-lg border border-purple-700/60 bg-purple-950/40 px-2 py-1 text-xs font-semibold text-purple-300 hover:bg-purple-900/50 transition-colors"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -434,7 +434,7 @@ export function MasterRoster({ campaignId, selectedWorldId, onWorldSelected }: M
           <div className="flex items-center rounded-lg border border-gray-700 bg-gray-950 p-0.5 text-xs">
             <button
               onClick={() => setActiveCenterView("canvas")}
-              className={`flex items-center gap-1 rounded-md px-2 py-1 font-medium transition-colors ${
+              className={`flex items-center gap-1 rounded-md px-2 py-0.5 font-medium transition-colors ${
                 activeCenterView === "canvas"
                   ? "bg-purple-600 text-white"
                   : "text-gray-400 hover:text-white"
@@ -446,7 +446,7 @@ export function MasterRoster({ campaignId, selectedWorldId, onWorldSelected }: M
             </button>
             <button
               onClick={() => setActiveCenterView("map")}
-              className={`flex items-center gap-1 rounded-md px-2 py-1 font-medium transition-colors ${
+              className={`flex items-center gap-1 rounded-md px-2 py-0.5 font-medium transition-colors ${
                 activeCenterView === "map"
                   ? "bg-purple-600 text-white"
                   : "text-gray-400 hover:text-white"
@@ -472,16 +472,16 @@ export function MasterRoster({ campaignId, selectedWorldId, onWorldSelected }: M
           </div>
 
           {/* Status Socket WebSocket em tempo real */}
-          <span className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+          <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
             isConnected ? "bg-emerald-950/80 text-emerald-400 border border-emerald-800" : "bg-rose-950/80 text-rose-400 border border-rose-800"
           }`}>
-            <span className={`h-2 w-2 rounded-full ${isConnected ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
+            <span className={`h-1.5 w-1.5 rounded-full ${isConnected ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
             {isConnected ? "Ao Vivo" : "Conectando..."}
           </span>
         </div>
 
         {/* Presença de Participantes da Mesa (RF-026, D-37) */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <div className="flex items-center -space-x-1 overflow-hidden">
             {presenceList.filter(p => p.online).map((p) => (
               <div
@@ -489,32 +489,32 @@ export function MasterRoster({ campaignId, selectedWorldId, onWorldSelected }: M
                 title={`${p.userName} (${p.role === "master" ? "Mestre" : "Jogador"})`}
                 className="relative"
               >
-                <div className={`flex h-7 w-7 items-center justify-center rounded-full border border-gray-900 text-xs font-bold text-white ${
+                <div className={`flex h-6 w-6 items-center justify-center rounded-full border border-gray-900 text-[10px] font-bold text-white ${
                   p.role === "master" ? "bg-purple-700" : "bg-blue-600"
                 }`}>
                   {p.userName.slice(0, 2).toUpperCase()}
                 </div>
-                <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-gray-950 bg-emerald-500" />
+                <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full border-2 border-gray-950 bg-emerald-500" />
               </div>
             ))}
           </div>
 
           <button
             onClick={() => setShowRollFeed(!showRollFeed)}
-            className="flex items-center gap-1.5 rounded-lg border border-purple-700/60 bg-purple-950/40 px-2.5 py-1 text-xs font-semibold text-purple-300 hover:bg-purple-900/50"
+            className="flex items-center gap-1 rounded-lg border border-purple-700/60 bg-purple-950/40 px-2 py-0.5 text-xs font-semibold text-purple-300 hover:bg-purple-900/50"
           >
             Rolagens {recentRolls.length > 0 && `(${recentRolls.length})`}
           </button>
 
-          <span className="text-xs text-gray-400">
-            {roster.players.length} jogadores · {visibleActors.filter((actor) => actor.kind === "npc").length} NPCs
+          <span className="text-[11px] text-gray-400">
+            {roster.players.length} J · {visibleActors.filter((actor) => actor.kind === "npc").length} N
           </span>
         </div>
       </div>
 
       {/* Feed de Rolagens de Dados em Tempo Real (RF-041, RF-046) */}
       {showRollFeed && (
-        <div className="mb-2 max-h-40 overflow-y-auto rounded-lg border border-purple-900/60 bg-purple-950/20 p-2.5 text-xs text-purple-200 shadow-inner">
+        <div className="mb-1.5 max-h-36 overflow-y-auto rounded-lg border border-purple-900/60 bg-purple-950/20 p-2 text-xs text-purple-200 shadow-inner shrink-0">
           <div className="mb-1 flex items-center justify-between border-b border-purple-900/40 pb-1">
             <span className="font-bold text-purple-300">Feed de Rolagens ao Vivo</span>
             <button
@@ -525,22 +525,22 @@ export function MasterRoster({ campaignId, selectedWorldId, onWorldSelected }: M
             </button>
           </div>
           {recentRolls.length === 0 ? (
-            <p className="py-2 text-center text-gray-400 italic">Nenhuma rolagem realizada na sessão ainda.</p>
+            <p className="py-1 text-center text-gray-400 italic text-[11px]">Nenhuma rolagem realizada na sessão ainda.</p>
           ) : (
             <div className="space-y-1">
               {recentRolls.map((roll, idx) => (
-                <div key={idx} className="flex items-center justify-between rounded bg-gray-900/70 p-1.5 border border-purple-900/30">
-                  <div className="flex items-center gap-2">
+                <div key={idx} className="flex items-center justify-between rounded bg-gray-900/70 p-1 border border-purple-900/30 text-[11px]">
+                  <div className="flex items-center gap-1.5">
                     <span className="font-bold text-white">{roll.actorName}</span>
-                    <span className="rounded bg-purple-900/60 px-1.5 py-0.5 text-[10px] uppercase font-semibold text-purple-300">
+                    <span className="rounded bg-purple-900/60 px-1 py-0.2 text-[9px] uppercase font-semibold text-purple-300">
                       {roll.rollType}
                     </span>
                     <span className="text-gray-300">{roll.formula}</span>
-                    {roll.isManual && <span className="text-[10px] text-amber-400 font-semibold">[Físico]</span>}
+                    {roll.isManual && <span className="text-[9px] text-amber-400 font-semibold">[Físico]</span>}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <span className="text-gray-400">{roll.diceDetail}</span>
-                    <span className="rounded bg-emerald-950 px-2 py-0.5 text-sm font-black text-emerald-400 border border-emerald-800">
+                    <span className="rounded bg-emerald-950 px-1.5 py-0.2 text-xs font-black text-emerald-400 border border-emerald-800">
                       {roll.result}
                     </span>
                   </div>
@@ -552,15 +552,13 @@ export function MasterRoster({ campaignId, selectedWorldId, onWorldSelected }: M
       )}
 
       {error && (
-        <div className="mb-2 rounded-lg border border-red-800 bg-red-900/30 p-2 text-sm text-red-300">
+        <div className="mb-1.5 rounded-lg border border-red-800 bg-red-900/30 p-1.5 text-xs text-red-300 shrink-0">
           {error}
         </div>
       )}
 
       {/* Contêiner Central: Canva Infinito ou Mapa do Mundo */}
-      <div className={`transition-all duration-300 mb-2 overflow-hidden rounded-lg border border-gray-800 bg-gray-950 ${
-        isCarouselCollapsed ? 'flex-1 h-[calc(100vh-12rem)]' : 'flex-1'
-      }`}>
+      <div className="flex-1 min-h-0 overflow-hidden rounded-lg border border-gray-800 bg-gray-950 mb-1.5">
         {activeCenterView === "canvas" ? (
           selectedWorldId ? (
             <InfiniteCanvas campaignId={`${campaignId}-${selectedWorldId}`} />

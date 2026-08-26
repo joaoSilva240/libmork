@@ -128,26 +128,26 @@ export function CampaignDetail() {
   }
 
   return (
-    <div>
-      <div className="mb-4 flex items-center justify-between">
-        <Link href="/master" className="text-sm text-purple-400 hover:text-purple-300">
-          ← Voltar
-        </Link>
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="mb-2 flex items-center justify-between gap-2 border-b border-gray-800/60 pb-1.5 shrink-0">
         <div className="flex items-center gap-3">
-          <span className="text-lg font-bold text-white">{campaign.name}</span>
-          <button
-            onClick={handleDelete}
-            disabled={isDeleting}
-            className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
-          >
-            {isDeleting ? "Excluindo..." : "Excluir"}
-          </button>
+          <Link href="/master" className="text-xs font-semibold text-purple-400 hover:text-purple-300 transition-colors">
+            ← Voltar
+          </Link>
+          <h1 className="text-base font-bold text-white truncate">{campaign.name}</h1>
         </div>
+        <button
+          onClick={handleDelete}
+          disabled={isDeleting}
+          className="rounded-lg bg-red-900/60 border border-red-700/50 px-2.5 py-1 text-xs font-semibold text-red-200 hover:bg-red-800 transition disabled:opacity-50"
+        >
+          {isDeleting ? "Excluindo..." : "Excluir"}
+        </button>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-[220px_minmax(0,1fr)_240px] xl:grid-cols-[240px_minmax(0,1fr)_260px]">
+      <div className="flex-1 grid gap-2.5 lg:grid-cols-[220px_minmax(0,1fr)_240px] xl:grid-cols-[240px_minmax(0,1fr)_260px] overflow-hidden min-h-0">
         {/* ===== Coluna esquerda — Gestão ===== */}
-        <div className="space-y-3">
+        <div className="space-y-3 overflow-y-auto min-h-0">
           <div className="rounded-lg border border-gray-800 bg-gray-900 p-3">
             <button
               onClick={() => setShowContentOverlay(true)}
@@ -219,7 +219,7 @@ export function CampaignDetail() {
         </div>
 
         {/* ===== Coluna central — Mesa (galeria de personagens) ===== */}
-        <div className="flex h-[calc(100vh-12rem)] flex-col rounded-lg border border-gray-800 bg-gray-900 p-3">
+        <div className="flex flex-col h-full min-h-0 overflow-hidden rounded-xl border border-gray-800 bg-gray-900 p-2.5">
           <MasterRoster
             key={`roster-${rosterVersion}`}
             campaignId={campaign.id}
