@@ -1,10 +1,11 @@
 # =============================================================================
 # Libmork — Docker Compose (ZimaOS / CasaOS Compatible)
 # =============================================================================
-# O banco PostgreSQL é EXTERNO (D-34) — configure a DATABASE_URL no ZimaOS.
+# O banco PostgreSQL é EXTERNO (D-34) — configure a DATABASE_URL no ambiente.
+# Para desenvolvimento local, execute: docker compose --env-file .env.local up -d
 # =============================================================================
 # NOTA NINEROUTER / TAILSCALE (Task #010):
-# - NINEROUTER_URL padrão usa IP CGNAT Tailscale 100.83.170.1:20128 (rede 100.64/10).
+# - NINEROUTER_URL pode usar um endpoint privado da rede Tailscale.
 #   Bridge padrão do Docker NÃO roteia Tailnet; se o host ZimaOS/CasaOS NÃO estiver
 #   no Tailnet OU não expuser o daemon ao container, fetches darão ENOTFOUND/
 #   ETIMEDOUT/ECONNREFUSED. Evidência via GET /api/health/ninerouter.
@@ -26,12 +27,18 @@ services:
     # Permite fallback host.docker.internal quando 9Router está no mesmo host
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    env_file:
+      # .env.local é opcional para permitir configuração pelo painel de deploy.
+      - path: .env.local
+        required: false
     environment:
       # --- Banco de Dados (PostgreSQL externo — D-34) ---
-      - DATABASE_URL=${DATABASE_URL:-postgresql://casaos:casaos@100.122.171.83:5432/libmork}
+      # DATABASE_URL é carregada de .env.local ou do ambiente de deploy.
+      - DATABASE_URL=${DATABASE_URL:?DATABASE_URL must be set}
 
       # --- Autenticação (Cookies HTTP-only) ---
-      - AUTH_SECRET=${AUTH_SECRET:-900747650a3d4a6bb19cd6ef7e55c74f1c681f7bfc572f65d640b4a9104ca6ce}
+      # AUTH_SECRET é carregada de .env.local ou do ambiente de deploy.
+      - AUTH_SECRET=${AUTH_SECRET:?AUTH_SECRET must be set}
 
       # --- Aplicação ---
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
@@ -39,11 +46,11 @@ services:
 
       # --- Tradução via 9Router (OpenAI-compatible) ---
       # Variáveis NINEROUTER_* devem ser configuradas via painel ZimaOS/CasaOS.
-      # - NINEROUTER_URL: URL pública (Funnel/Cloudflare) ou 100.83.170.1:20128/v1
+      # - NINEROUTER_URL: URL pública (Funnel/Cloudflare) ou endpoint privado/v1
       # - NINEROUTER_KEY: chave Bearer do 9Router (não commitar)
       # - NINEROUTER_MODEL: modelo Ollama ou OpenAI (ex: ollama/gpt-oss:120b)
       # extra_hosts resolve host.docker.internal para acesso local quando 9Router roda no mesmo host.
-      - NINEROUTER_URL=${NINEROUTER_URL:-http://100.83.170.1:20128/v1}
+      - NINEROUTER_URL=${NINEROUTER_URL:-http://localhost:20128/v1}
       - NINEROUTER_KEY=${NINEROUTER_KEY:-}
       - NINEROUTER_MODEL=${NINEROUTER_MODEL:-ollama/gpt-oss:120b}
 

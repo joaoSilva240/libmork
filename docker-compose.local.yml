@@ -26,12 +26,11 @@ services:
       - path: .env
         required: false
     environment:
-      # DATABASE_URL carregado de .env.local via env_file; overrides below para dev
-      - AUTH_SECRET=${AUTH_SECRET:-900747650a3d4a6bb19cd6ef7e55c74f1c681f7bfc572f65d640b4a9104ca6ce}
+      # DATABASE_URL e AUTH_SECRET são carregados de .env.local via env_file.
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3210}
       - NODE_ENV=production
       # NINEROUTER_* sobrescritos por env_file/.env.local se definidos; fallback padrão
-      - NINEROUTER_URL=${NINEROUTER_URL:-http://100.83.170.1:20128/v1}
+      - NINEROUTER_URL=${NINEROUTER_URL:-http://localhost:20128/v1}
       - NINEROUTER_KEY=${NINEROUTER_KEY:-}
       - NINEROUTER_MODEL=${NINEROUTER_MODEL:-ollama/gpt-oss:120b}
       - HEALTH_TOKEN=${HEALTH_TOKEN:-}

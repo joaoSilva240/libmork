@@ -1,5 +1,5 @@
-import { ClassManager } from "@/components/classes/ClassManager";
+import { redirect } from "next/navigation";
 
 export default function ClassesPage() {
-  return <ClassManager />;
+  redirect("/master/library");
 }
