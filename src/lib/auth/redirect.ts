@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 
-const INTERNAL_REDIRECT_ROOTS = ["/login", "/invite", "/player", "/master"];
+const INTERNAL_REDIRECT_ROOTS = ["/", "/invite", "/player", "/master"];
+const DISALLOWED_REDIRECT_PATHS = ["/login", "/register"];
 
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "0.0.0.0", "[::]", "[::1]"]);
 
@@ -87,6 +88,9 @@ export function getSafeRedirect(
     }
 
     const path = destination.pathname;
+    if (DISALLOWED_REDIRECT_PATHS.some((disallowed) => path === disallowed || path.startsWith(`${disallowed}/`))) {
+      return null;
+    }
     const isAllowed = INTERNAL_REDIRECT_ROOTS.some(
       (root) => path === root || path.startsWith(`${root}/`),
     );

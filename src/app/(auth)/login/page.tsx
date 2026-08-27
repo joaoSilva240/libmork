@@ -75,7 +75,7 @@ function LoginForm() {
         return;
       }
 
-      const targetUrl = data.data?.redirect || redirect || (data.data?.role === "master" ? "/master" : "/player");
+      const targetUrl = data.data?.redirect || redirect || "/";
       window.location.href = targetUrl;
     } catch {
       setErrors({ general: 'Erro de conexão. Tente novamente.' });

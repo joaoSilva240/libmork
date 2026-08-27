@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
     // Cria a sessão
     stage = "session_create";
     if (!isJson) {
-      const destination = redirect || (user.role === "master" ? "/master" : "/player");
+      const destination = redirect || "/";
       const response = NextResponse.redirect(
         new URL(destination, getPublicOrigin(request)),
         303,
@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
       return response;
     }
 
-    const destination = redirect || (user.role === "master" ? "/master" : "/player");
+    const destination = redirect || "/";
     const jsonResponse = NextResponse.json({
       success: true,
       data: {

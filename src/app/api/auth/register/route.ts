@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       .returning();
 
     // Cria a sessão
-    const destination = newUser.role === "master" ? "/master" : "/player";
+    const destination = "/";
     const jsonResponse = NextResponse.json({
       success: true,
       data: {

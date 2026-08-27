@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 import { getPublicOrigin, getSafeRedirect } from '@/lib/auth/redirect';
 
 // Rotas que requerem autenticação
-const protectedRoutes = ['/player', '/master'];
+const protectedRoutes = ['/', '/player', '/master'];
 
 // Rotas que não devem ser acessadas por usuários autenticados
 const authRoutes = ['/login', '/register'];
@@ -21,7 +21,7 @@ export async function middleware(request: NextRequest) {
 
   // Verificar se a rota atual é protegida
   const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
+    route === '/' ? pathname === '/' : pathname.startsWith(route)
   );
 
   // Verificar se a rota atual é de autenticação
@@ -40,7 +40,7 @@ export async function middleware(request: NextRequest) {
 
   // Se tentar acessar rota de autenticação estando autenticado
   if (isAuthRoute && isAuthenticated) {
-    return NextResponse.redirect(new URL('/player', getPublicOrigin(request)), 307);
+    return NextResponse.redirect(new URL('/', getPublicOrigin(request)), 307);
   }
 
   return NextResponse.next();

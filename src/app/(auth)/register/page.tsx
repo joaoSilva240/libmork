@@ -84,7 +84,7 @@ export default function RegisterPage() {
         return;
       }
 
-      const targetUrl = data.data?.redirect || (data.data?.role === "master" ? "/master" : "/player");
+      const targetUrl = data.data?.redirect || "/";
       window.location.href = targetUrl;
     } catch {
       setErrors({ general: 'Erro de conexão. Tente novamente.' });
