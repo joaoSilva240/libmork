@@ -1047,7 +1047,7 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
             onClick={() => setShowPf2eCatalogModal(false)}
           >
             <div
-              className="w-full max-w-2xl rounded-3xl border border-purple-800 bg-gray-950 p-6 shadow-2xl space-y-4 text-gray-100 max-h-[85vh] flex flex-col"
+              className="w-full max-w-5xl rounded-3xl border border-purple-800 bg-gray-950 p-6 shadow-2xl space-y-4 text-gray-100 max-h-[90vh] flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
@@ -1103,7 +1103,7 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
                   <Spinner size="lg" />
                 </div>
               ) : (
-                <div className="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 pr-1 min-h-[250px]">
+                <div className="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 pr-1 min-h-[350px]">
                   {pf2eCatalogList
                     .filter((m) => m.name.toLowerCase().includes(searchPf2eCatalog.toLowerCase()))
                     .map((m) => {
@@ -1172,7 +1172,7 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
             onClick={() => setShowDndCatalogModal(false)}
           >
             <div
-              className="w-full max-w-2xl rounded-3xl border border-purple-800 bg-gray-950 p-6 shadow-2xl space-y-4 text-gray-100 max-h-[85vh] flex flex-col"
+              className="w-full max-w-5xl rounded-3xl border border-purple-800 bg-gray-950 p-6 shadow-2xl space-y-4 text-gray-100 max-h-[90vh] flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
@@ -1228,7 +1228,7 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
                   <Spinner size="lg" />
                 </div>
               ) : (
-                <div className="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 pr-1 min-h-[250px]">
+                <div className="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 pr-1 min-h-[350px]">
                   {dndCatalogList
                     .filter((m) => m.name.toLowerCase().includes(searchDndCatalog.toLowerCase()))
                     .map((m) => {
