@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
     }
 
     const importedNpcs = [];
-    const BATCH_SIZE = 10;
+    const BATCH_SIZE = 3; // Reduz de 10 para 3 requisições simultâneas para mitigar limite e timeout no GitHub Raw
 
     for (let i = 0; i < targetPaths.length; i += BATCH_SIZE) {
       const batch = targetPaths.slice(i, i + BATCH_SIZE);
@@ -131,6 +131,10 @@ export async function POST(request: NextRequest) {
       );
       for (const item of results) {
         if (item) importedNpcs.push(item);
+      }
+      // Pequena pausa entre lotes de busca no GitHub
+      if (i + BATCH_SIZE < targetPaths.length) {
+        await new Promise((r) => setTimeout(r, 400));
       }
     }
 

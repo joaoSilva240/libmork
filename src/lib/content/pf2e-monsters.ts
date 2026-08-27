@@ -134,6 +134,44 @@ function cleanFoundryText(text: string): string {
     .trim();
 }
 
+async function fetchJsonWithRetry(url: string, retries = 2): Promise<any> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+  try {
+    const headers: Record<string, string> = { Accept: "application/json", "User-Agent": "LibmorkApp" };
+    if (process.env.GITHUB_TOKEN) {
+      headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+    }
+
+    const res = await fetch(url, {
+      headers,
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      if ((res.status === 403 || res.status === 429) && retries > 0) {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        return fetchJsonWithRetry(url, retries - 1);
+      }
+      console.error(`[fetchJsonWithRetry] HTTP ${res.status} para ${url}`);
+      return null;
+    }
+
+    return await res.json();
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    if (retries > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return fetchJsonWithRetry(url, retries - 1);
+    }
+    console.error(`[fetchJsonWithRetry] Falha ao consultar ${url}:`, err?.message || err);
+    return null;
+  }
+}
+
 /**
  * Busca e interpreta o JSON bruto de um monstro do Foundry PF2e.
  */
@@ -145,16 +183,7 @@ export async function fetchAndParsePf2eMonster(path: string): Promise<Pf2eMonste
 
   try {
     const rawUrl = `${PF2E_RAW_BASE}${path}`;
-    const res = await fetch(rawUrl, {
-      headers: { Accept: "application/json", "User-Agent": "LibmorkApp" },
-    });
-
-    if (!res.ok) {
-      console.error(`[fetchAndParsePf2eMonster] Erro HTTP ao buscar ${path}: ${res.status}`);
-      return null;
-    }
-
-    const json = await res.json();
+    const json = await fetchJsonWithRetry(rawUrl, 2);
     if (!json || typeof json !== "object") return null;
 
     const name = typeof json.name === "string" ? json.name.trim() : "Criatura sem nome";
