@@ -141,6 +141,7 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
   const [dndCatalogList, setDndCatalogList] = useState<Array<{ index: string; name: string }>>([]);
   const [selectedDndIndexes, setSelectedDndIndexes] = useState<Set<string>>(new Set());
   const [searchDndCatalog, setSearchDndCatalog] = useState("");
+  const [translateDndWithLLM, setTranslateDndWithLLM] = useState(false);
   const [isLoadingCatalog, setIsLoadingCatalog] = useState(false);
 
   const handleOpenDndCatalogModal = async () => {
@@ -289,7 +290,10 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
       const response = await fetch("/api/npcs/import-dnd", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ monsterIndexes: Array.from(selectedDndIndexes) }),
+        body: JSON.stringify({
+          monsterIndexes: Array.from(selectedDndIndexes),
+          translateWithLLM: translateDndWithLLM,
+        }),
         credentials: "include",
       });
       const data = await response.json();
@@ -318,7 +322,10 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
       const response = await fetch("/api/npcs/import-dnd", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ importAll: true }),
+        body: JSON.stringify({
+          importAll: true,
+          translateWithLLM: translateDndWithLLM,
+        }),
         credentials: "include",
       });
       const data = await response.json();
@@ -1196,13 +1203,23 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
                   className="w-full rounded-xl border border-gray-800 bg-gray-900 px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none transition"
                 />
 
+                <label className="flex items-center gap-1.5 text-xs text-purple-300 font-semibold cursor-pointer whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    checked={translateDndWithLLM}
+                    onChange={(e) => setTranslateDndWithLLM(e.target.checked)}
+                    className="rounded border-gray-800 bg-gray-900 text-purple-600 focus:ring-purple-500"
+                  />
+                  <span>Traduzir com IA</span>
+                </label>
+
                 <button
                   type="button"
                   onClick={handleImportAllDndMonsters}
                   disabled={isImportingDnd}
                   className="w-full sm:w-auto rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-purple-500 transition whitespace-nowrap shadow-lg shadow-purple-950 disabled:opacity-50"
                 >
-                  🔥 Importar Todos (334)
+                  {isImportingDnd ? "Importando..." : "🔥 Importar Todos (334)"}
                 </button>
               </div>
 
