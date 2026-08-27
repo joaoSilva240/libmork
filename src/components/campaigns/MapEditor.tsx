@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import "leaflet/dist/leaflet.css";
+import "@/styles/leaflet.css";
 import type { MapPin } from "@/types";
 import { Spinner } from "@/components/ui";
 

@@ -236,7 +236,10 @@ export function CampaignDetail() {
         <ContentOverlay
           campaignId={campaign.id}
           campaign={campaign}
-          onClose={() => setShowContentOverlay(false)}
+          onClose={() => {
+            setShowContentOverlay(false);
+            setRosterVersion((v) => v + 1);
+          }}
         />
       )}
 

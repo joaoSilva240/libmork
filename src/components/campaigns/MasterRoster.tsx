@@ -42,6 +42,7 @@ export function MasterRoster({ campaignId, selectedWorldId, onWorldSelected }: M
   const [activeCenterView, setActiveCenterView] = useState<"canvas" | "map">("canvas");
   const [showWorldSelector, setShowWorldSelector] = useState(false);
   const [campaignWorldIds, setCampaignWorldIds] = useState<Set<string>>(new Set());
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const [deskActors, setDeskActors] = useState<RosterActor[]>(() => {
     if (typeof window === "undefined") return [];
@@ -669,9 +670,20 @@ export function MasterRoster({ campaignId, selectedWorldId, onWorldSelected }: M
       {/* Carrossel de personagens fixo na parte inferior */}
       {!isCarouselCollapsed && (
         <div
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={handleDropActor}
-          className="transition-all duration-300 h-56 min-h-[220px] rounded-b-lg border border-gray-800 bg-gray-900/50 p-2 overflow-visible"
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragOver(true);
+          }}
+          onDragLeave={() => setIsDragOver(false)}
+          onDrop={(e) => {
+            setIsDragOver(false);
+            handleDropActor(e);
+          }}
+          className={`transition-all duration-300 h-56 min-h-[220px] rounded-b-lg border p-2 overflow-visible ${
+            isDragOver
+              ? "border-purple-500 bg-purple-950/40"
+              : "border-gray-800 bg-gray-900/50"
+          }`}
         >
           <CharacterCarousel
             actors={carouselActors}
