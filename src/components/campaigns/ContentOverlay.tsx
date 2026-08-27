@@ -11,7 +11,7 @@ type ContentOverlayProps = {
   onClose: () => void;
 };
 
-type ContentTab = "skills" | "spells" | "items" | "conditions";
+type ContentTab = "skills" | "spells" | "items" | "conditions" | "npcs";
 type ContentItem = Record<string, unknown> & { id: string; name: string; campaignId: string | null };
 
 const formatValue = (value: unknown): string => {
@@ -35,6 +35,7 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
     { key: "spells", label: "Magias" },
     { key: "items", label: "Itens" },
     { key: "conditions", label: "Condições" },
+    { key: "npcs", label: "NPCs" },
   ];
 
   const loadItems = useCallback(async () => {
@@ -44,15 +45,34 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
     setSelectedItem(null);
     
     try {
-      const response = await fetch(`/api/campaigns/${campaignId}/content/${activeTab}`);
-      const data = await response.json();
+      if (activeTab === "npcs") {
+        const [libRes, campRes] = await Promise.all([
+          fetch("/api/npcs"),
+          fetch(`/api/campaigns/${campaignId}/npcs`)
+        ]);
+        const libData = await libRes.json();
+        const campData = await campRes.json();
+        if (!libRes.ok || !campRes.ok) {
+          setError(libData.error || campData.error || "Erro ao carregar NPCs");
+          return;
+        }
+        const campaignNpcIds = new Set((campData.data || []).map((n: { id: string }) => n.id));
+        const mapped = (libData.data || []).map((npc: any) => ({
+          ...npc,
+          campaignId: campaignNpcIds.has(npc.id) ? campaignId : null
+        }));
+        setItems(mapped);
+      } else {
+        const response = await fetch(`/api/campaigns/${campaignId}/content/${activeTab}`);
+        const data = await response.json();
 
-      if (!response.ok) {
-        setError(data.error || "Erro ao carregar conteúdo");
-        return;
+        if (!response.ok) {
+          setError(data.error || "Erro ao carregar conteúdo");
+          return;
+        }
+
+        setItems(data.data);
       }
-
-      setItems(data.data);
     } catch {
       setError("Erro de conexão. Tente novamente.");
     } finally {
@@ -70,17 +90,37 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
       setSelectedItem(null);
       
       try {
-        const response = await fetch(`/api/campaigns/${campaignId}/content/${activeTab}`);
-        const data = await response.json();
+        if (activeTab === "npcs") {
+          const [libRes, campRes] = await Promise.all([
+            fetch("/api/npcs"),
+            fetch(`/api/campaigns/${campaignId}/npcs`)
+          ]);
+          const libData = await libRes.json();
+          const campData = await campRes.json();
+          if (cancelled) return;
+          if (!libRes.ok || !campRes.ok) {
+            setError(libData.error || campData.error || "Erro ao carregar NPCs");
+            return;
+          }
+          const campaignNpcIds = new Set((campData.data || []).map((n: { id: string }) => n.id));
+          const mapped = (libData.data || []).map((npc: any) => ({
+            ...npc,
+            campaignId: campaignNpcIds.has(npc.id) ? campaignId : null
+          }));
+          setItems(mapped);
+        } else {
+          const response = await fetch(`/api/campaigns/${campaignId}/content/${activeTab}`);
+          const data = await response.json();
 
-        if (cancelled) return;
+          if (cancelled) return;
 
-        if (!response.ok) {
-          setError(data.error || "Erro ao carregar conteúdo");
-          return;
+          if (!response.ok) {
+            setError(data.error || "Erro ao carregar conteúdo");
+            return;
+          }
+
+          setItems(data.data);
         }
-
-        setItems(data.data);
       } catch {
         if (!cancelled) {
           setError("Erro de conexão. Tente novamente.");
@@ -167,21 +207,45 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
 
   const toggleItemEnabled = async (item: ContentItem, currentlyEnabled: boolean) => {
     try {
-      if (currentlyEnabled) {
-        // Desabilitar = deletar o item privado da campanha
-        const response = await fetch(`/api/campaigns/${campaignId}/content/${activeTab}/${item.id}`, {
-          method: "DELETE",
-        });
-
-        if (!response.ok) {
-          const data = await response.json();
-          setError(data.error || "Erro ao desabilitar conteúdo");
-          return;
+      if (activeTab === "npcs") {
+        if (currentlyEnabled) {
+          const response = await fetch(`/api/campaigns/${campaignId}/npcs/${item.id}`, {
+            method: "DELETE",
+          });
+          if (!response.ok) {
+            const data = await response.json();
+            setError(data.error || "Erro ao remover NPC");
+            return;
+          }
+        } else {
+          const response = await fetch(`/api/campaigns/${campaignId}/npcs`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ npcId: item.id }),
+          });
+          if (!response.ok) {
+            const data = await response.json();
+            setError(data.error || "Erro ao adicionar NPC");
+            return;
+          }
         }
       } else {
-        // Habilitar = criar uma cópia privada na campanha (se for global) ou reativar
-        // Para simplificar, vamos apenas recarregar a lista
-        // A lógica real de enable/disable depende de como você quer implementar
+        if (currentlyEnabled) {
+          // Desabilitar = deletar o item privado da campanha
+          const response = await fetch(`/api/campaigns/${campaignId}/content/${activeTab}/${item.id}`, {
+            method: "DELETE",
+          });
+
+          if (!response.ok) {
+            const data = await response.json();
+            setError(data.error || "Erro ao desabilitar conteúdo");
+            return;
+          }
+        } else {
+          // Habilitar = criar uma cópia privada na campanha (se for global) ou reativar
+          // Para simplificar, vamos apenas recarregar a lista
+          // A lógica real de enable/disable depende de como você quer implementar
+        }
       }
 
       await loadItems();
@@ -195,6 +259,56 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
   );
 
   const renderItemDetails = (item: ContentItem) => {
+    if (activeTab === "npcs") {
+      return (
+        <div className="space-y-3 text-sm">
+          <div>
+            <span className="font-semibold text-gray-400">Tipo de NPC:</span>{" "}
+            <span className="text-white capitalize">{formatValue(item.npcType)}</span>
+          </div>
+          <div>
+            <span className="font-semibold text-gray-400">Nível:</span>{" "}
+            <span className="text-white">{formatValue(item.level)}</span>
+          </div>
+          <div>
+            <span className="font-semibold text-gray-400">Recompensa XP:</span>{" "}
+            <span className="text-white">{formatValue(item.xpReward)}</span>
+          </div>
+          <div>
+            <span className="font-semibold text-gray-400">Atributos:</span>
+            <div className="mt-1 grid grid-cols-5 gap-2 text-center font-bold text-white bg-gray-900 rounded-xl p-2">
+              <div>
+                <div className="text-[10px] text-gray-400">FOR</div>
+                <div>{String((item.attributes as any)?.forca ?? 10)}</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-gray-400">DES</div>
+                <div>{String((item.attributes as any)?.destreza ?? 10)}</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-gray-400">VIG</div>
+                <div>{String((item.attributes as any)?.vigor ?? 10)}</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-gray-400">INT</div>
+                <div>{String((item.attributes as any)?.inteligencia ?? 10)}</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-gray-400">EMP</div>
+                <div>{String((item.attributes as any)?.empatia ?? 10)}</div>
+              </div>
+            </div>
+          </div>
+          {!!item.publicNotes && (
+            <div>
+              <span className="font-semibold text-gray-400">Notas Públicas:</span>
+              <p className="mt-1 text-gray-300 whitespace-pre-wrap">{formatValue(item.publicNotes)}</p>
+            </div>
+          )}
+        </div>
+      );
+    }
+
     if (activeTab === "skills") {
       return (
         <div className="space-y-2 text-sm">
@@ -605,7 +719,7 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
             ) : filteredItems.length === 0 ? (
               <p className="text-center text-sm text-gray-500">Nenhum item encontrado</p>
             ) : (
-               <div className={activeTab === "items" ? "grid grid-cols-1 gap-3 sm:grid-cols-2" : "space-y-1"}>
+               <div className={(activeTab === "items" || activeTab === "npcs") ? "grid grid-cols-1 gap-3 sm:grid-cols-2" : "space-y-1"}>
                  {filteredItems.map((item) => {
                    const isEnabled = item.campaignId === campaignId;
                    const isGlobal = item.campaignId === null;
@@ -621,16 +735,16 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
                      .filter(([, value]) => value !== null && value !== undefined && value !== "")
                      .slice(0, 3);
 
-                    return (
-                     <div
-                       key={item.id}
-                       className={`${activeTab === "items" ? "flex flex-col" : "flex items-center gap-2"} rounded-lg border p-2 transition-colors ${
-                         selectedItem?.id === item.id
-                           ? "border-purple-600 bg-purple-900/20"
-                           : "border-gray-800 bg-gray-900 hover:border-gray-700"
-                       }`}
-                     >
-                       {activeTab === "items" && (
+                     return (
+                      <div
+                        key={item.id}
+                        className={`${(activeTab === "items" || activeTab === "npcs") ? "flex flex-col" : "flex items-center gap-2"} rounded-lg border p-2 transition-colors ${
+                          selectedItem?.id === item.id
+                            ? "border-purple-600 bg-purple-900/20"
+                            : "border-gray-800 bg-gray-900 hover:border-gray-700"
+                        }`}
+                      >
+                        {(activeTab === "items" || activeTab === "npcs") && (
                          <div className="mb-2 flex items-start gap-3">
                            {item.imageUrl && !failedImages.has(item.id) ? (
                              <img
@@ -654,52 +768,57 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
                              >
                                {item.name}
                              </button>
-                             {isGlobal && <span className="ml-2 rounded bg-gray-800 px-1.5 py-0.5 text-xs text-gray-400">Global</span>}
-                             {technical.length > 0 && (
-                               <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-gray-400">
-                                 {technical.map(([key, value]) => {
-                                   const formatted = formatTechnicalField(key, value, modalLanguage);
-                                   if (!formatted) return null;
-                                   return (
-                                     <span key={key}>
-                                       <strong className="text-purple-300">{getTechnicalLabel(key, modalLanguage)}:</strong> {formatted}
-                                     </span>
-                                   );
-                                 })}
+                              {isGlobal && activeTab !== "npcs" && <span className="ml-2 rounded bg-gray-800 px-1.5 py-0.5 text-xs text-gray-400">Global</span>}
+                              {activeTab === "npcs" && (
+                                <div className="mt-1 text-xs text-gray-400">
+                                  Nível {String(item.level)} · {String(item.npcType) === "enemy" ? "Inimigo" : "Aliado"}
                                 </div>
-                             )}
-                             {item.description !== null && item.description !== undefined && <p className="mt-1 line-clamp-2 text-[11px] text-gray-400">{String(item.description)}</p>}
-                           </div>
-                         </div>
-                       )}
-                       <input
-                        type="checkbox"
-                        checked={isEnabled}
-                        onChange={() => toggleItemEnabled(item, isEnabled)}
-                        disabled={isGlobal}
-                        className="h-4 w-4 accent-purple-600 disabled:opacity-50"
-                      />
-                      {activeTab !== "items" && <button
-                        onClick={() => setSelectedItem(item)}
-                        onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedItem(item); } }}
-                        aria-label={`Ver detalhes de ${item.name}`}
-                        className="flex-1 text-left text-sm text-white hover:text-purple-300"
-                      >
-                        {item.name}
-                        {isGlobal && (
-                          <span className="ml-2 rounded bg-gray-800 px-1.5 py-0.5 text-xs text-gray-400">
-                            Global
-                          </span>
+                              )}
+                              {activeTab !== "npcs" && technical.length > 0 && (
+                                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-gray-400">
+                                  {technical.map(([key, value]) => {
+                                    const formatted = formatTechnicalField(key, value, modalLanguage);
+                                    if (!formatted) return null;
+                                    return (
+                                      <span key={key}>
+                                        <strong className="text-purple-300">{getTechnicalLabel(key, modalLanguage)}:</strong> {formatted}
+                                      </span>
+                                    );
+                                  })}
+                                 </div>
+                              )}
+                              {item.description !== null && item.description !== undefined && activeTab !== "npcs" && <p className="mt-1 line-clamp-2 text-[11px] text-gray-400">{String(item.description)}</p>}
+                            </div>
+                          </div>
                         )}
-                      </button>}
-                      {activeTab === "items" && <button
-                        onClick={() => setSelectedItem(item)}
-                        onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedItem(item); } }}
-                        aria-label={`Ver detalhes de ${item.name}`}
-                        className="flex-1 text-left text-sm text-white hover:text-purple-300"
-                      >
-                        Ver detalhes
-                      </button>}
+                        <input
+                         type="checkbox"
+                         checked={isEnabled}
+                         onChange={() => toggleItemEnabled(item, isEnabled)}
+                         disabled={activeTab !== "npcs" && isGlobal}
+                         className="h-4 w-4 accent-purple-600 disabled:opacity-50"
+                       />
+                       {activeTab !== "items" && activeTab !== "npcs" && <button
+                         onClick={() => setSelectedItem(item)}
+                         onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedItem(item); } }}
+                         aria-label={`Ver detalhes de ${item.name}`}
+                         className="flex-1 text-left text-sm text-white hover:text-purple-300"
+                       >
+                         {item.name}
+                         {isGlobal && (
+                           <span className="ml-2 rounded bg-gray-800 px-1.5 py-0.5 text-xs text-gray-400">
+                             Global
+                           </span>
+                         )}
+                       </button>}
+                       {(activeTab === "items" || activeTab === "npcs") && <button
+                         onClick={() => setSelectedItem(item)}
+                         onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedItem(item); } }}
+                         aria-label={`Ver detalhes de ${item.name}`}
+                         className="flex-1 text-left text-sm text-white hover:text-purple-300"
+                       >
+                         Ver detalhes
+                       </button>}
                     </div>
                   );
                 })}
@@ -729,11 +848,11 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
                 <div>
                   <div className="mb-3 flex items-center justify-between border-b border-gray-800 pb-2">
                <div className="flex items-center gap-3">
-                      {isSpell && (
-                        spell.imageUrl ? (
+                      {(isSpell || activeTab === "npcs") && (
+                        (spell.imageUrl || selectedItem.imageUrl) ? (
                           <img
-                            src={String(spell.imageUrl)}
-                            alt={`Imagem da magia ${displayName}`}
+                            src={String(spell.imageUrl || selectedItem.imageUrl)}
+                            alt={`Imagem de ${displayName}`}
                             width={44}
                             height={44}
                             className="h-11 w-11 rounded-lg border border-purple-900/60 object-cover"

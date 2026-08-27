@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { useSocket } from "@/context/SocketContext";
 import { getModifier, getBlockValue } from "@/lib/engine/attributes";
 import { getDefenseValue } from "@/lib/engine/combat";
+import type { CombatSessionState, Combatant } from "@/lib/engine";
+import { TargetSelectionModal } from "@/components/combat/TargetSelectionModal";
+import { spendSpell, spendCombatActions, applyResolvedDamage, applyHealing, rollExpression as rollExpressionFn } from "@/lib/engine";
 
 export type RosterCondition = {
   junctionId: string;
@@ -63,6 +66,7 @@ type ActorOverlayProps = {
   actor: RosterActor;
   onClose: () => void;
   onChanged: () => void | Promise<void>;
+  combatState?: CombatSessionState | null;
 };
 
 export type NpcPinItem = {
@@ -86,12 +90,23 @@ export type NpcFullData = {
   manaPointsMax: number;
 };
 
-export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOverlayProps) {
-  const { updateActorStatus, rollDice } = useSocket();
+export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatState }: ActorOverlayProps) {
+  const { updateActorStatus, rollDice, updateCombatState, requestDefenseReaction } = useSocket();
   const [panel, setPanel] = useState<Panel>("inventory");
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  const [selectedActionItem, setSelectedActionItem] = useState<{
+    name: string;
+    isHealing: boolean;
+    rollExpr?: string;
+    damageExpr?: string;
+    isPhysical: boolean;
+    manaCost?: number;
+    circle?: number;
+    pinType: string;
+  } | null>(null);
 
   const [npcFullData, setNpcFullData] = useState<NpcFullData | null>(null);
 
@@ -443,6 +458,222 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
     }
   };
 
+  const handleActionClick = (pin: NpcPinItem) => {
+    const isInCombat = combatState && combatState.active;
+    if (isInCombat) {
+      const attacker = combatState.combatants[combatState.currentTurnIndex];
+      const isMyTurn = attacker && (attacker.id === actor.id || attacker.npcId === actor.id || attacker.characterId === actor.id);
+      if (!isMyTurn) {
+        setError("Este NPC não está no turno atual do combate.");
+        return;
+      }
+    }
+
+    const name = pin.label;
+    const desc = pin.label.toLowerCase();
+    const isHealing = desc.includes("cura") || desc.includes("poção") || desc.includes("healer") || desc.includes("recupera");
+
+    const expr = pin.rollExpression || "1d20";
+    let attackExpr = expr;
+    let damageExpr: string | undefined = undefined;
+
+    // Parse de parênteses para dano, ex: "1d20+3 (1d6+2)"
+    const parenMatch = expr.trim().match(/^([^(]+)\(([^)]+)\)/);
+    if (parenMatch) {
+      attackExpr = parenMatch[1].trim();
+      damageExpr = parenMatch[2].trim();
+    }
+
+    if (isInCombat) {
+      setSelectedActionItem({
+        name,
+        isHealing,
+        rollExpr: attackExpr,
+        damageExpr,
+        isPhysical: pin.pinType === "attack",
+        manaCost: pin.manaCost || undefined,
+        circle: pin.circle || undefined,
+        pinType: pin.pinType,
+      });
+    } else {
+      // Se não estiver em combate, rola diretamente
+      const attack = rollExpressionFn(attackExpr, 1);
+      const die = attack.total;
+      rollDice({
+        campaignId,
+        actorId: actor.id,
+        actorName: actor.name,
+        rollType: `Rolagem: ${pin.label}`,
+        formula: attackExpr,
+        result: die,
+        diceDetail: `Rolou ${pin.label}: ${attack.detail}`,
+      });
+      setSuccess(`Rolou ${pin.label}: ${attack.detail}`);
+    }
+  };
+
+  const handleConfirmTarget = async (target: Combatant) => {
+    if (!selectedActionItem || !combatState || !campaignId) return;
+
+    const attacker = combatState.combatants[combatState.currentTurnIndex];
+    if (!attacker || (attacker.id !== actor.id && attacker.npcId !== actor.id && attacker.characterId !== actor.id)) {
+      setError("Este NPC não está no turno atual do combate.");
+      return;
+    }
+
+    const hydratedCombatState = { ...combatState };
+    const isSpell = selectedActionItem.pinType === "spell";
+
+    const spent = isSpell && selectedActionItem.circle
+      ? spendSpell(hydratedCombatState, attacker.id, selectedActionItem.circle, selectedActionItem.manaCost ?? 0, null)
+      : spendCombatActions(hydratedCombatState, attacker.id, 1);
+
+    if (!spent.success) {
+      setError(spent.message);
+      return;
+    }
+
+    updateCombatState(spent.session);
+
+    const updatedAttacker = spent.session.combatants.find((c) => c.id === attacker.id);
+    if (updatedAttacker) {
+      updateActorStatus({
+        campaignId,
+        actorId: updatedAttacker.npcId ?? updatedAttacker.characterId ?? updatedAttacker.id,
+        currentHp: updatedAttacker.hpCurrent,
+        currentMana: updatedAttacker.manaCurrent,
+        maxHp: updatedAttacker.hpMax,
+        maxMana: updatedAttacker.manaMax,
+      });
+
+      // Persiste status do atacante
+      await fetch(`/api/campaigns/${campaignId}/actors/${updatedAttacker.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          hitPointsCurrent: updatedAttacker.hpCurrent,
+          ...(updatedAttacker.manaCurrent == null ? {} : { manaPointsCurrent: updatedAttacker.manaCurrent }),
+          reason: "combate",
+        }),
+      });
+    }
+
+    const actorSocketId = (act: Combatant) => act.characterId ?? act.npcId ?? act.id;
+
+    if (selectedActionItem.isHealing) {
+      const healed = rollExpressionFn(selectedActionItem.rollExpr, 0);
+      const healAmount = Math.max(0, healed.total);
+
+      const currentTarget = spent.session.combatants.find((combatant) => combatant.id === target.id);
+      if (!currentTarget) {
+        setError("Alvo não está mais no combate ativo.");
+        return;
+      }
+
+      const healedTarget = applyHealing(currentTarget, healAmount);
+      const healedState = {
+        ...spent.session,
+        combatants: spent.session.combatants.map((combatant) => combatant.id === healedTarget.id ? healedTarget : combatant),
+      };
+
+      updateCombatState(healedState);
+      updateActorStatus({
+        campaignId,
+        actorId: actorSocketId(healedTarget),
+        currentHp: healedTarget.hpCurrent,
+        maxHp: healedTarget.hpMax,
+      });
+
+      // Persiste HP do alvo curado no BD
+      await fetch(`/api/campaigns/${campaignId}/actors/${healedTarget.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          hitPointsCurrent: healedTarget.hpCurrent,
+          reason: "combate",
+        }),
+      });
+
+      rollDice({
+        campaignId,
+        actorId: actor.id,
+        actorName: actor.name,
+        rollType: `Cura: ${selectedActionItem.name}`,
+        formula: healed.formula,
+        result: healAmount,
+        diceDetail: `Curou +${healAmount} HP em ${target.name}`,
+      });
+
+      setSuccess(`Curou +${healAmount} HP em ${target.name}`);
+      await onChanged();
+    } else {
+      const attack = rollExpressionFn((selectedActionItem.rollExpr || "1d20") as string, 1);
+      const damage = rollExpressionFn(selectedActionItem.damageExpr, 0);
+      const damageConfigured = !damage.missing && damage.valid;
+
+      const currentTarget = spent.session.combatants.find((combatant) => combatant.id === target.id);
+      if (!currentTarget) {
+        setError("Alvo não está mais no combate ativo.");
+        return;
+      }
+
+      if (currentTarget.type === "npc" && !damage.missing && damage.valid) {
+        const resolved = applyResolvedDamage(spent.session, currentTarget.id, Math.max(0, damage.total), attack.total, currentTarget.defenseReaction ?? "dodge", selectedActionItem.isPhysical);
+        updateCombatState(resolved.session);
+
+        const updatedTarget = resolved.session.combatants.find((c) => c.id === currentTarget.id);
+        if (updatedTarget) {
+          updateActorStatus({
+            campaignId,
+            actorId: actorSocketId(updatedTarget),
+            currentHp: updatedTarget.hpCurrent,
+            maxHp: updatedTarget.hpMax,
+          });
+
+          // Persiste HP do NPC alvo
+          await fetch(`/api/campaigns/${campaignId}/actors/${updatedTarget.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              hitPointsCurrent: updatedTarget.hpCurrent,
+              reason: "combate",
+            }),
+          });
+        }
+
+        setSuccess(`Ataque contra ${target.name}: ${resolved.result.details}`);
+        await onChanged();
+      } else if (currentTarget.type !== "npc" && damageConfigured) {
+        // Envia requisição de reação defensiva ativa para o jogador alvo
+        requestDefenseReaction({
+          campaignId,
+          id: `react_${Date.now()}`,
+          attackerId: attacker.id,
+          attackerName: actor.name,
+          targetId: currentTarget.id,
+          targetName: currentTarget.name,
+          rawDamage: Math.max(0, damage.total),
+          attackRoll: attack.total,
+          isPhysical: selectedActionItem.isPhysical,
+          actionName: selectedActionItem.name,
+        });
+        setSuccess(`Solicitada reação defensiva a ${target.name} (Ataque: ${attack.total}, Dano bruto: ${damage.total})`);
+      }
+
+      rollDice({
+        campaignId,
+        actorId: actor.id,
+        actorName: actor.name,
+        rollType: `Ataque: ${selectedActionItem.name}`,
+        formula: attack.formula,
+        result: attack.total,
+        diceDetail: `Ataque contra ${target.name}: ${attack.detail}; dano: ${damage.total}`,
+      });
+    }
+
+    setSelectedActionItem(null);
+  };
+
   const toggleCondition = async (conditionId: string, currentlyApplied: boolean) => {
     setError(null);
     setSuccess(null);
@@ -682,22 +913,10 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
 
                       <button
                         type="button"
-                        onClick={() => {
-                          const expr = pin.rollExpression || "1d20";
-                          const die = Math.floor(Math.random() * 20) + 1;
-                          rollDice({
-                            campaignId,
-                            actorId: actor.id,
-                            actorName: actor.name,
-                            rollType: `Ataque: ${pin.label}`,
-                            formula: expr,
-                            result: die,
-                            diceDetail: `Rolou ${pin.label} [${die}]`,
-                          });
-                        }}
+                        onClick={() => handleActionClick(pin)}
                         className="rounded-lg bg-purple-600 px-3 py-1.5 font-bold text-white hover:bg-purple-500 transition shadow"
                       >
-                        🎲 Rolar
+                        {combatState?.active ? "⚔️ Atacar" : "🎲 Rolar"}
                       </button>
                     </div>
                   ))}
@@ -1207,6 +1426,17 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged }: ActorOve
           </div>
         </div>
       </div>
+      {selectedActionItem && (
+        <TargetSelectionModal
+          actionName={selectedActionItem.name}
+          isHealing={selectedActionItem.isHealing}
+          combatants={combatState?.combatants ?? []}
+          myCharacterId={actor.id}
+          isOpen={Boolean(selectedActionItem)}
+          onClose={() => setSelectedActionItem(null)}
+          onConfirmTarget={handleConfirmTarget}
+        />
+      )}
     </div>
   );
 }

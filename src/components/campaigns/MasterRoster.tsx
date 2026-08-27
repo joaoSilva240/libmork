@@ -688,6 +688,7 @@ export function MasterRoster({ campaignId, selectedWorldId, onWorldSelected }: M
           actor={selected}
           onClose={() => setSelected(null)}
           onChanged={handleRosterChanged}
+          combatState={combatState}
         />
       )}
 
