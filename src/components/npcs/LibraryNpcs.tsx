@@ -93,7 +93,11 @@ function toPayload(form: NpcFormState) {
 }
 
 type LibraryNpcsProps = {
-  onRegisterActions?: (actions: { openCreate: () => void; openCatalog: () => void }) => void;
+  onRegisterActions?: (actions: {
+    openCreate: () => void;
+    openCatalog: () => void;
+    openPf2eCatalog?: () => void;
+  }) => void;
 };
 
 export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
@@ -156,11 +160,38 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
     }
   };
 
+  // Catálogo Completo do Pathfinder 2e
+  const [showPf2eCatalogModal, setShowPf2eCatalogModal] = useState(false);
+  const [pf2eCatalogList, setPf2eCatalogList] = useState<Array<{ index: string; name: string; pack: string; path: string }>>([]);
+  const [selectedPf2ePaths, setSelectedPf2ePaths] = useState<Set<string>>(new Set());
+  const [searchPf2eCatalog, setSearchPf2eCatalog] = useState("");
+  const [isLoadingPf2eCatalog, setIsLoadingPf2eCatalog] = useState(false);
+  const [isImportingPf2e, setIsImportingPf2e] = useState(false);
+  const [translateWithLLM, setTranslateWithLLM] = useState(true);
+
+  const handleOpenPf2eCatalogModal = async () => {
+    setShowPf2eCatalogModal(true);
+    setError(null);
+    setIsLoadingPf2eCatalog(true);
+    try {
+      const res = await fetch("/api/npcs/pf2e-catalog", { credentials: "include" });
+      const data = await res.json();
+      if (res.ok && data.results) {
+        setPf2eCatalogList(data.results);
+      }
+    } catch {
+      setError("Erro ao carregar catálogo Pathfinder 2e.");
+    } finally {
+      setIsLoadingPf2eCatalog(false);
+    }
+  };
+
   useEffect(() => {
     if (onRegisterActions) {
       onRegisterActions({
         openCreate: () => setShowCreateModal(true),
         openCatalog: () => handleOpenDndCatalogModal(),
+        openPf2eCatalog: () => handleOpenPf2eCatalogModal(),
       });
     }
   }, [onRegisterActions]);
@@ -175,6 +206,79 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
       }
       return next;
     });
+  };
+
+  const handleToggleSelectPf2eMonster = (path: string) => {
+    setSelectedPf2ePaths((prev) => {
+      const next = new Set(prev);
+      if (next.has(path)) {
+        next.delete(path);
+      } else {
+        next.add(path);
+      }
+      return next;
+    });
+  };
+
+  const handleImportSelectedPf2eMonsters = async () => {
+    if (selectedPf2ePaths.size === 0) return;
+    setError(null);
+    setIsImportingPf2e(true);
+    try {
+      const response = await fetch("/api/npcs/import-pf2e", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          monsterPaths: Array.from(selectedPf2ePaths),
+          translateWithLLM,
+        }),
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.error || "Erro ao importar monstros selecionados do Pathfinder 2e");
+        return;
+      }
+      await loadNpcs();
+      setShowPf2eCatalogModal(false);
+      setSelectedPf2ePaths(new Set());
+      alert(data.message || "Monstros selecionados importados com sucesso!");
+    } catch {
+      setError("Erro de conexão ao importar da API Pathfinder 2e.");
+    } finally {
+      setIsImportingPf2e(false);
+    }
+  };
+
+  const handleImportAllPf2eMonsters = async () => {
+    if (!window.confirm(`Deseja importar TODOS os ${pf2eCatalogList.length} monstros da API Pathfinder 2e para sua biblioteca? Este processo levará alguns segundos.`)) {
+      return;
+    }
+    setError(null);
+    setIsImportingPf2e(true);
+    try {
+      const response = await fetch("/api/npcs/import-pf2e", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          importAll: true,
+          translateWithLLM,
+        }),
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.error || "Erro ao importar todos os monstros do Pathfinder 2e");
+        return;
+      }
+      await loadNpcs();
+      setShowPf2eCatalogModal(false);
+      alert(data.message || "Todos os monstros do Pathfinder 2e foram importados para sua biblioteca!");
+    } catch {
+      setError("Erro de conexão ao importar da API Pathfinder 2e.");
+    } finally {
+      setIsImportingPf2e(false);
+    }
   };
 
   const handleImportSelectedDndMonsters = async () => {
@@ -928,6 +1032,131 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
           </>
         )}
       </div>
+
+        {/* Modal do Catálogo Completo Pathfinder 2e */}
+        {showPf2eCatalogModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
+            onClick={() => setShowPf2eCatalogModal(false)}
+          >
+            <div
+              className="w-full max-w-2xl rounded-3xl border border-purple-800 bg-gray-950 p-6 shadow-2xl space-y-4 text-gray-100 max-h-[85vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">⚔️</span>
+                  <div>
+                    <h3 className="text-lg font-bold text-purple-200">Catálogo Pathfinder 2e ({pf2eCatalogList.length} Monstros)</h3>
+                    <p className="text-xs text-purple-400">
+                      Importe criaturas do Bestiário Pathfinder 2e com atributos, vida, habilidades e magias
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPf2eCatalogModal(false)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <input
+                  type="text"
+                  placeholder="Pesquisar criaturas Pathfinder 2e (ex: Goblin, Mephit, Golem, Dragon)..."
+                  value={searchPf2eCatalog}
+                  onChange={(e) => setSearchPf2eCatalog(e.target.value)}
+                  className="w-full rounded-xl border border-gray-800 bg-gray-900 px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none transition"
+                />
+
+                <label className="flex items-center gap-1.5 text-xs text-purple-300 font-semibold cursor-pointer whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    checked={translateWithLLM}
+                    onChange={(e) => setTranslateWithLLM(e.target.checked)}
+                    className="rounded border-gray-800 bg-gray-900 text-purple-600 focus:ring-purple-500"
+                  />
+                  <span>Traduzir com IA</span>
+                </label>
+
+                <button
+                  type="button"
+                  onClick={handleImportAllPf2eMonsters}
+                  disabled={isImportingPf2e}
+                  className="w-full sm:w-auto rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-purple-500 transition whitespace-nowrap shadow-lg shadow-purple-950 disabled:opacity-50"
+                >
+                  {isImportingPf2e ? "Importando..." : `🔥 Importar Todos (${pf2eCatalogList.length})`}
+                </button>
+              </div>
+
+              {isLoadingPf2eCatalog ? (
+                <div className="flex items-center justify-center min-h-[200px]">
+                  <Spinner size="lg" />
+                </div>
+              ) : (
+                <div className="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 pr-1 min-h-[250px]">
+                  {pf2eCatalogList
+                    .filter((m) => m.name.toLowerCase().includes(searchPf2eCatalog.toLowerCase()))
+                    .map((m) => {
+                      const isSelected = selectedPf2ePaths.has(m.path);
+
+                      return (
+                        <div
+                          key={m.path}
+                          onClick={() => handleToggleSelectPf2eMonster(m.path)}
+                          className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition ${
+                            isSelected
+                              ? "border-purple-500 bg-purple-950/60 text-white"
+                              : "border-gray-800 bg-gray-900/60 text-gray-300 hover:border-gray-700"
+                          }`}
+                        >
+                          <div className="flex flex-col truncate pr-2">
+                            <span className="text-xs font-bold truncate">{m.name}</span>
+                            <span className="text-[10px] text-gray-400 truncate">{m.pack}</span>
+                          </div>
+                          <div
+                            className={`h-5 w-5 rounded-md border flex items-center justify-center text-xs font-bold shrink-0 ${
+                              isSelected
+                                ? "bg-purple-600 border-purple-400 text-white"
+                                : "border-gray-700 bg-gray-800 text-transparent"
+                            }`}
+                          >
+                            ✓
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+
+              <div className="flex items-center justify-between pt-3 border-t border-gray-800 text-xs">
+                <span className="text-gray-400">
+                  {selectedPf2ePaths.size} monstro(s) selecionado(s)
+                </span>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowPf2eCatalogModal(false)}
+                    className="rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg"
+                  >
+                    Fechar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleImportSelectedPf2eMonsters}
+                    disabled={selectedPf2ePaths.size === 0 || isImportingPf2e}
+                    className="rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white hover:bg-purple-500 disabled:opacity-50"
+                  >
+                    {isImportingPf2e ? "Importando..." : `Importar Selecionados (${selectedPf2ePaths.size})`}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Modal do Catálogo Completo D&D 5e (334 Monstros) */}
         {showDndCatalogModal && (

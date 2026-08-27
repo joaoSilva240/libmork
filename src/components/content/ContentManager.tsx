@@ -235,7 +235,11 @@ function getTechnicalValue(system: Record<string, unknown>, key: string): unknow
 
 export function ContentManager({ basePath, title }: ContentManagerProps) {
   const [activeType, setActiveType] = useState<ManagerContentType>("skills");
-  const npcActionsRef = useRef<{ openCreate: () => void; openCatalog: () => void } | null>(null);
+  const npcActionsRef = useRef<{
+    openCreate: () => void;
+    openCatalog: () => void;
+    openPf2eCatalog?: () => void;
+  } | null>(null);
   const worldActionsRef = useRef<{ openCreate: () => void } | null>(null);
   const isCampaignContext = basePath.includes("/api/campaigns/");
   const availableTypes = isCampaignContext
@@ -726,6 +730,14 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
               >
                 <span>+</span>
                 <span>Criar Novo NPC</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => npcActionsRef.current?.openPf2eCatalog?.()}
+                className="rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2.5 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg flex items-center gap-2"
+              >
+                <span>⚔️</span>
+                <span>Catálogo Pathfinder 2e</span>
               </button>
               <button
                 type="button"
