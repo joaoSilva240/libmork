@@ -394,11 +394,14 @@ export function MasterRoster({ campaignId, selectedWorldId, onWorldSelected }: M
   const carouselActors = visibleDeskActors.length > 0 ? visibleDeskActors : visibleActors;
 
   useEffect(() => {
-    if (selected && !isActorVisible(selected)) {
+    const isDeskActor = deskActors.some(
+      (actor) => actor.id === selected?.id && actor.kind === selected?.kind
+    );
+    if (selected && !isDeskActor && !isActorVisible(selected)) {
       const clearSelection = window.setTimeout(() => setSelected(null), 0);
       return () => window.clearTimeout(clearSelection);
     }
-  }, [isActorVisible, selected]);
+  }, [deskActors, isActorVisible, selected]);
 
   if (isLoading) {
     return (
