@@ -44,7 +44,7 @@ export type RosterActor = {
   conditions?: RosterCondition[];
 };
 
-export type ContentCategory = "items" | "spells" | "abilities" | "skills";
+export type ContentCategory = "items" | "spells" | "skills";
 
 export type ManagedContentItem = {
   id: string;
@@ -134,7 +134,7 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
 
     const loadAll = async () => {
       try {
-        const categories: ContentCategory[] = ["items", "spells", "abilities", "skills"];
+        const categories: ContentCategory[] = ["items", "spells", "skills"];
         
         // 1. Conteúdos da campanha
         const managedPromises = categories.map((cat) =>
@@ -764,8 +764,6 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
         return "⚔️ Item";
       case "spells":
         return "✨ Magia";
-      case "abilities":
-        return "🥋 Habilidade";
       case "skills":
         return "📖 Perícia";
     }
@@ -1370,7 +1368,6 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
                     ["all", "Todos"],
                     ["items", "Itens"],
                     ["spells", "Magias"],
-                    ["abilities", "Habilidades"],
                     ["skills", "Perícias"],
                   ] as const
                 ).map(([cat, label]) => (
