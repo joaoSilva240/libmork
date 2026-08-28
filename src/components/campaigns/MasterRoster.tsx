@@ -79,19 +79,7 @@ export function MasterRoster({ campaignId, selectedWorldId, onWorldSelected }: M
     } catch {}
   };
 
-  const handleDropActor = (e: React.DragEvent) => {
-    e.preventDefault();
-    try {
-      const dataStr = e.dataTransfer.getData("application/json");
-      if (!dataStr) return;
-      const actor: RosterActor = JSON.parse(dataStr);
-      if (actor && actor.id) {
-        if (!deskActors.some((a) => a.id === actor.id && a.kind === actor.kind)) {
-          saveDeskActors([...deskActors, actor]);
-        }
-      }
-    } catch {}
-  };
+  // handleDropActor moved after handleRosterChanged (see below)
 
   const handleRemoveDeskActor = (actorId: string, kind: string) => {
     const updated = deskActors.filter((a) => !(a.id === actorId && a.kind === kind));
@@ -157,6 +145,28 @@ export function MasterRoster({ campaignId, selectedWorldId, onWorldSelected }: M
       setError("Erro de conexão. Tente novamente.");
     }
   }, [campaignId]);
+
+  const handleDropActor = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    try {
+      const dataStr = e.dataTransfer.getData("application/json");
+      if (!dataStr) return;
+      const actor: RosterActor = JSON.parse(dataStr);
+      if (actor && actor.id) {
+        setDeskActors((prev) => {
+          if (prev.some((a) => a.id === actor.id && a.kind === actor.kind)) {
+            return prev;
+          }
+          const next = [...prev, actor];
+          try {
+            localStorage.setItem(`carousel-desk-${campaignId}`, JSON.stringify(next));
+          } catch {}
+          return next;
+        });
+        void handleRosterChanged();
+      }
+    } catch {}
+  }, [campaignId, handleRosterChanged]);
 
   // Entrar no Socket da campanha e escutar atualizações em tempo real
   useEffect(() => {
@@ -380,10 +390,7 @@ export function MasterRoster({ campaignId, selectedWorldId, onWorldSelected }: M
     () => actors.filter(isActorVisible),
     [actors, isActorVisible]
   );
-  const visibleDeskActors = useMemo(
-    () => deskActors.filter(isActorVisible),
-    [deskActors, isActorVisible]
-  );
+  const visibleDeskActors = deskActors;
   const carouselActors = visibleDeskActors.length > 0 ? visibleDeskActors : visibleActors;
 
   useEffect(() => {
