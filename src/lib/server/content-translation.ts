@@ -25,7 +25,7 @@ import { logger } from "@/lib/logger";
  * @throws TranslationError with granular error code for client handling
  */
 export async function translateContentWithLLM(
-  contentType: "spell" | "item" | "class" | "npc" | string,
+  contentType: "spell" | "item" | "class" | "npc" | "race" | string,
   content: Record<string, unknown>,
   systemPrompt?: string,
 ): Promise<Record<string, unknown>> {
@@ -46,6 +46,9 @@ export async function translateContentWithLLM(
     }
     if (contentType === "npc") {
       return `Translate this tabletop RPG NPC/monster from English to Brazilian Portuguese. Return JSON only, preserving the same fields. Translate name, description, actions and skills. Do not add fields or commentary.`;
+    }
+    if (contentType === "race") {
+      return `Translate this tabletop RPG race/ancestry from English to Brazilian Portuguese (pt-BR). Return JSON only, preserving the exact JSON structure and keys. Translate name, description, traits (names and descriptions), heritages (names and descriptions), and languages. Do not add fields or commentary.`;
     }
     return `Translate this tabletop RPG magia PF2e from English to Brazilian Portuguese. Return JSON only, preserving the same fields. Translate name, description, and all relevant textual fields. Preserve technical SF2e/PF2e terms, numbers, formulas, units, proper names, and structured data. Do not add fields or commentary.`;
   })();

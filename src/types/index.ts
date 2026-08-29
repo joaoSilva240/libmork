@@ -156,6 +156,23 @@ export type RpgClass = {
   proficiencies: Proficiencies;
 };
 
+export type RpgRace = {
+  id: string;
+  name: string;
+  description: string | null;
+  speed: number;
+  size: string;
+  hitPointsBonus: number;
+  attributeBonuses: Record<string, number>;
+  languages: string[];
+  traits: Array<{ name: string; description?: string }>;
+  heritages: Array<{ name: string; description?: string }>;
+  imageUrl: string | null;
+  sourceSystem: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 export type Skill = {
   id: string;
   campaignId: string | null;

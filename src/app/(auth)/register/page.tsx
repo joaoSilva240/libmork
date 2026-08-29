@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Input, Button, Form } from '@/components/ui';
 
@@ -12,8 +12,20 @@ const BUTTON_IMAGES = [
   '/Buttons/Button 4.png',
 ];
 
-export default function RegisterPage() {
+const ERROR_MESSAGES: Record<string, string> = {
+  email_exists: 'E-mail já cadastrado.',
+  invalid_data: 'Dados inválidos. Verifique as informações fornecidas.',
+  server_error: 'Erro interno do servidor. Tente novamente mais tarde.',
+};
+
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlError = searchParams.get('error');
+  const urlErrorMessage = urlError
+    ? ERROR_MESSAGES[urlError] || 'Erro ao criar conta. Tente novamente.'
+    : undefined;
+
   const [formData, setFormData] = useState({
     displayName: '',
     email: '',
@@ -105,7 +117,13 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        <Form onSubmit={handleSubmit} error={errors.general}>
+        <Form
+          method="post"
+          action="/api/auth/register"
+          onSubmit={handleSubmit}
+          error={errors.general || urlErrorMessage}
+        >
+          <input type="hidden" name="role" value={formData.role} />
           <Input
             label="Nome"
             name="displayName"
@@ -127,6 +145,9 @@ export default function RegisterPage() {
             error={errors.email}
             required
             autoComplete="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             disabled={isLoading}
           />
 
@@ -202,5 +223,13 @@ export default function RegisterPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterForm />
+    </Suspense>
   );
 }

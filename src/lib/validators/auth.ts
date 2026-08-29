@@ -9,9 +9,18 @@ import { USER_ROLES } from "@/lib/utils/constants";
  * Schema de registro de usuário (RF-001).
  */
 export const registerSchema = z.object({
-  email: z.string().email("E-mail inválido"),
+  email: z
+    .string()
+    .trim()
+    .min(1, "E-mail é obrigatório")
+    .email("E-mail inválido")
+    .transform((v) => v.toLowerCase()),
   password: z.string().min(8, "Senha deve ter no mínimo 8 caracteres"),
-  displayName: z.string().min(2, "Nome deve ter no mínimo 2 caracteres").max(100),
+  displayName: z
+    .string()
+    .trim()
+    .min(2, "Nome deve ter no mínimo 2 caracteres")
+    .max(100),
   role: z.enum(USER_ROLES).default("player"),
 });
 
@@ -21,7 +30,11 @@ export type RegisterInput = z.infer<typeof registerSchema>;
  * Schema de login (RF-002).
  */
 export const loginSchema = z.object({
-  email: z.string().email("E-mail inválido"),
+  email: z
+    .string()
+    .trim()
+    .min(1, "E-mail é obrigatório")
+    .email("E-mail inválido"),
   password: z.string().min(1, "Senha é obrigatória"),
 });
 

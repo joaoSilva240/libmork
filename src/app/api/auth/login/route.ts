@@ -8,7 +8,7 @@ import { users } from "@/lib/db/schema";
 import { verifyPassword } from "@/lib/auth/password";
 import { createSession } from "@/lib/auth/session";
 import { loginSchema } from "@/lib/validators/auth";
-import { eq } from "drizzle-orm";
+import { ilike } from "drizzle-orm";
 import { getPublicOrigin, getSafeRedirect } from "@/lib/auth/redirect";
 import { logger } from "@/lib/logger";
 
@@ -82,9 +82,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { email, password } = validation.data;
-    // The current storage and registration flow preserve email casing, so a
-    // case-normalized lookup would not be compatible with existing accounts.
-    const lookupEmail = email;
+    const lookupEmail = email.trim();
 
     // Busca o usuário
     let user: typeof users.$inferSelect | undefined;
@@ -92,7 +90,7 @@ export async function POST(request: NextRequest) {
       [user] = await db
         .select()
         .from(users)
-        .where(eq(users.email, lookupEmail))
+        .where(ilike(users.email, lookupEmail))
         .limit(1);
     } catch {
       logOperationalFailure("lookup");

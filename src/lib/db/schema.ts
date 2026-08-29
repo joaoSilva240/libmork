@@ -64,6 +64,27 @@ export const rpgClasses = pgTable("rpg_classes", {
 });
 
 /**
+ * RPG_RACES — Raças / Ancestralidades de personagens.
+ * Campos JSONB: attribute_bonuses, languages, traits, heritages.
+ */
+export const rpgRaces = pgTable("rpg_races", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  speed: integer("speed").notNull().default(30),
+  size: varchar("size", { length: 50 }).notNull().default("Médio"),
+  hitPointsBonus: integer("hit_points_bonus").notNull().default(0),
+  attributeBonuses: jsonb("attribute_bonuses").notNull().default({}), // { forca?: number, destreza?: number, ... }
+  languages: jsonb("languages").notNull().default([]), // string[]
+  traits: jsonb("traits").notNull().default([]), // Array<{ name: string; description?: string }>
+  heritages: jsonb("heritages").notNull().default([]), // Array<{ name: string; description?: string }>
+  imageUrl: varchar("image_url", { length: 500 }),
+  sourceSystem: varchar("source_system", { length: 50 }).default("custom"), // "dnd5e" | "pf2e" | "custom"
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+/**
  * CLASS_LEVEL_BENEFIT — Benefícios ganhos por nível da classe (D-21).
  * Campo JSONB: benefits (schema definido em § 7.1)
  */
@@ -650,6 +671,8 @@ export const rpgClassesRelations = relations(rpgClasses, ({ many }) => ({
   levelBenefits: many(classLevelBenefits),
   characters: many(characters),
 }));
+
+export const rpgRacesRelations = relations(rpgRaces, () => ({}));
 
 export const classLevelBenefitsRelations = relations(classLevelBenefits, ({ one }) => ({
   rpgClass: one(rpgClasses, { fields: [classLevelBenefits.classId], references: [rpgClasses.id] }),

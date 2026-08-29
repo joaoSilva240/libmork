@@ -8,6 +8,7 @@ import { Button, Form, Input, Spinner } from "@/components/ui";
 import type { Spell } from "@/types";
 
 import { LibraryClasses } from "@/components/classes/LibraryClasses";
+import { LibraryRaces } from "@/components/races/LibraryRaces";
 import { LibraryNpcs } from "@/components/npcs/LibraryNpcs";
 import { LibraryWorlds } from "@/components/worlds/LibraryWorlds";
 import { useRef } from "react";
@@ -30,7 +31,7 @@ type TypeConfig = {
   showInList: string[];
 };
 
-type ManagerContentType = ContentType | "classes" | "npcs" | "worlds";
+type ManagerContentType = ContentType | "classes" | "races" | "npcs" | "worlds";
 
 const TYPE_CONFIGS: Record<ManagerContentType, TypeConfig> = {
   skills: {
@@ -85,6 +86,11 @@ const TYPE_CONFIGS: Record<ManagerContentType, TypeConfig> = {
     fields: [],
     showInList: [],
   },
+  races: {
+    label: "Raças",
+    fields: [],
+    showInList: [],
+  },
   npcs: {
     label: "NPCs",
     fields: [],
@@ -103,6 +109,7 @@ const CONTENT_TYPE_ORDER: ManagerContentType[] = [
   "items",
   "conditions",
   "classes",
+  "races",
   "npcs",
   "worlds",
 ];
@@ -241,6 +248,11 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
     openCatalog: () => void;
     openPf2eCatalog?: () => void;
   } | null>(null);
+  const raceActionsRef = useRef<{
+    openCreate: () => void;
+    openCatalog: () => void;
+    openPf2eCatalog?: () => void;
+  } | null>(null);
   const npcActionsRef = useRef<{
     openCreate: () => void;
     openCatalog: () => void;
@@ -249,7 +261,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
   const worldActionsRef = useRef<{ openCreate: () => void } | null>(null);
   const isCampaignContext = basePath.includes("/api/campaigns/");
   const availableTypes = isCampaignContext
-    ? CONTENT_TYPE_ORDER.filter((t) => t !== "npcs" && t !== "worlds" && t !== "classes")
+    ? CONTENT_TYPE_ORDER.filter((t) => t !== "npcs" && t !== "worlds" && t !== "classes" && t !== "races")
     : CONTENT_TYPE_ORDER;
   const [items, setItems] = useState<Item[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -504,7 +516,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
   };
 
   useEffect(() => {
-    if (activeType === "classes" || activeType === "npcs" || activeType === "worlds") {
+    if (activeType === "classes" || activeType === "races" || activeType === "npcs" || activeType === "worlds") {
       setIsLoading(false);
       return;
     }
@@ -760,6 +772,35 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
             </>
           )}
 
+          {activeType === "races" && (
+            <>
+              <button
+                type="button"
+                onClick={() => raceActionsRef.current?.openCreate()}
+                className="rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-purple-500 transition shadow-lg flex items-center gap-1.5"
+              >
+                <span>+</span>
+                <span>Criar Raça</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => raceActionsRef.current?.openPf2eCatalog?.()}
+                className="rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2.5 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg flex items-center gap-2"
+              >
+                <span>⚔️</span>
+                <span>Catálogo Pathfinder 2e</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => raceActionsRef.current?.openCatalog()}
+                className="rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2.5 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg flex items-center gap-2"
+              >
+                <span>🐉</span>
+                <span>Catálogo D&D 5e</span>
+              </button>
+            </>
+          )}
+
           {activeType === "npcs" && (
             <>
               <button
@@ -802,7 +843,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
             </button>
           )}
 
-          {activeType !== "classes" && activeType !== "npcs" && activeType !== "worlds" && (
+          {activeType !== "classes" && activeType !== "races" && activeType !== "npcs" && activeType !== "worlds" && (
             <>
               <button
                 type="button"
@@ -859,7 +900,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
             ))}
           </div>
 
-          {activeType !== "classes" && activeType !== "npcs" && activeType !== "worlds" && (
+          {activeType !== "classes" && activeType !== "races" && activeType !== "npcs" && activeType !== "worlds" && (
             <input
               type="text"
               placeholder={`Buscar ${config.label.toLowerCase()} por nome...`}
@@ -1075,6 +1116,8 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
 
       {activeType === "classes" ? (
         <LibraryClasses onRegisterActions={(actions) => (classActionsRef.current = actions)} />
+      ) : activeType === "races" ? (
+        <LibraryRaces onRegisterActions={(actions) => (raceActionsRef.current = actions)} />
       ) : activeType === "npcs" ? (
         <LibraryNpcs onRegisterActions={(actions) => (npcActionsRef.current = actions)} />
       ) : activeType === "worlds" ? (

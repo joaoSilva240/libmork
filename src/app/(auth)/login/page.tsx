@@ -114,6 +114,9 @@ function LoginForm() {
               error={errors.email}
               required
               autoComplete="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               disabled={isLoading}
             />
 
