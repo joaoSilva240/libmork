@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: NPC Específico (RF-014, D-38)
 // =============================================================================
 
@@ -8,6 +8,7 @@ import { npcs, worlds, campaigns } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { updateNpcSchema } from "@/lib/validators/npc";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ worldId: string; npcId: string }> };
 
@@ -73,7 +74,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: npc,
     });
   } catch (error) {
-    console.error("Erro ao obter NPC:", error);
+    logger.error({ err: error }, 'Erro ao obter NPC');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -145,7 +146,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       data: updated,
     });
   } catch (error) {
-    console.error("Erro ao atualizar NPC:", error);
+    logger.error({ err: error }, 'Erro ao atualizar NPC');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -199,7 +200,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       message: "NPC excluído com sucesso",
     });
   } catch (error) {
-    console.error("Erro ao excluir NPC:", error);
+    logger.error({ err: error }, 'Erro ao excluir NPC');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Associação NFC do Personagem (RF-021, RF-022, RF-024)
 // =============================================================================
 // Gera URL NDEF, lista etiquetas ativas e revoga associações.
@@ -10,6 +10,7 @@ import { characters, nfcTags } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { generateUrlSafeToken } from "@/lib/utils/tokens";
 import { eq, and } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: activeTag ?? null,
     });
   } catch (error) {
-    console.error("Erro ao obter NFC:", error);
+    logger.error({ err: error }, 'Erro ao obter NFC');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -120,7 +121,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Erro ao associar NFC:", error);
+    logger.error({ err: error }, 'Erro ao associar NFC');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -168,7 +169,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       message: "Associação NFC revogada com sucesso",
     });
   } catch (error) {
-    console.error("Erro ao revogar NFC:", error);
+    logger.error({ err: error }, 'Erro ao revogar NFC');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

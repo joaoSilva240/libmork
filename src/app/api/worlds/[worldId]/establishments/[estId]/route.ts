@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { establishments } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { eq, and } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ worldId: string; estId: string }> };
 
@@ -20,7 +21,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
 
     return NextResponse.json({ success: true, message: "Estabelecimento excluído com sucesso" });
   } catch (error) {
-    console.error("Erro ao excluir estabelecimento:", error);
+    logger.error({ err: error }, 'Erro ao excluir estabelecimento');
     return NextResponse.json({ success: false, error: "Erro interno do servidor" }, { status: 500 });
   }
 }

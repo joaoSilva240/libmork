@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Classes — Lista (RF-033, D-21)
 // =============================================================================
 
@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { rpgClasses } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { createClassSchema } from "@/lib/validators/class";
+import { logger } from "@/lib/logger";
 
 export async function GET() {
   try {
@@ -26,7 +27,7 @@ export async function GET() {
       data: classes,
     });
   } catch (error) {
-    console.error("Erro ao listar classes:", error);
+    logger.error({ err: error }, 'Erro ao listar classes');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -83,7 +84,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Erro ao criar classe:", error);
+    logger.error({ err: error }, 'Erro ao criar classe');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

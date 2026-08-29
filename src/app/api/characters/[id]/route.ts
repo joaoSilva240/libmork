@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Operações em Personagem Específico (RF-008, RF-009, RF-010)
 // =============================================================================
 
@@ -8,6 +8,7 @@ import { characters, characterCampaigns } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { updateCharacterSchema } from "@/lib/validators/character";
 import { eq, and } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -57,7 +58,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: { ...character, campaignId: campaignLink?.campaignId ?? null },
     });
   } catch (error) {
-    console.error("Erro ao obter personagem:", error);
+    logger.error({ err: error }, 'Erro ao obter personagem');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -130,7 +131,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       data: updatedCharacter,
     });
   } catch (error) {
-    console.error("Erro ao atualizar personagem:", error);
+    logger.error({ err: error }, 'Erro ao atualizar personagem');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -184,7 +185,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       message: "Personagem excluído com sucesso",
     });
   } catch (error) {
-    console.error("Erro ao excluir personagem:", error);
+    logger.error({ err: error }, 'Erro ao excluir personagem');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

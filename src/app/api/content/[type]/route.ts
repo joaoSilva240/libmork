@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Biblioteca Global de Conteúdo (RF-016)
 // =============================================================================
 // Escopo global: campaign_id = NULL. Gerenciada por mestres (role=master).
@@ -18,6 +18,7 @@ import {
   getContentIdColumn,
 } from "@/lib/db/content-registry";
 import { isNull } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ type: string }> };
 
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: result,
     });
   } catch (error) {
-    console.error("Erro ao listar conteúdo global:", error);
+    logger.error({ err: error }, 'Erro ao listar conteúdo global');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -129,7 +130,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       { status: 201 }
     );
   } catch (error) {
-    console.error(`Erro ao criar ${CONTENT_LABELS.skills} global:`, error);
+    logger.error(`Erro ao criar ${CONTENT_LABELS.skills} global:`, error);
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

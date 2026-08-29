@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Conteúdo na Ficha do Personagem (RF-018, RF-008)
 // =============================================================================
 // GET: conteúdo vinculado + disponível (global + campanhas do personagem).
@@ -21,6 +21,7 @@ import {
   buildJunctionValues,
 } from "@/lib/db/content-registry";
 import { eq, and, isNull, or, inArray } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string; type: string }> };
 
@@ -147,7 +148,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: { linked, available },
     });
     } catch (error) {
-    console.error("Erro ao listar conteúdo da ficha:", error);
+    logger.error({ err: error }, 'Erro ao listar conteúdo da ficha');
     const message = error instanceof Error && /column .*translation.* does not exist/i.test(error.message)
       ? "Schema desatualizado: aplique a migration 0007_add_item_translation.sql (npm run db:migrate) e tente novamente."
       : "Erro interno do servidor";
@@ -287,7 +288,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Erro ao vincular conteúdo:", error);
+    logger.error({ err: error }, 'Erro ao vincular conteúdo');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

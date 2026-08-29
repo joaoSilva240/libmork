@@ -9,6 +9,7 @@ import { requireAuth } from "@/lib/auth/session";
 import { getCampaignAsMaster } from "@/lib/auth/campaign-access";
 import { rollResultSchema } from "@/lib/validators/session";
 import { fillRollResult } from "@/lib/server/session-actions";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string; logId: string }> };
 
@@ -59,7 +60,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 
     return NextResponse.json({ success: true, data: result.data });
   } catch (error) {
-    console.error("Erro ao preencher resultado da rolagem:", error);
+    logger.error({ err: error }, "Erro ao preencher resultado da rolagem");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

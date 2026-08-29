@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Link Público de Personagem (RF-023, RF-024, RNF-003)
 // =============================================================================
 
@@ -8,6 +8,7 @@ import { characters, publicShareLinks } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { generateUrlSafeToken } from "@/lib/utils/tokens";
 import { eq, and } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -66,7 +67,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       },
     });
   } catch (error) {
-    console.error("Erro ao obter link público:", error);
+    logger.error({ err: error }, 'Erro ao obter link público');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -140,7 +141,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Erro ao gerar link público:", error);
+    logger.error({ err: error }, 'Erro ao gerar link público');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -193,7 +194,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       message: "Link público revogado com sucesso",
     });
   } catch (error) {
-    console.error("Erro ao revogar link público:", error);
+    logger.error({ err: error }, 'Erro ao revogar link público');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Pin Específico de NPC (RF-065)
 // =============================================================================
 
@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { worlds, campaigns, npcPins } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = {
   params: Promise<{ worldId: string; npcId: string; pinId: string }>;
@@ -72,7 +73,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       message: "Pin removido com sucesso",
     });
   } catch (error) {
-    console.error("Erro ao remover pin:", error);
+    logger.error({ err: error }, 'Erro ao remover pin');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

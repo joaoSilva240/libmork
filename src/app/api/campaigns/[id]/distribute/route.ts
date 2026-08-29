@@ -10,6 +10,7 @@ import { db } from "@/lib/db";
 import { campaigns, characters, users, characterCampaigns } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { eq, and } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -137,7 +138,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Erro ao distribuir ficha:", error);
+    logger.error({ err: error }, "Erro ao distribuir ficha");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

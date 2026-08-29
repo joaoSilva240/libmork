@@ -8,6 +8,7 @@ import { campaigns } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { createCampaignSchema } from "@/lib/validators/campaign";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/campaigns
@@ -35,7 +36,7 @@ export async function GET() {
       data: userCampaigns,
     });
   } catch (error) {
-    console.error("Erro ao listar campanhas:", error);
+    logger.error({ err: error }, "Erro ao listar campanhas");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Erro ao criar campanha:", error);
+    logger.error({ err: error }, "Erro ao criar campanha");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

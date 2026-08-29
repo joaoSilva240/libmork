@@ -10,6 +10,7 @@ import { createSession } from "@/lib/auth/session";
 import { loginSchema } from "@/lib/validators/auth";
 import { eq } from "drizzle-orm";
 import { getPublicOrigin, getSafeRedirect } from "@/lib/auth/redirect";
+import { logger } from "@/lib/logger";
 
 const GENERIC_LOGIN_ERROR = "login_failed";
 const LOGIN_OPERATIONAL_FAILURE = "AUTH_LOGIN_OPERATIONAL_FAILURE";
@@ -17,7 +18,7 @@ const LOGIN_OPERATIONAL_FAILURE = "AUTH_LOGIN_OPERATIONAL_FAILURE";
 type LoginStage = "lookup" | "password_verify" | "session_create";
 
 function logOperationalFailure(stage: LoginStage): void {
-  console.error(LOGIN_OPERATIONAL_FAILURE, { status: "error", stage });
+  logger.error({ stage }, LOGIN_OPERATIONAL_FAILURE);
 }
 
 function formErrorResponse(request: NextRequest, redirect: string | null) {

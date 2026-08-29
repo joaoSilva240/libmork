@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Benefícios por Nível da Classe (RF-033, D-21)
 // =============================================================================
 
@@ -8,6 +8,7 @@ import { rpgClasses, classLevelBenefits } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { createClassBenefitSchema } from "@/lib/validators/class";
 import { eq, and } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: benefits,
     });
   } catch (error) {
-    console.error("Erro ao listar benefícios:", error);
+    logger.error({ err: error }, 'Erro ao listar benefícios');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -143,7 +144,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Erro ao criar benefício:", error);
+    logger.error({ err: error }, 'Erro ao criar benefício');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

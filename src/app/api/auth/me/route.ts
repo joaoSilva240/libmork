@@ -4,6 +4,7 @@
 
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
+import { logger } from "@/lib/logger";
 
 export async function GET() {
   try {
@@ -24,7 +25,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error("Erro ao buscar sessão:", error);
+    logger.error({ err: error }, "Erro ao buscar sessão");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

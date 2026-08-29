@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Npc, World, Encounter } from "@/types";
 import { ActorOverlay } from "@/components/campaigns/ActorOverlay";
@@ -8,12 +9,20 @@ import { InfiniteCanvas } from "@/components/campaigns/InfiniteCanvas";
 import { CharacterCarousel } from "@/components/campaigns/CharacterCarousel";
 import { EncounterModal } from "@/components/campaigns/EncounterModal";
 import { useSocket, type RollDataPayload } from "@/context/SocketContext";
-import { CombatTrackerModal } from "@/components/combat/CombatTrackerModal";
 import type { CombatSessionState } from "@/lib/engine";
 import { advanceCombatTurn, spendCombatActions } from "@/lib/engine";
 import { Spinner } from "@/components/ui";
-import { MapEditor } from "@/components/campaigns/MapEditor";
 import { WorldSelectorModal } from "@/components/campaigns/WorldSelectorModal";
+
+const CombatTrackerModal = dynamic(() => import("@/components/combat/CombatTrackerModal").then(m => ({ default: m.CombatTrackerModal })), {
+  ssr: false,
+  loading: () => null,
+});
+
+const MapEditor = dynamic(() => import("@/components/campaigns/MapEditor").then(m => ({ default: m.MapEditor })), {
+  ssr: false,
+  loading: () => <div className="animate-pulse bg-gray-800 h-96 rounded-lg" />,
+});
 
 type RosterData = {
   players: RosterPlayer[];

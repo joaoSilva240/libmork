@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Importação de Monstros/NPCs do Pathfinder 2e
 // =============================================================================
 
@@ -8,6 +8,7 @@ import { npcs, npcPins } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { fetchAndParsePf2eMonster, fetchPf2eMonsterCatalog } from "@/lib/content/pf2e-monsters";
 import { translateContentWithLLM } from "@/lib/server/content-translation";
+import { logger } from "@/lib/logger";
 
 async function importSinglePf2eMonster(path: string, userId: string, translateWithLLM: boolean) {
   try {
@@ -40,7 +41,7 @@ async function importSinglePf2eMonster(path: string, userId: string, translateWi
           }));
         }
       } catch (err) {
-        console.warn(`[importSinglePf2eMonster] Falha na tradução via LLM para ${monsterData.name}, mantendo original:`, err);
+        logger.warn(`[importSinglePf2eMonster] Falha na tradução via LLM para ${monsterData.name}, mantendo original:`, err);
       }
     }
 
@@ -81,7 +82,7 @@ async function importSinglePf2eMonster(path: string, userId: string, translateWi
 
     return createdNpc;
   } catch (error) {
-    console.error(`[importSinglePf2eMonster] Erro ao importar monstro ${path}:`, error);
+    logger.error(`[importSinglePf2eMonster] Erro ao importar monstro ${path}:`, error);
     return null;
   }
 }
@@ -144,7 +145,7 @@ export async function POST(request: NextRequest) {
       data: importedNpcs,
     });
   } catch (error) {
-    console.error("Erro na rota de importação Pathfinder 2e:", error);
+    logger.error({ err: error }, 'Erro na rota de importação Pathfinder 2e');
     return NextResponse.json(
       { success: false, error: "Erro ao importar monstros do Pathfinder 2e" },
       { status: 500 }

@@ -12,6 +12,7 @@ import { getCampaignAsMaster } from "@/lib/auth/campaign-access";
 import { updateActorSchema } from "@/lib/validators/session";
 import { applyCharacterUpdate } from "@/lib/server/session-actions";
 import { eq, and } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string; characterId: string }> };
 
@@ -84,7 +85,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       logs: result.logs,
     });
   } catch (error) {
-    console.error("Erro ao atualizar personagem da campanha:", error);
+    logger.error({ err: error }, "Erro ao atualizar personagem da campanha");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

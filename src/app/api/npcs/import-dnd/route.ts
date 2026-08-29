@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Importação de Monstros via D&D 5e API (dnd5eapi.co)
 // =============================================================================
 
@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { npcs, npcPins } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { translateContentWithLLM } from "@/lib/server/content-translation";
+import { logger } from "@/lib/logger";
 
 interface DnDMonsterResponse {
   index: string;
@@ -66,7 +67,7 @@ async function fetchAndImportMonster(index: string, userId: string, translateWit
           }));
         }
       } catch (err) {
-        console.warn(`[fetchAndImportMonster D&D 5e] Falha na tradução via LLM para ${data.name}:`, err);
+        logger.warn(`[fetchAndImportMonster D&D 5e] Falha na tradução via LLM para ${data.name}:`, err);
       }
     }
 
@@ -119,7 +120,7 @@ async function fetchAndImportMonster(index: string, userId: string, translateWit
 
     return created;
   } catch (err) {
-    console.error(`Erro ao importar monstro ${index}:`, err);
+    logger.error(`Erro ao importar monstro ${index}:`, err);
     return null;
   }
 }
@@ -181,7 +182,7 @@ export async function POST(request: NextRequest) {
       data: importedMonsters,
     });
   } catch (error) {
-    console.error("Erro na rota de importação D&D 5e:", error);
+    logger.error({ err: error }, 'Erro na rota de importação D&D 5e');
     return NextResponse.json(
       { success: false, error: "Erro ao importar monstros da API D&D 5e" },
       { status: 500 }

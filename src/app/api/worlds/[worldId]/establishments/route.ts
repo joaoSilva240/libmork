@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Estabelecimentos de um Mundo
 // =============================================================================
 
@@ -8,6 +8,7 @@ import { establishments, worlds } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ worldId: string }> };
 
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 
     return NextResponse.json({ success: true, data });
   } catch (error) {
-    console.error("Erro ao listar estabelecimentos:", error);
+    logger.error({ err: error }, 'Erro ao listar estabelecimentos');
     return NextResponse.json({ success: false, error: "Erro interno do servidor" }, { status: 500 });
   }
 }
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
     return NextResponse.json({ success: true, data: newEst }, { status: 201 });
   } catch (error) {
-    console.error("Erro ao criar estabelecimento:", error);
+    logger.error({ err: error }, 'Erro ao criar estabelecimento');
     return NextResponse.json({ success: false, error: "Erro interno do servidor" }, { status: 500 });
   }
 }

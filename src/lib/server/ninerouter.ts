@@ -31,11 +31,14 @@
 // módulo, para evitar congelar valor de build-time em `output: standalone`.
 // =============================================================================
 
+import { logger } from "@/lib/logger";
+import { NINEROUTER_TIMEOUT_MS, NINEROUTER_RETRY_DELAY_MS } from "@/lib/utils/constants";
+
 export const FALLBACK_TAILSCALE_URL = "http://100.83.170.1:20128/v1";
 export const FALLBACK_HOST_DOCKER_URL = "http://host.docker.internal:20128/v1";
 
-export const NINE_TIMEOUT_MS = 25_000;
-export const NINE_RETRY_DELAY_MS = 2000;
+export const NINE_TIMEOUT_MS = NINEROUTER_TIMEOUT_MS;
+export const NINE_RETRY_DELAY_MS = NINEROUTER_RETRY_DELAY_MS;
 
 export type NinerouterConfig = {
   url: string;
@@ -255,7 +258,11 @@ export async function fetchNinerouterWithFallback(
     // Se é erro de rede e temos fallback, tenta fallback automaticamente
     if (isNetwork && altFull) {
       fallbackAttempted = true;
-      console.warn(`warn: ninerouter fallback host.docker.internal — primary ${primaryFull} failed with ${code}, trying ${altFull}`);
+      logger.warn({ 
+        primaryFull, 
+        code, 
+        altFull 
+      }, 'ninerouter fallback host.docker.internal — primary failed, trying alternative');
       try {
         const res2 = await tryFetch(altFull);
         return { response: res2, usedFallback: true, attemptedUrl: altFull, fallbackAttempted: true };

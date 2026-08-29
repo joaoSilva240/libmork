@@ -8,6 +8,7 @@ import { npcs, npcCampaigns, campaignLogs } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { getCampaignAsMaster } from "@/lib/auth/campaign-access";
 import { eq, and } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string; npcId: string }> };
 
@@ -61,7 +62,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       message: "NPC removido da campanha",
     });
   } catch (error) {
-    console.error("Erro ao remover NPC da campanha:", error);
+    logger.error({ err: error }, "Erro ao remover NPC da campanha");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

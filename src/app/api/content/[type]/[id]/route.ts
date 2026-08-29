@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Item Global da Biblioteca (RF-016)
 // =============================================================================
 // GET (autenticado), PATCH e DELETE (apenas mestres).
@@ -17,6 +17,7 @@ import {
   getContentIdColumn,
 } from "@/lib/db/content-registry";
 import { eq, isNull, and } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ type: string; id: string }> };
 
@@ -70,7 +71,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: content,
     });
   } catch (error) {
-    console.error("Erro ao obter conteúdo global:", error);
+    logger.error({ err: error }, 'Erro ao obter conteúdo global');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -156,7 +157,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       data: updated,
     });
   } catch (error) {
-    console.error("Erro ao atualizar conteúdo global:", error);
+    logger.error({ err: error }, 'Erro ao atualizar conteúdo global');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -223,7 +224,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       message: "Conteúdo excluído com sucesso",
     });
   } catch (error) {
-    console.error("Erro ao excluir conteúdo global:", error);
+    logger.error({ err: error }, 'Erro ao excluir conteúdo global');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

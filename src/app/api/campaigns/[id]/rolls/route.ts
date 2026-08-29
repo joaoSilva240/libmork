@@ -12,6 +12,7 @@ import { createRollRequest } from "@/lib/server/session-actions";
 import { db } from "@/lib/db";
 import { characterCampaigns } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
     return NextResponse.json({ success: true, data: log }, { status: 201 });
   } catch (error) {
-    console.error("Erro ao exigir rolagem:", error);
+    logger.error({ err: error }, "Erro ao exigir rolagem");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

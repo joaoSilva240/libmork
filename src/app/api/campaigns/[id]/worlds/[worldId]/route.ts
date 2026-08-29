@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Operações em Mundo Específico (RF-013)
 // =============================================================================
 
@@ -8,6 +8,7 @@ import { campaigns, worlds } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { createWorldSchema } from "@/lib/validators/campaign";
 import { eq, and } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string; worldId: string }> };
 
@@ -79,7 +80,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       data: updatedWorld,
     });
   } catch (error) {
-    console.error("Erro ao atualizar mundo:", error);
+    logger.error({ err: error }, 'Erro ao atualizar mundo');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -137,7 +138,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       message: "Mundo excluído com sucesso",
     });
   } catch (error) {
-    console.error("Erro ao excluir mundo:", error);
+    logger.error({ err: error }, 'Erro ao excluir mundo');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

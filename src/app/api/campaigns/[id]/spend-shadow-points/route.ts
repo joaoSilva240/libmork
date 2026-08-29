@@ -8,6 +8,7 @@ import { users, campaigns, characterCampaigns, characters } from "@/lib/db/schem
 import { requireAuth } from "@/lib/auth/session";
 import { eq, and, sql } from "drizzle-orm";
 import type { ShadowPointBonus } from "@/types";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -124,7 +125,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       },
     });
   } catch (error) {
-    console.error("Erro ao gastar Pontos de Sombra:", error);
+    logger.error({ err: error }, "Erro ao gastar Pontos de Sombra");
     return NextResponse.json(
       { success: false, error: "Erro interno ao processar gasto de Pontos de Sombra" },
       { status: 500 }

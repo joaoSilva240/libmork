@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Mundos Globais / Biblioteca
 // =============================================================================
 
@@ -8,6 +8,7 @@ import { worlds } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { createWorldSchema } from "@/lib/validators/campaign";
 import { desc, isNull, eq, or } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/worlds
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ success: true, data });
   } catch (error) {
-    console.error("Erro ao listar mundos:", error);
+    logger.error({ err: error }, 'Erro ao listar mundos');
     return NextResponse.json({ success: false, error: "Erro interno do servidor" }, { status: 500 });
   }
 }
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, data: newWorld }, { status: 201 });
   } catch (error) {
-    console.error("Erro ao criar mundo:", error);
+    logger.error({ err: error }, 'Erro ao criar mundo');
     return NextResponse.json({ success: false, error: "Erro interno do servidor" }, { status: 500 });
   }
 }

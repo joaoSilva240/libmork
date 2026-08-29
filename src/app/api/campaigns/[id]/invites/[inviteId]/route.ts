@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { campaigns, campaignInvites } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { eq, and } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string; inviteId: string }> };
 
@@ -65,7 +66,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       message: "Convite revogado com sucesso",
     });
   } catch (error) {
-    console.error("Erro ao revogar convite:", error);
+    logger.error({ err: error }, "Erro ao revogar convite");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

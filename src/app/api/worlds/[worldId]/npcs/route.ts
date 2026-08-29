@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: NPCs de um Mundo (RF-014, D-38)
 // =============================================================================
 // GET: mestre da campanha ou participante. POST/PATCH/DELETE: apenas mestre.
@@ -10,6 +10,7 @@ import { npcs, worlds, campaigns, npcPins } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { createNpcSchema } from "@/lib/validators/npc";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ worldId: string }> };
 
@@ -85,7 +86,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: worldNpcs,
     });
   } catch (error) {
-    console.error("Erro ao listar NPCs:", error);
+    logger.error({ err: error }, 'Erro ao listar NPCs');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -229,7 +230,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Erro ao criar NPC:", error);
+    logger.error({ err: error }, 'Erro ao criar NPC');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

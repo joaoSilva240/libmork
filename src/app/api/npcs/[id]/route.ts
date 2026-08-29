@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: NPC Específico da Biblioteca / Mundos
 // =============================================================================
 // GET: qualquer autenticado. PATCH/DELETE: dono do NPC ou mestre da campanha
@@ -12,6 +12,7 @@ import { requireAuth } from "@/lib/auth/session";
 import { canManageNpc } from "@/lib/auth/campaign-access";
 import { updateNpcSchema } from "@/lib/validators/npc";
 import { eq, inArray } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -64,7 +65,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: { ...npc, pins, includedCampaigns },
     });
   } catch (error) {
-    console.error("Erro ao obter NPC:", error);
+    logger.error({ err: error }, 'Erro ao obter NPC');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -123,7 +124,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       data: updated,
     });
   } catch (error) {
-    console.error("Erro ao atualizar NPC:", error);
+    logger.error({ err: error }, 'Erro ao atualizar NPC');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -164,7 +165,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       message: "NPC excluído com sucesso",
     });
   } catch (error) {
-    console.error("Erro ao excluir NPC:", error);
+    logger.error({ err: error }, 'Erro ao excluir NPC');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

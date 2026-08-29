@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Encontros de um Mundo
 // =============================================================================
 
@@ -8,6 +8,7 @@ import { campaigns, worlds, encounters } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { createEncounterSchema } from "@/lib/validators/encounter";
 import { eq, and, desc } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string; worldId: string }> };
 
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 
     return NextResponse.json({ success: true, data });
   } catch (error) {
-    console.error("Erro ao listar encontros:", error);
+    logger.error({ err: error }, 'Erro ao listar encontros');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Erro ao criar encontro:", error);
+    logger.error({ err: error }, 'Erro ao criar encontro');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
