@@ -67,7 +67,7 @@ async function fetchAndImportMonster(index: string, userId: string, translateWit
           }));
         }
       } catch (err) {
-        logger.warn(`[fetchAndImportMonster D&D 5e] Falha na tradução via LLM para ${data.name}:`, err);
+        logger.warn({ err, monsterName: data.name }, "[fetchAndImportMonster D&D 5e] Falha na tradução via LLM");
       }
     }
 
@@ -120,7 +120,7 @@ async function fetchAndImportMonster(index: string, userId: string, translateWit
 
     return created;
   } catch (err) {
-    logger.error(`Erro ao importar monstro ${index}:`, err);
+    logger.error({ err, index }, "Erro ao importar monstro");
     return null;
   }
 }

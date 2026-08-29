@@ -41,7 +41,7 @@ async function importSinglePf2eMonster(path: string, userId: string, translateWi
           }));
         }
       } catch (err) {
-        logger.warn(`[importSinglePf2eMonster] Falha na tradução via LLM para ${monsterData.name}, mantendo original:`, err);
+        logger.warn({ err, monsterName: monsterData.name }, "[importSinglePf2eMonster] Falha na tradução via LLM, mantendo original");
       }
     }
 
@@ -82,7 +82,7 @@ async function importSinglePf2eMonster(path: string, userId: string, translateWi
 
     return createdNpc;
   } catch (error) {
-    logger.error(`[importSinglePf2eMonster] Erro ao importar monstro ${path}:`, error);
+    logger.error({ err: error, path }, "[importSinglePf2eMonster] Erro ao importar monstro");
     return null;
   }
 }

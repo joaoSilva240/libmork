@@ -130,7 +130,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       { status: 201 }
     );
   } catch (error) {
-    logger.error(`Erro ao criar ${CONTENT_LABELS.skills} global:`, error);
+    logger.error({ err: error, contentLabel: CONTENT_LABELS.skills }, "Erro ao criar conteúdo global");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

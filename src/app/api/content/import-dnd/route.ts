@@ -423,7 +423,7 @@ export async function POST(request: NextRequest) {
                 : undefined;
               return Array.isArray(entries) ? entries as Pf2eSpell[] : [];
             } catch (err) {
-              logger.error(`Erro ao carregar fonte de magias Pathfinder 2e (${file}):`, err);
+              logger.error({ err, file }, "Erro ao carregar fonte de magias Pathfinder 2e");
               return [];
             }
           }));
@@ -442,7 +442,7 @@ export async function POST(request: NextRequest) {
         try {
           iconFiles = await fetchPf2eSpellIconFiles();
         } catch (err) {
-          logger.error("Erro ao listar ícones de magias Pathfinder 2e:", err);
+          logger.error({ err }, "Erro ao listar ícones de magias Pathfinder 2e");
         }
         const existingSpells = await db.select({ id: spells.id, name: spells.name, imageUrl: spells.imageUrl }).from(spells).where(isNull(spells.campaignId));
 
@@ -498,7 +498,7 @@ export async function POST(request: NextRequest) {
               importedSpellCount++;
             } catch (err) {
               spellFailed++;
-              logger.error('Falha ao importar magia', name, err);
+              logger.error({ err, name }, "Falha ao importar magia");
               continue;
             }
           } else {
@@ -526,17 +526,17 @@ export async function POST(request: NextRequest) {
               importedSpellCount++;
             } catch (err) {
               spellFailed++;
-              logger.error('Falha ao importar magia', name, err);
+              logger.error({ err, name }, "Falha ao importar magia");
               continue;
             }
           }
         }
         if (spellFailed > 0) {
-          logger.error(`Magias com falha: ${spellFailed} de ${uniqueSpells.length}`);
+          logger.error({ spellFailed, totalSpells: uniqueSpells.length }, "Magias com falha");
         }
         logger.info(`Magias Pathfinder 2e processadas! Criadas/Atualizadas: ${importedSpellCount}, Falhas: ${spellFailed}`);
       } catch (err) {
-        logger.error("Erro ao importar magias Pathfinder 2e:", err);
+        logger.error({ err }, "Erro ao importar magias Pathfinder 2e");
       }
     }
 
@@ -612,7 +612,7 @@ export async function POST(request: NextRequest) {
             importedCount++;
             importedDndCount++;
           } catch (err) {
-            logger.error(`Erro ao importar perícia ${sk.index}:`, err);
+            logger.error({ err, skillIndex: sk.index }, "Erro ao importar perícia");
           }
         }
       }
@@ -654,7 +654,7 @@ export async function POST(request: NextRequest) {
             importedCount++;
             importedDndCount++;
           } catch (err) {
-            logger.error(`Erro ao importar condição ${cond.index}:`, err);
+            logger.error({ err, conditionIndex: cond.index }, "Erro ao importar condição");
           }
         }
       }
