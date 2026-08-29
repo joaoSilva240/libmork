@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Listar e Criar Personagens (RF-006)
 // =============================================================================
 
@@ -8,6 +8,7 @@ import { characters } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { createCharacterSchema } from "@/lib/validators/character";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/characters
@@ -34,7 +35,7 @@ export async function GET() {
       data: userCharacters,
     });
   } catch (error) {
-    console.error("Erro ao listar personagens:", error);
+    logger.error({ err: error }, 'Erro ao listar personagens');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -109,7 +110,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Erro ao criar personagem:", error);
+    logger.error({ err: error }, 'Erro ao criar personagem');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

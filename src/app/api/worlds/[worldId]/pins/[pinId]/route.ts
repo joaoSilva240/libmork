@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Pin Individual de Mapa
 // =============================================================================
 
@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { worlds, campaigns, mapPins } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = {
   params: Promise<{ worldId: string; pinId: string }>;
@@ -76,7 +77,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       message: "Pin removido com sucesso",
     });
   } catch (error) {
-    console.error("Erro ao remover pin do mapa:", error);
+    logger.error({ err: error }, 'Erro ao remover pin do mapa');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

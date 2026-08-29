@@ -11,9 +11,10 @@ import { db } from "@/lib/db";
 import { sessions, users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { generateToken } from "@/lib/utils/tokens";
+import { SESSION_DURATION_DAYS } from "@/lib/utils/constants";
+import { cache } from "@/lib/cache/redis";
 
 const SESSION_COOKIE_NAME = "libmork_session";
-const SESSION_DURATION_DAYS = 30;
 
 /**
  * Determines whether the session cookie must use the Secure attribute.
@@ -109,6 +110,9 @@ export async function verifySessionToken(token: string): Promise<{
 } | null> {
   if (!token) return null;
 
+  const cached = await cache.get<any>(`session:${token}`);
+  if (cached && new Date(cached.session.expiresAt) > new Date()) return { user: cached.user, session: { ...cached.session, expiresAt: new Date(cached.session.expiresAt) } };
+
   const result = await db
     .select()
     .from(sessions)
@@ -124,6 +128,8 @@ export async function verifySessionToken(token: string): Promise<{
     await db.delete(sessions).where(eq(sessions.token, token));
     return null;
   }
+
+  await cache.set(`session:${token}`, { user, session }, 300);
 
   return { user, session };
 }
@@ -174,6 +180,7 @@ export async function destroySession(): Promise<void> {
 
   if (token) {
     await db.delete(sessions).where(eq(sessions.token, token));
+    await cache.del(`session:${token}`);
   }
 
   cookieStore.delete(SESSION_COOKIE_NAME);

@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Junção de Conteúdo da Ficha (RF-018, RF-008)
 // =============================================================================
 // PATCH (treinada/quantidade/permanente) e DELETE (desvincular) — dono.
@@ -16,6 +16,7 @@ import {
   buildJunctionPatch,
 } from "@/lib/db/content-registry";
 import { eq, and } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = {
   params: Promise<{ id: string; type: string; junctionId: string }>;
@@ -149,7 +150,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       data: updated,
     });
   } catch (error) {
-    console.error("Erro ao atualizar vínculo de conteúdo:", error);
+    logger.error({ err: error }, 'Erro ao atualizar vínculo de conteúdo');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -218,7 +219,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       message: "Conteúdo desvinculado com sucesso",
     });
   } catch (error) {
-    console.error("Erro ao desvincular conteúdo:", error);
+    logger.error({ err: error }, 'Erro ao desvincular conteúdo');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Classes (RF-033, D-21)
 // =============================================================================
 // GET: qualquer usuário autenticado. POST/PATCH/DELETE: apenas mestres.
@@ -10,6 +10,7 @@ import { rpgClasses } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { createClassSchema, updateClassSchema } from "@/lib/validators/class";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -35,7 +36,7 @@ export async function GET() {
       data: classes,
     });
   } catch (error) {
-    console.error("Erro ao listar classes:", error);
+    logger.error({ err: error }, 'Erro ao listar classes');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Erro ao criar classe:", error);
+    logger.error({ err: error }, 'Erro ao criar classe');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -169,7 +170,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       data: updated,
     });
   } catch (error) {
-    console.error("Erro ao atualizar classe:", error);
+    logger.error({ err: error }, 'Erro ao atualizar classe');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -221,7 +222,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       message: "Classe excluída com sucesso",
     });
   } catch (error) {
-    console.error("Erro ao excluir classe:", error);
+    logger.error({ err: error }, 'Erro ao excluir classe');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Upload de Imagem do NPC (RF-014, RF-063)
 // =============================================================================
 
@@ -9,6 +9,7 @@ import { requireAuth } from "@/lib/auth/session";
 import { canManageNpc } from "@/lib/auth/campaign-access";
 import { saveImage } from "@/lib/utils/uploads";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       data: updated,
     });
   } catch (error) {
-    console.error("Erro ao enviar imagem do NPC:", error);
+    logger.error({ err: error }, 'Erro ao enviar imagem do NPC');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

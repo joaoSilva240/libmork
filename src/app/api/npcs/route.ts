@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: NPCs da Biblioteca (ficha completa estilo jogador)
 // =============================================================================
 // GET: qualquer usuário autenticado. POST: apenas mestres (ownerId = criador).
@@ -11,6 +11,7 @@ import { npcs } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { createNpcSchema } from "@/lib/validators/npc";
 import { isNull } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/npcs
@@ -38,7 +39,7 @@ export async function GET() {
       data: result,
     });
   } catch (error) {
-    console.error("Erro ao listar NPCs da biblioteca:", error);
+    logger.error({ err: error }, 'Erro ao listar NPCs da biblioteca');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -101,7 +102,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Erro ao criar NPC de biblioteca:", error);
+    logger.error({ err: error }, 'Erro ao criar NPC de biblioteca');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

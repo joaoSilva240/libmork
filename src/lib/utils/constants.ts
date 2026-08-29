@@ -81,3 +81,15 @@ export type DuelStatus = (typeof DUEL_STATUSES)[number];
 /** Papéis globais de usuário (D-09, RF-005) */
 export const USER_ROLES = ["player", "master"] as const;
 export type UserRole = (typeof USER_ROLES)[number];
+
+/** Duração da sessão de autenticação em dias (D-44) */
+export const SESSION_DURATION_DAYS = 30;
+
+/** Timeout para requisições ao NINEROUTER/9Router em ms */
+export const NINEROUTER_TIMEOUT_MS = 25_000;
+
+/** Delay entre retentativas ao NINEROUTER em ms */
+export const NINEROUTER_RETRY_DELAY_MS = 2000;
+
+/** Dificuldade base para testes de morte (D-25) */
+export const DEATH_SAVE_BASE_DIFFICULTY = 10;

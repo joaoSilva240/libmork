@@ -9,6 +9,7 @@ import { hashPassword } from "@/lib/auth/password";
 import { createSession } from "@/lib/auth/session";
 import { registerSchema } from "@/lib/validators/auth";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
   try {
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
     await createSession(newUser.id, request, jsonResponse);
     return jsonResponse;
   } catch (error) {
-    console.error("Erro ao registrar usuário:", error);
+    logger.error({ err: error }, "Erro ao registrar usuário");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

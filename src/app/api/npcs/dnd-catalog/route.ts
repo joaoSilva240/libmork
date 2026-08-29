@@ -1,9 +1,10 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Catálogo Completo de Monstros D&D 5e (334 Monstros)
 // =============================================================================
 
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/session";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/npcs/dnd-catalog
@@ -32,7 +33,7 @@ export async function GET() {
       results: data.results, // Array de { index, name, url }
     });
   } catch (error) {
-    console.error("Erro ao carregar catálogo D&D 5e:", error);
+    logger.error({ err: error }, 'Erro ao carregar catálogo D&D 5e');
     return NextResponse.json({ success: false, error: "Erro interno do servidor" }, { status: 500 });
   }
 }

@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Duplicar NPC da Biblioteca
 // =============================================================================
 // Cria uma cópia idêntica do NPC para compor variações de inimigos.
@@ -10,6 +10,7 @@ import { npcs } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { canManageNpc } from "@/lib/auth/campaign-access";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Erro ao duplicar NPC:", error);
+    logger.error({ err: error }, 'Erro ao duplicar NPC');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

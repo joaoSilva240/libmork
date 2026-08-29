@@ -1,10 +1,11 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Catálogo Completo de Monstros Pathfinder 2e
 // =============================================================================
 
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/session";
 import { fetchPf2eMonsterCatalog } from "@/lib/content/pf2e-monsters";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/npcs/pf2e-catalog
@@ -25,7 +26,7 @@ export async function GET() {
       results,
     });
   } catch (error) {
-    console.error("Erro ao carregar catálogo Pathfinder 2e:", error);
+    logger.error({ err: error }, 'Erro ao carregar catálogo Pathfinder 2e');
     return NextResponse.json({ success: false, error: "Erro interno do servidor" }, { status: 500 });
   }
 }

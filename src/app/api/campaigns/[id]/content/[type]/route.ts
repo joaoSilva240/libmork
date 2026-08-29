@@ -18,6 +18,7 @@ import {
   getContentCampaignColumn,
 } from "@/lib/db/content-registry";
 import { eq, and, isNull, or } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string; type: string }> };
 
@@ -98,7 +99,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: result,
     });
   } catch (error) {
-    console.error("Erro ao listar conteúdo da campanha:", error);
+    logger.error({ err: error }, "Erro ao listar conteúdo da campanha");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -174,7 +175,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Erro ao criar conteúdo da campanha:", error);
+    logger.error({ err: error }, "Erro ao criar conteúdo da campanha");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Importação de Conteúdo D&D 5e (Magias, Itens, Perícias, Condições)
 // =============================================================================
 
@@ -9,6 +9,7 @@ import { requireAuth } from "@/lib/auth/session";
 import { eq, isNull } from "drizzle-orm";
 import { fetchPf2eSpellIconFiles, resolvePf2eSpellIcon } from "@/lib/content/pf2e-spell-icons";
 import { fetchSf2eItems } from "@/lib/content/sf2e-items";
+import { logger } from "@/lib/logger";
 
 const DND_ABILITY_MAP: Record<string, "forca" | "destreza" | "vigor" | "inteligencia" | "empatia"> = {
   STR: "forca",
@@ -422,7 +423,7 @@ export async function POST(request: NextRequest) {
                 : undefined;
               return Array.isArray(entries) ? entries as Pf2eSpell[] : [];
             } catch (err) {
-              console.error(`Erro ao carregar fonte de magias Pathfinder 2e (${file}):`, err);
+              logger.error(`Erro ao carregar fonte de magias Pathfinder 2e (${file}):`, err);
               return [];
             }
           }));
@@ -441,7 +442,7 @@ export async function POST(request: NextRequest) {
         try {
           iconFiles = await fetchPf2eSpellIconFiles();
         } catch (err) {
-          console.error("Erro ao listar ícones de magias Pathfinder 2e:", err);
+          logger.error("Erro ao listar ícones de magias Pathfinder 2e:", err);
         }
         const existingSpells = await db.select({ id: spells.id, name: spells.name, imageUrl: spells.imageUrl }).from(spells).where(isNull(spells.campaignId));
 
@@ -497,7 +498,7 @@ export async function POST(request: NextRequest) {
               importedSpellCount++;
             } catch (err) {
               spellFailed++;
-              console.error('Falha ao importar magia', name, err);
+              logger.error('Falha ao importar magia', name, err);
               continue;
             }
           } else {
@@ -525,17 +526,17 @@ export async function POST(request: NextRequest) {
               importedSpellCount++;
             } catch (err) {
               spellFailed++;
-              console.error('Falha ao importar magia', name, err);
+              logger.error('Falha ao importar magia', name, err);
               continue;
             }
           }
         }
         if (spellFailed > 0) {
-          console.error(`Magias com falha: ${spellFailed} de ${uniqueSpells.length}`);
+          logger.error(`Magias com falha: ${spellFailed} de ${uniqueSpells.length}`);
         }
-        console.log(`Magias Pathfinder 2e processadas! Criadas/Atualizadas: ${importedSpellCount}, Falhas: ${spellFailed}`);
+        logger.info(`Magias Pathfinder 2e processadas! Criadas/Atualizadas: ${importedSpellCount}, Falhas: ${spellFailed}`);
       } catch (err) {
-        console.error("Erro ao importar magias Pathfinder 2e:", err);
+        logger.error("Erro ao importar magias Pathfinder 2e:", err);
       }
     }
 
@@ -611,7 +612,7 @@ export async function POST(request: NextRequest) {
             importedCount++;
             importedDndCount++;
           } catch (err) {
-            console.error(`Erro ao importar perícia ${sk.index}:`, err);
+            logger.error(`Erro ao importar perícia ${sk.index}:`, err);
           }
         }
       }
@@ -653,7 +654,7 @@ export async function POST(request: NextRequest) {
             importedCount++;
             importedDndCount++;
           } catch (err) {
-            console.error(`Erro ao importar condição ${cond.index}:`, err);
+            logger.error(`Erro ao importar condição ${cond.index}:`, err);
           }
         }
       }
@@ -676,7 +677,7 @@ export async function POST(request: NextRequest) {
       sf2e: { created: sf2eCreated, updated: sf2eUpdated, failures: sf2eFailures, failedCategories: [...new Set(sf2eFailures.map((failure) => failure.category))] },
     });
   } catch (error) {
-    console.error("Erro ao importar conteúdo D&D 5e:", error);
+    logger.error({ err: error }, 'Erro ao importar conteúdo D&D 5e');
     return NextResponse.json({ success: false, error: "Erro interno do servidor" }, { status: 500 });
   }
 }

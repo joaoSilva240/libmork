@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Convite Público (RF-015)
 // =============================================================================
 // GET sem autenticação (mostra a campanha no link).
@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getPublicInvite } from "@/lib/server/public-invite";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ token: string }> };
 
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: result.invite,
     });
   } catch (error) {
-    console.error("Erro ao obter convite:", error);
+    logger.error({ err: error }, 'Erro ao obter convite');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

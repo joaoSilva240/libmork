@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Benefício Específico (RF-033, D-21)
 // =============================================================================
 
@@ -8,6 +8,7 @@ import { rpgClasses, classLevelBenefits } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { updateClassBenefitSchema } from "@/lib/validators/class";
 import { eq, and } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string; benefitId: string }> };
 
@@ -91,7 +92,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       data: updated,
     });
   } catch (error) {
-    console.error("Erro ao atualizar benefício:", error);
+    logger.error({ err: error }, 'Erro ao atualizar benefício');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -161,7 +162,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       message: "Benefício excluído com sucesso",
     });
   } catch (error) {
-    console.error("Erro ao excluir benefício:", error);
+    logger.error({ err: error }, 'Erro ao excluir benefício');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

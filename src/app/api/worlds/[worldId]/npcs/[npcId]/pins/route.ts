@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Pins de NPC (RF-065, D-38)
 // =============================================================================
 // Atalhos rápidos (magias, habilidades, ataques) na ficha simplificada do NPC.
@@ -10,6 +10,7 @@ import { npcs, worlds, campaigns, npcPins, skills, spells } from "@/lib/db/schem
 import { requireAuth } from "@/lib/auth/session";
 import { createNpcPinSchema } from "@/lib/validators/npcPin";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ worldId: string; npcId: string }> };
 
@@ -77,7 +78,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: pins,
     });
   } catch (error) {
-    console.error("Erro ao listar pins:", error);
+    logger.error({ err: error }, 'Erro ao listar pins');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -206,7 +207,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Erro ao criar pin:", error);
+    logger.error({ err: error }, 'Erro ao criar pin');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

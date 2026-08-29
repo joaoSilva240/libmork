@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Entrar na Campanha via Convite (RF-015)
 // =============================================================================
 // POST /api/invites/:token/join — jogador autenticado vincula um personagem.
@@ -10,6 +10,7 @@ import { db } from "@/lib/db";
 import { characters, characterCampaigns, campaignInvites } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { eq, and } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ token: string }> };
 
@@ -117,7 +118,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Erro ao entrar na campanha:", error);
+    logger.error({ err: error }, 'Erro ao entrar na campanha');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

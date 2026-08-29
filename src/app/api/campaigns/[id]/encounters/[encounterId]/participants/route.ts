@@ -8,6 +8,7 @@ import { campaigns, encounters, worlds, encounterParticipants } from "@/lib/db/s
 import { requireAuth } from "@/lib/auth/session";
 import { addParticipantSchema } from "@/lib/validators/encounter";
 import { eq, and } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string; encounterId: string }> };
 
@@ -75,7 +76,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 
     return NextResponse.json({ success: true, data: participants });
   } catch (error) {
-    console.error("Erro ao listar participantes:", error);
+    logger.error({ err: error }, "Erro ao listar participantes");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -153,7 +154,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Erro ao adicionar participante:", error);
+    logger.error({ err: error }, "Erro ao adicionar participante");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

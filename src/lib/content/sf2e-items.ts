@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 export const SF2E_GITHUB_API = "https://api.github.com/repos/foundryvtt/pf2e/contents";
 export const SF2E_GITHUB_TREES_API = "https://api.github.com/repos/foundryvtt/pf2e/git/trees";
 export const SF2E_RAW_BASE = "https://raw.githubusercontent.com/foundryvtt/pf2e";
@@ -341,7 +343,7 @@ export async function fetchSf2eItems(onError?: (category: string, error: string)
     files = await filesFromRecursiveTree();
   } catch (error) {
     const message = error instanceof Error ? error.message : "inventário GitHub indisponível";
-    console.warn(`SF2e: ${message}. Fallback Contents API.`);
+    logger.warn({ err: error }, 'SF2e: Fallback Contents API');
   }
 
   if (!files) {
@@ -350,6 +352,7 @@ export async function fetchSf2eItems(onError?: (category: string, error: string)
       files = entries.filter((entry) => entry.type === "file" && entry.name.endsWith(".json") && entry.name !== "_folders.json");
     } catch (error) {
       const message = error instanceof Error ? error.message : "erro ao listar pasta SF2E_EQUIPMENT_PATH";
+      logger.error({ err: error }, 'SF2e: Erro ao listar pasta SF2E_EQUIPMENT_PATH');
       failures.push({ category: "equipment", error: message });
       onError?.("equipment", message);
     }

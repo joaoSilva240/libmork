@@ -18,6 +18,7 @@ import {
 import { requireAuth } from "@/lib/auth/session";
 import { getCampaignAsMaster } from "@/lib/auth/campaign-access";
 import { eq, inArray, and } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -113,7 +114,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: { players: playersWithConditions, npcs: campaignNpcs },
     });
   } catch (error) {
-    console.error("Erro ao carregar roster:", error);
+    logger.error({ err: error }, "Erro ao carregar roster");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

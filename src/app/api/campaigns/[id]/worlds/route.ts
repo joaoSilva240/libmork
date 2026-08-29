@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Mundos de uma Campanha (RF-013)
 // =============================================================================
 
@@ -8,6 +8,7 @@ import { campaigns, worlds } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { createWorldSchema } from "@/lib/validators/campaign";
 import { eq, and, or } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: campaignWorlds,
     });
   } catch (error) {
-    console.error("Erro ao listar mundos:", error);
+    logger.error({ err: error }, 'Erro ao listar mundos');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -180,7 +181,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Erro ao processar mundo:", error);
+    logger.error({ err: error }, 'Erro ao processar mundo');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

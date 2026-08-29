@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Upload de Imagem do Personagem (RF-007, RF-063)
 // =============================================================================
 
@@ -8,6 +8,7 @@ import { characters } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { saveImage } from "@/lib/utils/uploads";
 import { eq, and } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       data: updatedCharacter,
     });
   } catch (error) {
-    console.error("Erro ao enviar imagem:", error);
+    logger.error({ err: error }, 'Erro ao enviar imagem');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

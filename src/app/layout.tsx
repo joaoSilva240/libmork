@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SocketProvider } from "@/context/SocketContext";
+import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,6 +17,7 @@ export default function RootLayout({
     <html lang="pt-BR" data-theme="default-dark" suppressHydrationWarning>
       <body className="antialiased" suppressHydrationWarning>
         <SocketProvider>{children}</SocketProvider>
+        <ServiceWorkerRegistrar />
       </body>
     </html>
   );

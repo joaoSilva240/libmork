@@ -9,6 +9,7 @@ import { campaigns, characters, characterCampaigns } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { APPROVAL_STATUSES } from "@/lib/utils/constants";
 import { eq, and } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string; linkId: string }> };
 
@@ -89,7 +90,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       data: updatedLink,
     });
   } catch (error) {
-    console.error("Erro ao atualizar vínculo:", error);
+    logger.error({ err: error }, "Erro ao atualizar vínculo");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -170,7 +171,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       message: "Vínculo removido com sucesso",
     });
   } catch (error) {
-    console.error("Erro ao remover vínculo:", error);
+    logger.error({ err: error }, "Erro ao remover vínculo");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

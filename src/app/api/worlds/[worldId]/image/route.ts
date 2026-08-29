@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Upload de Imagens de Mundo (Capa / Mapa)
 // =============================================================================
 
@@ -8,6 +8,7 @@ import { worlds } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { saveImage } from "@/lib/utils/uploads";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ worldId: string }> };
 
@@ -91,7 +92,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       },
     });
   } catch (error) {
-    console.error("Erro ao enviar imagem do mundo:", error);
+    logger.error({ err: error }, 'Erro ao enviar imagem do mundo');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

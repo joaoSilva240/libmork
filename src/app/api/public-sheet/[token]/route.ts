@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Ficha Pública (RF-023, D-05)
 // =============================================================================
 // Retorna a ficha somente leitura via token de link público. SEM autenticação.
@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { characters, publicShareLinks } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ token: string }> };
 
@@ -69,7 +70,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       },
     });
   } catch (error) {
-    console.error("Erro ao obter ficha pública:", error);
+    logger.error({ err: error }, 'Erro ao obter ficha pública');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

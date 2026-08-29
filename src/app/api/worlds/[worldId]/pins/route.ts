@@ -1,4 +1,4 @@
-// =============================================================================
+﻿// =============================================================================
 // Libmork — API Route: Pins de Mapa Interativo (RF-068)
 // =============================================================================
 // Gerencia marcadores (pins) em mapas do mundo com persistência no banco.
@@ -10,6 +10,7 @@ import { worlds, campaigns, mapPins } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { eq } from "drizzle-orm";
 import { uuid } from "drizzle-orm/pg-core";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ worldId: string }> };
 
@@ -82,7 +83,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: pins,
     });
   } catch (error) {
-    console.error("Erro ao listar pins do mapa:", error);
+    logger.error({ err: error }, 'Erro ao listar pins do mapa');
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }
@@ -172,7 +173,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       data: validatedPins,
     });
   } catch (error) {
-    console.error("Erro ao salvar pins do mapa:", error);
+    logger.error({ err: error }, 'Erro ao salvar pins do mapa');
     return NextResponse.json(
       { success: false, error: "Erro ao salvar pins: " + (error instanceof Error ? error.message : "Erro desconhecido") },
       { status: 500 }

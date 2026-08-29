@@ -10,6 +10,7 @@ import { campaignLogs } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { getCampaignAsMaster } from "@/lib/auth/campaign-access";
 import { eq, desc } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: logs,
     });
   } catch (error) {
-    console.error("Erro ao carregar logs:", error);
+    logger.error({ err: error }, "Erro ao carregar logs");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 }

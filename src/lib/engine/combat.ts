@@ -5,6 +5,7 @@
 // =============================================================================
 
 import { getModifier, getBlockValue } from "./attributes";
+import { ACTIONS_PER_TURN } from "@/lib/utils/constants";
 
 /** Tipo de reação defensiva (D-41) */
 export type DefenseReaction = "dodge" | "block";
@@ -72,8 +73,8 @@ export function createCombatSession(
 
   const combatants: Combatant[] = sorted.map((c) => ({
     ...c,
-    actionsRemaining: 3,
-    maxActions: 3,
+    actionsRemaining: ACTIONS_PER_TURN,
+    maxActions: ACTIONS_PER_TURN,
     deathSavesSuccess: c.deathSavesSuccess ?? 0,
     deathSavesFailure: c.deathSavesFailure ?? 0,
   }));
@@ -113,7 +114,7 @@ export function advanceCombatTurn(session: CombatSessionState): CombatSessionSta
 
   const updatedCombatants = session.combatants.map((c, idx) => {
     if (idx === nextIndex) {
-      return { ...c, actionsRemaining: c.maxActions || 3 };
+      return { ...c, actionsRemaining: c.maxActions || ACTIONS_PER_TURN };
     }
     return c;
   });
@@ -129,7 +130,7 @@ export function advanceCombatTurn(session: CombatSessionState): CombatSessionSta
       {
         id: `log_${Date.now()}_${Math.random()}`,
         timestamp: new Date().toLocaleTimeString(),
-        message: `Turno de ${nextCombatant.name} (Rodada ${newRound}). Ações: ${nextCombatant.actionsRemaining}/3`,
+        message: `Turno de ${nextCombatant.name} (Rodada ${newRound}). Ações: ${nextCombatant.actionsRemaining}/${ACTIONS_PER_TURN}`,
       },
       ...session.logs.slice(0, 49),
     ],
@@ -182,14 +183,14 @@ export function spendCombatActions(
     combatants: updatedCombatants,
   };
 
-  // Se esgotou todas as 3 ações (<= 0), avança automaticamente para o próximo turno da fila
+  // Se esgotou todas as ações (<= 0), avança automaticamente para o próximo turno da fila
   if (newActionsLeft <= 0) {
     const nextSession = advanceCombatTurn(updatedSession);
     const nextCombatant = nextSession.combatants[nextSession.currentTurnIndex];
     return {
       session: nextSession,
       success: true,
-      message: `${currentCombatant.name} esgotou suas 3 ações! Turno avançado automaticamente para ${nextCombatant?.name}.`,
+      message: `${currentCombatant.name} esgotou suas ${ACTIONS_PER_TURN} ações! Turno avançado automaticamente para ${nextCombatant?.name}.`,
     };
   }
 

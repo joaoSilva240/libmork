@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { spells } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { eq } from "drizzle-orm";
 import { translateContentWithLLM } from "@/lib/server/content-translation";
 import { extractErrorCode, getStatusForCode, TranslationErrorCode } from "@/lib/server/ninerouter";
+import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ spellId: string }> };
 
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     await db.update(spells).set({ translation }).where(eq(spells.id, spellId));
 
     const durationMs = Date.now() - start;
-    console.log(`[translateSpell] spellId=${spellId} durationMs=${durationMs} success`);
+    logger.info(`[translateSpell] spellId=${spellId} durationMs=${durationMs} success`);
 
     return NextResponse.json({ success: true, translation });
 
@@ -98,12 +99,12 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
     // Log error with granular code
     if (status >= 500) {
-      console.error(
+      logger.error(
         `[translateSpell] spellId=${spellIdForLog} durationMs=${durationMs} error.code=${mappedCode} ` +
         `cause=${err?.causeCode || ""} status=${status} details=${details.slice(0, 200)}`
       );
     } else {
-      console.warn(
+      logger.warn(
         `[translateSpell] spellId=${spellIdForLog} durationMs=${durationMs} error.code=${mappedCode} status=${status}`
       );
     }

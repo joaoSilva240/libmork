@@ -8,6 +8,7 @@ import {
   NINE_TIMEOUT_MS,
   NINE_RETRY_DELAY_MS,
 } from "./ninerouter";
+import { logger } from "@/lib/logger";
 
 /**
  * Translates content (items or spells) from English to Brazilian Portuguese
@@ -89,11 +90,12 @@ export async function translateContentWithLLM(
       result = await response.json();
     } catch (e) {
       const code = extractErrorCode(e);
-      console.error(`[content-translation] JSON parse error: ${code}`, {
+      logger.error({ 
+        err: e,
         attemptedUrl: usedFallback ? `${ninerouterUrl}/v1 (fallback)` : ninerouterUrl,
         contentType,
         causeCode: code,
-      });
+      }, 'content-translation JSON parse error');
       throw createTranslationError("translation_provider_invalid_json", 502, `translation_provider_invalid_json: ${code}`, {
         causeCode: code,
       });
@@ -111,11 +113,12 @@ export async function translateContentWithLLM(
       return JSON.parse(fenced.trim()) as Record<string, unknown>;
     } catch (e) {
       const code = extractErrorCode(e);
-      console.error(`[content-translation] JSON parse failed`, {
+      logger.error({
+        err: e,
         attemptedUrl: usedFallback ? `${ninerouterUrl}/v1 (fallback)` : ninerouterUrl,
         contentType,
         causeCode: code,
-      });
+      }, 'content-translation JSON parse failed');
       throw createTranslationError("translation_provider_invalid_json", 502, `translation_provider_invalid_json: ${code}`, {
         causeCode: code,
       });
@@ -127,10 +130,12 @@ export async function translateContentWithLLM(
     try {
       const parsed = await doFetch();
       const durationMs = Date.now() - start;
-      console.log(`[content-translation] ${contentType} translated successfully in ${durationMs}ms`, {
+      logger.info({ 
+        contentType,
+        durationMs,
         url: ninerouterUrl,
-        usedFallback: false, // already resolved in doFetch if we got here
-      });
+        usedFallback: false,
+      }, 'content-translation translated successfully');
       return parsed;
     } catch (error) {
       lastError = error;
@@ -149,7 +154,12 @@ export async function translateContentWithLLM(
       // Retry once for network/timeout errors
       if (isNetwork && attempt === 0) {
         const durationMs = Date.now() - start;
-        console.warn(`[content-translation] retry after network error (${code} / ${transCode}), attempt=${attempt + 1}, durationMs=${durationMs}`);
+        logger.warn({ 
+          code, 
+          transCode, 
+          attempt: attempt + 1, 
+          durationMs 
+        }, 'content-translation retry after network error');
         await new Promise((r) => setTimeout(r, NINE_RETRY_DELAY_MS));
         continue;
       }
