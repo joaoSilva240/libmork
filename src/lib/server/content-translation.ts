@@ -11,21 +11,21 @@ import {
 import { logger } from "@/lib/logger";
 
 /**
- * Translates content (items or spells) from English to Brazilian Portuguese
+ * Translates content (items, spells, classes, npcs) from English to Brazilian Portuguese
  * using NINEROUTER (OpenAI-compatible API).
  *
  * Reads NINEROUTER_* variables at runtime (required for standalone output).
  * Uses AbortController with 25s timeout. Falls back to host.docker.internal
  * if Tailscale CGNAT URL (100.83.170.1) is unreachable.
  *
- * @param contentType - "spell" or "item"
+ * @param contentType - "spell" | "item" | "class" | "npc" | string
  * @param content - The content object to translate
  * @param systemPrompt - Optional custom system prompt (uses default if not provided)
  * @returns Translated content object
  * @throws TranslationError with granular error code for client handling
  */
 export async function translateContentWithLLM(
-  contentType: "spell" | "item",
+  contentType: "spell" | "item" | "class" | "npc" | string,
   content: Record<string, unknown>,
   systemPrompt?: string,
 ): Promise<Record<string, unknown>> {
@@ -38,8 +38,16 @@ export async function translateContentWithLLM(
 
   // Use custom prompt if provided, otherwise build default
   const prompt = systemPrompt ?? (() => {
-    const subject = contentType === "item" ? "item SF2e/PF2e" : "magia PF2e";
-    return `Translate this tabletop RPG ${subject} from English to Brazilian Portuguese. Return JSON only, preserving the same fields. Translate name, description, and all relevant textual fields. Preserve technical SF2e/PF2e terms, numbers, formulas, units, proper names, and structured data. Do not add fields or commentary.`;
+    if (contentType === "item") {
+      return `Translate this tabletop RPG item SF2e/PF2e from English to Brazilian Portuguese. Return JSON only, preserving the same fields. Translate name, description, and all relevant textual fields. Preserve technical SF2e/PF2e terms, numbers, formulas, units, proper names, and structured data. Do not add fields or commentary.`;
+    }
+    if (contentType === "class") {
+      return `Translate this tabletop RPG class and its progression benefits from English to Brazilian Portuguese (pt-BR). Return JSON only, preserving the exact JSON structure and keys. Translate name, description, proficiencies, item names, and level benefit descriptions/advantages. Do not add fields or commentary.`;
+    }
+    if (contentType === "npc") {
+      return `Translate this tabletop RPG NPC/monster from English to Brazilian Portuguese. Return JSON only, preserving the same fields. Translate name, description, actions and skills. Do not add fields or commentary.`;
+    }
+    return `Translate this tabletop RPG magia PF2e from English to Brazilian Portuguese. Return JSON only, preserving the same fields. Translate name, description, and all relevant textual fields. Preserve technical SF2e/PF2e terms, numbers, formulas, units, proper names, and structured data. Do not add fields or commentary.`;
   })();
 
   const headers = {

@@ -25,23 +25,6 @@ const proficienciesSchema = z.object({
 });
 
 /**
- * Schema de criação de classe (RF-033, D-21).
- */
-export const createClassSchema = z.object({
-  name: z.string().min(2, "Nome deve ter no mínimo 2 caracteres").max(100),
-  description: z.string().max(5000).optional().nullable(),
-  initialItems: z.array(initialItemSchema).default([]),
-  proficiencies: proficienciesSchema.default({}),
-});
-
-export const updateClassSchema = z.object({
-  name: z.string().min(2, "Nome deve ter no mínimo 2 caracteres").max(100).optional(),
-  description: z.string().max(5000).optional().nullable(),
-  initialItems: z.array(initialItemSchema).optional(),
-  proficiencies: proficienciesSchema.optional(),
-});
-
-/**
  * Benefícios por nível da classe (schema JSONB benefits, D-21).
  */
 export const createClassBenefitSchema = z.object({
@@ -90,4 +73,22 @@ export const updateClassBenefitSchema = z.object({
       description: z.string().max(5000).optional(),
     })
     .optional(),
+});
+
+/**
+ * Schema de criação de classe (RF-033, D-21).
+ */
+export const createClassSchema = z.object({
+  name: z.string().min(2, "Nome deve ter no mínimo 2 caracteres").max(100),
+  description: z.string().max(5000).optional().nullable(),
+  initialItems: z.array(initialItemSchema).default([]),
+  proficiencies: proficienciesSchema.default({}),
+  levelBenefits: z.array(createClassBenefitSchema).optional(),
+});
+
+export const updateClassSchema = z.object({
+  name: z.string().min(2, "Nome deve ter no mínimo 2 caracteres").max(100).optional(),
+  description: z.string().max(5000).optional().nullable(),
+  initialItems: z.array(initialItemSchema).optional(),
+  proficiencies: proficienciesSchema.optional(),
 });

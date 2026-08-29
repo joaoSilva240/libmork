@@ -7,7 +7,7 @@ import type { ContentType } from "@/lib/validators/content";
 import { Button, Form, Input, Spinner } from "@/components/ui";
 import type { Spell } from "@/types";
 
-import { ClassManager } from "@/components/classes/ClassManager";
+import { LibraryClasses } from "@/components/classes/LibraryClasses";
 import { LibraryNpcs } from "@/components/npcs/LibraryNpcs";
 import { LibraryWorlds } from "@/components/worlds/LibraryWorlds";
 import { useRef } from "react";
@@ -236,6 +236,11 @@ function getTechnicalValue(system: Record<string, unknown>, key: string): unknow
 
 export function ContentManager({ basePath, title }: ContentManagerProps) {
   const [activeType, setActiveType] = useState<ManagerContentType>("skills");
+  const classActionsRef = useRef<{
+    openCreate: () => void;
+    openCatalog: () => void;
+    openPf2eCatalog?: () => void;
+  } | null>(null);
   const npcActionsRef = useRef<{
     openCreate: () => void;
     openCatalog: () => void;
@@ -726,6 +731,35 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
         <h2 className="text-2xl font-bold text-white">{title}</h2>
 
         <div className="flex items-center gap-2">
+          {activeType === "classes" && (
+            <>
+              <button
+                type="button"
+                onClick={() => classActionsRef.current?.openCreate()}
+                className="rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-purple-500 transition shadow-lg flex items-center gap-1.5"
+              >
+                <span>+</span>
+                <span>Criar Classe</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => classActionsRef.current?.openPf2eCatalog?.()}
+                className="rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2.5 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg flex items-center gap-2"
+              >
+                <span>⚔️</span>
+                <span>Catálogo Pathfinder 2e</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => classActionsRef.current?.openCatalog()}
+                className="rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2.5 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg flex items-center gap-2"
+              >
+                <span>🐉</span>
+                <span>Catálogo D&D 5e</span>
+              </button>
+            </>
+          )}
+
           {activeType === "npcs" && (
             <>
               <button
@@ -1040,7 +1074,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
       )}
 
       {activeType === "classes" ? (
-        <ClassManager />
+        <LibraryClasses onRegisterActions={(actions) => (classActionsRef.current = actions)} />
       ) : activeType === "npcs" ? (
         <LibraryNpcs onRegisterActions={(actions) => (npcActionsRef.current = actions)} />
       ) : activeType === "worlds" ? (

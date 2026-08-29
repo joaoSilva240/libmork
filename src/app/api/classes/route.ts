@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { rpgClasses } from "@/lib/db/schema";
+import { rpgClasses, classLevelBenefits } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { createClassSchema } from "@/lib/validators/class";
 import { logger } from "@/lib/logger";
@@ -67,17 +67,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, description, initialItems, proficiencies } = validation.data;
+    const { name, description, initialItems, proficiencies, levelBenefits } = validation.data;
 
-    const [newClass] = await db
-      .insert(rpgClasses)
-      .values({
-        name,
-        description: description ?? null,
-        initialItems,
-        proficiencies,
-      })
-      .returning();
+    const newClass = await db.transaction(async (tx) => {
+      const [created] = await tx
+        .insert(rpgClasses)
+        .values({
+          name,
+          description: description ?? null,
+          initialItems,
+          proficiencies,
+        })
+        .returning();
+
+      if (levelBenefits && levelBenefits.length > 0) {
+        const benefitRows = levelBenefits.map((lb) => ({
+          classId: created.id,
+          level: lb.level,
+          benefits: lb.benefits,
+        }));
+        await tx.insert(classLevelBenefits).values(benefitRows);
+      }
+
+      return created;
+    });
 
     return NextResponse.json(
       { success: true, data: newClass },
