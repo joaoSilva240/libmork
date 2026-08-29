@@ -11,6 +11,7 @@ import { ClassManager } from "@/components/classes/ClassManager";
 import { LibraryNpcs } from "@/components/npcs/LibraryNpcs";
 import { LibraryWorlds } from "@/components/worlds/LibraryWorlds";
 import { useRef } from "react";
+import { getCsrfToken } from "@/lib/client/csrf";
 
 type FieldDef = {
   name: string;
@@ -328,9 +329,11 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
     setTranslationCode(null);
     setIsTranslating(true);
     try {
+      const csrfToken = getCsrfToken();
       const res = await fetch(`/api/content/${type}/${spellId}/translate`, {
         method: "POST",
         credentials: "include",
+        headers: csrfToken ? { "x-csrf-token": csrfToken } : undefined,
       });
       const data = (await res.json().catch(() => ({}))) as { success?: boolean; translation?: unknown; error?: string; code?: string; details?: string };
       if (!res.ok) {
@@ -408,9 +411,11 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
     (async () => {
       setIsTranslating(true);
       try {
+        const csrfToken = getCsrfToken();
         const res = await fetch(`/api/content/${activeType}/${spellId}/translate`, {
           method: "POST",
           credentials: "include",
+          headers: csrfToken ? { "x-csrf-token": csrfToken } : undefined,
         });
         const data = (await res.json().catch(() => ({}))) as { success?: boolean; translation?: unknown; error?: string; code?: string; details?: string };
         if (!active) return;
