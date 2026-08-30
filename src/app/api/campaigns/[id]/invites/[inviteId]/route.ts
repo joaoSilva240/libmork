@@ -6,14 +6,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { campaigns, campaignInvites } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string; inviteId: string }> };
 
 /**
  * DELETE /api/campaigns/:id/invites/:inviteId
- * Revoga um convite (apenas o mestre).
+ * Revoga um convite por inviteId ou userId (apenas o mestre).
  */
 export async function DELETE(request: NextRequest, { params }: RouteContext) {
   try {
@@ -45,7 +45,13 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       .select()
       .from(campaignInvites)
       .where(
-        and(eq(campaignInvites.id, inviteId), eq(campaignInvites.campaignId, id))
+        and(
+          eq(campaignInvites.campaignId, id),
+          or(
+            eq(campaignInvites.id, inviteId),
+            eq(campaignInvites.userId, inviteId)
+          )
+        )
       )
       .limit(1);
 
@@ -59,7 +65,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     await db
       .update(campaignInvites)
       .set({ revoked: true })
-      .where(eq(campaignInvites.id, inviteId));
+      .where(eq(campaignInvites.id, invite.id));
 
     return NextResponse.json({
       success: true,

@@ -18,7 +18,10 @@ import {
   SkillsFilledIcon,
   InventoryFilledIcon,
   SettingsFilledIcon,
+  ArrowLeftIcon,
+  LogOutIcon,
 } from "@/components/ui/Icons";
+import { BottomNav } from "@/components/ui/BottomNav";
 import {
   useSocket,
   DICE_ROLL_LOADING_DELAY,
@@ -619,8 +622,14 @@ export function CharacterDetail() {
     <div className="relative mx-auto min-h-screen max-w-md bg-gray-950 text-gray-100 pb-24 shadow-2xl font-sans">
       {/* Top Header Mobile Bar */}
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-gray-800/80 bg-gray-900/90 px-4 py-3 backdrop-blur-md">
-        <Link href="/player" className="text-sm font-bold text-gray-200 hover:text-white">
-          Libmork — Jogador
+        <Link
+          href="/player"
+          className="flex items-center gap-2 text-sm font-bold text-gray-200 hover:text-white"
+          title="Voltar para a Frente do Jogador"
+          aria-label="Voltar para a Frente do Jogador"
+        >
+          <ArrowLeftIcon className="h-5 w-5 text-purple-400" />
+          <span>Libmork — Jogador</span>
         </Link>
         <span aria-label={isConnected ? "Conectado à mesa" : "Desconectado da mesa"} title={isConnected ? "Conectado à mesa" : "Desconectado da mesa"} className={`h-2.5 w-2.5 rounded-full ${isConnected ? "bg-emerald-400" : "bg-red-500"}`} />
       </header>
@@ -893,8 +902,14 @@ export function CharacterDetail() {
 
               {/* Exclusão do Personagem */}
               <div className="pt-2">
-                <button type="button" onClick={() => void handleLogout()} disabled={isLoggingOut} className="mb-2 w-full rounded-xl border border-gray-700 bg-gray-800 py-2.5 text-xs font-bold text-gray-200 hover:bg-gray-700 disabled:opacity-50">
-                  {isLoggingOut ? "Saindo..." : "Sair"}
+                <button
+                  type="button"
+                  onClick={() => router.push("/player")}
+                  className="mb-2 flex w-full items-center justify-center gap-2 rounded-xl border border-gray-700 bg-gray-800 py-2.5 text-xs font-bold text-gray-200 hover:bg-gray-700"
+                  title="Voltar para a Frente do Jogador"
+                  aria-label="Voltar para a Frente do Jogador"
+                >
+                  <LogOutIcon className="h-5 w-5 text-gray-300" />
                 </button>
                 <button
                   onClick={handleDelete}
@@ -914,70 +929,32 @@ export function CharacterDetail() {
         <PlayerTurnOverlay combatState={combatState} characterId={character.id} />
       )}
 
-      {/* Sticky Bottom Navigation Bar (Menu Inferior com Ícones Filled) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 mx-auto max-w-md border-t border-gray-800/80 bg-gray-900/95 py-2 px-3 backdrop-blur-lg shadow-2xl">
-        <div className="flex items-center justify-around">
-          {/* Tab 1: Status */}
-          <button
-            onClick={() => setActiveTab("status")}
-            className={`flex flex-col items-center gap-1 px-3 py-1 transition-all ${
-              activeTab === "status"
-                ? "text-purple-400 scale-105"
-                : "text-gray-500 hover:text-gray-300"
-            }`}
-          >
-            <StatusFilledIcon className={`h-6 w-6 ${activeTab === "status" ? "fill-purple-400" : "fill-gray-500"}`} />
-            <span className={`text-[10px] font-bold ${activeTab === "status" ? "text-purple-400" : "text-gray-400"}`}>
-              Status
-            </span>
-          </button>
-
-          {/* Tab 2: Perícias */}
-          <button
-            onClick={() => setActiveTab("skills")}
-            className={`flex flex-col items-center gap-1 px-3 py-1 transition-all ${
-              activeTab === "skills"
-                ? "text-purple-400 scale-105"
-                : "text-gray-500 hover:text-gray-300"
-            }`}
-          >
-            <SkillsFilledIcon className={`h-6 w-6 ${activeTab === "skills" ? "fill-purple-400" : "fill-gray-500"}`} />
-            <span className={`text-[10px] font-bold ${activeTab === "skills" ? "text-purple-400" : "text-gray-400"}`}>
-              Perícias
-            </span>
-          </button>
-
-          {/* Tab 3: Inventário */}
-          <button
-            onClick={() => setActiveTab("inventory")}
-            className={`flex flex-col items-center gap-1 px-3 py-1 transition-all ${
-              activeTab === "inventory"
-                ? "text-purple-400 scale-105"
-                : "text-gray-500 hover:text-gray-300"
-            }`}
-          >
-            <InventoryFilledIcon className={`h-6 w-6 ${activeTab === "inventory" ? "fill-purple-400" : "fill-gray-500"}`} />
-            <span className={`text-[10px] font-bold ${activeTab === "inventory" ? "text-purple-400" : "text-gray-400"}`}>
-              Inventário
-            </span>
-          </button>
-
-          {/* Tab 4: Configurações */}
-          <button
-            onClick={() => setActiveTab("settings")}
-            className={`flex flex-col items-center gap-1 px-3 py-1 transition-all ${
-              activeTab === "settings"
-                ? "text-purple-400 scale-105"
-                : "text-gray-500 hover:text-gray-300"
-            }`}
-          >
-            <SettingsFilledIcon className={`h-6 w-6 ${activeTab === "settings" ? "fill-purple-400" : "fill-gray-500"}`} />
-            <span className={`text-[10px] font-bold ${activeTab === "settings" ? "text-purple-400" : "text-gray-400"}`}>
-              Configurações
-            </span>
-          </button>
-        </div>
-      </nav>
+      <BottomNav
+        activeId={activeTab}
+        onChange={(id) => setActiveTab(id as TabType)}
+        tabs={[
+          {
+            id: "status",
+            label: "Status",
+            icon: <StatusFilledIcon className={`h-6 w-6 ${activeTab === "status" ? "fill-purple-400" : "fill-gray-500"}`} />,
+          },
+          {
+            id: "skills",
+            label: "Perícias",
+            icon: <SkillsFilledIcon className={`h-6 w-6 ${activeTab === "skills" ? "fill-purple-400" : "fill-gray-500"}`} />,
+          },
+          {
+            id: "inventory",
+            label: "Inventário",
+            icon: <InventoryFilledIcon className={`h-6 w-6 ${activeTab === "inventory" ? "fill-purple-400" : "fill-gray-500"}`} />,
+          },
+          {
+            id: "settings",
+            label: "Configurações",
+            icon: <SettingsFilledIcon className={`h-6 w-6 ${activeTab === "settings" ? "fill-purple-400" : "fill-gray-500"}`} />,
+          },
+        ]}
+      />
 
       {/* Modais de Fase 5 — Pontos de Sombra e Duelo P2P */}
       {character && (

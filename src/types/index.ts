@@ -294,6 +294,46 @@ export type Duel = {
   finishedAt: Date | null;
 };
 
+export type CampaignInvite = {
+  id: string;
+  campaignId: string;
+  userId: string | null;
+  token: string;
+  revoked: boolean;
+  createdAt: Date;
+};
+
+export type CampaignPlayerInvite = {
+  id: string;
+  displayName: string;
+  email: string;
+  isInvited: boolean;
+  inviteId: string | null;
+  activeCharactersCount: number;
+};
+
+export type PlayerCampaign = {
+  id: string;
+  name: string;
+  rulesEngine: RulesEngine;
+  pvpEnabled: boolean;
+  master: {
+    id: string;
+    displayName: string;
+    email: string;
+  };
+  characters: Array<{
+    id: string;
+    name: string;
+    imageUrl: string | null;
+    level: number;
+    hitPointsCurrent: number;
+    hitPointsMax: number;
+    manaPointsCurrent: number;
+    manaPointsMax: number;
+  }>;
+};
+
 // =============================================================================
 // Tipos de API Response
 // =============================================================================

@@ -35,9 +35,10 @@ type LibraryClassesProps = {
     openCatalog: () => void;
     openPf2eCatalog?: () => void;
   }) => void;
+  onNavigateToFeatures?: () => void;
 };
 
-export function LibraryClasses({ onRegisterActions }: LibraryClassesProps = {}) {
+export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: LibraryClassesProps = {}) {
   const [classes, setClasses] = useState<RpgClass[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1023,9 +1024,20 @@ export function LibraryClasses({ onRegisterActions }: LibraryClassesProps = {}) 
       {/* Grade Principal de Classes */}
       <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 shadow-xl flex flex-col max-h-[calc(100vh-16rem)]">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3 shrink-0">
-          <h3 className="font-bold text-white text-lg flex items-center gap-2">
-            <span>Classes Cadastradas</span>
-          </h3>
+          <div className="flex items-center gap-3">
+            <h3 className="font-bold text-white text-lg flex items-center gap-2">
+              <span>Classes Cadastradas</span>
+            </h3>
+            {onNavigateToFeatures && (
+              <button
+                type="button"
+                onClick={onNavigateToFeatures}
+                className="rounded-lg border border-purple-800/60 bg-purple-950/60 px-3 py-1 text-xs font-semibold text-purple-300 hover:bg-purple-900/80 transition"
+              >
+                ✨ Ver Habilidades de Classe
+              </button>
+            )}
+          </div>
           <div className="text-xs text-gray-400 font-semibold whitespace-nowrap">
             Total:{" "}
             <span className="text-xs text-purple-400 font-bold bg-purple-950/60 border border-purple-900/60 px-2.5 py-1 rounded-lg">
