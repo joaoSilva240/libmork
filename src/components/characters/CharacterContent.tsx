@@ -194,6 +194,33 @@ export function CharacterContent({
   }, [characterId, activeType]);
 
   const handleActionClick = (row: LinkedRow) => {
+    if (activeType === "skills") {
+      const name = String(row.content.name || "Perícia");
+      const exprValue = getExpression(row.content.rollExpression);
+      const expr = exprValue === null ? "1d20" : String(exprValue);
+      const rollResult = rollExpression(expr, 1);
+
+      if (campaignId) {
+        rollDice({
+          campaignId,
+          actorId: characterId,
+          actorName: "Jogador",
+          rollType: `Teste de Perícia: ${name}`,
+          formula: rollResult.formula,
+          result: rollResult.total,
+          diceDetail: rollResult.detail,
+        });
+      }
+
+      onActionResult?.({
+        title: `Teste de Perícia: ${name}`,
+        formula: rollResult.formula,
+        result: rollResult.total,
+        detail: rollResult.detail,
+      });
+      return;
+    }
+
     if (!campaignId || combatants.length === 0) {
       showToast("Nenhum combate ativo: inicie um combate antes de usar esta ação.");
       return;
@@ -428,11 +455,12 @@ export function CharacterContent({
                     const isLinked = data.linked.some((linked) => linked.content.id === row.content.id);
                     const isAvailableOnly = !isLinked;
                     const isClickable = activeType === "skills" || activeType === "spells" || activeType === "items";
+                    const isLocked = activeType === "skills" ? false : isTurnLocked;
 
                     return (
                       <div
                         key={row.junction.id}
-                        onClick={() => isClickable && !isTurnLocked && !isBusy ? handleActionClick(row) : undefined}
+                        onClick={() => isClickable && !isLocked && !isBusy ? handleActionClick(row) : undefined}
                         className={`flex items-center justify-between rounded-xl border border-gray-800 bg-gray-950 p-3 shadow-sm ${
                           isClickable
                             ? "cursor-pointer hover:border-purple-600 hover:bg-purple-950/20 transition-all active:scale-[0.98]" 
@@ -445,17 +473,15 @@ export function CharacterContent({
                           </p>
                           <div className="mt-1 flex flex-wrap gap-2">
                             {activeType === "skills" && (
-                              <label className="flex items-center gap-1.5 text-xs font-medium text-gray-300">
-                                <input
-                                  type="checkbox"
-                                  checked={!!row.junction.trained}
-                                  disabled={true}
-                                  className="h-4 w-4 accent-purple-600 opacity-60 cursor-not-allowed"
-                                />
-                                <span className={row.junction.trained ? "text-purple-400 font-bold" : "text-gray-400"}>
-                                  {row.junction.trained ? "Treinada" : "Não Treinada"}
+                              row.junction.trained ? (
+                                <span className="rounded bg-purple-950 px-2 py-0.5 text-[10px] font-bold text-purple-300 border border-purple-800/60">
+                                  ★ Treinada
                                 </span>
-                              </label>
+                              ) : (
+                                <span className="rounded bg-gray-900 px-2 py-0.5 text-[10px] font-medium text-gray-400 border border-gray-800">
+                                  Não Treinada
+                                </span>
+                              )
                             )}
                             {activeType === "items" && "quantity" in row.junction && (
                               <span className="text-[11px] text-gray-400 font-medium">
