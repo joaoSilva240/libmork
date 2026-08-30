@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { Campaign, Spell } from "@/types";
-import { formatTechnicalField, getTechnicalLabel } from "@/lib/content/pf2e-item-formatter";
+import { formatTechnicalField, getTechnicalLabel, PF2E_DAMAGE_TYPES_PT } from "@/lib/content/pf2e-item-formatter";
 import { Spinner } from "@/components/ui";
+
+import { extractItemDamageInfo } from "@/components/content/ContentManager";
 
 type ContentOverlayProps = {
   campaignId: string;
@@ -578,9 +580,20 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
       const sourceData = item.sourceData && typeof item.sourceData === "object" ? item.sourceData as Record<string, unknown> : {};
       const system = sourceData.system && typeof sourceData.system === "object" ? sourceData.system as Record<string, unknown> : {};
       const technical = ["level", "price", "bulk", "quantity", "usage", "category", "group", "damage", "traits", "ac", "resiliency"];
+      const itemDmgInfo = extractItemDamageInfo(item);
+      const translatedType = itemDmgInfo.damageType
+        ? (PF2E_DAMAGE_TYPES_PT[itemDmgInfo.damageType.toLowerCase()] || itemDmgInfo.damageType)
+        : null;
 
       return (
         <div className="space-y-3 text-sm">
+          {itemDmgInfo.damage && (
+            <div className="mb-2">
+              <span className="rounded-md bg-rose-950 px-2.5 py-1 text-xs font-bold text-rose-300 border border-rose-800/60 inline-flex items-center gap-1.5 shadow-sm">
+                ⚔️ Dano: {itemDmgInfo.damage}{translatedType ? ` (${translatedType})` : ""}
+              </span>
+            </div>
+          )}
           <div className="flex flex-wrap gap-x-4 gap-y-2 border-b border-purple-900/20 pb-3 text-xs text-gray-300">
             {technical.map((key) => {
               const raw = system[key];
@@ -769,12 +782,26 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
                                {item.name}
                              </button>
                               {isGlobal && activeTab !== "npcs" && <span className="ml-2 rounded bg-gray-800 px-1.5 py-0.5 text-xs text-gray-400">Global</span>}
-                              {activeTab === "npcs" && (
-                                <div className="mt-1 text-xs text-gray-400">
-                                  Nível {String(item.level)} · {String(item.npcType) === "enemy" ? "Inimigo" : "Aliado"}
-                                </div>
-                              )}
-                              {activeTab !== "npcs" && technical.length > 0 && (
+                               {activeTab === "npcs" && (
+                                 <div className="mt-1 text-xs text-gray-400">
+                                   Nível {String(item.level)} · {String(item.npcType) === "enemy" ? "Inimigo" : "Aliado"}
+                                 </div>
+                               )}
+                               {activeTab === "items" && (() => {
+                                 const dmgInfo = extractItemDamageInfo(item);
+                                 if (!dmgInfo.damage) return null;
+                                 const translatedType = dmgInfo.damageType
+                                   ? (PF2E_DAMAGE_TYPES_PT[dmgInfo.damageType.toLowerCase()] || dmgInfo.damageType)
+                                   : null;
+                                 return (
+                                   <div className="mt-1">
+                                     <span className="rounded bg-rose-950 px-2 py-0.5 text-[10px] font-bold text-rose-300 border border-rose-800/60 inline-flex items-center gap-1">
+                                       ⚔️ Dano: {dmgInfo.damage}{translatedType ? ` (${translatedType})` : ""}
+                                     </span>
+                                   </div>
+                                 );
+                               })()}
+                               {activeTab !== "npcs" && technical.length > 0 && (
                                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-gray-400">
                                   {technical.map(([key, value]) => {
                                     const formatted = formatTechnicalField(key, value, modalLanguage);

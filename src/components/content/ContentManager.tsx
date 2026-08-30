@@ -1,6 +1,6 @@
 "use client";
 
-import { getTechnicalLabel, formatTechnicalField } from "@/lib/content/pf2e-item-formatter";
+import { getTechnicalLabel, formatTechnicalField, PF2E_DAMAGE_TYPES_PT } from "@/lib/content/pf2e-item-formatter";
 import { useEffect, useState } from "react";
 import { ATTRIBUTES, SPELL_USE_TYPES } from "@/lib/utils/constants";
 import type { ContentType } from "@/lib/validators/content";
@@ -246,6 +246,71 @@ function getSpellActions(spell: Item): number | null {
 function getTechnicalValue(system: Record<string, unknown>, key: string): unknown {
   const raw = system[key];
   return raw && typeof raw === "object" && "value" in raw ? (raw as Record<string, unknown>).value : raw;
+}
+
+export function extractItemDamageInfo(item: Record<string, unknown>): {
+  damage: string | null;
+  damageType: string | null;
+  rollExpression: string | null;
+} {
+  if (!item || typeof item !== "object") {
+    return { damage: null, damageType: null, rollExpression: null };
+  }
+
+  const sourceData = (item.sourceData && typeof item.sourceData === "object" ? item.sourceData : {}) as Record<string, unknown>;
+  const system = (sourceData.system && typeof sourceData.system === "object" ? sourceData.system : {}) as Record<string, unknown>;
+  const translation = (item.translation && typeof item.translation === "object" ? item.translation : {}) as Record<string, unknown>;
+  const transSystem = (translation.system && typeof translation.system === "object" ? translation.system : {}) as Record<string, unknown>;
+
+  let rawDamage: unknown = item.damage ?? system.damage ?? transSystem.damage;
+  let rawDamageType: unknown = item.damageType ?? system.damageType ?? transSystem.damageType;
+  let rawRollExpr: unknown = item.rollExpression ?? system.rollExpression ?? transSystem.rollExpression;
+
+  if (system.damage && typeof system.damage === "object") {
+    const sysDmg = system.damage as Record<string, unknown>;
+    if (sysDmg.dice && sysDmg.die) {
+      if (!rawDamage) rawDamage = `${sysDmg.dice}${sysDmg.die}`;
+    } else if (sysDmg.die) {
+      if (!rawDamage) rawDamage = `1${sysDmg.die}`;
+    }
+    if (sysDmg.damageType && !rawDamageType) {
+      rawDamageType = sysDmg.damageType;
+    }
+  }
+
+  let damageStr: string | null = null;
+  if (rawDamage !== null && rawDamage !== undefined) {
+    if (typeof rawDamage === "string" && rawDamage.trim() !== "") {
+      damageStr = rawDamage.trim();
+    } else if (typeof rawDamage === "number") {
+      damageStr = String(rawDamage);
+    } else if (typeof rawDamage === "object") {
+      const obj = rawDamage as Record<string, unknown>;
+      if (obj.dice && obj.die) {
+        damageStr = `${obj.dice}${obj.die}`;
+      } else if (obj.formula) {
+        damageStr = String(obj.formula);
+      } else if (obj.value) {
+        damageStr = String(obj.value);
+      }
+    }
+  }
+
+  let damageTypeStr: string | null = null;
+  if (rawDamageType !== null && rawDamageType !== undefined && String(rawDamageType).trim() !== "") {
+    damageTypeStr = String(rawDamageType).trim();
+  }
+
+  let rollExprStr: string | null = null;
+  if (rawRollExpr !== null && rawRollExpr !== undefined && String(rawRollExpr).trim() !== "") {
+    rollExprStr = String(rawRollExpr).trim();
+  }
+
+  return {
+    damage: damageStr,
+    damageType: damageTypeStr,
+    rollExpression: rollExprStr,
+  };
 }
 
 export function ContentManager({ basePath, title }: ContentManagerProps) {
@@ -1292,6 +1357,20 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
                           </div>
 
                           <div className="mt-1 space-y-0.5 text-xs text-gray-400">
+                            {activeType === "items" && (() => {
+                              const dmgInfo = extractItemDamageInfo(item);
+                              if (!dmgInfo.damage) return null;
+                              const translatedType = dmgInfo.damageType
+                                ? (PF2E_DAMAGE_TYPES_PT[dmgInfo.damageType.toLowerCase()] || dmgInfo.damageType)
+                                : null;
+                              return (
+                                <div className="mb-1 mt-0.5">
+                                  <span className="rounded bg-rose-950 px-2 py-0.5 text-[10px] font-bold text-rose-300 border border-rose-800/60 inline-flex items-center gap-1">
+                                    ⚔️ Dano: {dmgInfo.damage}{translatedType ? ` (${translatedType})` : ""}
+                                  </span>
+                                </div>
+                              );
+                            })()}
                             {config.showInList.map((field) => {
                               const value = item[field];
                               if (value === null || value === undefined || value === "") return null;
@@ -1733,11 +1812,32 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
           if (!formatted) return null;
           return <span><strong className="text-purple-400">{getTechnicalLabel(key, modalLanguage)}:</strong> {formatted}</span>;
         };
+        const itemDmgInfo = extractItemDamageInfo(item);
+        const translatedType = itemDmgInfo.damageType
+          ? (PF2E_DAMAGE_TYPES_PT[itemDmgInfo.damageType.toLowerCase()] || itemDmgInfo.damageType)
+          : null;
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md" onClick={() => setSelectedSpell(null)}>
             <div role="dialog" aria-modal="true" aria-labelledby="item-details-title" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-purple-800 bg-gray-950 p-6 text-gray-100 shadow-2xl" onClick={(event) => event.stopPropagation()}>
               <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
-                 <div className="flex items-center gap-3">{item.imageUrl && !failedImages.has(String(item.id)) ? <img src={String(item.imageUrl)} alt={`Imagem de ${String(item.name)}`} className="h-11 w-11 rounded-lg border border-purple-900/60 object-cover" onError={() => setFailedImages((previous) => new Set(previous).add(String(item.id)))} /> : <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-purple-900/60 bg-gray-900 text-xl text-gray-600">✦</div>}<h3 id="item-details-title" className="text-xl font-bold text-purple-200">{String(getItemField("name"))}</h3></div>
+                 <div className="flex items-center gap-3">
+                   {item.imageUrl && !failedImages.has(String(item.id)) ? <img src={String(item.imageUrl)} alt={`Imagem de ${String(item.name)}`} className="h-11 w-11 rounded-lg border border-purple-900/60 object-cover" onError={() => setFailedImages((previous) => new Set(previous).add(String(item.id)))} /> : <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-purple-900/60 bg-gray-900 text-xl text-gray-600">✦</div>}
+                   <div>
+                     <h3 id="item-details-title" className="text-xl font-bold text-purple-200">{String(getItemField("name"))}</h3>
+                     {itemDmgInfo.damage && (
+                       <div className="mt-1 flex items-center gap-2">
+                         <span className="rounded-md bg-rose-950 px-2 py-0.5 text-xs font-bold text-rose-300 border border-rose-800/60 inline-flex items-center gap-1">
+                           ⚔️ Dano: {itemDmgInfo.damage}
+                         </span>
+                         {translatedType && (
+                           <span className="text-xs font-medium text-rose-400">
+                             ({translatedType})
+                           </span>
+                         )}
+                       </div>
+                     )}
+                   </div>
+                 </div>
                  <div className="flex items-center gap-2">{isTranslating && <span className="text-xs text-purple-400 animate-pulse">Traduzindo item...</span>}{translation && <div className="flex gap-1 rounded-lg border border-purple-800 bg-gray-900 p-0.5"><button type="button" onClick={() => setModalLanguage("pt")} className="rounded px-2 py-1 text-xs">PT</button><button type="button" onClick={() => setModalLanguage("en")} className="rounded px-2 py-1 text-xs">EN</button></div>}</div>
                  <button type="button" aria-label="Fechar detalhes do item" onClick={() => setSelectedSpell(null)} className="rounded-lg px-2 py-1 text-gray-400 hover:bg-gray-800 hover:text-white">✕</button>
                </div>
