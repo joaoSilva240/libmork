@@ -11,11 +11,9 @@ import {
 } from "@/lib/utils/constants";
 import type { Attribute } from "@/lib/utils/constants";
 import { getDerivedStats, getModifier } from "@/lib/engine/attributes";
-import type { AttributeMap } from "@/lib/engine/attributes";
 import { Button, Input, Spinner } from "@/components/ui";
 import { Toast } from "@/components/ui/Toast";
 import { generateUUID } from "@/lib/utils/uuid";
-import type { ClassLevelBenefit } from "@/types";
 
 // =============================================================================
 // Types
@@ -28,7 +26,7 @@ type WizardData = {
   raceId: string | null;
   classId: string | null;
   attributes: Record<Attribute, number>;
-  items: Array<{ itemId: string; quantity: number }>;
+  skills: string[];
   spells: string[];
   campaignId: string | null;
 };
@@ -55,11 +53,12 @@ type ClassData = {
   proficiencies: { weapons?: string[]; armor?: string[]; languages?: string[]; tools?: string[] };
 };
 
-type ItemData = {
+type SkillData = {
   id: string;
   name: string;
   description: string | null;
-  imageUrl: string | null;
+  keyAttribute: Attribute;
+  rollExpression: string | null;
 };
 
 type SpellData = {
@@ -75,13 +74,14 @@ type SpellData = {
 // Constants
 // =============================================================================
 
-const STORAGE_KEY = "libmork_character_wizard_draft";
+const STORAGE_KEY = "libmork_character_wizard_draft_v2";
 
 const STEPS = [
   { label: "Básico", shortLabel: "Básico" },
   { label: "Raça", shortLabel: "Raça" },
   { label: "Classe", shortLabel: "Classe" },
-  { label: "Atributos & Itens", shortLabel: "Atrib." },
+  { label: "Atributos", shortLabel: "Atrib." },
+  { label: "Perícias", shortLabel: "Perícias" },
   { label: "Magias", shortLabel: "Magias" },
   { label: "Revisão", shortLabel: "Revisar" },
 ] as const;
@@ -110,7 +110,7 @@ function getInitialWizardData(campaignId: string | null): WizardData {
     raceId: null,
     classId: null,
     attributes: { ...DEFAULT_ATTRIBUTES },
-    items: [],
+    skills: [],
     spells: [],
     campaignId,
   };
@@ -130,6 +130,15 @@ export function CharacterWizard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toasts, setToasts] = useState<Array<{ id: string; message: string; type?: "error" | "success" | "info" | "warning" }>>([]);
   const [hydrated, setHydrated] = useState(false);
+
+  // Clear legacy localStorage draft if present
+  useEffect(() => {
+    try {
+      localStorage.removeItem("libmork_character_wizard_draft");
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -174,7 +183,7 @@ export function CharacterWizard() {
 
   const validateStep = useCallback((step: number): boolean => {
     switch (step) {
-      case 0: // Basic Info
+      case 0: // Básico
         if (!wizardData.name || wizardData.name.trim().length < 2) {
           addToast("Nome deve ter no mínimo 2 caracteres.", "warning");
           return false;
@@ -184,11 +193,11 @@ export function CharacterWizard() {
           return false;
         }
         return true;
-      case 1: // Race — optional
+      case 1: // Raça — opcional
         return true;
-      case 2: // Class — optional
+      case 2: // Classe — opcional
         return true;
-      case 3: { // Attributes + Items
+      case 3: { // Atributos
         const sum = ATTRIBUTES.reduce((acc, attr) => acc + wizardData.attributes[attr], 0);
         if (sum !== ATTRIBUTE_CREATION_TOTAL) {
           addToast(`Distribua todos os pontos de atributo. Soma atual: ${sum}, esperado: ${ATTRIBUTE_CREATION_TOTAL}.`, "warning");
@@ -196,9 +205,11 @@ export function CharacterWizard() {
         }
         return true;
       }
-      case 4: // Spells — optional
+      case 4: // Perícias
         return true;
-      case 5: // Review
+      case 5: // Magias
+        return true;
+      case 6: // Revisão
         return true;
       default:
         return true;
@@ -231,7 +242,7 @@ export function CharacterWizard() {
       if (wizardData.raceId) payload.raceId = wizardData.raceId;
       if (wizardData.classId) payload.classId = wizardData.classId;
       if (wizardData.campaignId) payload.campaignId = wizardData.campaignId;
-      if (wizardData.items.length > 0) payload.items = wizardData.items;
+      if (wizardData.skills.length > 0) payload.skills = wizardData.skills;
       if (wizardData.spells.length > 0) payload.spells = wizardData.spells;
 
       const response = await fetch("/api/characters", {
@@ -248,7 +259,7 @@ export function CharacterWizard() {
         return;
       }
 
-      // Clear draft
+      // Limpar draft do localStorage
       try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
 
       addToast("Personagem criado com sucesso!", "success");
@@ -270,7 +281,7 @@ export function CharacterWizard() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 pb-8">
-      {/* Toast container */}
+      {/* Toast Container */}
       {toasts.length > 0 && (
         <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2">
           {toasts.map((toast) => (
@@ -284,13 +295,13 @@ export function CharacterWizard() {
         </div>
       )}
 
-      {/* Header */}
+      {/* Título */}
       <h2 className="mb-6 text-2xl font-bold text-white">Criar Personagem</h2>
 
-      {/* Stepper */}
+      {/* Stepper (7 Etapas) */}
       <WizardStepper currentStep={currentStep} onStepClick={setCurrentStep} wizardData={wizardData} validateStep={validateStep} />
 
-      {/* Step content */}
+      {/* Conteúdo da Etapa */}
       <div className="mt-6">
         {currentStep === 0 && (
           <WizardStepBasicInfo data={wizardData} updateData={updateData} />
@@ -302,17 +313,20 @@ export function CharacterWizard() {
           <WizardStepClass data={wizardData} updateData={updateData} />
         )}
         {currentStep === 3 && (
-          <WizardStepItems data={wizardData} updateData={updateData} />
+          <WizardStepAttributes data={wizardData} updateData={updateData} />
         )}
         {currentStep === 4 && (
-          <WizardStepSpells data={wizardData} updateData={updateData} />
+          <WizardStepSkills data={wizardData} updateData={updateData} />
         )}
         {currentStep === 5 && (
+          <WizardStepSpells data={wizardData} updateData={updateData} />
+        )}
+        {currentStep === 6 && (
           <WizardStepReview data={wizardData} />
         )}
       </div>
 
-      {/* Navigation */}
+      {/* Navegação */}
       <div className="mt-6 flex items-center justify-between gap-4">
         <Button
           variant="secondary"
@@ -338,7 +352,7 @@ export function CharacterWizard() {
 }
 
 // =============================================================================
-// Stepper
+// Stepper (7 passos)
 // =============================================================================
 
 function WizardStepper({
@@ -355,14 +369,14 @@ function WizardStepper({
   const completedSteps = useMemo(() => {
     const completed = new Set<number>();
     if (wizardData.name.trim().length >= 2) completed.add(0);
-    for (let i = 1; i <= 4; i++) {
+    for (let i = 1; i <= 5; i++) {
       if (currentStep > i) completed.add(i);
     }
     return completed;
   }, [wizardData.name, currentStep]);
 
   return (
-    <div className="flex items-center justify-between gap-1 overflow-x-auto">
+    <div className="flex items-center justify-between gap-1 overflow-x-auto pb-2">
       {STEPS.map((step, idx) => {
         const isActive = idx === currentStep;
         const isCompleted = completedSteps.has(idx) && !isActive;
@@ -392,7 +406,7 @@ function WizardStepper({
             }`}
           >
             <span
-              className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-all duration-200 ${
+              className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-all duration-200 ${
                 isActive
                   ? "bg-purple-600 text-white shadow-[0_0_12px_rgba(147,51,234,0.4)]"
                   : isCompleted
@@ -404,11 +418,10 @@ function WizardStepper({
             </span>
             <span
               className={`text-[10px] font-medium whitespace-nowrap ${
-                isActive ? "text-purple-400" : isCompleted ? "text-green-400" : "text-gray-500"
+                isActive ? "text-purple-300 font-bold" : isCompleted ? "text-green-400" : "text-gray-400"
               }`}
             >
-              <span className="hidden sm:inline">{step.label}</span>
-              <span className="sm:hidden">{step.shortLabel}</span>
+              {step.shortLabel}
             </span>
           </button>
         );
@@ -418,7 +431,7 @@ function WizardStepper({
 }
 
 // =============================================================================
-// Step 1: Basic Info
+// Step 0: Básico
 // =============================================================================
 
 function WizardStepBasicInfo({
@@ -429,68 +442,73 @@ function WizardStepBasicInfo({
   updateData: (partial: Partial<WizardData>) => void;
 }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 rounded-xl border border-gray-800 bg-gray-900/60 p-5">
       <h3 className="text-lg font-semibold text-white">Informações Básicas</h3>
-      <p className="text-sm text-gray-400">Dê um nome ao seu personagem e adicione detalhes opcionais.</p>
+      <p className="text-xs text-gray-400">
+        Defina o nome, histórico e imagem do seu herói.
+      </p>
 
       <Input
-        label="Nome *"
-        name="name"
+        label="Nome do Personagem *"
+        name="wizard-name"
         type="text"
         value={data.name}
         onChange={(e) => updateData({ name: e.target.value })}
-        placeholder="Ex: Aragorn, Gandalf..."
+        required
+        placeholder="Ex: Gandalf, Thorin, Lyra..."
         autoComplete="off"
-        maxLength={100}
+        className="bg-gray-900 text-white"
       />
 
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">
-          Descrição (opcional)
+        <label className="mb-1 block text-sm font-medium text-gray-300">
+          Descrição / Background (opcional)
         </label>
         <textarea
           value={data.description}
           onChange={(e) => updateData({ description: e.target.value })}
-          placeholder="Backstory, aparência, personalidade..."
-          maxLength={500}
+          placeholder="Um breve histórico, personalidade ou aparência..."
           rows={3}
-          className="w-full rounded-lg border border-gray-800 bg-gray-900 px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-purple-600"
+          maxLength={500}
+          className="w-full rounded-lg border border-gray-700 bg-gray-900 p-3 text-sm text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
         />
-        <p className="mt-1 text-xs text-gray-500">
-          {data.description.length}/500 caracteres
-        </p>
+        <span className="text-[10px] text-gray-500">{data.description.length}/500 caracteres</span>
       </div>
 
-      <Input
-        label="URL da Imagem (opcional)"
-        name="imageUrl"
-        type="url"
-        value={data.imageUrl || ""}
-        onChange={(e) => updateData({ imageUrl: e.target.value || null })}
-        placeholder="https://exemplo.com/imagem.png"
-      />
-
-      {data.imageUrl && (
-        <div className="flex justify-center">
-          <div className="relative h-32 w-32 overflow-hidden rounded-lg border border-gray-700">
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-300">
+          URL da Imagem / Avatar (opcional)
+        </label>
+        <Input
+          label=""
+          name="wizard-image-url"
+          type="url"
+          value={data.imageUrl ?? ""}
+          onChange={(e) => updateData({ imageUrl: e.target.value || null })}
+          placeholder="https://exemplo.com/minha-foto.png"
+          className="bg-gray-900 text-white"
+        />
+        {data.imageUrl && (
+          <div className="mt-3 flex items-center gap-3">
+            <span className="text-xs text-gray-400">Preview:</span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={data.imageUrl}
               alt="Preview"
-              className="h-full w-full object-cover"
+              className="h-12 w-12 rounded-full border border-purple-500 object-cover"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = "none";
               }}
             />
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
 
 // =============================================================================
-// Step 2: Race Selection
+// Step 1: Raça
 // =============================================================================
 
 function WizardStepRace({
@@ -511,12 +529,11 @@ function WizardStepRace({
         const res = await fetch("/api/races", { credentials: "include" });
         if (!res.ok) return;
         const json = await res.json();
-        if (cancelled) return;
-        if (json.success && Array.isArray(json.data)) {
+        if (!cancelled && json.data) {
           setRaces(json.data);
         }
       } catch {
-        // Ignore errors
+        // Ignora erro
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -528,125 +545,100 @@ function WizardStepRace({
   const filteredRaces = useMemo(() => {
     if (!search.trim()) return races;
     const q = search.toLowerCase();
-    return races.filter((r) => r.name.toLowerCase().includes(q));
+    return races.filter(
+      (r) => r.name.toLowerCase().includes(q) || (r.description && r.description.toLowerCase().includes(q))
+    );
   }, [races, search]);
 
-  const selectedRace = useMemo(() => races.find((r) => r.id === data.raceId), [races, data.raceId]);
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[200px] items-center justify-center">
-        <Spinner size="md" />
-      </div>
-    );
-  }
+  const selectedRace = useMemo(
+    () => races.find((r) => r.id === data.raceId),
+    [races, data.raceId]
+  );
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-white">Escolha uma Raça</h3>
-      <p className="text-sm text-gray-400">Selecione a raça do seu personagem. Este passo é opcional.</p>
+    <div className="space-y-4 rounded-xl border border-gray-800 bg-gray-900/60 p-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-white">Escolha a Raça</h3>
+          <p className="text-xs text-gray-400">
+            A raça define traços, velocidade e bônus de vida inicial.
+          </p>
+        </div>
+        {data.raceId && (
+          <button
+            type="button"
+            onClick={() => updateData({ raceId: null })}
+            className="text-xs text-purple-400 hover:underline"
+          >
+            Limpar seleção
+          </button>
+        )}
+      </div>
 
-      {races.length > 0 && (
-        <Input
-          placeholder="Buscar raça..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      )}
+      <input
+        type="text"
+        placeholder="Buscar raça por nome..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
+      />
 
-      {data.raceId && (
-        <button
-          type="button"
-          onClick={() => updateData({ raceId: null })}
-          className="text-xs text-purple-400 hover:text-purple-300 underline"
-        >
-          Limpar seleção
-        </button>
-      )}
-
-      {races.length === 0 ? (
-        <p className="text-sm text-gray-500">Nenhuma raça cadastrada na biblioteca.</p>
+      {isLoading ? (
+        <div className="flex min-h-[150px] items-center justify-center">
+          <Spinner size="md" />
+        </div>
       ) : filteredRaces.length === 0 ? (
-        <p className="text-sm text-gray-500">Nenhuma raça encontrada para &quot;{search}&quot;.</p>
+        <p className="text-xs text-gray-500 py-6 text-center">Nenhuma raça encontrada.</p>
       ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           {filteredRaces.map((race) => {
             const isSelected = data.raceId === race.id;
             return (
-              <button
+              <div
                 key={race.id}
-                type="button"
                 onClick={() => updateData({ raceId: isSelected ? null : race.id })}
-                className={`rounded-lg border p-3 text-left transition-all duration-200 ${
+                className={`cursor-pointer rounded-xl border p-4 transition-all ${
                   isSelected
-                    ? "border-purple-500 bg-purple-950/40 shadow-[0_0_12px_rgba(147,51,234,0.15)]"
+                    ? "border-purple-500 bg-purple-950/40 shadow-lg shadow-purple-950/50"
                     : "border-gray-800 bg-gray-900 hover:border-gray-700"
                 }`}
               >
-                <div className="flex items-start gap-3">
-                  {race.imageUrl && (
-                    <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-gray-700">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={race.imageUrl} alt={race.name} className="h-full w-full object-cover" />
-                    </div>
+                <div className="flex items-start justify-between gap-2">
+                  <h4 className="font-bold text-white text-sm">{race.name}</h4>
+                  {isSelected && (
+                    <span className="rounded bg-purple-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                      Selecionada
+                    </span>
                   )}
-                  <div className="min-w-0 flex-1">
-                    <h4 className="font-semibold text-white text-sm">{race.name}</h4>
-                    {race.description && (
-                      <p className="mt-0.5 text-xs text-gray-400 line-clamp-2">{race.description}</p>
-                    )}
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {race.hitPointsBonus !== 0 && (
-                        <span className="rounded bg-red-900/40 px-1.5 py-0.5 text-[10px] font-medium text-red-300">
-                          HP {race.hitPointsBonus > 0 ? "+" : ""}{race.hitPointsBonus}
-                        </span>
-                      )}
-                      <span className="rounded bg-blue-900/40 px-1.5 py-0.5 text-[10px] font-medium text-blue-300">
-                        Vel. {race.speed}
-                      </span>
-                      {Object.entries(race.attributeBonuses || {}).map(([attr, val]) => (
-                        <span
-                          key={attr}
-                          className="rounded bg-purple-900/40 px-1.5 py-0.5 text-[10px] font-medium text-purple-300"
-                        >
-                          {ATTRIBUTE_LABELS[attr as Attribute] || attr} {val > 0 ? "+" : ""}{val}
-                        </span>
-                      ))}
-                    </div>
-                    {race.traits && race.traits.length > 0 && (
-                      <div className="mt-1.5 flex flex-wrap gap-1">
-                        {race.traits.map((trait, i) => (
-                          <span key={i} className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px] text-gray-300">
-                            {trait.name}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
                 </div>
-              </button>
+
+                {race.description && (
+                  <p className="mt-1 text-xs text-gray-400 line-clamp-2">{race.description}</p>
+                )}
+
+                <div className="mt-3 flex flex-wrap gap-1.5 text-[10px]">
+                  {race.hitPointsBonus > 0 && (
+                    <span className="rounded bg-red-950 border border-red-800/60 px-1.5 py-0.5 text-red-300 font-semibold">
+                      +{race.hitPointsBonus} HP
+                    </span>
+                  )}
+                  <span className="rounded bg-gray-800 px-1.5 py-0.5 text-gray-300">
+                    Desloc: {race.speed}ft
+                  </span>
+                  <span className="rounded bg-gray-800 px-1.5 py-0.5 text-gray-300">
+                    Tamanho: {race.size}
+                  </span>
+                </div>
+              </div>
             );
           })}
         </div>
       )}
 
-      {/* Impact preview */}
       {selectedRace && (
-        <div className="rounded-lg border border-purple-800/60 bg-purple-950/30 p-3">
-          <h4 className="text-xs font-semibold text-purple-300 mb-2">Impacto da raça selecionada</h4>
-          <div className="flex flex-wrap gap-2 text-xs text-gray-300">
-            {selectedRace.hitPointsBonus !== 0 && (
-              <span>HP: {selectedRace.hitPointsBonus > 0 ? "+" : ""}{selectedRace.hitPointsBonus}</span>
-            )}
-            {Object.entries(selectedRace.attributeBonuses || {}).map(([attr, val]) => (
-              <span key={attr}>
-                {ATTRIBUTE_LABELS[attr as Attribute] || attr}: {val > 0 ? "+" : ""}{val}
-              </span>
-            ))}
-            {selectedRace.languages && selectedRace.languages.length > 0 && (
-              <span>Idiomas: {(selectedRace.languages as string[]).join(", ")}</span>
-            )}
-          </div>
+        <div className="mt-4 rounded-lg border border-purple-800/50 bg-purple-950/30 p-3 text-xs text-purple-200">
+          <span className="font-bold text-purple-300">Bônus da Raça selecionada ({selectedRace.name}):</span>{" "}
+          +{selectedRace.hitPointsBonus} HP base máximo.
         </div>
       )}
     </div>
@@ -654,7 +646,7 @@ function WizardStepRace({
 }
 
 // =============================================================================
-// Step 3: Class Selection
+// Step 2: Classe
 // =============================================================================
 
 function WizardStepClass({
@@ -666,6 +658,7 @@ function WizardStepClass({
 }) {
   const [classes, setClasses] = useState<ClassData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -674,12 +667,11 @@ function WizardStepClass({
         const res = await fetch("/api/classes", { credentials: "include" });
         if (!res.ok) return;
         const json = await res.json();
-        if (cancelled) return;
-        if (json.success && Array.isArray(json.data)) {
+        if (!cancelled && json.data) {
           setClasses(json.data);
         }
       } catch {
-        // Ignore errors
+        // Ignora erro
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -688,92 +680,95 @@ function WizardStepClass({
     return () => { cancelled = true; };
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[200px] items-center justify-center">
-        <Spinner size="md" />
-      </div>
+  const filteredClasses = useMemo(() => {
+    if (!search.trim()) return classes;
+    const q = search.toLowerCase();
+    return classes.filter(
+      (c) => c.name.toLowerCase().includes(q) || (c.description && c.description.toLowerCase().includes(q))
     );
-  }
+  }, [classes, search]);
+
+  const selectedClass = useMemo(
+    () => classes.find((c) => c.id === data.classId),
+    [classes, data.classId]
+  );
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-white">Escolha uma Classe</h3>
-      <p className="text-sm text-gray-400">Selecione a classe do seu personagem. Este passo é opcional.</p>
+    <div className="space-y-4 rounded-xl border border-gray-800 bg-gray-900/60 p-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-white">Escolha a Classe</h3>
+          <p className="text-xs text-gray-400">
+            A classe determina seu treinamento em combate, magia e equipamentos iniciais.
+          </p>
+        </div>
+        {data.classId && (
+          <button
+            type="button"
+            onClick={() => updateData({ classId: null })}
+            className="text-xs text-purple-400 hover:underline"
+          >
+            Limpar seleção
+          </button>
+        )}
+      </div>
 
-      {data.classId && (
-        <button
-          type="button"
-          onClick={() => updateData({ classId: null })}
-          className="text-xs text-purple-400 hover:text-purple-300 underline"
-        >
-          Limpar seleção
-        </button>
-      )}
+      <input
+        type="text"
+        placeholder="Buscar classe por nome..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
+      />
 
-      {classes.length === 0 ? (
-        <p className="text-sm text-gray-500">Nenhuma classe cadastrada na biblioteca.</p>
+      {isLoading ? (
+        <div className="flex min-h-[150px] items-center justify-center">
+          <Spinner size="md" />
+        </div>
+      ) : filteredClasses.length === 0 ? (
+        <p className="text-xs text-gray-500 py-6 text-center">Nenhuma classe cadastrada.</p>
       ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {classes.map((cls) => {
+        <div className="grid gap-3 sm:grid-cols-2">
+          {filteredClasses.map((cls) => {
             const isSelected = data.classId === cls.id;
-            const profs = cls.proficiencies || {};
-            const allProfs = [
-              ...(profs.weapons || []),
-              ...(profs.armor || []),
-              ...(profs.tools || []),
-            ];
-
             return (
-              <button
+              <div
                 key={cls.id}
-                type="button"
                 onClick={() => updateData({ classId: isSelected ? null : cls.id })}
-                className={`rounded-lg border p-3 text-left transition-all duration-200 ${
+                className={`cursor-pointer rounded-xl border p-4 transition-all ${
                   isSelected
-                    ? "border-purple-500 bg-purple-950/40 shadow-[0_0_12px_rgba(147,51,234,0.15)]"
+                    ? "border-purple-500 bg-purple-950/40 shadow-lg shadow-purple-950/50"
                     : "border-gray-800 bg-gray-900 hover:border-gray-700"
                 }`}
               >
-                <h4 className="font-semibold text-white text-sm">{cls.name}</h4>
-                {cls.description && (
-                  <p className="mt-0.5 text-xs text-gray-400 line-clamp-2">{cls.description}</p>
-                )}
+                <div className="flex items-start justify-between gap-2">
+                  <h4 className="font-bold text-white text-sm">{cls.name}</h4>
+                  {isSelected && (
+                    <span className="rounded bg-purple-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                      Selecionada
+                    </span>
+                  )}
+                </div>
 
-                {allProfs.length > 0 && (
-                  <div className="mt-2">
-                    <span className="text-[10px] font-semibold text-gray-500 uppercase">Proficiências</span>
-                    <div className="mt-0.5 flex flex-wrap gap-1">
-                      {allProfs.slice(0, 6).map((p, i) => (
-                        <span key={i} className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px] text-gray-300">
-                          {p}
-                        </span>
-                      ))}
-                      {allProfs.length > 6 && (
-                        <span className="text-[10px] text-gray-500">+{allProfs.length - 6}</span>
-                      )}
-                    </div>
-                  </div>
+                {cls.description && (
+                  <p className="mt-1 text-xs text-gray-400 line-clamp-2">{cls.description}</p>
                 )}
 
                 {cls.initialItems && cls.initialItems.length > 0 && (
-                  <div className="mt-2">
-                    <span className="text-[10px] font-semibold text-gray-500 uppercase">Itens Iniciais</span>
-                    <div className="mt-0.5 flex flex-wrap gap-1">
-                      {cls.initialItems.slice(0, 4).map((item, i) => (
-                        <span key={i} className="rounded bg-amber-900/40 px-1.5 py-0.5 text-[10px] text-amber-300">
-                          {item.name} ×{item.quantity}
-                        </span>
-                      ))}
-                      {cls.initialItems.length > 4 && (
-                        <span className="text-[10px] text-gray-500">+{cls.initialItems.length - 4}</span>
-                      )}
-                    </div>
+                  <div className="mt-2 text-[10px] text-gray-400">
+                    <span className="font-semibold text-purple-300">Equipamentos da classe:</span>{" "}
+                    {cls.initialItems.map((i) => i.name).join(", ")}
                   </div>
                 )}
-              </button>
+              </div>
             );
           })}
+        </div>
+      )}
+
+      {selectedClass && (
+        <div className="mt-4 rounded-lg border border-purple-800/50 bg-purple-950/30 p-3 text-xs text-purple-200">
+          <span className="font-bold text-purple-300">Classe Selecionada: {selectedClass.name}</span>. Os itens iniciais desta classe serão concedidos automaticamente ao inventário!
         </div>
       )}
     </div>
@@ -781,320 +776,238 @@ function WizardStepClass({
 }
 
 // =============================================================================
-// Step 4: Attributes + Items
+// Step 3: Atributos
 // =============================================================================
 
-function WizardStepItems({
+function WizardStepAttributes({
   data,
   updateData,
 }: {
   data: WizardData;
   updateData: (partial: Partial<WizardData>) => void;
 }) {
-  const [items, setItems] = useState<ItemData[]>([]);
-  const [isLoadingItems, setIsLoadingItems] = useState(true);
-  const [selectedRace, setSelectedRace] = useState<RaceData | null>(null);
-  const [selectedClass, setSelectedClass] = useState<ClassData | null>(null);
-
-  // Load race info for attribute bonuses display
-  useEffect(() => {
-    if (!data.raceId) {
-      setSelectedRace(null);
-      return;
-    }
-    let cancelled = false;
-    async function loadRace() {
-      try {
-        const res = await fetch("/api/races", { credentials: "include" });
-        if (!res.ok) return;
-        const json = await res.json();
-        if (cancelled) return;
-        if (json.success && Array.isArray(json.data)) {
-          const found = json.data.find((r: RaceData) => r.id === data.raceId);
-          if (found) setSelectedRace(found);
-        }
-      } catch {
-        // Ignore
-      }
-    }
-    void loadRace();
-    return () => { cancelled = true; };
-  }, [data.raceId]);
-
-  // Load class info for initial items auto-selection
-  useEffect(() => {
-    if (!data.classId) {
-      setSelectedClass(null);
-      return;
-    }
-    let cancelled = false;
-    async function loadClass() {
-      try {
-        const res = await fetch("/api/classes", { credentials: "include" });
-        if (!res.ok) return;
-        const json = await res.json();
-        if (cancelled) return;
-        if (json.success && Array.isArray(json.data)) {
-          const found = json.data.find((c: ClassData) => c.id === data.classId);
-          if (found) setSelectedClass(found);
-        }
-      } catch {
-        // Ignore
-      }
-    }
-    void loadClass();
-    return () => { cancelled = true; };
-  }, [data.classId]);
-
-  // Load items
-  useEffect(() => {
-    let cancelled = false;
-    async function loadItems() {
-      try {
-        const res = await fetch("/api/content/items", { credentials: "include" });
-        if (!res.ok) {
-          setIsLoadingItems(false);
-          return;
-        }
-        const json = await res.json();
-        if (cancelled) return;
-        if (json.success && Array.isArray(json.data)) {
-          setItems(json.data);
-        }
-      } catch {
-        // Endpoint may not exist — use empty
-      } finally {
-        if (!cancelled) setIsLoadingItems(false);
-      }
-    }
-    void loadItems();
-    return () => { cancelled = true; };
-  }, []);
-
-  // Auto pre-select initial items when items and selectedClass are available
-  useEffect(() => {
-    if (!selectedClass || !selectedClass.initialItems || selectedClass.initialItems.length === 0) {
-      return;
-    }
-
-    const itemsToAdd: Array<{ itemId: string; quantity: number }> = [];
-
-    for (const initItem of selectedClass.initialItems) {
-      let matchedGlobalItem: ItemData | undefined;
-
-      if (initItem.item_id) {
-        matchedGlobalItem = items.find((i) => i.id === initItem.item_id);
-      }
-      if (!matchedGlobalItem && initItem.name) {
-        const normName = initItem.name.toLowerCase().trim();
-        matchedGlobalItem = items.find((i) => i.name.toLowerCase().trim() === normName);
-      }
-
-      if (matchedGlobalItem) {
-        const itemId = matchedGlobalItem.id;
-        const alreadyInWizard = data.items.some((i) => i.itemId === itemId);
-        if (!alreadyInWizard) {
-          itemsToAdd.push({ itemId, quantity: initItem.quantity || 1 });
-        }
-      }
-    }
-
-    if (itemsToAdd.length > 0) {
-      updateData({ items: [...data.items, ...itemsToAdd] });
-    }
-  }, [selectedClass, items, data.items, updateData]);
-
   const spentPoints = useMemo(
     () => ATTRIBUTES.reduce((sum, attr) => sum + (data.attributes[attr] - ATTRIBUTE_BASE_VALUE), 0),
-    [data.attributes],
+    [data.attributes]
   );
+
   const remainingPoints = ATTRIBUTE_FREE_POINTS - spentPoints;
 
   const handleIncrement = (attr: Attribute) => {
     if (remainingPoints <= 0) return;
     updateData({
-      attributes: { ...data.attributes, [attr]: data.attributes[attr] + 1 },
+      attributes: {
+        ...data.attributes,
+        [attr]: data.attributes[attr] + 1,
+      },
     });
   };
 
   const handleDecrement = (attr: Attribute) => {
     if (data.attributes[attr] <= ATTRIBUTE_BASE_VALUE) return;
     updateData({
-      attributes: { ...data.attributes, [attr]: data.attributes[attr] - 1 },
+      attributes: {
+        ...data.attributes,
+        [attr]: data.attributes[attr] - 1,
+      },
     });
   };
-
-  const toggleItem = (itemId: string) => {
-    const existing = data.items.find((i) => i.itemId === itemId);
-    if (existing) {
-      updateData({ items: data.items.filter((i) => i.itemId !== itemId) });
-    } else {
-      updateData({ items: [...data.items, { itemId, quantity: 1 }] });
-    }
-  };
-
-  const updateItemQuantity = (itemId: string, quantity: number) => {
-    if (quantity < 1) return;
-    updateData({
-      items: data.items.map((i) => (i.itemId === itemId ? { ...i, quantity } : i)),
-    });
-  };
-
-  const raceBonuses = selectedRace?.attributeBonuses || {};
 
   return (
-    <div className="space-y-6">
-      {/* Attributes section */}
-      <div>
-        <h3 className="text-lg font-semibold text-white">Distribuição de Atributos</h3>
-        <p className="text-sm text-gray-400 mt-1">
-          Base {ATTRIBUTE_BASE_VALUE} por atributo + {ATTRIBUTE_FREE_POINTS} pontos livres para distribuir.
-        </p>
-
-        <div className="mt-3 mb-2 flex items-center justify-between">
-          <span className="text-sm text-gray-300">Pontos livres</span>
-          <span
-            className={`text-sm font-bold ${
-              remainingPoints === 0 ? "text-green-400" : "text-yellow-400"
-            }`}
-          >
-            {remainingPoints} restante(s)
-          </span>
+    <div className="space-y-4 rounded-xl border border-gray-800 bg-gray-900/60 p-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-white">Distribuição de Atributos</h3>
+          <p className="text-xs text-gray-400">
+            Cada atributo começa em 8. Distribua os 8 pontos livres disponíveis.
+          </p>
         </div>
-
-        <div className="space-y-2">
-          {ATTRIBUTES.map((attr) => {
-            const raceBonus = (raceBonuses[attr] as number) || 0;
-            const effectiveValue = data.attributes[attr] + raceBonus;
-            const mod = getModifier(effectiveValue);
-
-            return (
-              <div
-                key={attr}
-                className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-900 px-3 py-2"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-white">
-                    {ATTRIBUTE_LABELS[attr]}
-                  </span>
-                  {raceBonus !== 0 && (
-                    <span className="text-[10px] text-purple-400">
-                      (+{raceBonus} racial)
-                    </span>
-                  )}
-                  <span className="text-xs text-gray-400">
-                    mod {mod >= 0 ? "+" : ""}{mod}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleDecrement(attr)}
-                    disabled={data.attributes[attr] <= ATTRIBUTE_BASE_VALUE}
-                    className="h-8 w-8 rounded bg-gray-800 font-bold text-white hover:bg-gray-700 disabled:opacity-40"
-                  >
-                    −
-                  </button>
-                  <span className="w-8 text-center font-bold text-white">
-                    {data.attributes[attr]}
-                    {raceBonus !== 0 && (
-                      <span className="text-[10px] text-purple-400 ml-0.5">({effectiveValue})</span>
-                    )}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleIncrement(attr)}
-                    disabled={remainingPoints <= 0}
-                    className="h-8 w-8 rounded bg-gray-800 font-bold text-white hover:bg-gray-700 disabled:opacity-40"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <span
+          className={`text-xs font-bold rounded-lg px-2.5 py-1 ${
+            remainingPoints === 0
+              ? "bg-green-950 border border-green-800 text-green-400"
+              : "bg-yellow-950 border border-yellow-800 text-yellow-400"
+          }`}
+        >
+          {remainingPoints} ponto(s) restante(s)
+        </span>
       </div>
 
-      {/* Items section */}
-      <div>
-        <h3 className="text-lg font-semibold text-white">Seleção de Itens</h3>
-        <p className="text-sm text-gray-400 mt-1">Escolha itens iniciais para o seu personagem (opcional).</p>
-
-        {selectedClass && selectedClass.initialItems && selectedClass.initialItems.length > 0 && (
-          <div className="mt-3 rounded-lg border border-amber-800/60 bg-amber-950/30 p-3">
-            <h4 className="text-xs font-semibold text-amber-300 flex items-center gap-1.5 mb-1.5">
-              <span>🎒</span>
-              <span>Itens Iniciais da sua Classe (Pré-selecionados)</span>
-            </h4>
-            <div className="flex flex-wrap gap-1.5">
-              {selectedClass.initialItems.map((initItem, idx) => (
-                <span
-                  key={idx}
-                  className="rounded bg-amber-900/50 border border-amber-700/50 px-2 py-0.5 text-xs text-amber-200 font-medium"
-                >
-                  {initItem.name} ×{initItem.quantity}
+      <div className="space-y-2.5">
+        {ATTRIBUTES.map((attr) => {
+          const val = data.attributes[attr];
+          const mod = getModifier(val);
+          return (
+            <div
+              key={attr}
+              className="flex items-center justify-between rounded-xl border border-gray-800 bg-gray-900 px-4 py-3"
+            >
+              <div>
+                <span className="text-sm font-semibold text-white">
+                  {ATTRIBUTE_LABELS[attr]}
                 </span>
-              ))}
-            </div>
-          </div>
-        )}
+                <span className="ml-2 text-xs text-gray-400">
+                  mod {mod >= 0 ? `+${mod}` : mod}
+                </span>
+              </div>
 
-        {isLoadingItems ? (
-          <div className="flex min-h-[100px] items-center justify-center">
-            <Spinner size="sm" />
-          </div>
-        ) : items.length === 0 ? (
-          <p className="mt-2 text-sm text-gray-500">Nenhum item disponível na biblioteca global.</p>
-        ) : (
-          <div className="mt-3 space-y-2 max-h-60 overflow-y-auto pr-1">
-            {items.map((item) => {
-              const selected = data.items.find((i) => i.itemId === item.id);
-              return (
-                <div
-                  key={item.id}
-                  className={`flex items-center gap-3 rounded-lg border p-2.5 transition-all duration-200 ${
-                    selected
-                      ? "border-purple-600 bg-purple-950/30"
-                      : "border-gray-800 bg-gray-900"
-                  }`}
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleDecrement(attr)}
+                  disabled={val <= ATTRIBUTE_BASE_VALUE}
+                  className="h-8 w-8 rounded-lg bg-gray-800 font-bold text-white hover:bg-gray-700 disabled:opacity-30"
                 >
-                  <input
-                    type="checkbox"
-                    checked={!!selected}
-                    onChange={() => toggleItem(item.id)}
-                    className="h-4 w-4 rounded border-gray-600 accent-purple-600"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <span className="text-sm font-medium text-white">{item.name}</span>
-                    {item.description && (
-                      <p className="text-xs text-gray-400 line-clamp-1">{item.description}</p>
-                    )}
-                  </div>
-                  {selected && (
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs text-gray-400">Qtd:</span>
-                      <input
-                        type="number"
-                        min={1}
-                        value={selected.quantity}
-                        onChange={(e) => updateItemQuantity(item.id, parseInt(e.target.value) || 1)}
-                        className="w-14 rounded border border-gray-700 bg-gray-800 px-1.5 py-0.5 text-center text-sm text-white"
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
+                  −
+                </button>
+                <span className="w-8 text-center font-bold text-base text-white">{val}</span>
+                <button
+                  type="button"
+                  onClick={() => handleIncrement(attr)}
+                  disabled={remainingPoints <= 0}
+                  className="h-8 w-8 rounded-lg bg-gray-800 font-bold text-white hover:bg-gray-700 disabled:opacity-30"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
 // =============================================================================
-// Step 5: Spells
+// Step 4: Perícias Treinadas (NOVO)
+// =============================================================================
+
+function WizardStepSkills({
+  data,
+  updateData,
+}: {
+  data: WizardData;
+  updateData: (partial: Partial<WizardData>) => void;
+}) {
+  const [skills, setSkills] = useState<SkillData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Buscar lista de perícias da biblioteca
+  useEffect(() => {
+    let cancelled = false;
+    async function loadSkills() {
+      try {
+        const res = await fetch("/api/content/skills", { credentials: "include" });
+        if (res.ok) {
+          const json = await res.json();
+          if (!cancelled && Array.isArray(json.data)) {
+            setSkills(json.data);
+          }
+        }
+      } catch {
+        // Ignora erro
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+    void loadSkills();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Vagas de Perícia Treinada (Inteligência ÷ 2, arredondado para baixo)
+  const baseSlots = Math.max(0, Math.floor(data.attributes.inteligencia / 2));
+  // Mínimo de 1 slot garantido para o herói
+  const maxSlots = Math.max(1, baseSlots);
+  const selectedCount = data.skills.length;
+
+  const toggleSkill = (skillId: string) => {
+    if (data.skills.includes(skillId)) {
+      updateData({ skills: data.skills.filter((id) => id !== skillId) });
+    } else {
+      if (selectedCount >= maxSlots) return;
+      updateData({ skills: [...data.skills, skillId] });
+    }
+  };
+
+  return (
+    <div className="space-y-4 rounded-xl border border-gray-800 bg-gray-900/60 p-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-white">Perícias Treinadas</h3>
+          <p className="text-xs text-gray-400">
+            Sua Inteligência ({data.attributes.inteligencia}) concede vagas de Perícias Treinadas.
+          </p>
+        </div>
+
+        <span
+          className={`text-xs font-bold rounded-lg px-2.5 py-1 ${
+            selectedCount === maxSlots
+              ? "bg-green-950 border border-green-800 text-green-400"
+              : "bg-purple-950 border border-purple-800 text-purple-300"
+          }`}
+        >
+          {selectedCount} / {maxSlots} selecionada(s)
+        </span>
+      </div>
+
+      {isLoading ? (
+        <div className="flex min-h-[150px] items-center justify-center">
+          <Spinner size="md" />
+        </div>
+      ) : skills.length === 0 ? (
+        <p className="text-xs text-gray-500 py-6 text-center">Nenhuma perícia cadastrada na biblioteca.</p>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {skills.map((skill) => {
+            const isSelected = data.skills.includes(skill.id);
+            const isDisabled = !isSelected && selectedCount >= maxSlots;
+
+            return (
+              <div
+                key={skill.id}
+                onClick={() => !isDisabled && toggleSkill(skill.id)}
+                className={`flex items-start gap-3 rounded-xl border p-3.5 transition-all ${
+                  isDisabled ? "opacity-40 cursor-not-allowed border-gray-800 bg-gray-950" : "cursor-pointer"
+                } ${
+                  isSelected
+                    ? "border-purple-500 bg-purple-950/40 shadow-md shadow-purple-950/40"
+                    : "border-gray-800 bg-gray-900 hover:border-gray-700"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={() => {}}
+                  disabled={isDisabled}
+                  className="mt-1 h-4 w-4 rounded border-gray-700 bg-gray-900 text-purple-600 focus:ring-purple-500"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-white text-xs truncate">{skill.name}</h4>
+                    <span className="rounded bg-purple-950/80 border border-purple-800/60 px-1.5 py-0.5 text-[9px] text-purple-300 font-bold uppercase">
+                      {ATTRIBUTE_LABELS[skill.keyAttribute]}
+                    </span>
+                  </div>
+                  {skill.description && (
+                    <p className="mt-1 text-[11px] text-gray-400 line-clamp-2">{skill.description}</p>
+                  )}
+                  {skill.rollExpression && (
+                    <span className="mt-1 inline-block text-[10px] text-purple-400 font-mono">
+                      {skill.rollExpression}
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// =============================================================================
+// Step 5: Magias & Habilidades
 // =============================================================================
 
 function WizardStepSpells({
@@ -1105,84 +1018,20 @@ function WizardStepSpells({
   updateData: (partial: Partial<WizardData>) => void;
 }) {
   const [spells, setSpells] = useState<SpellData[]>([]);
-  const [selectedClass, setSelectedClass] = useState<ClassData | null>(null);
-  const [classBenefits, setClassBenefits] = useState<Array<{ level: number; benefits: ClassLevelBenefit }>>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [circleFilter, setCircleFilter] = useState<number | null>(1); // Padrão: 1º Círculo no Nível 1
-
-  // Load class info and level 1 benefits if classId is present
-  useEffect(() => {
-    if (!data.classId) {
-      setSelectedClass(null);
-      setClassBenefits([]);
-      return;
-    }
-    let cancelled = false;
-    async function loadClassData() {
-      try {
-        const [clsRes, benRes] = await Promise.allSettled([
-          fetch("/api/classes", { credentials: "include" }),
-          fetch(`/api/classes/${data.classId}/benefits`, { credentials: "include" }),
-        ]);
-
-        if (cancelled) return;
-
-        if (clsRes.status === "fulfilled" && clsRes.value.ok) {
-          const json = await clsRes.value.json();
-          if (json.success && Array.isArray(json.data)) {
-            const found = json.data.find((c: ClassData) => c.id === data.classId);
-            if (found) setSelectedClass(found);
-          }
-        }
-
-        if (benRes.status === "fulfilled" && benRes.value.ok) {
-          const json = await benRes.value.json();
-          if (json.success && Array.isArray(json.data)) {
-            setClassBenefits(json.data);
-          }
-        }
-      } catch {
-        // Ignore
-      }
-    }
-    void loadClassData();
-    return () => { cancelled = true; };
-  }, [data.classId]);
-
-  // Determine if class is spellcaster (conjuradora)
-  const isCaster = useMemo(() => {
-    if (!data.classId) return false;
-    // Check level 1 benefit for mana_bonus / manaBonus
-    const lvl1Benefit = classBenefits.find((b) => b.level === 1);
-    if (lvl1Benefit && lvl1Benefit.benefits) {
-      const b = lvl1Benefit.benefits as Record<string, unknown>;
-      if ((b.mana_bonus && Number(b.mana_bonus) > 0) || (b.manaBonus && Number(b.manaBonus) > 0)) {
-        return true;
-      }
-    }
-    // Also check derived mana points from attributes
-    const derived = getDerivedStats(data.attributes, 1);
-    return derived.manaPointsMax > 0;
-  }, [data.classId, classBenefits, data.attributes]);
-
-  const maxAllowedSpells = isCaster ? 3 : 1;
 
   useEffect(() => {
     let cancelled = false;
     async function loadSpells() {
       try {
         const res = await fetch("/api/content/spells", { credentials: "include" });
-        if (!res.ok) {
-          setIsLoading(false);
-          return;
-        }
+        if (!res.ok) return;
         const json = await res.json();
-        if (cancelled) return;
-        if (json.success && Array.isArray(json.data)) {
+        if (!cancelled && json.data) {
           setSpells(json.data);
         }
       } catch {
-        // Endpoint may not exist — use empty
+        // Ignora erro
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -1191,362 +1040,250 @@ function WizardStepSpells({
     return () => { cancelled = true; };
   }, []);
 
-  const availableCircles = useMemo(() => {
-    const circles = new Set(spells.map((s) => s.circle));
-    return Array.from(circles).sort((a, b) => a - b);
-  }, [spells]);
-
-  const filteredSpells = useMemo(() => {
-    if (circleFilter === null) return spells;
-    return spells.filter((s) => s.circle === circleFilter);
-  }, [spells, circleFilter]);
+  // No nível 1, apenas magias de Círculo 1
+  const level1Spells = useMemo(() => spells.filter((s) => s.circle === 1), [spells]);
+  const maxSpells = 3;
+  const selectedCount = data.spells.length;
 
   const toggleSpell = (spellId: string) => {
-    const spell = spells.find((s) => s.id === spellId);
-    if (!spell) return;
-
-    // Apenas magias do 1º Círculo podem ser marcadas no Nível 1
-    if (spell.circle > 1) return;
-
     if (data.spells.includes(spellId)) {
       updateData({ spells: data.spells.filter((id) => id !== spellId) });
     } else {
-      if (data.spells.length >= maxAllowedSpells) {
-        return;
-      }
+      if (selectedCount >= maxSpells) return;
       updateData({ spells: [...data.spells, spellId] });
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[200px] items-center justify-center">
-        <Spinner size="md" />
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+    <div className="space-y-4 rounded-xl border border-gray-800 bg-gray-900/60 p-5">
+      <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-white">Seleção de Magias</h3>
-          <p className="text-sm text-gray-400">Escolha magias para o seu personagem (opcional).</p>
+          <h3 className="text-lg font-semibold text-white">Magias & Habilidades (1º Círculo)</h3>
+          <p className="text-xs text-gray-400">
+            No Nível 1, escolha até {maxSpells} magias do 1º Círculo.
+          </p>
         </div>
-        <div className="rounded-lg border border-purple-800/60 bg-purple-950/40 px-3 py-1.5 text-xs text-purple-300 font-medium">
-          Magias selecionadas: <span className="font-bold text-white">{data.spells.length}</span> / {maxAllowedSpells} (Apenas 1º Círculo no Nível 1)
-        </div>
+
+        <span
+          className={`text-xs font-bold rounded-lg px-2.5 py-1 ${
+            selectedCount === maxSpells
+              ? "bg-green-950 border border-green-800 text-green-400"
+              : "bg-purple-950 border border-purple-800 text-purple-300"
+          }`}
+        >
+          {selectedCount} / {maxSpells} selecionada(s)
+        </span>
       </div>
 
-      {!isCaster && data.classId && (
-        <div className="rounded-lg border border-amber-800/60 bg-amber-950/30 p-3 text-xs text-amber-300">
-          ⚠️ Esta classe não é conjuradora no Nível 1. Você pode selecionar no máximo 1 magia/truque opcional.
+      {isLoading ? (
+        <div className="flex min-h-[150px] items-center justify-center">
+          <Spinner size="md" />
         </div>
-      )}
-
-      {spells.length === 0 ? (
-        <p className="text-sm text-gray-500">Nenhuma magia disponível na biblioteca global.</p>
+      ) : level1Spells.length === 0 ? (
+        <p className="text-xs text-gray-500 py-6 text-center">Nenhuma magia de 1º Círculo encontrada.</p>
       ) : (
-        <>
-          {/* Circle filter */}
-          <div className="flex flex-wrap gap-1.5">
-            <button
-              type="button"
-              onClick={() => setCircleFilter(null)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                circleFilter === null
-                  ? "bg-purple-600 text-white"
-                  : "bg-gray-800 text-gray-400 hover:bg-gray-700"
-              }`}
-            >
-              Todos
-            </button>
-            {availableCircles.map((c) => {
-              const isLocked = c > 1;
-              return (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setCircleFilter(c === circleFilter ? null : c)}
-                  className={`relative rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                    circleFilter === c
-                      ? "bg-purple-600 text-white"
-                      : isLocked
-                        ? "bg-gray-900 text-gray-500 border border-gray-800"
-                        : "bg-gray-800 text-gray-400 hover:bg-gray-700"
-                  }`}
-                >
-                  {c}° Círculo
-                  {isLocked && (
-                    <span className="ml-1 text-[9px] text-amber-400 font-normal">
-                      (Requer Nível superior)
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-            {filteredSpells.map((spell) => {
-              const isSelected = data.spells.includes(spell.id);
-              const isLocked = spell.circle > 1;
-              const actionCost = spell.circle ? (SPELL_ACTION_COST_BY_CIRCLE[spell.circle] ?? 1) : 1;
-              const isMaxReached = !isSelected && data.spells.length >= maxAllowedSpells;
-
-              return (
-                <div
-                  key={spell.id}
-                  className={`flex items-start gap-3 rounded-lg border p-2.5 transition-all duration-200 ${
-                    isSelected
-                      ? "border-purple-600 bg-purple-950/30"
-                      : isLocked
-                        ? "border-gray-800/60 bg-gray-950/50 opacity-60"
-                        : "border-gray-800 bg-gray-900"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    disabled={isLocked || isMaxReached}
-                    onChange={() => toggleSpell(spell.id)}
-                    className="mt-1 h-4 w-4 rounded border-gray-600 accent-purple-600 disabled:opacity-40"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-medium text-white">{spell.name}</span>
-                      <span className="rounded bg-blue-900/40 px-1.5 py-0.5 text-[10px] font-medium text-blue-300">
-                        {spell.circle}° Círculo
-                      </span>
-                      {isLocked && (
-                        <span className="rounded bg-amber-950 border border-amber-800/60 px-1.5 py-0.5 text-[10px] font-medium text-amber-400">
-                          Disponível em Níveis Superiores
-                        </span>
-                      )}
-                      <span className="rounded bg-indigo-900/40 px-1.5 py-0.5 text-[10px] font-medium text-indigo-300">
-                        Mana: {spell.manaCost}
-                      </span>
-                      <span className="rounded bg-amber-900/40 px-1.5 py-0.5 text-[10px] font-medium text-amber-300">
-                        {actionCost} ação(ões)
-                      </span>
-                      {spell.useType && (
-                        <span className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px] text-gray-300">
-                          {spell.useType}
-                        </span>
-                      )}
-                    </div>
-                    {spell.description && (
-                      <p className="mt-1 text-xs text-gray-400 line-clamp-2">{spell.description}</p>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-// =============================================================================
-// Step 6: Review & Confirm
-// =============================================================================
-
-function WizardStepReview({ data }: { data: WizardData }) {
-  const [races, setRaces] = useState<RaceData[]>([]);
-  const [classes, setClasses] = useState<ClassData[]>([]);
-  const [items, setItems] = useState<ItemData[]>([]);
-  const [spellsList, setSpellsList] = useState<SpellData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadData() {
-      try {
-        const [racesRes, classesRes, itemsRes, spellsRes] = await Promise.allSettled([
-          fetch("/api/races", { credentials: "include" }),
-          fetch("/api/classes", { credentials: "include" }),
-          fetch("/api/content/items", { credentials: "include" }),
-          fetch("/api/content/spells", { credentials: "include" }),
-        ]);
-
-        if (cancelled) return;
-
-        if (racesRes.status === "fulfilled" && racesRes.value.ok) {
-          const json = await racesRes.value.json();
-          if (json.success) setRaces(json.data);
-        }
-        if (classesRes.status === "fulfilled" && classesRes.value.ok) {
-          const json = await classesRes.value.json();
-          if (json.success) setClasses(json.data);
-        }
-        if (itemsRes.status === "fulfilled" && itemsRes.value.ok) {
-          const json = await itemsRes.value.json();
-          if (json.success) setItems(json.data);
-        }
-        if (spellsRes.status === "fulfilled" && spellsRes.value.ok) {
-          const json = await spellsRes.value.json();
-          if (json.success) setSpellsList(json.data);
-        }
-      } catch {
-        // Ignore
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    }
-    void loadData();
-    return () => { cancelled = true; };
-  }, []);
-
-  const selectedRace = useMemo(() => races.find((r) => r.id === data.raceId), [races, data.raceId]);
-  const selectedClass = useMemo(() => classes.find((c) => c.id === data.classId), [classes, data.classId]);
-
-  const raceBonuses = selectedRace?.attributeBonuses || {};
-  const derived = useMemo(() => {
-    const effectiveAttrs: Record<Attribute, number> = { ...data.attributes };
-    for (const attr of ATTRIBUTES) {
-      effectiveAttrs[attr] += (raceBonuses[attr] as number) || 0;
-    }
-    return getDerivedStats(effectiveAttrs, 1);
-  }, [data.attributes, raceBonuses]);
-
-  const selectedItemDetails = useMemo(() => {
-    return data.items
-      .map((i) => {
-        const found = items.find((item) => item.id === i.itemId);
-        return found ? { ...found, quantity: i.quantity } : null;
-      })
-      .filter((i): i is ItemData & { quantity: number } => i !== null);
-  }, [data.items, items]);
-
-  const selectedSpellDetails = useMemo(() => {
-    return data.spells
-      .map((id) => spellsList.find((s) => s.id === id))
-      .filter((s): s is SpellData => s !== undefined);
-  }, [data.spells, spellsList]);
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[200px] items-center justify-center">
-        <Spinner size="md" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-white">Revisão do Personagem</h3>
-
-      {/* Basic summary */}
-      <div className="rounded-lg border border-gray-800 bg-gray-900 p-4 space-y-3">
-        <div className="flex items-center gap-4">
-          {data.imageUrl ? (
-            <div className="h-16 w-16 overflow-hidden rounded-full border border-gray-700 shrink-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={data.imageUrl} alt={data.name} className="h-full w-full object-cover" />
-            </div>
-          ) : (
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-purple-950 border border-purple-800 text-purple-300 font-bold text-xl shrink-0">
-              {data.name.charAt(0).toUpperCase()}
-            </div>
-          )}
-          <div>
-            <h4 className="text-xl font-bold text-white">{data.name}</h4>
-            <p className="text-sm text-gray-400">
-              {selectedRace?.name || "Sem Raça"} · {selectedClass?.name || "Sem Classe"} · Nível 1
-            </p>
-          </div>
-        </div>
-
-        {data.description && (
-          <p className="text-xs text-gray-300 border-t border-gray-800 pt-2">{data.description}</p>
-        )}
-      </div>
-
-      {/* Derived stats */}
-      <div className="rounded-lg border border-gray-800 bg-gray-900 p-4">
-        <h4 className="text-sm font-semibold text-purple-400 mb-3">Status Calculados (Nível 1)</h4>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatBadge label="HP Máx" value={derived.hitPointsMax} color="red" />
-          <StatBadge label="MP Máx" value={derived.manaPointsMax} color="blue" />
-          <StatBadge label="Bloqueio" value={derived.block} color="purple" />
-          <StatBadge label="Perícias Treinadas" value={derived.trainedSkillSlots} color="yellow" />
-        </div>
-      </div>
-
-      {/* Attributes */}
-      <div className="rounded-lg border border-gray-800 bg-gray-900 p-4">
-        <h4 className="text-sm font-semibold text-purple-400 mb-3">Atributos Finalizados</h4>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-          {ATTRIBUTES.map((attr) => {
-            const baseVal = data.attributes[attr];
-            const raceBonus = (raceBonuses[attr] as number) || 0;
-            const finalVal = baseVal + raceBonus;
-            const mod = getModifier(finalVal);
+        <div className="grid gap-3 sm:grid-cols-2">
+          {level1Spells.map((spell) => {
+            const isSelected = data.spells.includes(spell.id);
+            const isDisabled = !isSelected && selectedCount >= maxSpells;
+            const actionCost = SPELL_ACTION_COST_BY_CIRCLE[spell.circle] ?? 1;
 
             return (
-              <div key={attr} className="rounded border border-gray-800 bg-gray-950 p-2 text-center">
-                <span className="block text-[10px] text-gray-400 uppercase font-semibold">
-                  {ATTRIBUTE_LABELS[attr]}
-                </span>
-                <span className="block text-lg font-bold text-white mt-0.5">{finalVal}</span>
-                <span className="block text-[10px] text-purple-400">
-                  mod {mod >= 0 ? "+" : ""}{mod}
-                </span>
+              <div
+                key={spell.id}
+                onClick={() => !isDisabled && toggleSpell(spell.id)}
+                className={`flex items-start gap-3 rounded-xl border p-3.5 transition-all ${
+                  isDisabled ? "opacity-40 cursor-not-allowed border-gray-800 bg-gray-950" : "cursor-pointer"
+                } ${
+                  isSelected
+                    ? "border-purple-500 bg-purple-950/40 shadow-md shadow-purple-950/40"
+                    : "border-gray-800 bg-gray-900 hover:border-gray-700"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={() => {}}
+                  disabled={isDisabled}
+                  className="mt-1 h-4 w-4 rounded border-gray-700 bg-gray-900 text-purple-600 focus:ring-purple-500"
+                />
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-white text-xs truncate">{spell.name}</h4>
+                    <span className="rounded bg-blue-950 border border-blue-800/60 px-1.5 py-0.5 text-[9px] text-blue-300 font-bold">
+                      {spell.manaCost} MP
+                    </span>
+                  </div>
+
+                  {spell.description && (
+                    <p className="mt-1 text-[11px] text-gray-400 line-clamp-2">{spell.description}</p>
+                  )}
+
+                  <div className="mt-2 flex items-center gap-2 text-[10px] text-gray-400">
+                    <span>⚡ {actionCost} ação(ões)</span>
+                    {spell.useType && <span className="capitalize">• {spell.useType}</span>}
+                  </div>
+                </div>
               </div>
             );
           })}
         </div>
-      </div>
-
-      {/* Selected Items */}
-      {selectedItemDetails.length > 0 && (
-        <div className="rounded-lg border border-gray-800 bg-gray-900 p-4">
-          <h4 className="text-sm font-semibold text-purple-400 mb-2">
-            Itens ({selectedItemDetails.length})
-          </h4>
-          <div className="flex flex-wrap gap-2">
-            {selectedItemDetails.map((item) => (
-              <span key={item.id} className="rounded bg-amber-900/40 border border-amber-800/40 px-2 py-1 text-xs text-amber-300 font-medium">
-                {item.name} ×{item.quantity}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Selected Spells */}
-      {selectedSpellDetails.length > 0 && (
-        <div className="rounded-lg border border-gray-800 bg-gray-900 p-4">
-          <h4 className="text-sm font-semibold text-purple-400 mb-2">
-            Magias ({selectedSpellDetails.length})
-          </h4>
-          <div className="flex flex-wrap gap-2">
-            {selectedSpellDetails.map((spell) => (
-              <span key={spell.id} className="rounded bg-blue-900/40 border border-blue-800/40 px-2 py-1 text-xs text-blue-300 font-medium">
-                {spell.name} ({spell.circle}° Círculo)
-              </span>
-            ))}
-          </div>
-        </div>
       )}
     </div>
   );
 }
 
-function StatBadge({ label, value, color }: { label: string; value: number; color: "red" | "blue" | "purple" | "yellow" }) {
-  const colorClasses = {
-    red: "border-red-900/60 bg-red-950/40 text-red-300",
-    blue: "border-blue-900/60 bg-blue-950/40 text-blue-300",
-    purple: "border-purple-900/60 bg-purple-950/40 text-purple-300",
-    yellow: "border-yellow-900/60 bg-yellow-950/40 text-yellow-300",
-  };
+// =============================================================================
+// Step 6: Revisão & Confirmação
+// =============================================================================
+
+function WizardStepReview({ data }: { data: WizardData }) {
+  const [raceName, setRaceName] = useState<string | null>(null);
+  const [className, setClassName] = useState<string | null>(null);
+  const [initialItemsList, setInitialItemsList] = useState<Array<{ name: string; quantity: number }>>([]);
+  const [raceHpBonus, setRaceHpBonus] = useState(0);
+
+  useEffect(() => {
+    async function loadInfo() {
+      if (data.raceId) {
+        try {
+          const res = await fetch("/api/races", { credentials: "include" });
+          if (res.ok) {
+            const json = await res.json();
+            const found = (json.data || []).find((r: RaceData) => r.id === data.raceId);
+            if (found) {
+              setRaceName(found.name);
+              setRaceHpBonus(found.hitPointsBonus || 0);
+            }
+          }
+        } catch { /* ignore */ }
+      }
+      if (data.classId) {
+        try {
+          const res = await fetch("/api/classes", { credentials: "include" });
+          if (res.ok) {
+            const json = await res.json();
+            const found = (json.data || []).find((c: ClassData) => c.id === data.classId);
+            if (found) {
+              setClassName(found.name);
+              if (found.initialItems) {
+                setInitialItemsList(found.initialItems);
+              }
+            }
+          }
+        } catch { /* ignore */ }
+      }
+    }
+    void loadInfo();
+  }, [data.raceId, data.classId]);
+
+  const derived = useMemo(
+    () => getDerivedStats(data.attributes, 1),
+    [data.attributes]
+  );
+
+  const totalHpMax = derived.hitPointsMax + raceHpBonus;
 
   return (
-    <div className={`rounded-lg border p-2.5 text-center ${colorClasses[color]}`}>
-      <span className="block text-[10px] font-semibold uppercase opacity-80">{label}</span>
-      <span className="block text-xl font-bold mt-0.5">{value}</span>
+    <div className="space-y-4 rounded-xl border border-gray-800 bg-gray-900/60 p-5">
+      <h3 className="text-lg font-semibold text-white">Revisão do Personagem</h3>
+      <p className="text-xs text-gray-400">
+        Confira todas as estatísticas e seleções antes de criar o herói.
+      </p>
+
+      {/* Resumo do Personagem */}
+      <div className="flex items-center gap-4 rounded-xl border border-purple-900/60 bg-purple-950/30 p-4">
+        {data.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={data.imageUrl}
+            alt={data.name}
+            className="h-16 w-16 rounded-full border-2 border-purple-500 object-cover shrink-0"
+          />
+        ) : (
+          <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-purple-500 bg-purple-900 text-xl font-bold text-white shrink-0">
+            {data.name.slice(0, 2).toUpperCase() || "??"}
+          </div>
+        )}
+        <div>
+          <h4 className="text-xl font-bold text-white">{data.name || "Sem Nome"}</h4>
+          <p className="text-xs text-purple-300">
+            {raceName || "Sem Raça"} • {className || "Sem Classe"} • Nível 1
+          </p>
+          {data.description && (
+            <p className="mt-1 text-xs text-gray-400 line-clamp-2">{data.description}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Atributos e Estatísticas Derivadas */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
+          <h5 className="mb-2 text-xs font-bold text-purple-400 uppercase tracking-wider">
+            Atributos Principais
+          </h5>
+          <div className="space-y-1 text-xs">
+            {ATTRIBUTES.map((attr) => {
+              const val = data.attributes[attr];
+              const mod = derived.modifiers[attr];
+              return (
+                <div key={attr} className="flex justify-between border-b border-gray-800/50 py-1">
+                  <span className="text-gray-300">{ATTRIBUTE_LABELS[attr]}:</span>
+                  <span className="font-bold text-white">
+                    {val} (mod {mod >= 0 ? `+${mod}` : mod})
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
+          <h5 className="mb-2 text-xs font-bold text-purple-400 uppercase tracking-wider">
+            Estatísticas Derivadas (Nível 1)
+          </h5>
+          <div className="space-y-1 text-xs">
+            <div className="flex justify-between border-b border-gray-800/50 py-1">
+              <span className="text-gray-300">Vida Máxima (HP):</span>
+              <span className="font-bold text-red-400">{totalHpMax} HP</span>
+            </div>
+            <div className="flex justify-between border-b border-gray-800/50 py-1">
+              <span className="text-gray-300">Mana Máxima (MP):</span>
+              <span className="font-bold text-blue-400">{derived.manaPointsMax} MP</span>
+            </div>
+            <div className="flex justify-between border-b border-gray-800/50 py-1">
+              <span className="text-gray-300">Bloqueio Tático:</span>
+              <span className="font-bold text-white">{derived.block}</span>
+            </div>
+            <div className="flex justify-between py-1">
+              <span className="text-gray-300">Perícias Treinadas Selecionadas:</span>
+              <span className="font-bold text-purple-300">{data.skills.length}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Itens Iniciais Concedidos pela Classe */}
+      <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
+        <h5 className="mb-2 text-xs font-bold text-purple-300 flex items-center gap-1.5">
+          <span>🎒 Itens Iniciais da Classe (Concedidos Automáticos)</span>
+        </h5>
+        {initialItemsList.length === 0 ? (
+          <p className="text-xs text-gray-500 italic">Nenhum item inicial padrão para a classe selecionada.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {initialItemsList.map((item, idx) => (
+              <span
+                key={idx}
+                className="rounded-lg bg-purple-950/80 border border-purple-800/60 px-2.5 py-1 text-xs font-semibold text-purple-200"
+              >
+                {item.quantity}x {item.name}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
