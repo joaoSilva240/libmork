@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { ContentType } from "@/lib/validators/content";
-import { useSocket } from "@/context/SocketContext";
+import { useSocket, DICE_ROLL_LOADING_DELAY } from "@/context/SocketContext";
 import { TargetSelectionModal } from "@/components/combat/TargetSelectionModal";
 import { DecorativeFrame } from "@/components/ui/DecorativeFrame";
 import { Spinner } from "@/components/ui";
@@ -91,6 +91,8 @@ type CharacterContentProps = {
   onActionResult?: (result: { title: string; formula: string; result: number; detail: string }) => void;
   characterManaCurrent?: number | null;
   characterManaMax?: number | null;
+  onStartRolling?: () => void;
+  onEndRolling?: () => void;
 };
 
 export function CharacterContent({
@@ -107,6 +109,8 @@ export function CharacterContent({
   onActionResult,
   characterManaCurrent,
   characterManaMax,
+  onStartRolling,
+  onEndRolling,
 }: CharacterContentProps) {
   const [activeType, setActiveType] = useState<ContentType>(defaultType);
   const [data, setData] = useState<{ linked: LinkedRow[]; available: Record<string, unknown>[] }>({
@@ -195,29 +199,40 @@ export function CharacterContent({
 
   const handleActionClick = (row: LinkedRow) => {
     if (activeType === "skills") {
-      const name = String(row.content.name || "Perícia");
-      const exprValue = getExpression(row.content.rollExpression);
-      const expr = exprValue === null ? "1d20" : String(exprValue);
-      const rollResult = rollExpression(expr, 1);
+      if (isBusy) return;
 
-      if (campaignId) {
-        rollDice({
-          campaignId,
-          actorId: characterId,
-          actorName: "Jogador",
-          rollType: `Teste de Perícia: ${name}`,
+      onStartRolling?.();
+      setIsBusy(true);
+
+      setTimeout(() => {
+        const name = String(row.content.name || "Perícia");
+        const exprValue = getExpression(row.content.rollExpression);
+        const expr = exprValue === null ? "1d20" : String(exprValue);
+        const rollResult = rollExpression(expr, 1);
+
+        if (campaignId) {
+          rollDice({
+            campaignId,
+            actorId: characterId,
+            actorName: "Jogador",
+            rollType: `Teste de Perícia: ${name}`,
+            formula: rollResult.formula,
+            result: rollResult.total,
+            diceDetail: rollResult.detail,
+          });
+        }
+
+        onActionResult?.({
+          title: `Teste de Perícia: ${name}`,
           formula: rollResult.formula,
           result: rollResult.total,
-          diceDetail: rollResult.detail,
+          detail: rollResult.detail,
         });
-      }
 
-      onActionResult?.({
-        title: `Teste de Perícia: ${name}`,
-        formula: rollResult.formula,
-        result: rollResult.total,
-        detail: rollResult.detail,
-      });
+        onEndRolling?.();
+        setIsBusy(false);
+      }, DICE_ROLL_LOADING_DELAY);
+
       return;
     }
 
