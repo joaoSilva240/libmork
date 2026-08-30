@@ -19,6 +19,7 @@ import {
   InventoryFilledIcon,
   SettingsFilledIcon,
 } from "@/components/ui/Icons";
+import { BottomNav } from "@/components/ui/BottomNav";
 import {
   useSocket,
   DICE_ROLL_LOADING_DELAY,
@@ -914,70 +915,32 @@ export function CharacterDetail() {
         <PlayerTurnOverlay combatState={combatState} characterId={character.id} />
       )}
 
-      {/* Sticky Bottom Navigation Bar (Menu Inferior com Ícones Filled) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 mx-auto max-w-md border-t border-gray-800/80 bg-gray-900/95 py-2 px-3 backdrop-blur-lg shadow-2xl">
-        <div className="flex items-center justify-around">
-          {/* Tab 1: Status */}
-          <button
-            onClick={() => setActiveTab("status")}
-            className={`flex flex-col items-center gap-1 px-3 py-1 transition-all ${
-              activeTab === "status"
-                ? "text-purple-400 scale-105"
-                : "text-gray-500 hover:text-gray-300"
-            }`}
-          >
-            <StatusFilledIcon className={`h-6 w-6 ${activeTab === "status" ? "fill-purple-400" : "fill-gray-500"}`} />
-            <span className={`text-[10px] font-bold ${activeTab === "status" ? "text-purple-400" : "text-gray-400"}`}>
-              Status
-            </span>
-          </button>
-
-          {/* Tab 2: Perícias */}
-          <button
-            onClick={() => setActiveTab("skills")}
-            className={`flex flex-col items-center gap-1 px-3 py-1 transition-all ${
-              activeTab === "skills"
-                ? "text-purple-400 scale-105"
-                : "text-gray-500 hover:text-gray-300"
-            }`}
-          >
-            <SkillsFilledIcon className={`h-6 w-6 ${activeTab === "skills" ? "fill-purple-400" : "fill-gray-500"}`} />
-            <span className={`text-[10px] font-bold ${activeTab === "skills" ? "text-purple-400" : "text-gray-400"}`}>
-              Perícias
-            </span>
-          </button>
-
-          {/* Tab 3: Inventário */}
-          <button
-            onClick={() => setActiveTab("inventory")}
-            className={`flex flex-col items-center gap-1 px-3 py-1 transition-all ${
-              activeTab === "inventory"
-                ? "text-purple-400 scale-105"
-                : "text-gray-500 hover:text-gray-300"
-            }`}
-          >
-            <InventoryFilledIcon className={`h-6 w-6 ${activeTab === "inventory" ? "fill-purple-400" : "fill-gray-500"}`} />
-            <span className={`text-[10px] font-bold ${activeTab === "inventory" ? "text-purple-400" : "text-gray-400"}`}>
-              Inventário
-            </span>
-          </button>
-
-          {/* Tab 4: Configurações */}
-          <button
-            onClick={() => setActiveTab("settings")}
-            className={`flex flex-col items-center gap-1 px-3 py-1 transition-all ${
-              activeTab === "settings"
-                ? "text-purple-400 scale-105"
-                : "text-gray-500 hover:text-gray-300"
-            }`}
-          >
-            <SettingsFilledIcon className={`h-6 w-6 ${activeTab === "settings" ? "fill-purple-400" : "fill-gray-500"}`} />
-            <span className={`text-[10px] font-bold ${activeTab === "settings" ? "text-purple-400" : "text-gray-400"}`}>
-              Configurações
-            </span>
-          </button>
-        </div>
-      </nav>
+      <BottomNav
+        activeId={activeTab}
+        onChange={(id) => setActiveTab(id as TabType)}
+        tabs={[
+          {
+            id: "status",
+            label: "Status",
+            icon: <StatusFilledIcon className={`h-6 w-6 ${activeTab === "status" ? "fill-purple-400" : "fill-gray-500"}`} />,
+          },
+          {
+            id: "skills",
+            label: "Perícias",
+            icon: <SkillsFilledIcon className={`h-6 w-6 ${activeTab === "skills" ? "fill-purple-400" : "fill-gray-500"}`} />,
+          },
+          {
+            id: "inventory",
+            label: "Inventário",
+            icon: <InventoryFilledIcon className={`h-6 w-6 ${activeTab === "inventory" ? "fill-purple-400" : "fill-gray-500"}`} />,
+          },
+          {
+            id: "settings",
+            label: "Configurações",
+            icon: <SettingsFilledIcon className={`h-6 w-6 ${activeTab === "settings" ? "fill-purple-400" : "fill-gray-500"}`} />,
+          },
+        ]}
+      />
 
       {/* Modais de Fase 5 — Pontos de Sombra e Duelo P2P */}
       {character && (

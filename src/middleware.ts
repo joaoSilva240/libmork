@@ -2,12 +2,13 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getPublicOrigin, getSafeRedirect } from '@/lib/auth/redirect';
 import { generateToken } from '@/lib/utils/tokens';
+import { generateUUID } from '@/lib/utils/uuid';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // === 1. CORRELATION ID ===
-  const correlationId = request.headers.get('x-correlation-id') || globalThis.crypto.randomUUID();
+  const correlationId = request.headers.get('x-correlation-id') || generateUUID();
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-correlation-id', correlationId);
 

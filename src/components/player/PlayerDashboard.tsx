@@ -6,6 +6,10 @@ import type { Character, PlayerCampaign } from "@/types";
 import { CharacterCard } from "@/components/characters/CharacterCard";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { Spinner, Button } from "@/components/ui";
+import { BottomNav } from "@/components/ui/BottomNav";
+import { ToastContainer } from "@/components/ui/Toast";
+import { CampaignsFilledIcon, CharactersFilledIcon } from "@/components/ui/Icons";
+import { generateUUID } from "@/lib/utils/uuid";
 
 export function PlayerDashboard() {
   const [activeTab, setActiveTab] = useState<"characters" | "campaigns">("characters");
@@ -19,6 +23,18 @@ export function PlayerDashboard() {
   const [campaigns, setCampaigns] = useState<PlayerCampaign[]>([]);
   const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(true);
   const [campaignsError, setCampaignsError] = useState<string | null>(null);
+
+  // Estado de Importação de Personagem
+  const [importingCampaignId, setImportingCampaignId] = useState<string | null>(null);
+  const [importableCharacters, setImportableCharacters] = useState<Character[]>([]);
+  const [isLoadingImport, setIsLoadingImport] = useState(false);
+  const [importSearch, setImportSearch] = useState("");
+
+  // Toasts
+  const [toasts, setToasts] = useState<Array<{ id: string; message: string; type?: "error" | "success" | "info" | "warning" }>>([]);
+  const addToast = (message: string, type: "error" | "success" | "info" | "warning" = "info") => {
+    setToasts((prev) => [...prev, { id: generateUUID(), message, type }]);
+  };
 
   useEffect(() => {
     async function loadCharacters() {
@@ -85,8 +101,75 @@ export function PlayerDashboard() {
     void loadCampaigns();
   }, []);
 
+  function handleOpenImportModal(
+    campaignId: string,
+    campaignCharacters: PlayerCampaign["characters"]
+  ) {
+    const linkedIds = new Set(campaignCharacters.map((c) => c.id));
+    const available = characters.filter((c) => !linkedIds.has(c.id));
+
+    if (available.length === 0) {
+      addToast("Você não tem personagens para importar", "info");
+      return;
+    }
+
+    setImportableCharacters(available);
+    setImportingCampaignId(campaignId);
+    setImportSearch("");
+  }
+
+  async function handleImportCharacter(characterId: string) {
+    if (!importingCampaignId) return;
+
+    setIsLoadingImport(true);
+    try {
+      const response = await fetch(
+        `/api/campaigns/${importingCampaignId}/import-character`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ characterId }),
+        }
+      );
+
+      if (response.status === 201) {
+        addToast("Personagem vinculado com sucesso!", "success");
+
+        // Re-fetch campanhas para atualizar a lista
+        const campaignsResponse = await fetch("/api/player/campaigns", {
+          credentials: "include",
+        });
+        if (campaignsResponse.ok) {
+          const data = await campaignsResponse.json();
+          setCampaigns(data.data || []);
+        }
+
+        setImportingCampaignId(null);
+        setImportableCharacters([]);
+        return;
+      }
+
+      if (response.status === 409) {
+        addToast("Este personagem já está nesta campanha", "warning");
+        return;
+      }
+
+      const data = await response.json().catch(() => ({}));
+      addToast(data.error || "Erro ao importar personagem", "error");
+    } catch {
+      addToast("Erro de conexão. Tente novamente.", "error");
+    } finally {
+      setIsLoadingImport(false);
+    }
+  }
+
+  const filteredImportableCharacters = importableCharacters.filter((c) =>
+    c.name.toLowerCase().includes(importSearch.toLowerCase())
+  );
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20">
       <header className="flex items-center justify-between border border-secondary-border bg-secondary-card p-4 rounded-xl shadow-md">
         <div>
           <h1 className="text-xl font-bold text-secondary-pure">Libmork — Jogador</h1>
@@ -94,30 +177,6 @@ export function PlayerDashboard() {
         </div>
         <LogoutButton />
       </header>
-
-      {/* Navegação por Abas */}
-      <div className="flex border-b border-gray-800 gap-6">
-        <button
-          onClick={() => setActiveTab("characters")}
-          className={`pb-3 text-sm font-semibold transition-colors relative ${
-            activeTab === "characters"
-              ? "text-purple-400 border-b-2 border-purple-500"
-              : "text-gray-400 hover:text-gray-200"
-          }`}
-        >
-          Meus Personagens ({characters.length})
-        </button>
-        <button
-          onClick={() => setActiveTab("campaigns")}
-          className={`pb-3 text-sm font-semibold transition-colors relative ${
-            activeTab === "campaigns"
-              ? "text-purple-400 border-b-2 border-purple-500"
-              : "text-gray-400 hover:text-gray-200"
-          }`}
-        >
-          Campanhas ({campaigns.length})
-        </button>
-      </div>
 
       {/* Conteúdo da Aba 1: Meus Personagens */}
       {activeTab === "characters" && (
@@ -274,7 +333,7 @@ export function PlayerDashboard() {
                   </div>
 
                   {/* Botão de Criação de Personagem alinhado ao Bottom */}
-                  <div className="mt-5 border-t border-gray-800 pt-3">
+                  <div className="mt-5 border-t border-gray-800 pt-3 space-y-2">
                     <Link
                       href={`/player/characters/new?campaignId=${campaign.id}`}
                       className="block w-full"
@@ -286,13 +345,129 @@ export function PlayerDashboard() {
                         + Criar Personagem nesta Campanha
                       </Button>
                     </Link>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenImportModal(campaign.id, campaign.characters)}
+                      className="w-full rounded-xl border border-purple-800/60 bg-purple-950/40 py-2 text-xs font-semibold text-purple-300 hover:bg-purple-900/60 transition-colors"
+                    >
+                      ↩ Importar Personagem Existente
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
-          )}
+            )}
         </div>
       )}
+
+      <BottomNav
+        activeId={activeTab}
+        onChange={(id) => setActiveTab(id as typeof activeTab)}
+        tabs={[
+          {
+            id: "characters",
+            label: "Meus Personagens",
+            icon: (
+              <CharactersFilledIcon
+                className={`h-6 w-6 ${activeTab === "characters" ? "fill-purple-400" : "fill-gray-500"}`}
+              />
+            ),
+          },
+          {
+            id: "campaigns",
+            label: "Campanhas",
+            icon: (
+              <CampaignsFilledIcon
+                className={`h-6 w-6 ${activeTab === "campaigns" ? "fill-purple-400" : "fill-gray-500"}`}
+              />
+            ),
+          },
+        ]}
+      />
+
+      {/* Modal de Importação de Personagem */}
+      {importingCampaignId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
+          <div className="w-full max-w-md rounded-xl border border-gray-800 bg-gray-900 p-5 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-white">Importar Personagem</h2>
+              <button
+                type="button"
+                onClick={() => {
+                  setImportingCampaignId(null);
+                  setImportableCharacters([]);
+                  setImportSearch("");
+                }}
+                className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <input
+              type="text"
+              placeholder="Buscar por nome..."
+              value={importSearch}
+              onChange={(e) => setImportSearch(e.target.value)}
+              className="mb-4 w-full rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-600"
+            />
+
+            <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+              {filteredImportableCharacters.length === 0 ? (
+                <p className="py-4 text-center text-sm text-gray-500">
+                  Nenhum personagem encontrado
+                </p>
+              ) : (
+                filteredImportableCharacters.map((char) => (
+                  <div
+                    key={char.id}
+                    className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-950 p-2.5"
+                  >
+                    <div className="flex items-center gap-2.5 overflow-hidden">
+                      {char.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={char.imageUrl}
+                          alt={char.name}
+                          className="h-9 w-9 rounded-full object-cover shrink-0"
+                        />
+                      ) : (
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-purple-950 text-purple-300 font-bold text-xs shrink-0 border border-purple-800/60">
+                          {char.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-semibold text-white">
+                          {char.name}
+                        </p>
+                        <p className="text-[11px] text-gray-400">
+                          Nível {char.level} · HP:{" "}
+                          <span className="text-red-400 font-medium">
+                            {char.hitPointsCurrent}/{char.hitPointsMax}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={isLoadingImport}
+                      onClick={() => handleImportCharacter(char.id)}
+                      className="shrink-0 rounded-lg border border-purple-800/60 bg-purple-950/60 px-3 py-1.5 text-xs font-semibold text-purple-300 hover:bg-purple-900/60 transition-colors disabled:opacity-50"
+                    >
+                      {isLoadingImport ? "…" : "Vincular"}
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ToastContainer
+        toasts={toasts}
+        onRemove={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))}
+      />
     </div>
   );
 }

@@ -4,9 +4,10 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { characters } from "@/lib/db/schema";
+import { characters, characterCampaigns, rpgRaces, characterItems, characterSpells } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { createCharacterSchema } from "@/lib/validators/character";
+import { getDerivedStats } from "@/lib/engine/attributes";
 import { eq } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 
@@ -72,35 +73,67 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, classId, imageUrl, attributes } = validation.data;
+    const { name, classId, imageUrl, attributes, campaignId, raceId, items: itemsInput, spells: spellsInput } = validation.data;
 
-    // Criar personagem com valores padrão
-    const [newCharacter] = await db
-      .insert(characters)
-      .values({
+    // Buscar bônus de raça se fornecido
+    let raceHpBonus = 0;
+    if (raceId) {
+      const [race] = await db.select({ hitPointsBonus: rpgRaces.hitPointsBonus }).from(rpgRaces).where(eq(rpgRaces.id, raceId));
+      if (race) raceHpBonus = race.hitPointsBonus;
+    }
+
+    const finalAttributes = attributes || { forca: 8, destreza: 8, vigor: 8, inteligencia: 8, empatia: 8 };
+    const derived = getDerivedStats(finalAttributes, 1);
+
+    const newCharacter = await db.transaction(async (tx) => {
+      const [created] = await tx.insert(characters).values({
         ownerId: session.user.id,
         name,
         classId: classId || null,
         imageUrl: imageUrl || null,
-        attributes: attributes || {
-          forca: 8,
-          destreza: 8,
-          vigor: 8,
-          inteligencia: 8,
-          empatia: 8,
-        },
-        hitPointsMax: 15,
-        hitPointsCurrent: 15,
-        manaPointsMax: 5,
-        manaPointsCurrent: 5,
-        block: 0,
+        attributes: finalAttributes,
+        hitPointsMax: derived.hitPointsMax + raceHpBonus,
+        hitPointsCurrent: derived.hitPointsMax + raceHpBonus,
+        manaPointsMax: derived.manaPointsMax,
+        manaPointsCurrent: derived.manaPointsMax,
+        block: derived.block,
         level: 1,
         xp: 0,
         deathStatus: "alive",
         deathSuccesses: 0,
         deathFailures: 0,
-      })
-      .returning();
+      }).returning();
+
+      if (campaignId) {
+        await tx.insert(characterCampaigns).values({
+          campaignId,
+          characterId: created.id,
+          origin: "player_created",
+          approvalStatus: "approved",
+        });
+      }
+
+      if (itemsInput && itemsInput.length > 0) {
+        await tx.insert(characterItems).values(
+          itemsInput.map((item) => ({
+            characterId: created.id,
+            itemId: item.itemId,
+            quantity: item.quantity,
+          }))
+        );
+      }
+
+      if (spellsInput && spellsInput.length > 0) {
+        await tx.insert(characterSpells).values(
+          spellsInput.map((spellId) => ({
+            characterId: created.id,
+            spellId,
+          }))
+        );
+      }
+
+      return created;
+    });
 
     return NextResponse.json(
       {

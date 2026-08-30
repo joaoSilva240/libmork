@@ -25,3 +25,15 @@ export function SettingsFilledIcon({ className = "w-6 h-6" }: { className?: stri
     <span className={`font-dings text-[2.1rem] leading-none inline-flex items-center justify-center ${className}`}>E</span>
   );
 }
+
+export function CharactersFilledIcon({ className = "w-6 h-6" }: { className?: string }) {
+  return (
+    <span className={`font-dings text-[2.1rem] leading-none inline-flex items-center justify-center ${className}`}>U</span>
+  );
+}
+
+export function CampaignsFilledIcon({ className = "w-6 h-6" }: { className?: string }) {
+  return (
+    <span className={`font-dings text-[2.1rem] leading-none inline-flex items-center justify-center ${className}`}>O</span>
+  );
+}

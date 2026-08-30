@@ -4,23 +4,23 @@ import { useEffect, useState } from "react";
 import type { Npc } from "@/types";
 import type { RosterPlayer, RosterActor } from "@/components/campaigns/ActorOverlay";
 
-type InviteData = {
+type PlayerInviteData = {
   id: string;
-  campaignId: string;
-  token: string;
-  revoked: boolean;
-  createdAt: string;
-  url: string;
+  displayName: string;
+  email: string;
+  isInvited: boolean;
+  inviteId: string | null;
+  activeCharactersCount: number;
 };
 
 export function CampaignInvites({ campaignId }: { campaignId: string }) {
-  const [invites, setInvites] = useState<InviteData[]>([]);
+  const [players, setPlayers] = useState<PlayerInviteData[]>([]);
   const [actors, setActors] = useState<RosterActor[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [actorSearchQuery, setActorSearchQuery] = useState("");
+  const [playerSearchQuery, setPlayerSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [copiedToken, setCopiedToken] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -38,7 +38,9 @@ export function CampaignInvites({ campaignId }: { campaignId: string }) {
         if (cancelled) return;
 
         if (invitesRes.ok && invitesData.data) {
-          setInvites(invitesData.data.filter((invite: InviteData) => !invite.revoked));
+          setPlayers(invitesData.data);
+        } else if (!invitesRes.ok) {
+          setError(invitesData.error || "Erro ao carregar jogadores");
         }
 
         if (rosterRes.ok && rosterData.data) {
@@ -94,61 +96,65 @@ export function CampaignInvites({ campaignId }: { campaignId: string }) {
     };
   }, [campaignId]);
 
-  const handleGenerate = async () => {
+  const handleInvite = async (userId: string) => {
     setError(null);
-    setIsGenerating(true);
+    setActionLoadingId(userId);
     try {
       const response = await fetch(`/api/campaigns/${campaignId}/invites`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Erro ao gerar convite");
+        setError(data.error || "Erro ao convidar jogador");
         return;
       }
 
-      setInvites((prev) => [...prev, data.data]);
+      setPlayers((prev) =>
+        prev.map((player) =>
+          player.id === userId
+            ? { ...player, isInvited: true, inviteId: data.data.id }
+            : player
+        )
+      );
     } catch {
-      setError("Erro de conexão. Tente novamente.");
+      setError("Erro de conexão ao convidar jogador.");
     } finally {
-      setIsGenerating(false);
+      setActionLoadingId(null);
     }
   };
 
-  const handleRevoke = async (inviteId: string) => {
-    if (!window.confirm("Revogar este convite? O link deixará de funcionar.")) {
-      return;
-    }
-
+  const handleUninvite = async (player: PlayerInviteData) => {
+    const targetId = player.inviteId || player.id;
     setError(null);
+    setActionLoadingId(player.id);
     try {
       const response = await fetch(
-        `/api/campaigns/${campaignId}/invites/${inviteId}`,
+        `/api/campaigns/${campaignId}/invites/${targetId}`,
         { method: "DELETE" }
       );
 
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Erro ao revogar convite");
+        setError(data.error || "Erro ao remover convite");
         return;
       }
 
-      setInvites((prev) => prev.filter((invite) => invite.id !== inviteId));
+      setPlayers((prev) =>
+        prev.map((p) =>
+          p.id === player.id
+            ? { ...p, isInvited: false, inviteId: null }
+            : p
+        )
+      );
     } catch {
-      setError("Erro de conexão. Tente novamente.");
-    }
-  };
-
-  const handleCopy = async (invite: InviteData) => {
-    try {
-      await navigator.clipboard.writeText(invite.url);
-      setCopiedToken(invite.token);
-      setTimeout(() => setCopiedToken(null), 2000);
-    } catch {
-      setError("Não foi possível copiar. Copie manualmente.");
+      setError("Erro de conexão ao remover convite.");
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
@@ -157,7 +163,13 @@ export function CampaignInvites({ campaignId }: { campaignId: string }) {
   };
 
   const filteredActors = actors.filter((actor) =>
-    actor.name.toLowerCase().includes(searchQuery.toLowerCase())
+    actor.name.toLowerCase().includes(actorSearchQuery.toLowerCase())
+  );
+
+  const filteredPlayers = players.filter(
+    (player) =>
+      player.displayName.toLowerCase().includes(playerSearchQuery.toLowerCase()) ||
+      player.email.toLowerCase().includes(playerSearchQuery.toLowerCase())
   );
 
   return (
@@ -174,8 +186,8 @@ export function CampaignInvites({ campaignId }: { campaignId: string }) {
           <input
             type="text"
             placeholder="Pesquisar personagem ou NPC..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={actorSearchQuery}
+            onChange={(e) => setActorSearchQuery(e.target.value)}
             className="w-full rounded border border-gray-800 bg-gray-950 px-2 py-1 text-xs text-white placeholder-gray-500 focus:border-transparent focus:ring-1 focus:ring-purple-600"
           />
         </div>
@@ -184,7 +196,7 @@ export function CampaignInvites({ campaignId }: { campaignId: string }) {
           <p className="text-xs text-gray-500">Carregando personagens...</p>
         ) : filteredActors.length === 0 ? (
           <p className="text-xs text-gray-500">
-            {searchQuery ? "Nenhum personagem encontrado." : "Nenhum personagem ou NPC cadastrado."}
+            {actorSearchQuery ? "Nenhum personagem encontrado." : "Nenhum personagem ou NPC cadastrado."}
           </p>
         ) : (
           <div className="max-h-36 space-y-1.5 overflow-y-auto pr-0.5">
@@ -224,19 +236,22 @@ export function CampaignInvites({ campaignId }: { campaignId: string }) {
         )}
       </div>
 
-      {/* Seção Convites de Jogadores */}
+      {/* Seção Convidar Jogadores Direto */}
       <div className="border-t border-gray-800 pt-3">
-        <div className="mb-2 flex items-center justify-between">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">
-            Links de Convite
+        <div className="mb-1.5 flex items-center justify-between">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400">
+            Jogadores ({players.filter((p) => p.isInvited).length}/{players.length})
           </h3>
-          <button
-            onClick={handleGenerate}
-            disabled={isGenerating}
-            className="rounded bg-purple-600 px-2 py-1 text-xs font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
-          >
-            {isGenerating ? "..." : "+ Novo Convite"}
-          </button>
+        </div>
+
+        <div className="mb-2">
+          <input
+            type="text"
+            placeholder="Buscar jogador por nome ou email..."
+            value={playerSearchQuery}
+            onChange={(e) => setPlayerSearchQuery(e.target.value)}
+            className="w-full rounded border border-gray-800 bg-gray-950 px-2 py-1 text-xs text-white placeholder-gray-500 focus:border-transparent focus:ring-1 focus:ring-purple-600"
+          />
         </div>
 
         {error && (
@@ -245,38 +260,66 @@ export function CampaignInvites({ campaignId }: { campaignId: string }) {
           </div>
         )}
 
-        {invites.length === 0 ? (
+        {isLoading ? (
+          <p className="text-xs text-gray-500">Carregando jogadores...</p>
+        ) : filteredPlayers.length === 0 ? (
           <p className="text-xs text-gray-500">
-            Nenhum convite pendente. Gere um link acima.
+            {playerSearchQuery ? "Nenhum jogador encontrado." : "Nenhum jogador cadastrado no sistema."}
           </p>
         ) : (
-          <div className="max-h-24 space-y-1.5 overflow-y-auto pr-0.5">
-            {invites.map((invite) => (
-              <div
-                key={invite.id}
-                className="flex items-center gap-1.5 rounded-lg border border-gray-800 bg-gray-950 p-1.5"
-              >
-                <input
-                  type="text"
-                  readOnly
-                  value={invite.url}
-                  className="w-full truncate rounded border border-gray-800 bg-gray-900 px-2 py-1 text-[11px] text-gray-400"
-                  onFocus={(e) => e.target.select()}
-                />
-                <button
-                  onClick={() => handleCopy(invite)}
-                  className="shrink-0 rounded bg-gray-800 px-2 py-1 text-[11px] font-medium text-white hover:bg-gray-700"
+          <div className="max-h-48 space-y-1.5 overflow-y-auto pr-0.5">
+            {filteredPlayers.map((player) => {
+              const isActionLoading = actionLoadingId === player.id;
+              return (
+                <div
+                  key={player.id}
+                  className="flex items-center justify-between gap-2 rounded-lg border border-gray-800 bg-gray-950 p-2"
                 >
-                  {copiedToken === invite.token ? "Copiado!" : "Copiar"}
-                </button>
-                <button
-                  onClick={() => handleRevoke(invite.id)}
-                  className="shrink-0 text-[11px] text-red-400 hover:text-red-300"
-                >
-                  Revogar
-                </button>
-              </div>
-            ))}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <p className="truncate text-xs font-semibold text-white">
+                        {player.displayName}
+                      </p>
+                      {player.isInvited && (
+                        <span className="shrink-0 rounded border border-emerald-800/60 bg-emerald-950/80 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-400">
+                          Convidado
+                        </span>
+                      )}
+                    </div>
+                    <p className="truncate text-[10px] text-gray-400">{player.email}</p>
+                    {player.activeCharactersCount > 0 && (
+                      <p className="text-[10px] text-purple-400 font-medium">
+                        {player.activeCharactersCount}{" "}
+                        {player.activeCharactersCount === 1
+                          ? "personagem ativo"
+                          : "personagens ativos"}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {player.isInvited ? (
+                      <button
+                        onClick={() => handleUninvite(player)}
+                        disabled={isActionLoading}
+                        className="rounded px-2 py-1 text-[11px] font-medium text-red-400 hover:bg-red-950/40 hover:text-red-300 disabled:opacity-50 transition-colors"
+                        title="Remover convite"
+                      >
+                        {isActionLoading ? "..." : "Remover"}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleInvite(player.id)}
+                        disabled={isActionLoading}
+                        className="rounded bg-purple-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-purple-500 disabled:opacity-50 transition-colors"
+                      >
+                        {isActionLoading ? "..." : "+ Convidar"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

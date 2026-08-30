@@ -590,11 +590,15 @@ export const campaignInvites = pgTable(
     campaignId: uuid("campaign_id")
       .notNull()
       .references(() => campaigns.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
     token: varchar("token", { length: 255 }).notNull().unique(),
     revoked: boolean("revoked").notNull().default(false),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
-  (table) => [index("idx_campaign_invite_campaign").on(table.campaignId)],
+  (table) => [
+    index("idx_campaign_invite_campaign").on(table.campaignId),
+    index("idx_campaign_invite_user").on(table.userId),
+  ],
 );
 
 /**
@@ -661,6 +665,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   characters: many(characters),
   campaigns: many(campaigns),
   sessions: many(sessions),
+  campaignInvites: many(campaignInvites),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -828,6 +833,10 @@ export const campaignInvitesRelations = relations(campaignInvites, ({ one }) => 
   campaign: one(campaigns, {
     fields: [campaignInvites.campaignId],
     references: [campaigns.id],
+  }),
+  user: one(users, {
+    fields: [campaignInvites.userId],
+    references: [users.id],
   }),
 }));
 

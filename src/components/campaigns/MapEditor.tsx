@@ -5,6 +5,7 @@ import "leaflet/dist/leaflet.css";
 import "@/styles/leaflet.css";
 import type { MapPin } from "@/types";
 import { Spinner } from "@/components/ui";
+import { generateUUID } from "@/lib/utils/uuid";
 
 type MapEditorProps = {
   worldId: string;
@@ -239,7 +240,7 @@ export function MapEditor({ worldId, mapUrl, onSave }: MapEditorProps) {
     if (description === null) return;
 
     const newPin: MapPin = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       worldId,
       lat,
       lng,

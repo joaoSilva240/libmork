@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ATTRIBUTES, ATTRIBUTE_BASE_VALUE, ATTRIBUTE_FREE_POINTS } from "@/lib/utils/constants";
 import type { Attribute } from "@/lib/utils/constants";
 import { getModifier } from "@/lib/engine/attributes";
@@ -25,10 +25,41 @@ const DEFAULT_ATTRIBUTES: Record<Attribute, number> = {
 
 export function CharacterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const campaignId = searchParams.get("campaignId");
+
   const [name, setName] = useState("");
+  const [campaignName, setCampaignName] = useState<string | null>(null);
   const [attributes, setAttributes] = useState<Record<Attribute, number>>(DEFAULT_ATTRIBUTES);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!campaignId) return;
+
+    let cancelled = false;
+    async function loadCampaignInfo() {
+      try {
+        const res = await fetch("/api/player/campaigns");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled) return;
+        if (data.data && Array.isArray(data.data)) {
+          const match = data.data.find((c: { id: string; name: string }) => c.id === campaignId);
+          if (match) {
+            setCampaignName(match.name);
+          }
+        }
+      } catch {
+        // Ignora erro de fetch silenciosamente
+      }
+    }
+
+    void loadCampaignInfo();
+    return () => {
+      cancelled = true;
+    };
+  }, [campaignId]);
 
   const spentPoints = useMemo(
     () => ATTRIBUTES.reduce((sum, attr) => sum + (attributes[attr] - ATTRIBUTE_BASE_VALUE), 0),
@@ -61,10 +92,15 @@ export function CharacterForm() {
     }
 
     try {
+      const payload: Record<string, unknown> = { name, attributes };
+      if (campaignId) {
+        payload.campaignId = campaignId;
+      }
+
       const response = await fetch("/api/characters", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, attributes }),
+        body: JSON.stringify(payload),
         credentials: "include",
       });
 
@@ -86,6 +122,18 @@ export function CharacterForm() {
   return (
     <div className="mx-auto max-w-lg">
       <h2 className="mb-4 text-2xl font-bold text-white">Criar Personagem</h2>
+
+      {campaignId && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-purple-800/60 bg-purple-950/40 p-3 text-xs text-purple-200 shadow-sm">
+          <span className="flex h-2 w-2 rounded-full bg-purple-400 animate-pulse shrink-0" />
+          <div>
+            <span className="font-semibold text-purple-300">
+              Criando personagem para a campanha:
+            </span>{" "}
+            <span className="font-medium text-white">{campaignName || "Carregando..."}</span>
+          </div>
+        </div>
+      )}
 
       <Form onSubmit={handleSubmit} error={error ?? undefined}>
         <Input

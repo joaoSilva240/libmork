@@ -8,6 +8,7 @@ import { Button, Form, Input, Spinner } from "@/components/ui";
 import type { Spell } from "@/types";
 
 import { LibraryClasses } from "@/components/classes/LibraryClasses";
+import { LibraryClassFeatures } from "@/components/classes/LibraryClassFeatures";
 import { LibraryRaces } from "@/components/races/LibraryRaces";
 import { LibraryNpcs } from "@/components/npcs/LibraryNpcs";
 import { LibraryWorlds } from "@/components/worlds/LibraryWorlds";
@@ -31,7 +32,7 @@ type TypeConfig = {
   showInList: string[];
 };
 
-type ManagerContentType = ContentType | "classes" | "races" | "npcs" | "worlds";
+type ManagerContentType = ContentType | "classes" | "class-features" | "races" | "npcs" | "worlds";
 
 const TYPE_CONFIGS: Record<ManagerContentType, TypeConfig> = {
   skills: {
@@ -86,6 +87,11 @@ const TYPE_CONFIGS: Record<ManagerContentType, TypeConfig> = {
     fields: [],
     showInList: [],
   },
+  "class-features": {
+    label: "Habilidades de Classe",
+    fields: [],
+    showInList: [],
+  },
   races: {
     label: "Raças",
     fields: [],
@@ -109,6 +115,7 @@ const CONTENT_TYPE_ORDER: ManagerContentType[] = [
   "items",
   "conditions",
   "classes",
+  "class-features",
   "races",
   "npcs",
   "worlds",
@@ -261,7 +268,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
   const worldActionsRef = useRef<{ openCreate: () => void } | null>(null);
   const isCampaignContext = basePath.includes("/api/campaigns/");
   const availableTypes = isCampaignContext
-    ? CONTENT_TYPE_ORDER.filter((t) => t !== "npcs" && t !== "worlds" && t !== "classes" && t !== "races")
+    ? CONTENT_TYPE_ORDER.filter((t) => t !== "npcs" && t !== "worlds" && t !== "classes" && t !== "class-features" && t !== "races")
     : CONTENT_TYPE_ORDER;
   const [items, setItems] = useState<Item[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -516,7 +523,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
   };
 
   useEffect(() => {
-    if (activeType === "classes" || activeType === "races" || activeType === "npcs" || activeType === "worlds") {
+    if (activeType === "classes" || activeType === "class-features" || activeType === "races" || activeType === "npcs" || activeType === "worlds") {
       setIsLoading(false);
       return;
     }
@@ -843,7 +850,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
             </button>
           )}
 
-          {activeType !== "classes" && activeType !== "races" && activeType !== "npcs" && activeType !== "worlds" && (
+          {activeType !== "classes" && activeType !== "class-features" && activeType !== "races" && activeType !== "npcs" && activeType !== "worlds" && (
             <>
               <button
                 type="button"
@@ -900,7 +907,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
             ))}
           </div>
 
-          {activeType !== "classes" && activeType !== "races" && activeType !== "npcs" && activeType !== "worlds" && (
+          {activeType !== "classes" && activeType !== "class-features" && activeType !== "races" && activeType !== "npcs" && activeType !== "worlds" && (
             <input
               type="text"
               placeholder={`Buscar ${config.label.toLowerCase()} por nome...`}
@@ -1115,7 +1122,12 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
       )}
 
       {activeType === "classes" ? (
-        <LibraryClasses onRegisterActions={(actions) => (classActionsRef.current = actions)} />
+        <LibraryClasses
+          onRegisterActions={(actions) => (classActionsRef.current = actions)}
+          onNavigateToFeatures={() => setActiveType("class-features")}
+        />
+      ) : activeType === "class-features" ? (
+        <LibraryClassFeatures />
       ) : activeType === "races" ? (
         <LibraryRaces onRegisterActions={(actions) => (raceActionsRef.current = actions)} />
       ) : activeType === "npcs" ? (
