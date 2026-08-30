@@ -891,6 +891,10 @@ function WizardStepSkills({
 }) {
   const [skills, setSkills] = useState<SkillData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+
+  const ITEMS_PER_PAGE = 10;
 
   // Buscar lista de perícias da biblioteca
   useEffect(() => {
@@ -913,6 +917,29 @@ function WizardStepSkills({
     void loadSkills();
     return () => { cancelled = true; };
   }, []);
+
+  const filteredSkills = useMemo(() => {
+    if (!search.trim()) return skills;
+    const q = search.toLowerCase();
+    return skills.filter(
+      (s) =>
+        s.name.toLowerCase().includes(q) ||
+        (s.description && s.description.toLowerCase().includes(q))
+    );
+  }, [skills, search]);
+
+  const totalPages = Math.ceil(filteredSkills.length / ITEMS_PER_PAGE) || 1;
+  const currentPage = Math.min(page, totalPages);
+
+  const paginatedSkills = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredSkills.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredSkills, currentPage]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    setPage(1);
+  };
 
   // Vagas de Perícia Treinada (Inteligência ÷ 2, arredondado para baixo)
   const baseSlots = Math.max(0, Math.floor(data.attributes.inteligencia / 2));
@@ -950,57 +977,89 @@ function WizardStepSkills({
         </span>
       </div>
 
+      <input
+        type="text"
+        placeholder="Buscar perícia por nome..."
+        value={search}
+        onChange={handleSearchChange}
+        className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
+      />
+
       {isLoading ? (
         <div className="flex min-h-[150px] items-center justify-center">
           <Spinner size="md" />
         </div>
-      ) : skills.length === 0 ? (
-        <p className="text-xs text-gray-500 py-6 text-center">Nenhuma perícia cadastrada na biblioteca.</p>
+      ) : filteredSkills.length === 0 ? (
+        <p className="text-xs text-gray-500 py-6 text-center">Nenhuma perícia encontrada.</p>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {skills.map((skill) => {
-            const isSelected = data.skills.includes(skill.id);
-            const isDisabled = !isSelected && selectedCount >= maxSlots;
+        <>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {paginatedSkills.map((skill) => {
+              const isSelected = data.skills.includes(skill.id);
+              const isDisabled = !isSelected && selectedCount >= maxSlots;
 
-            return (
-              <div
-                key={skill.id}
-                onClick={() => !isDisabled && toggleSkill(skill.id)}
-                className={`flex items-start gap-3 rounded-xl border p-3.5 transition-all ${
-                  isDisabled ? "opacity-40 cursor-not-allowed border-gray-800 bg-gray-950" : "cursor-pointer"
-                } ${
-                  isSelected
-                    ? "border-purple-500 bg-purple-950/40 shadow-md shadow-purple-950/40"
-                    : "border-gray-800 bg-gray-900 hover:border-gray-700"
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => {}}
-                  disabled={isDisabled}
-                  className="mt-1 h-4 w-4 rounded border-gray-700 bg-gray-900 text-purple-600 focus:ring-purple-500"
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-bold text-white text-xs truncate">{skill.name}</h4>
-                    <span className="rounded bg-purple-950/80 border border-purple-800/60 px-1.5 py-0.5 text-[9px] text-purple-300 font-bold uppercase">
-                      {ATTRIBUTE_LABELS[skill.keyAttribute]}
-                    </span>
+              return (
+                <div
+                  key={skill.id}
+                  onClick={() => !isDisabled && toggleSkill(skill.id)}
+                  className={`flex items-start gap-3 rounded-xl border p-3.5 transition-all ${
+                    isDisabled ? "opacity-40 cursor-not-allowed border-gray-800 bg-gray-950" : "cursor-pointer"
+                  } ${
+                    isSelected
+                      ? "border-purple-500 bg-purple-950/40 shadow-md shadow-purple-950/40"
+                      : "border-gray-800 bg-gray-900 hover:border-gray-700"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => {}}
+                    disabled={isDisabled}
+                    className="mt-1 h-4 w-4 rounded border-gray-700 bg-gray-900 text-purple-600 focus:ring-purple-500"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-white text-xs truncate">{skill.name}</h4>
+                      <span className="rounded bg-purple-950/80 border border-purple-800/60 px-1.5 py-0.5 text-[9px] text-purple-300 font-bold uppercase">
+                        {ATTRIBUTE_LABELS[skill.keyAttribute]}
+                      </span>
+                    </div>
+                    {skill.description && (
+                      <p className="mt-1 text-[11px] text-gray-400 line-clamp-2">{skill.description}</p>
+                    )}
+                    {skill.rollExpression && (
+                      <span className="mt-1 inline-block text-[10px] text-purple-400 font-mono">
+                        {skill.rollExpression}
+                      </span>
+                    )}
                   </div>
-                  {skill.description && (
-                    <p className="mt-1 text-[11px] text-gray-400 line-clamp-2">{skill.description}</p>
-                  )}
-                  {skill.rollExpression && (
-                    <span className="mt-1 inline-block text-[10px] text-purple-400 font-mono">
-                      {skill.rollExpression}
-                    </span>
-                  )}
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center justify-between border-t border-gray-800 pt-3 text-xs text-gray-400">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(p - 1, 1))}
+              disabled={currentPage <= 1}
+              className="rounded-lg bg-gray-800 px-3 py-1.5 text-xs text-white hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              Anterior
+            </button>
+            <span>
+              Página <strong className="text-white">{currentPage}</strong> de <strong className="text-white">{totalPages}</strong> ({filteredSkills.length} {filteredSkills.length === 1 ? "item" : "itens"})
+            </span>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+              disabled={currentPage >= totalPages}
+              className="rounded-lg bg-gray-800 px-3 py-1.5 text-xs text-white hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              Próximo
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
@@ -1019,6 +1078,10 @@ function WizardStepSpells({
 }) {
   const [spells, setSpells] = useState<SpellData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+
+  const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
     let cancelled = false;
@@ -1042,6 +1105,30 @@ function WizardStepSpells({
 
   // No nível 1, apenas magias de Círculo 1
   const level1Spells = useMemo(() => spells.filter((s) => s.circle === 1), [spells]);
+
+  const filteredSpells = useMemo(() => {
+    if (!search.trim()) return level1Spells;
+    const q = search.toLowerCase();
+    return level1Spells.filter(
+      (s) =>
+        s.name.toLowerCase().includes(q) ||
+        (s.description && s.description.toLowerCase().includes(q))
+    );
+  }, [level1Spells, search]);
+
+  const totalPages = Math.ceil(filteredSpells.length / ITEMS_PER_PAGE) || 1;
+  const currentPage = Math.min(page, totalPages);
+
+  const paginatedSpells = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredSpells.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredSpells, currentPage]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    setPage(1);
+  };
+
   const maxSpells = 3;
   const selectedCount = data.spells.length;
 
@@ -1075,60 +1162,92 @@ function WizardStepSpells({
         </span>
       </div>
 
+      <input
+        type="text"
+        placeholder="Buscar magia por nome..."
+        value={search}
+        onChange={handleSearchChange}
+        className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
+      />
+
       {isLoading ? (
         <div className="flex min-h-[150px] items-center justify-center">
           <Spinner size="md" />
         </div>
-      ) : level1Spells.length === 0 ? (
+      ) : filteredSpells.length === 0 ? (
         <p className="text-xs text-gray-500 py-6 text-center">Nenhuma magia de 1º Círculo encontrada.</p>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {level1Spells.map((spell) => {
-            const isSelected = data.spells.includes(spell.id);
-            const isDisabled = !isSelected && selectedCount >= maxSpells;
-            const actionCost = SPELL_ACTION_COST_BY_CIRCLE[spell.circle] ?? 1;
+        <>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {paginatedSpells.map((spell) => {
+              const isSelected = data.spells.includes(spell.id);
+              const isDisabled = !isSelected && selectedCount >= maxSpells;
+              const actionCost = SPELL_ACTION_COST_BY_CIRCLE[spell.circle] ?? 1;
 
-            return (
-              <div
-                key={spell.id}
-                onClick={() => !isDisabled && toggleSpell(spell.id)}
-                className={`flex items-start gap-3 rounded-xl border p-3.5 transition-all ${
-                  isDisabled ? "opacity-40 cursor-not-allowed border-gray-800 bg-gray-950" : "cursor-pointer"
-                } ${
-                  isSelected
-                    ? "border-purple-500 bg-purple-950/40 shadow-md shadow-purple-950/40"
-                    : "border-gray-800 bg-gray-900 hover:border-gray-700"
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => {}}
-                  disabled={isDisabled}
-                  className="mt-1 h-4 w-4 rounded border-gray-700 bg-gray-900 text-purple-600 focus:ring-purple-500"
-                />
+              return (
+                <div
+                  key={spell.id}
+                  onClick={() => !isDisabled && toggleSpell(spell.id)}
+                  className={`flex items-start gap-3 rounded-xl border p-3.5 transition-all ${
+                    isDisabled ? "opacity-40 cursor-not-allowed border-gray-800 bg-gray-950" : "cursor-pointer"
+                  } ${
+                    isSelected
+                      ? "border-purple-500 bg-purple-950/40 shadow-md shadow-purple-950/40"
+                      : "border-gray-800 bg-gray-900 hover:border-gray-700"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => {}}
+                    disabled={isDisabled}
+                    className="mt-1 h-4 w-4 rounded border-gray-700 bg-gray-900 text-purple-600 focus:ring-purple-500"
+                  />
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-bold text-white text-xs truncate">{spell.name}</h4>
-                    <span className="rounded bg-blue-950 border border-blue-800/60 px-1.5 py-0.5 text-[9px] text-blue-300 font-bold">
-                      {spell.manaCost} MP
-                    </span>
-                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-white text-xs truncate">{spell.name}</h4>
+                      <span className="rounded bg-blue-950 border border-blue-800/60 px-1.5 py-0.5 text-[9px] text-blue-300 font-bold">
+                        {spell.manaCost} MP
+                      </span>
+                    </div>
 
-                  {spell.description && (
-                    <p className="mt-1 text-[11px] text-gray-400 line-clamp-2">{spell.description}</p>
-                  )}
+                    {spell.description && (
+                      <p className="mt-1 text-[11px] text-gray-400 line-clamp-2">{spell.description}</p>
+                    )}
 
-                  <div className="mt-2 flex items-center gap-2 text-[10px] text-gray-400">
-                    <span>⚡ {actionCost} ação(ões)</span>
-                    {spell.useType && <span className="capitalize">• {spell.useType}</span>}
+                    <div className="mt-2 flex items-center gap-2 text-[10px] text-gray-400">
+                      <span>⚡ {actionCost} ação(ões)</span>
+                      {spell.useType && <span className="capitalize">• {spell.useType}</span>}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center justify-between border-t border-gray-800 pt-3 text-xs text-gray-400">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(p - 1, 1))}
+              disabled={currentPage <= 1}
+              className="rounded-lg bg-gray-800 px-3 py-1.5 text-xs text-white hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              Anterior
+            </button>
+            <span>
+              Página <strong className="text-white">{currentPage}</strong> de <strong className="text-white">{totalPages}</strong> ({filteredSpells.length} {filteredSpells.length === 1 ? "item" : "itens"})
+            </span>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+              disabled={currentPage >= totalPages}
+              className="rounded-lg bg-gray-800 px-3 py-1.5 text-xs text-white hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              Próximo
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

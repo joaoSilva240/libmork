@@ -18,6 +18,8 @@ import {
   SkillsFilledIcon,
   InventoryFilledIcon,
   SettingsFilledIcon,
+  ArrowLeftIcon,
+  LogOutIcon,
 } from "@/components/ui/Icons";
 import { BottomNav } from "@/components/ui/BottomNav";
 import {
@@ -620,8 +622,14 @@ export function CharacterDetail() {
     <div className="relative mx-auto min-h-screen max-w-md bg-gray-950 text-gray-100 pb-24 shadow-2xl font-sans">
       {/* Top Header Mobile Bar */}
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-gray-800/80 bg-gray-900/90 px-4 py-3 backdrop-blur-md">
-        <Link href="/player" className="text-sm font-bold text-gray-200 hover:text-white">
-          Libmork — Jogador
+        <Link
+          href="/player"
+          className="flex items-center gap-2 text-sm font-bold text-gray-200 hover:text-white"
+          title="Voltar para a Frente do Jogador"
+          aria-label="Voltar para a Frente do Jogador"
+        >
+          <ArrowLeftIcon className="h-5 w-5 text-purple-400" />
+          <span>Libmork — Jogador</span>
         </Link>
         <span aria-label={isConnected ? "Conectado à mesa" : "Desconectado da mesa"} title={isConnected ? "Conectado à mesa" : "Desconectado da mesa"} className={`h-2.5 w-2.5 rounded-full ${isConnected ? "bg-emerald-400" : "bg-red-500"}`} />
       </header>
@@ -894,8 +902,14 @@ export function CharacterDetail() {
 
               {/* Exclusão do Personagem */}
               <div className="pt-2">
-                <button type="button" onClick={() => void handleLogout()} disabled={isLoggingOut} className="mb-2 w-full rounded-xl border border-gray-700 bg-gray-800 py-2.5 text-xs font-bold text-gray-200 hover:bg-gray-700 disabled:opacity-50">
-                  {isLoggingOut ? "Saindo..." : "Sair"}
+                <button
+                  type="button"
+                  onClick={() => router.push("/player")}
+                  className="mb-2 flex w-full items-center justify-center gap-2 rounded-xl border border-gray-700 bg-gray-800 py-2.5 text-xs font-bold text-gray-200 hover:bg-gray-700"
+                  title="Voltar para a Frente do Jogador"
+                  aria-label="Voltar para a Frente do Jogador"
+                >
+                  <LogOutIcon className="h-5 w-5 text-gray-300" />
                 </button>
                 <button
                   onClick={handleDelete}
