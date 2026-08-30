@@ -61,6 +61,56 @@ const ROLL_QUICK = ["1d20", "2d20", "1d6", "1d8", "1d10", "1d12", "2d6", "3d6"];
 const DELTA_QUICK = [-10, -5, -1, 1, 5, 10];
 const XP_QUICK = [10, 25, 50, 100];
 
+export function matchActorId(id1?: string | null, id2?: string | null): boolean {
+  if (!id1 || !id2) return false;
+  const clean1 = id1.replace(/^(npc:|character:)/, "");
+  const clean2 = id2.replace(/^(npc:|character:)/, "");
+  return clean1 === clean2;
+}
+
+export function parseNpcPinExpression(rawExpr?: string | null): { attackExpr: string; damageExpr?: string } {
+  const expr = (rawExpr || "").trim();
+
+  if (!expr) {
+    return { attackExpr: "1d20" };
+  }
+
+  const parenMatch = expr.match(/^([^(]+)\(([^)]+)\)/);
+  if (parenMatch) {
+    let attackPart = parenMatch[1].trim();
+    const damagePart = parenMatch[2].trim();
+
+    if (/^[+-]?\d+$/.test(attackPart)) {
+      const sign = attackPart.startsWith("-") ? "" : "+";
+      attackPart = `1d20${sign}${attackPart.replace(/^\+/, "")}`;
+    }
+
+    return {
+      attackExpr: attackPart || "1d20",
+      damageExpr: damagePart || undefined,
+    };
+  }
+
+  if (/^[+-]?\d+$/.test(expr)) {
+    const val = expr.startsWith("-") ? expr : `+${expr.replace(/^\+/, "")}`;
+    return {
+      attackExpr: `1d20${val}`,
+      damageExpr: `1d6${val}`,
+    };
+  }
+
+  if (/d20/i.test(expr)) {
+    return {
+      attackExpr: expr,
+    };
+  }
+
+  return {
+    attackExpr: "1d20",
+    damageExpr: expr,
+  };
+}
+
 type ActorOverlayProps = {
   campaignId: string;
   actor: RosterActor;
@@ -462,7 +512,7 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
     const isInCombat = combatState && combatState.active;
     if (isInCombat) {
       const attacker = combatState.combatants[combatState.currentTurnIndex];
-      const isMyTurn = attacker && (attacker.id === actor.id || attacker.npcId === actor.id || attacker.characterId === actor.id);
+      const isMyTurn = attacker && (matchActorId(attacker.id, actor.id) || matchActorId(attacker.npcId, actor.id) || matchActorId(attacker.characterId, actor.id));
       if (!isMyTurn) {
         setError("Este NPC não está no turno atual do combate.");
         return;
@@ -473,16 +523,7 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
     const desc = pin.label.toLowerCase();
     const isHealing = desc.includes("cura") || desc.includes("poção") || desc.includes("healer") || desc.includes("recupera");
 
-    const expr = pin.rollExpression || "1d20";
-    let attackExpr = expr;
-    let damageExpr: string | undefined = undefined;
-
-    // Parse de parênteses para dano, ex: "1d20+3 (1d6+2)"
-    const parenMatch = expr.trim().match(/^([^(]+)\(([^)]+)\)/);
-    if (parenMatch) {
-      attackExpr = parenMatch[1].trim();
-      damageExpr = parenMatch[2].trim();
-    }
+    const { attackExpr, damageExpr } = parseNpcPinExpression(pin.rollExpression);
 
     if (isInCombat) {
       setSelectedActionItem({
@@ -516,7 +557,7 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
     if (!selectedActionItem || !combatState || !campaignId) return;
 
     const attacker = combatState.combatants[combatState.currentTurnIndex];
-    if (!attacker || (attacker.id !== actor.id && attacker.npcId !== actor.id && attacker.characterId !== actor.id)) {
+    if (!attacker || (!matchActorId(attacker.id, actor.id) && !matchActorId(attacker.npcId, actor.id) && !matchActorId(attacker.characterId, actor.id))) {
       setError("Este NPC não está no turno atual do combate.");
       return;
     }
@@ -644,13 +685,14 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
         setSuccess(`Ataque contra ${target.name}: ${resolved.result.details}`);
         await onChanged();
       } else if (currentTarget.type !== "npc" && damageConfigured) {
+        const sanitizedTargetId = currentTarget.characterId ?? currentTarget.id.replace(/^character:/, "");
         // Envia requisição de reação defensiva ativa para o jogador alvo
         requestDefenseReaction({
           campaignId,
           id: `react_${Date.now()}`,
           attackerId: attacker.id,
           attackerName: actor.name,
-          targetId: currentTarget.id,
+          targetId: sanitizedTargetId,
           targetName: currentTarget.name,
           rawDamage: Math.max(0, damage.total),
           attackRoll: attack.total,
@@ -959,6 +1001,18 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
               </div>
             </div>
           </div>
+
+          {selectedActionItem && (
+            <TargetSelectionModal
+              actionName={selectedActionItem.name}
+              isHealing={selectedActionItem.isHealing}
+              combatants={combatState?.combatants ?? []}
+              myCharacterId={actor.id}
+              isOpen={Boolean(selectedActionItem)}
+              onClose={() => setSelectedActionItem(null)}
+              onConfirmTarget={handleConfirmTarget}
+            />
+          )}
         </div>
       </div>
     );
