@@ -26,6 +26,7 @@ export function CampaignList() {
           const data = await response.json().catch(() => ({}));
 
           if (response.status === 401) {
+            await fetch("/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => {});
             window.location.href = '/login';
             return;
           }
