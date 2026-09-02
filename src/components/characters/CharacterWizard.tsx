@@ -14,6 +14,8 @@ import { getDerivedStats, getModifier } from "@/lib/engine/attributes";
 import { Button, Input, Spinner } from "@/components/ui";
 import { Toast } from "@/components/ui/Toast";
 import { generateUUID } from "@/lib/utils/uuid";
+import { HeartAwakeningModal } from "@/components/characters/HeartAwakeningModal";
+import type { HeartAwakeningResult } from "@/components/characters/HeartAwakeningModal";
 
 // =============================================================================
 // Types
@@ -130,6 +132,87 @@ export function CharacterWizard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toasts, setToasts] = useState<Array<{ id: string; message: string; type?: "error" | "success" | "info" | "warning" }>>([]);
   const [hydrated, setHydrated] = useState(false);
+  const [showAwakeningModal, setShowAwakeningModal] = useState(false);
+  const [classes, setClasses] = useState<ClassData[]>([]);
+
+  const addToast = useCallback((message: string, type: "error" | "success" | "info" | "warning" = "error") => {
+    const id = generateUUID();
+    setToasts((prev) => [...prev, { id, message, type }]);
+  }, []);
+
+  const removeToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  // Carregar lista de classes pré-carregadas para correspondência de classe sugerida
+  useEffect(() => {
+    let cancelled = false;
+    async function loadClasses() {
+      try {
+        const res = await fetch("/api/classes", { credentials: "include" });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (!cancelled && json.data) {
+          setClasses(json.data);
+        }
+      } catch {
+        // ignore
+      }
+    }
+    void loadClasses();
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleAwakeningComplete = useCallback(async (result: HeartAwakeningResult) => {
+    let classList = classes;
+    if (classList.length === 0) {
+      try {
+        const res = await fetch("/api/classes", { credentials: "include" });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.data) {
+            classList = json.data;
+            setClasses(json.data);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    let matchedClassId: string | null = null;
+    if (result.suggestedClass) {
+      const suggestedLower = result.suggestedClass.trim().toLowerCase();
+      const foundClass = classList.find(
+        (c) => c.name.trim().toLowerCase() === suggestedLower
+      );
+      if (foundClass) {
+        matchedClassId = foundClass.id;
+      }
+    }
+
+    setWizardData((prev) => {
+      let newDescription = prev.description;
+      if (result.prophecy) {
+        newDescription = prev.description
+          ? `${prev.description}\n\n${result.prophecy}`
+          : result.prophecy;
+      }
+
+      return {
+        ...prev,
+        attributes: { ...result.attributes },
+        description: newDescription,
+        ...(matchedClassId ? { classId: matchedClassId } : {}),
+      };
+    });
+
+    addToast(
+      "O ritual despertou a alma de seu personagem! Atributos e classe foram pré-preenchidos.",
+      "info"
+    );
+    setShowAwakeningModal(false);
+  }, [classes, addToast]);
 
   // Clear legacy localStorage draft if present
   useEffect(() => {
@@ -167,15 +250,6 @@ export function CharacterWizard() {
       // Ignore quota errors
     }
   }, [wizardData, hydrated]);
-
-  const addToast = useCallback((message: string, type: "error" | "success" | "info" | "warning" = "error") => {
-    const id = generateUUID();
-    setToasts((prev) => [...prev, { id, message, type }]);
-  }, []);
-
-  const removeToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
 
   const updateData = useCallback((partial: Partial<WizardData>) => {
     setWizardData((prev) => ({ ...prev, ...partial }));
@@ -304,7 +378,11 @@ export function CharacterWizard() {
       {/* Conteúdo da Etapa */}
       <div className="mt-6">
         {currentStep === 0 && (
-          <WizardStepBasicInfo data={wizardData} updateData={updateData} />
+          <WizardStepBasicInfo
+            data={wizardData}
+            updateData={updateData}
+            onOpenAwakeningModal={() => setShowAwakeningModal(true)}
+          />
         )}
         {currentStep === 1 && (
           <WizardStepRace data={wizardData} updateData={updateData} />
@@ -347,6 +425,13 @@ export function CharacterWizard() {
           </Button>
         )}
       </div>
+
+      {/* Heart Awakening Modal */}
+      <HeartAwakeningModal
+        isOpen={showAwakeningModal}
+        onClose={() => setShowAwakeningModal(false)}
+        onComplete={handleAwakeningComplete}
+      />
     </div>
   );
 }
@@ -437,12 +522,36 @@ function WizardStepper({
 function WizardStepBasicInfo({
   data,
   updateData,
+  onOpenAwakeningModal,
 }: {
   data: WizardData;
   updateData: (partial: Partial<WizardData>) => void;
+  onOpenAwakeningModal: () => void;
 }) {
   return (
     <div className="space-y-4 rounded-xl border border-gray-800 bg-gray-900/60 p-5">
+      {/* Banner / Botão Místico - O Despertar do Coração */}
+      <div className="relative overflow-hidden rounded-xl border border-purple-800/60 bg-gradient-to-r from-purple-950/80 via-purple-900/40 to-gray-900 p-4 shadow-[0_0_20px_rgba(147,51,234,0.15)]">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div>
+            <h4 className="text-sm font-bold text-purple-200 flex items-center gap-1.5">
+              <span>🔮</span> O Despertar do Coração (Criar com Ritual & IA)
+            </h4>
+            <p className="mt-1 text-xs text-purple-300/80">
+              Responda ao Oráculo e revele a profecia, atributos e classe ideais para o seu herói.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="master"
+            onClick={onOpenAwakeningModal}
+            className="whitespace-nowrap px-4 py-2 text-xs font-semibold shadow-[0_0_12px_rgba(168,85,247,0.4)]"
+          >
+            Iniciar Ritual ✨
+          </Button>
+        </div>
+      </div>
+
       <h3 className="text-lg font-semibold text-white">Informações Básicas</h3>
       <p className="text-xs text-gray-400">
         Defina o nome, histórico e imagem do seu herói.

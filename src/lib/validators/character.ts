@@ -53,6 +53,19 @@ export const createCharacterSchema = z.object({
 
 export type CreateCharacterInput = z.infer<typeof createCharacterSchema>;
 
+export const heartAwakeningSchema = z.object({
+  chosenRelic: z.enum(["conflito", "salvaguarda", "segredo"]),
+  sacrificedRelic: z.enum(["conflito", "salvaguarda", "segredo"]),
+  q1Origin: z.enum(["carta", "moeda", "amuleto"]),
+  q2Impulse: z.enum(["colina", "floresta", "mar"]),
+  q3End: z.enum(["luzes", "cidade", "odiar"]),
+}).refine(data => data.chosenRelic !== data.sacrificedRelic, {
+  message: "A relíquia sacrificada deve ser diferente da escolhida",
+  path: ["sacrificedRelic"]
+});
+
+export type HeartAwakeningInput = z.infer<typeof heartAwakeningSchema>;
+
 /**
  * Schema de atualização de personagem (RF-009).
  * Todos os campos são opcionais
