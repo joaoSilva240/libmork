@@ -33,38 +33,38 @@ const RELICS: Array<{ id: ChosenRelic; name: string; quote: string; icon: string
     id: "conflito",
     name: "Relíquia do Conflito",
     quote: "Uma lâmina cega que busca propósito no sangue",
-    icon: "⚔️",
+    icon: "A",
   },
   {
     id: "salvaguarda",
     name: "Relíquia da Salvaguarda",
     quote: "Um elmo partido que ainda ecoa a promessa de proteger",
-    icon: "🛡️",
+    icon: "B",
   },
   {
     id: "segredo",
     name: "Relíquia do Segredo",
     quote: "Um espelho trincado que reflete verdades que os olhos desviam",
-    icon: "👁️",
+    icon: "C",
   },
 ];
 
-const Q1_OPTIONS: Array<{ id: Q1Origin; title: string; desc: string }> = [
-  { id: "carta", title: "Carta", desc: "Uma carta que nunca tive coragem de abrir" },
-  { id: "moeda", title: "Moeda", desc: "Uma moeda de duas caras, ambas gastas" },
-  { id: "amuleto", title: "Amuleto", desc: "O amuleto frio daqueles que já partiram" },
+const Q1_OPTIONS: Array<{ id: Q1Origin; title: string; desc: string; glyph: string }> = [
+  { id: "carta", title: "Carta", desc: "Uma carta que nunca tive coragem de abrir", glyph: "D" },
+  { id: "moeda", title: "Moeda", desc: "Uma moeda de duas caras, ambas gastas", glyph: "E" },
+  { id: "amuleto", title: "Amuleto", desc: "O amuleto frio daqueles que já partiram", glyph: "F" },
 ];
 
-const Q2_OPTIONS: Array<{ id: Q2Impulse; title: string; desc: string }> = [
-  { id: "colina", title: "Colina", desc: "Para o topo da colina, onde posso ver o mundo primeiro" },
-  { id: "floresta", title: "Floresta", desc: "Para dentro da floresta, onde as sombras me escondem" },
-  { id: "mar", title: "Mar", desc: "Para a beira do mar, esperando o que a maré vai trazer" },
+const Q2_OPTIONS: Array<{ id: Q2Impulse; title: string; desc: string; glyph: string }> = [
+  { id: "colina", title: "Colina", desc: "Para o topo da colina, onde posso ver o mundo primeiro", glyph: "G" },
+  { id: "floresta", title: "Floresta", desc: "Para dentro da floresta, onde as sombras me escondem", glyph: "H" },
+  { id: "mar", title: "Mar", desc: "Para a beira do mar, esperando o que a maré vai trazer", glyph: "I" },
 ];
 
-const Q3_OPTIONS: Array<{ id: Q3End; title: string; desc: string }> = [
-  { id: "luzes", title: "Luzes", desc: "Que eu tremo quando as luzes se apagam" },
-  { id: "cidade", title: "Cidade", desc: "Que eu esqueci o som da voz mecânica da minha cidade" },
-  { id: "odiar", title: "Odiar", desc: "Que eu mentiria para salvar quem odeio" },
+const Q3_OPTIONS: Array<{ id: Q3End; title: string; desc: string; glyph: string }> = [
+  { id: "luzes", title: "Luzes", desc: "Que eu tremo quando as luzes se apagam", glyph: "J" },
+  { id: "cidade", title: "Cidade", desc: "Que eu esqueci o som da voz mecânica da minha cidade", glyph: "K" },
+  { id: "odiar", title: "Odiar", desc: "Que eu mentiria para salvar quem odeio", glyph: "L" },
 ];
 
 export function HeartAwakeningModal({
@@ -73,6 +73,7 @@ export function HeartAwakeningModal({
   onComplete,
 }: HeartAwakeningModalProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [questionStep, setQuestionStep] = useState<1 | 2 | 3>(1);
 
   // Etapa 1
   const [chosenRelic, setChosenRelic] = useState<ChosenRelic | null>(null);
@@ -111,6 +112,7 @@ export function HeartAwakeningModal({
   const handleNextStep1 = () => {
     if (chosenRelic && sacrificedRelic && chosenRelic !== sacrificedRelic) {
       setStep(2);
+      setQuestionStep(1);
     }
   };
 
@@ -172,9 +174,27 @@ export function HeartAwakeningModal({
             <h2 className="text-lg sm:text-2xl font-extrabold tracking-wider text-purple-200 uppercase drop-shadow-[0_2px_10px_rgba(168,85,247,0.4)]">
               O Despertar do Coração
             </h2>
-            <p className="text-[11px] sm:text-xs text-purple-400/80 font-mono mt-0.5">
-              Passo {step} de 3 — {step === 1 ? "A Escolha das Relíquias" : step === 2 ? "O Questionário das Vozes Sem Rosto" : "O Despertar"}
-            </p>
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-mono mt-1">
+              <span className={step === 1 ? "text-purple-200 font-bold underline" : step > 1 ? "text-purple-400/60" : "text-gray-500"}>
+                Relíquias
+              </span>
+              <span className="text-purple-600/60">→</span>
+              <span className={step === 2 && questionStep === 1 ? "text-purple-200 font-bold underline" : (step === 2 && questionStep > 1) || step > 2 ? "text-purple-400/60" : "text-gray-500"}>
+                Pergunta 1/3
+              </span>
+              <span className="text-purple-600/60">→</span>
+              <span className={step === 2 && questionStep === 2 ? "text-purple-200 font-bold underline" : (step === 2 && questionStep > 2) || step > 2 ? "text-purple-400/60" : "text-gray-500"}>
+                Pergunta 2/3
+              </span>
+              <span className="text-purple-600/60">→</span>
+              <span className={step === 2 && questionStep === 3 ? "text-purple-200 font-bold underline" : step > 2 ? "text-purple-400/60" : "text-gray-500"}>
+                Pergunta 3/3
+              </span>
+              <span className="text-purple-600/60">→</span>
+              <span className={step === 3 ? "text-purple-200 font-bold underline" : "text-gray-500"}>
+                O Despertar
+              </span>
+            </div>
           </div>
           <button
             type="button"
@@ -219,7 +239,9 @@ export function HeartAwakeningModal({
                         }`}
                       >
                         <div>
-                          <div className="text-xl sm:text-2xl mb-1 sm:mb-2">{relic.icon}</div>
+                          <div className="font-fantasy text-2xl sm:text-3xl mb-1 sm:mb-2 text-purple-300 group-hover:text-purple-200 leading-none">
+                            {relic.icon}
+                          </div>
                           <div className="font-bold text-xs text-white group-hover:text-purple-300">
                             {relic.name}
                           </div>
@@ -266,7 +288,9 @@ export function HeartAwakeningModal({
                         }`}
                       >
                         <div>
-                          <div className="text-xl sm:text-2xl mb-1 sm:mb-2">{relic.icon}</div>
+                          <div className="font-fantasy text-2xl sm:text-3xl mb-1 sm:mb-2 text-red-400 group-hover:text-red-300 leading-none">
+                            {relic.icon}
+                          </div>
                           <div className="font-bold text-xs text-white group-hover:text-red-300">
                             {relic.name}
                           </div>
@@ -298,98 +322,215 @@ export function HeartAwakeningModal({
             </div>
           )}
 
-          {/* STEP 2: O Questionário das Vozes Sem Rosto */}
+          {/* STEP 2: O Questionário das Vozes Sem Rosto (1 Pergunta por Vez) */}
           {step === 2 && (
-            <div className="space-y-4 sm:space-y-5 animate-fadeIn">
-              {/* Pergunta 1: Origem */}
-              <div>
-                <h4 className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-purple-300 mb-1.5 sm:mb-2">
-                  Pergunta 1 — Qual lembrança guardas do passado?
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5">
-                  {Q1_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => setQ1Origin(opt.id)}
-                      className={`rounded-xl border p-2.5 sm:p-3 text-left transition-all text-xs ${
-                        q1Origin === opt.id
-                          ? "border-purple-500 bg-purple-950/70 text-white font-semibold shadow-[0_0_10px_rgba(168,85,247,0.3)]"
-                          : "border-purple-900/30 bg-gray-900/50 text-gray-300 hover:border-purple-700/50 hover:bg-purple-950/20"
-                      }`}
-                    >
-                      <div className="font-bold text-purple-200 mb-0.5">{opt.title}</div>
-                      <div className="text-[10px] sm:text-[11px] text-gray-400 italic">&quot;{opt.desc}&quot;</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
+            <div className="space-y-4 sm:space-y-6 animate-fadeIn">
+              {/* Sub-etapa 1: Pergunta 1 (Origem) */}
+              {questionStep === 1 && (
+                <>
+                  <div>
+                    <span className="text-[10px] sm:text-xs font-semibold tracking-wider text-purple-400 uppercase">
+                      Vozes Sem Rosto — Pergunta 1 de 3
+                    </span>
+                    <h3 className="text-sm sm:text-base font-bold text-purple-200 mt-1">
+                      Pergunta 1 (Origem) — &quot;Qual lembrança guardas do passado?&quot;
+                    </h3>
+                  </div>
 
-              {/* Pergunta 2: Impulso */}
-              <div>
-                <h4 className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-purple-300 mb-1.5 sm:mb-2">
-                  Pergunta 2 — Para onde teu olhar se dirige quando a tempestade se aproxima?
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5">
-                  {Q2_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => setQ2Impulse(opt.id)}
-                      className={`rounded-xl border p-2.5 sm:p-3 text-left transition-all text-xs ${
-                        q2Impulse === opt.id
-                          ? "border-purple-500 bg-purple-950/70 text-white font-semibold shadow-[0_0_10px_rgba(168,85,247,0.3)]"
-                          : "border-purple-900/30 bg-gray-900/50 text-gray-300 hover:border-purple-700/50 hover:bg-purple-950/20"
-                      }`}
-                    >
-                      <div className="font-bold text-purple-200 mb-0.5">{opt.title}</div>
-                      <div className="text-[10px] sm:text-[11px] text-gray-400 italic">&quot;{opt.desc}&quot;</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
+                    {Q1_OPTIONS.map((opt) => {
+                      const isSelected = q1Origin === opt.id;
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => setQ1Origin(opt.id)}
+                          className={`group relative flex flex-col justify-between rounded-xl border p-3 sm:p-4 text-left transition-all duration-200 ${
+                            isSelected
+                              ? "border-purple-500 bg-purple-950/70 text-white font-semibold shadow-[0_0_15px_rgba(168,85,247,0.3)] ring-1 ring-purple-400"
+                              : "border-purple-900/40 bg-gray-900/60 text-gray-300 hover:border-purple-700/60 hover:bg-purple-950/30"
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-center gap-2.5 mb-2">
+                              <span className="font-fantasy text-2xl text-purple-400 group-hover:text-purple-300 leading-none">
+                                {opt.glyph}
+                              </span>
+                              <span className="font-bold text-xs sm:text-sm text-purple-200 group-hover:text-white">
+                                {opt.title}
+                              </span>
+                            </div>
+                            <p className="text-[10px] sm:text-[11px] text-gray-400 italic leading-relaxed">
+                              &quot;{opt.desc}&quot;
+                            </p>
+                          </div>
+                          {isSelected && (
+                            <span className="mt-3 inline-block self-start rounded bg-purple-600 px-2 py-0.5 text-[9px] sm:text-[10px] font-bold text-white uppercase tracking-wider">
+                              Selecionado
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
 
-              {/* Pergunta 3: O Fim */}
-              <div>
-                <h4 className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-purple-300 mb-1.5 sm:mb-2">
-                  Pergunta 3 — Qual segredo confessarias apenas ao silêncio?
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5">
-                  {Q3_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => setQ3End(opt.id)}
-                      className={`rounded-xl border p-2.5 sm:p-3 text-left transition-all text-xs ${
-                        q3End === opt.id
-                          ? "border-purple-500 bg-purple-950/70 text-white font-semibold shadow-[0_0_10px_rgba(168,85,247,0.3)]"
-                          : "border-purple-900/30 bg-gray-900/50 text-gray-300 hover:border-purple-700/50 hover:bg-purple-950/20"
-                      }`}
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 sm:pt-4 border-t border-purple-900/30">
+                    <Button
+                      onClick={() => setStep(1)}
+                      variant="secondary"
+                      className="w-full sm:w-auto px-4 py-2 text-xs"
                     >
-                      <div className="font-bold text-purple-200 mb-0.5">{opt.title}</div>
-                      <div className="text-[10px] sm:text-[11px] text-gray-400 italic">&quot;{opt.desc}&quot;</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
+                      ← Voltar às Relíquias
+                    </Button>
+                    <Button
+                      onClick={() => setQuestionStep(2)}
+                      disabled={!q1Origin}
+                      variant="master"
+                      className="w-full sm:w-auto px-6 py-2 text-xs sm:text-sm font-semibold"
+                    >
+                      Avançar →
+                    </Button>
+                  </div>
+                </>
+              )}
 
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 sm:pt-4 border-t border-purple-900/30">
-                <Button
-                  onClick={() => setStep(1)}
-                  variant="secondary"
-                  className="w-full sm:w-auto px-4 py-2 text-xs"
-                >
-                  ← Voltar às Relíquias
-                </Button>
-                <Button
-                  onClick={handleFetchAwakening}
-                  disabled={!q1Origin || !q2Impulse || !q3End}
-                  variant="master"
-                  className="w-full sm:w-auto px-6 py-2 text-xs sm:text-sm font-semibold"
-                >
-                  Consultar o Oráculo ✨
-                </Button>
-              </div>
+              {/* Sub-etapa 2: Pergunta 2 (Impulso) */}
+              {questionStep === 2 && (
+                <>
+                  <div>
+                    <span className="text-[10px] sm:text-xs font-semibold tracking-wider text-purple-400 uppercase">
+                      Vozes Sem Rosto — Pergunta 2 de 3
+                    </span>
+                    <h3 className="text-sm sm:text-base font-bold text-purple-200 mt-1">
+                      Pergunta 2 (Impulso) — &quot;Para onde teu olhar se dirige quando a tempestade se aproxima?&quot;
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
+                    {Q2_OPTIONS.map((opt) => {
+                      const isSelected = q2Impulse === opt.id;
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => setQ2Impulse(opt.id)}
+                          className={`group relative flex flex-col justify-between rounded-xl border p-3 sm:p-4 text-left transition-all duration-200 ${
+                            isSelected
+                              ? "border-purple-500 bg-purple-950/70 text-white font-semibold shadow-[0_0_15px_rgba(168,85,247,0.3)] ring-1 ring-purple-400"
+                              : "border-purple-900/40 bg-gray-900/60 text-gray-300 hover:border-purple-700/60 hover:bg-purple-950/30"
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-center gap-2.5 mb-2">
+                              <span className="font-fantasy text-2xl text-purple-400 group-hover:text-purple-300 leading-none">
+                                {opt.glyph}
+                              </span>
+                              <span className="font-bold text-xs sm:text-sm text-purple-200 group-hover:text-white">
+                                {opt.title}
+                              </span>
+                            </div>
+                            <p className="text-[10px] sm:text-[11px] text-gray-400 italic leading-relaxed">
+                              &quot;{opt.desc}&quot;
+                            </p>
+                          </div>
+                          {isSelected && (
+                            <span className="mt-3 inline-block self-start rounded bg-purple-600 px-2 py-0.5 text-[9px] sm:text-[10px] font-bold text-white uppercase tracking-wider">
+                              Selecionado
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 sm:pt-4 border-t border-purple-900/30">
+                    <Button
+                      onClick={() => setQuestionStep(1)}
+                      variant="secondary"
+                      className="w-full sm:w-auto px-4 py-2 text-xs"
+                    >
+                      ← Voltar
+                    </Button>
+                    <Button
+                      onClick={() => setQuestionStep(3)}
+                      disabled={!q2Impulse}
+                      variant="master"
+                      className="w-full sm:w-auto px-6 py-2 text-xs sm:text-sm font-semibold"
+                    >
+                      Avançar →
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              {/* Sub-etapa 3: Pergunta 3 (O Fim) */}
+              {questionStep === 3 && (
+                <>
+                  <div>
+                    <span className="text-[10px] sm:text-xs font-semibold tracking-wider text-purple-400 uppercase">
+                      Vozes Sem Rosto — Pergunta 3 de 3
+                    </span>
+                    <h3 className="text-sm sm:text-base font-bold text-purple-200 mt-1">
+                      Pergunta 3 (O Fim) — &quot;Qual segredo confessarias apenas ao silêncio?&quot;
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
+                    {Q3_OPTIONS.map((opt) => {
+                      const isSelected = q3End === opt.id;
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => setQ3End(opt.id)}
+                          className={`group relative flex flex-col justify-between rounded-xl border p-3 sm:p-4 text-left transition-all duration-200 ${
+                            isSelected
+                              ? "border-purple-500 bg-purple-950/70 text-white font-semibold shadow-[0_0_15px_rgba(168,85,247,0.3)] ring-1 ring-purple-400"
+                              : "border-purple-900/40 bg-gray-900/60 text-gray-300 hover:border-purple-700/60 hover:bg-purple-950/30"
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-center gap-2.5 mb-2">
+                              <span className="font-fantasy text-2xl text-purple-400 group-hover:text-purple-300 leading-none">
+                                {opt.glyph}
+                              </span>
+                              <span className="font-bold text-xs sm:text-sm text-purple-200 group-hover:text-white">
+                                {opt.title}
+                              </span>
+                            </div>
+                            <p className="text-[10px] sm:text-[11px] text-gray-400 italic leading-relaxed">
+                              &quot;{opt.desc}&quot;
+                            </p>
+                          </div>
+                          {isSelected && (
+                            <span className="mt-3 inline-block self-start rounded bg-purple-600 px-2 py-0.5 text-[9px] sm:text-[10px] font-bold text-white uppercase tracking-wider">
+                              Selecionado
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 sm:pt-4 border-t border-purple-900/30">
+                    <Button
+                      onClick={() => setQuestionStep(2)}
+                      variant="secondary"
+                      className="w-full sm:w-auto px-4 py-2 text-xs"
+                    >
+                      ← Voltar
+                    </Button>
+                    <Button
+                      onClick={handleFetchAwakening}
+                      disabled={!q3End}
+                      variant="master"
+                      className="w-full sm:w-auto px-6 py-2 text-xs sm:text-sm font-semibold"
+                    >
+                      Consultar o Oráculo ✨
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -406,7 +547,7 @@ export function HeartAwakeningModal({
               ) : errorMsg ? (
                 <div className="my-auto rounded-xl border border-red-800 bg-red-950/40 p-6 text-center space-y-4">
                   <p className="text-sm text-red-300 font-semibold">{errorMsg}</p>
-                  <Button onClick={() => setStep(2)} variant="secondary" className="mx-auto">
+                  <Button onClick={() => { setStep(2); setQuestionStep(3); }} variant="secondary" className="mx-auto">
                     Tentar Novamente
                   </Button>
                 </div>
