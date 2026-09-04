@@ -378,7 +378,7 @@ export function CharacterWizard() {
       </div>
 
       {/* Conteúdo com Rolagem Independente */}
-      <div className="max-h-[calc(100vh-200px)] overflow-y-auto pr-1 flex flex-col justify-between">
+      <div className="max-h-[calc(100vh-200px)] overflow-y-auto pr-1 pb-20">
         {/* Conteúdo da Etapa */}
         <div>
           {currentStep === 0 && (
@@ -407,9 +407,11 @@ export function CharacterWizard() {
             <WizardStepReview data={wizardData} />
           )}
         </div>
+      </div>
 
-        {/* Navegação Fixada na Parte Inferior */}
-        <div className="sticky bottom-0 z-20 bg-gray-950/95 pt-3 pb-2 border-t border-gray-800 mt-6 flex items-center justify-between gap-4">
+      {/* Barra de Navegação Fixa na Parte Inferior */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-gray-950/95 backdrop-blur-md border-t border-gray-800/80 py-3 px-4 sm:px-8 shadow-2xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
           <Button
             variant="secondary"
             onClick={goBack}
