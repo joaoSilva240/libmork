@@ -336,9 +336,11 @@ export function CharacterWizard() {
       };
 
       if (wizardData.description?.trim()) {
-        payload.description = wizardData.description.trim();
+        payload.description = wizardData.description.trim().slice(0, 2000);
       }
-      if (wizardData.imageUrl) payload.imageUrl = wizardData.imageUrl;
+      if (wizardData.imageUrl && wizardData.imageUrl.trim() !== "") {
+        payload.imageUrl = wizardData.imageUrl;
+      }
       if (wizardData.raceId) payload.raceId = wizardData.raceId;
       if (wizardData.classId) payload.classId = wizardData.classId;
       if (wizardData.campaignId) payload.campaignId = wizardData.campaignId;
@@ -355,7 +357,8 @@ export function CharacterWizard() {
       const data = await response.json();
 
       if (!response.ok) {
-        addToast(data.error || "Erro ao criar personagem.", "error");
+        const errorMessage = data.errors?.[0]?.message || data.error || "Erro ao criar personagem.";
+        addToast(errorMessage, "error");
         return;
       }
 

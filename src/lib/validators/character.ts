@@ -24,11 +24,11 @@ export const attributesSchema = z.object({
  */
 export const createCharacterSchema = z.object({
   name: z.string().min(2, "Nome deve ter no mínimo 2 caracteres").max(100),
-  description: z.string().max(500).optional().nullable(),
+  description: z.string().max(2000).optional().nullable(),
   classId: z.string().uuid().optional().nullable(),
   raceId: z.string().uuid().optional().nullable(),
   campaignId: z.string().uuid().optional().nullable(),
-  imageUrl: z.string().url().optional().nullable(),
+  imageUrl: z.union([z.string().url(), z.literal("")]).optional().nullable(),
   attributes: attributesSchema.optional(),
   skills: z.array(z.string().uuid()).optional().default([]),
   spells: z.array(z.string().uuid()).optional().default([]),
