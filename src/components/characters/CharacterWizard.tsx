@@ -369,61 +369,64 @@ export function CharacterWizard() {
         </div>
       )}
 
-      {/* Título */}
-      <h2 className="mb-6 text-2xl font-bold text-white">Criar Personagem</h2>
-
-      {/* Stepper (7 Etapas) */}
-      <WizardStepper currentStep={currentStep} onStepClick={setCurrentStep} wizardData={wizardData} validateStep={validateStep} />
-
-      {/* Conteúdo da Etapa */}
-      <div className="mt-6">
-        {currentStep === 0 && (
-          <WizardStepBasicInfo
-            data={wizardData}
-            updateData={updateData}
-            onOpenAwakeningModal={() => setShowAwakeningModal(true)}
-          />
-        )}
-        {currentStep === 1 && (
-          <WizardStepRace data={wizardData} updateData={updateData} />
-        )}
-        {currentStep === 2 && (
-          <WizardStepClass data={wizardData} updateData={updateData} />
-        )}
-        {currentStep === 3 && (
-          <WizardStepAttributes data={wizardData} updateData={updateData} />
-        )}
-        {currentStep === 4 && (
-          <WizardStepSkills data={wizardData} updateData={updateData} />
-        )}
-        {currentStep === 5 && (
-          <WizardStepSpells data={wizardData} updateData={updateData} />
-        )}
-        {currentStep === 6 && (
-          <WizardStepReview data={wizardData} />
-        )}
+      {/* Cabeçalho e Stepper Fixos no Topo */}
+      <div className="sticky top-0 z-30 bg-gray-950/95 backdrop-blur-md pt-4 pb-3 border-b border-purple-900/30 mb-6">
+        <h2 className="mb-4 text-2xl font-bold text-white font-serif">Criar Personagem</h2>
+        <WizardStepper currentStep={currentStep} onStepClick={setCurrentStep} wizardData={wizardData} validateStep={validateStep} />
       </div>
 
-      {/* Navegação */}
-      <div className="mt-6 flex items-center justify-between gap-4">
-        <Button
-          variant="secondary"
-          onClick={goBack}
-          disabled={currentStep === 0 || isSubmitting}
-          className="min-w-[100px]"
-        >
-          Voltar
-        </Button>
+      {/* Conteúdo com Rolagem Independente */}
+      <div className="max-h-[calc(100vh-200px)] overflow-y-auto pr-1 flex flex-col justify-between">
+        {/* Conteúdo da Etapa */}
+        <div>
+          {currentStep === 0 && (
+            <WizardStepBasicInfo
+              data={wizardData}
+              updateData={updateData}
+              onOpenAwakeningModal={() => setShowAwakeningModal(true)}
+            />
+          )}
+          {currentStep === 1 && (
+            <WizardStepRace data={wizardData} updateData={updateData} />
+          )}
+          {currentStep === 2 && (
+            <WizardStepClass data={wizardData} updateData={updateData} />
+          )}
+          {currentStep === 3 && (
+            <WizardStepAttributes data={wizardData} updateData={updateData} />
+          )}
+          {currentStep === 4 && (
+            <WizardStepSkills data={wizardData} updateData={updateData} />
+          )}
+          {currentStep === 5 && (
+            <WizardStepSpells data={wizardData} updateData={updateData} />
+          )}
+          {currentStep === 6 && (
+            <WizardStepReview data={wizardData} />
+          )}
+        </div>
 
-        {currentStep < STEPS.length - 1 ? (
-          <Button onClick={goNext} disabled={isSubmitting} className="min-w-[100px]">
-            Próximo
+        {/* Navegação Fixada na Parte Inferior */}
+        <div className="sticky bottom-0 z-20 bg-gray-950/95 pt-3 pb-2 border-t border-gray-800 mt-6 flex items-center justify-between gap-4">
+          <Button
+            variant="secondary"
+            onClick={goBack}
+            disabled={currentStep === 0 || isSubmitting}
+            className="min-w-[100px]"
+          >
+            Voltar
           </Button>
-        ) : (
-          <Button onClick={handleSubmit} isLoading={isSubmitting} className="min-w-[160px]">
-            Criar Personagem
-          </Button>
-        )}
+
+          {currentStep < STEPS.length - 1 ? (
+            <Button onClick={goNext} disabled={isSubmitting} className="min-w-[100px]">
+              Próximo
+            </Button>
+          ) : (
+            <Button onClick={handleSubmit} isLoading={isSubmitting} className="min-w-[160px]">
+              Criar Personagem
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Heart Awakening Modal */}
