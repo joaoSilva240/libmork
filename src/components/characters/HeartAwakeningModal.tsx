@@ -213,97 +213,89 @@ export function HeartAwakeningModal({
             <div className="space-y-5 sm:space-y-6 animate-fadeIn">
               <div>
                 <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-purple-300 mb-1">
-                  1. Escolha sua Relíquia Dominante
+                  Escolha suas Relíquias
                 </h3>
                 <p className="text-[11px] sm:text-xs text-gray-400">
-                  Esta relíquia guiará os pilares da sua força interior.
+                  Selecione uma relíquia como Dominante e outra como Sacrificada.
                 </p>
-                <div className="mt-2 sm:mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
                   {RELICS.map((relic) => {
                     const isChosen = chosenRelic === relic.id;
                     const isSacrificed = sacrificedRelic === relic.id;
                     return (
-                      <button
+                      <div
                         key={relic.id}
-                        type="button"
-                        disabled={isSacrificed}
-                        onClick={() => {
-                          setChosenRelic(relic.id);
-                        }}
                         className={`group relative flex flex-col justify-between rounded-xl border p-3 sm:p-4 text-left transition-all duration-200 ${
                           isChosen
-                            ? "border-purple-500 bg-purple-950/70 shadow-[0_0_15px_rgba(168,85,247,0.3)] ring-1 ring-purple-400"
+                            ? "border-purple-400 bg-purple-950/80 shadow-[0_0_15px_rgba(168,85,247,0.4)] ring-1 ring-amber-400/60"
                             : isSacrificed
-                            ? "opacity-30 border-gray-800 bg-gray-900/40 cursor-not-allowed"
+                            ? "border-red-500/80 bg-red-950/50 shadow-[0_0_15px_rgba(239,68,68,0.2)] ring-1 ring-red-400/50"
                             : "border-purple-900/40 bg-gray-900/60 hover:border-purple-700/60 hover:bg-purple-950/30"
                         }`}
                       >
                         <div>
-                          <div className="font-fantasy text-2xl sm:text-3xl mb-1 sm:mb-2 text-purple-300 group-hover:text-purple-200 leading-none">
-                            {relic.icon}
+                          <div className="flex items-center justify-between mb-1 sm:mb-2">
+                            <div
+                              className={`font-fantasy text-2xl sm:text-3xl leading-none ${
+                                isChosen
+                                  ? "text-amber-300"
+                                  : isSacrificed
+                                  ? "text-red-400"
+                                  : "text-purple-300"
+                              }`}
+                            >
+                              {relic.icon}
+                            </div>
+                            {isChosen && (
+                              <span className="rounded bg-gradient-to-r from-purple-600 to-amber-500 px-2 py-0.5 text-[9px] sm:text-[10px] font-bold text-white uppercase tracking-wider">
+                                Escolhida
+                              </span>
+                            )}
+                            {isSacrificed && (
+                              <span className="rounded bg-red-600 px-2 py-0.5 text-[9px] sm:text-[10px] font-bold text-white uppercase tracking-wider">
+                                Sacrificada
+                              </span>
+                            )}
                           </div>
-                          <div className="font-bold text-xs text-white group-hover:text-purple-300">
+                          <div className="font-bold text-xs sm:text-sm text-white">
                             {relic.name}
                           </div>
                           <p className="mt-1 text-[10px] sm:text-[11px] text-gray-400 italic leading-relaxed">
                             &quot;{relic.quote}&quot;
                           </p>
                         </div>
-                        {isChosen && (
-                          <span className="mt-2 sm:mt-3 inline-block rounded bg-purple-600 px-2 py-0.5 text-[9px] sm:text-[10px] font-bold text-white uppercase tracking-wider">
-                            Escolhida
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
 
-              <div>
-                <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-purple-300 mb-1">
-                  2. Escolha uma Relíquia para Sacrificar
-                </h3>
-                <p className="text-[11px] sm:text-xs text-gray-400">
-                  Aquilo de que você se desfaz para alcançar o despertar.
-                </p>
-                <div className="mt-2 sm:mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
-                  {RELICS.map((relic) => {
-                    const isChosen = chosenRelic === relic.id;
-                    const isSacrificed = sacrificedRelic === relic.id;
-                    return (
-                      <button
-                        key={relic.id}
-                        type="button"
-                        disabled={isChosen}
-                        onClick={() => {
-                          setSacrificedRelic(relic.id);
-                        }}
-                        className={`group relative flex flex-col justify-between rounded-xl border p-3 sm:p-4 text-left transition-all duration-200 ${
-                          isSacrificed
-                            ? "border-red-500/80 bg-red-950/50 shadow-[0_0_15px_rgba(239,68,68,0.2)] ring-1 ring-red-400"
-                            : isChosen
-                            ? "opacity-30 border-gray-800 bg-gray-900/40 cursor-not-allowed"
-                            : "border-purple-900/40 bg-gray-900/60 hover:border-red-900/60 hover:bg-red-950/20"
-                        }`}
-                      >
-                        <div>
-                          <div className="font-fantasy text-2xl sm:text-3xl mb-1 sm:mb-2 text-red-400 group-hover:text-red-300 leading-none">
-                            {relic.icon}
-                          </div>
-                          <div className="font-bold text-xs text-white group-hover:text-red-300">
-                            {relic.name}
-                          </div>
-                          <p className="mt-1 text-[10px] sm:text-[11px] text-gray-400 italic leading-relaxed">
-                            &quot;{relic.quote}&quot;
-                          </p>
+                        <div className="mt-3 pt-3 border-t border-purple-900/30 grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            disabled={isSacrificed}
+                            onClick={() => setChosenRelic(relic.id)}
+                            className={`px-2 py-1.5 rounded text-[10px] sm:text-xs font-semibold transition-all ${
+                              isChosen
+                                ? "bg-purple-600 text-white shadow-sm ring-1 ring-amber-300"
+                                : isSacrificed
+                                ? "bg-gray-800/50 text-gray-600 cursor-not-allowed border border-gray-800"
+                                : "bg-purple-950/60 text-purple-200 border border-purple-800/60 hover:bg-purple-900 hover:text-white"
+                            }`}
+                          >
+                            Escolher
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isChosen}
+                            onClick={() => setSacrificedRelic(relic.id)}
+                            className={`px-2 py-1.5 rounded text-[10px] sm:text-xs font-semibold transition-all ${
+                              isSacrificed
+                                ? "bg-red-600 text-white shadow-sm ring-1 ring-red-300"
+                                : isChosen
+                                ? "bg-gray-800/50 text-gray-600 cursor-not-allowed border border-gray-800"
+                                : "bg-red-950/40 text-red-300 border border-red-900/60 hover:bg-red-900 hover:text-white"
+                            }`}
+                          >
+                            Sacrificar
+                          </button>
                         </div>
-                        {isSacrificed && (
-                          <span className="mt-2 sm:mt-3 inline-block rounded bg-red-600 px-2 py-0.5 text-[9px] sm:text-[10px] font-bold text-white uppercase tracking-wider">
-                            Sacrificada
-                          </span>
-                        )}
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
