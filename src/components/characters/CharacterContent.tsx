@@ -6,6 +6,7 @@ import { useSocket, DICE_ROLL_LOADING_DELAY } from "@/context/SocketContext";
 import { TargetSelectionModal } from "@/components/combat/TargetSelectionModal";
 import { DecorativeFrame } from "@/components/ui/DecorativeFrame";
 import { Spinner } from "@/components/ui";
+import { SpellFilledIcon } from "@/components/ui/Icons";
 import { ToastContainer } from "@/components/ui/Toast";
 import type { CombatSessionState, Combatant } from "@/lib/engine";
 import { applyHealing, applyResolvedDamage, getExpression, hydrateCombatantMana, normalizeSkillExpression, rollExpression, spendCombatActions, spendSpell } from "@/lib/engine";
@@ -95,6 +96,26 @@ type CharacterContentProps = {
   onStartRolling?: () => void;
   onEndRolling?: () => void;
 };
+
+function SpellIcon({ src }: { src?: unknown }) {
+  const [hasError, setHasError] = useState(false);
+  const imageUrl = typeof src === "string" ? src.trim() : "";
+
+  if (imageUrl && !hasError) {
+    return (
+      <img
+        src={imageUrl}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        onError={() => setHasError(true)}
+        className="h-8 w-8 shrink-0 rounded-md object-cover border border-purple-500/40"
+      />
+    );
+  }
+
+  return <SpellFilledIcon className="h-6 w-6 shrink-0 text-purple-400" />;
+}
 
 export function CharacterContent({
   characterId,
@@ -484,37 +505,42 @@ export function CharacterContent({
                             : ""
                         }`}
                       >
-                        <div>
-                          <p className="text-xs font-bold text-white">
-                            {row.content.name as string}
-                          </p>
-                          <div className="mt-1 flex flex-wrap gap-2">
-                            {activeType === "skills" && (
-                              row.junction.trained ? (
-                                <span className="rounded bg-purple-950 px-2 py-0.5 text-[10px] font-bold text-purple-300 border border-purple-800/60">
-                                  ★ Treinada
+                        <div className="flex items-center gap-3 min-w-0">
+                          {activeType === "spells" && (
+                            <SpellIcon src={row.content.imageUrl} />
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-white truncate">
+                              {row.content.name as string}
+                            </p>
+                            <div className="mt-1 flex flex-wrap gap-2">
+                              {activeType === "skills" && (
+                                row.junction.trained ? (
+                                  <span className="rounded bg-purple-950 px-2 py-0.5 text-[10px] font-bold text-purple-300 border border-purple-800/60">
+                                    ★ Treinada
+                                  </span>
+                                ) : (
+                                  <span className="rounded bg-gray-900 px-2 py-0.5 text-[10px] font-medium text-gray-400 border border-gray-800">
+                                    Não Treinada
+                                  </span>
+                                )
+                              )}
+                              {activeType === "items" && "quantity" in row.junction && (
+                                <span className="text-[11px] text-gray-400 font-medium">
+                                  Quantidade: {row.junction.quantity || 1}
                                 </span>
-                              ) : (
-                                <span className="rounded bg-gray-900 px-2 py-0.5 text-[10px] font-medium text-gray-400 border border-gray-800">
-                                  Não Treinada
+                              )}
+                              {activeType === "conditions" && "permanent" in row.junction && row.junction.permanent && (
+                                <span className="rounded bg-red-950 px-2 py-0.5 text-[10px] font-bold text-red-300 border border-red-800/60">
+                                  Permanente
                                 </span>
-                              )
-                            )}
-                            {activeType === "items" && "quantity" in row.junction && (
-                              <span className="text-[11px] text-gray-400 font-medium">
-                                Quantidade: {row.junction.quantity || 1}
-                              </span>
-                            )}
-                            {activeType === "conditions" && "permanent" in row.junction && row.junction.permanent && (
-                              <span className="rounded bg-red-950 px-2 py-0.5 text-[10px] font-bold text-red-300 border border-red-800/60">
-                                Permanente
-                              </span>
-                            )}
-                            {activeType === "spells" && (
-                              <span className="text-[11px] text-purple-300 font-medium">
-                                Círculo {String(row.content.circle)} · {String(row.content.manaCost)} Mana
-                              </span>
-                            )}
+                              )}
+                              {activeType === "spells" && (
+                                <span className="text-[11px] text-purple-300 font-medium">
+                                  Círculo {String(row.content.circle)} · {String(row.content.manaCost)} Mana
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                         {activeType === "conditions" && (
