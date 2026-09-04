@@ -354,7 +354,7 @@ export function CharacterWizard() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 pb-8">
+    <div className="mx-auto w-full max-w-7xl px-2 sm:px-6 pb-8">
       {/* Toast Container */}
       {toasts.length > 0 && (
         <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2">
@@ -727,7 +727,7 @@ function WizardStepRace({
       ) : filteredRaces.length === 0 ? (
         <p className="text-xs text-gray-500 py-6 text-center">Nenhuma raça encontrada.</p>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredRaces.map((race) => {
             const isSelected = data.raceId === race.id;
             return (
@@ -865,7 +865,7 @@ function WizardStepClass({
       ) : filteredClasses.length === 0 ? (
         <p className="text-xs text-gray-500 py-6 text-center">Nenhuma classe cadastrada.</p>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredClasses.map((cls) => {
             const isSelected = data.classId === cls.id;
             return (
@@ -1130,7 +1130,7 @@ function WizardStepSkills({
         <p className="text-xs text-gray-500 py-6 text-center">Nenhuma perícia encontrada.</p>
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {paginatedSkills.map((skill) => {
               const isSelected = data.skills.includes(skill.id);
               const isDisabled = !isSelected && selectedCount >= maxSlots;
@@ -1315,7 +1315,7 @@ function WizardStepSpells({
         <p className="text-xs text-gray-500 py-6 text-center">Nenhuma magia de 1º Círculo encontrada.</p>
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {paginatedSpells.map((spell) => {
               const isSelected = data.spells.includes(spell.id);
               const isDisabled = !isSelected && selectedCount >= maxSpells;
@@ -1474,7 +1474,7 @@ function WizardStepReview({ data }: { data: WizardData }) {
       </div>
 
       {/* Atributos e Estatísticas Derivadas */}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 grid-cols-1 md:grid-cols-2">
         <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
           <h5 className="mb-2 text-xs font-bold text-purple-400 uppercase tracking-wider">
             Atributos Principais
