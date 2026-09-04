@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ATTRIBUTES,
@@ -369,22 +369,8 @@ export function CharacterWizard() {
         </div>
       )}
 
-      {/* Cabeçalho Dark Fantasy */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-purple-200 to-amber-400 font-serif">
-            Criação de Personagem
-          </h1>
-          <p className="text-xs text-purple-300/70 mt-1">
-            Forje a lenda do seu herói para explorar os domínios de Libmork.
-          </p>
-        </div>
-        {wizardData.campaignId && (
-          <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-950/40 px-3 py-1 text-xs font-medium text-amber-300">
-            <span>📜 Campanha Vinculada</span>
-          </span>
-        )}
-      </div>
+      {/* Título */}
+      <h2 className="mb-6 text-2xl font-bold text-white">Criar Personagem</h2>
 
       {/* Stepper (7 Etapas) */}
       <WizardStepper currentStep={currentStep} onStepClick={setCurrentStep} wizardData={wizardData} validateStep={validateStep} />
@@ -424,26 +410,18 @@ export function CharacterWizard() {
           variant="secondary"
           onClick={goBack}
           disabled={currentStep === 0 || isSubmitting}
-          className="min-w-[100px] border-purple-900/50 bg-gray-950/80 text-purple-200 hover:bg-purple-950/60"
+          className="min-w-[100px]"
         >
           Voltar
         </Button>
 
         {currentStep < STEPS.length - 1 ? (
-          <Button
-            onClick={goNext}
-            disabled={isSubmitting}
-            className="min-w-[110px] bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 text-white font-bold shadow-[0_0_15px_rgba(147,51,234,0.4)] hover:shadow-[0_0_20px_rgba(168,85,247,0.6)]"
-          >
+          <Button onClick={goNext} disabled={isSubmitting} className="min-w-[100px]">
             Próximo
           </Button>
         ) : (
-          <Button
-            onClick={handleSubmit}
-            isLoading={isSubmitting}
-            className="min-w-[170px] bg-gradient-to-r from-amber-500 via-purple-600 to-amber-600 text-white font-bold shadow-[0_0_20px_rgba(245,158,11,0.4)] hover:shadow-[0_0_25px_rgba(245,158,11,0.6)]"
-          >
-            Criar Personagem ✨
+          <Button onClick={handleSubmit} isLoading={isSubmitting} className="min-w-[160px]">
+            Criar Personagem
           </Button>
         )}
       </div>
@@ -459,7 +437,7 @@ export function CharacterWizard() {
 }
 
 // =============================================================================
-// Stepper (7 passos - Responsivo)
+// Stepper (7 passos)
 // =============================================================================
 
 function WizardStepper({
@@ -473,6 +451,8 @@ function WizardStepper({
   wizardData: WizardData;
   validateStep: (step: number) => boolean;
 }) {
+  const activeStepRef = useRef<HTMLButtonElement | null>(null);
+
   const completedSteps = useMemo(() => {
     const completed = new Set<number>();
     if (wizardData.name.trim().length >= 2) completed.add(0);
@@ -482,93 +462,75 @@ function WizardStepper({
     return completed;
   }, [wizardData.name, currentStep]);
 
-  const progressPercent = Math.round(((currentStep + 1) / STEPS.length) * 100);
-
-  const handleStepJump = (idx: number) => {
-    if (idx < currentStep) {
-      onStepClick(idx);
-    } else if (idx > currentStep) {
-      let canAdvance = true;
-      for (let s = currentStep; s < idx; s++) {
-        if (!validateStep(s)) {
-          canAdvance = false;
-          break;
-        }
-      }
-      if (canAdvance) onStepClick(idx);
+  useEffect(() => {
+    if (activeStepRef.current) {
+      activeStepRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "center",
+      });
     }
-  };
+  }, [currentStep]);
 
   return (
-    <div className="w-full space-y-3">
-      {/* Visualização Mobile: Barra de progresso mística elegante */}
-      <div className="block sm:hidden rounded-2xl border border-purple-900/50 bg-gradient-to-b from-gray-900/90 to-gray-950/95 p-3.5 shadow-lg backdrop-blur-md">
-        <div className="flex items-center justify-between text-xs mb-2">
-          <span className="font-semibold text-purple-200">
-            Passo {currentStep + 1} de {STEPS.length}: <span className="text-amber-300 font-bold">{STEPS[currentStep].label}</span>
-          </span>
-          <span className="text-[11px] font-mono text-purple-400 font-bold">{progressPercent}%</span>
-        </div>
+    <div className="relative">
+      <div className="flex items-center justify-between gap-2 overflow-x-auto pb-3 pt-1 scroll-smooth scrollbar-hide px-1 snap-x">
+        {STEPS.map((step, idx) => {
+          const isActive = idx === currentStep;
+          const isCompleted = completedSteps.has(idx) && !isActive;
 
-        {/* Progress Bar com Glow Místico */}
-        <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-gray-950 border border-purple-900/50 shadow-inner">
-          <div
-            className="h-full bg-gradient-to-r from-purple-600 via-purple-400 to-amber-400 transition-all duration-300 shadow-[0_0_10px_rgba(168,85,247,0.8)]"
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Visualização Desktop: Stepper de 7 passos conectados por linha */}
-      <div className="hidden sm:block rounded-2xl border border-purple-900/40 bg-gradient-to-b from-gray-900/80 to-gray-950/90 p-4 shadow-xl backdrop-blur-md">
-        <div className="relative flex items-center justify-between">
-          {/* Connecting Line */}
-          <div className="absolute top-4 left-6 right-6 h-[2px] bg-gray-800 -z-0" />
-          <div
-            className="absolute top-4 left-6 h-[2px] bg-gradient-to-r from-purple-600 via-amber-400 to-purple-500 transition-all duration-300 -z-0"
-            style={{
-              width: `${(currentStep / (STEPS.length - 1)) * 100}%`,
-              maxWidth: "calc(100% - 3rem)",
-            }}
-          />
-
-          {STEPS.map((step, idx) => {
-            const isActive = idx === currentStep;
-            const isCompleted = completedSteps.has(idx) && !isActive;
-
-            return (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => handleStepJump(idx)}
-                className="relative z-10 flex flex-col items-center gap-1.5 group cursor-pointer focus:outline-none"
+          return (
+            <button
+              key={idx}
+              ref={isActive ? activeStepRef : null}
+              type="button"
+              onClick={() => {
+                if (idx < currentStep) {
+                  onStepClick(idx);
+                } else if (idx > currentStep) {
+                  let canAdvance = true;
+                  for (let s = currentStep; s < idx; s++) {
+                    if (!validateStep(s)) {
+                      canAdvance = false;
+                      break;
+                    }
+                  }
+                  if (canAdvance) onStepClick(idx);
+                }
+              }}
+              className={`flex flex-col items-center gap-1.5 rounded-xl px-3 py-2 transition-all duration-200 shrink-0 snap-center border ${
+                isActive
+                  ? "bg-purple-950/60 border-purple-500/80 shadow-[0_0_12px_rgba(168,85,247,0.25)]"
+                  : isCompleted
+                    ? "bg-gray-900/60 border-emerald-500/30 opacity-90 hover:opacity-100"
+                    : "bg-gray-900/40 border-gray-800/80 opacity-60 hover:opacity-100"
+              }`}
+            >
+              <span
+                className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-extrabold transition-all duration-200 ${
+                  isActive
+                    ? "bg-purple-600 text-white shadow-[0_0_10px_rgba(168,85,247,0.5)]"
+                    : isCompleted
+                      ? "bg-emerald-600 text-white"
+                      : "bg-gray-800 text-gray-400 border border-gray-700/80"
+                }`}
               >
-                <span
-                  className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-all duration-300 ${
-                    isActive
-                      ? "bg-purple-950 text-amber-300 border-2 border-purple-400 ring-4 ring-purple-600/40 shadow-[0_0_15px_rgba(168,85,247,0.7)] scale-110"
-                      : isCompleted
-                        ? "bg-gradient-to-br from-amber-500 to-amber-700 text-gray-950 border border-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.4)]"
-                        : "bg-gray-900 text-gray-400 border border-gray-700 hover:border-purple-600 hover:text-purple-300"
-                  }`}
-                >
-                  {isCompleted ? "✓" : idx + 1}
-                </span>
-                <span
-                  className={`text-xs font-medium transition-colors ${
-                    isActive
-                      ? "text-amber-300 font-bold tracking-wide"
-                      : isCompleted
-                        ? "text-amber-400/90 font-medium"
-                        : "text-gray-400 group-hover:text-gray-200"
-                  }`}
-                >
-                  {step.shortLabel}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+                {isCompleted ? "✓" : idx + 1}
+              </span>
+              <span
+                className={`text-xs font-semibold whitespace-nowrap tracking-wide ${
+                  isActive
+                    ? "text-purple-300 font-bold"
+                    : isCompleted
+                      ? "text-emerald-400"
+                      : "text-gray-400"
+                }`}
+              >
+                {step.shortLabel}
+              </span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -588,97 +550,95 @@ function WizardStepBasicInfo({
   onOpenAwakeningModal: () => void;
 }) {
   return (
-    <div className="space-y-6 rounded-2xl border border-purple-900/40 bg-gradient-to-b from-gray-900/90 via-gray-900/80 to-gray-950/95 p-5 sm:p-7 shadow-2xl backdrop-blur-md">
-      {/* Banner / Card do Ritual do Despertar */}
-      <div className="relative overflow-hidden rounded-xl border border-purple-500/50 bg-gradient-to-r from-purple-950/90 via-purple-900/50 to-gray-950 p-5 shadow-[0_0_25px_rgba(147,51,234,0.25)]">
-        <div className="pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full bg-amber-500/10 blur-2xl" />
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <h4 className="text-sm sm:text-base font-bold text-amber-300 flex items-center gap-2 tracking-wide">
-              <span>🔮</span> O Despertar do Coração <span className="text-xs font-normal text-purple-300 border border-purple-500/40 bg-purple-950/80 px-2 py-0.5 rounded-full">(Criar via IA)</span>
-            </h4>
-            <p className="text-xs text-purple-200/80 leading-relaxed max-w-lg">
-              Responda ao Oráculo e revele a profecia, atributos e classe ideais para a alma de seu personagem.
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="master"
-            onClick={onOpenAwakeningModal}
-            className="w-full sm:w-auto whitespace-nowrap px-5 py-2.5 text-xs font-bold tracking-wider uppercase shadow-[0_0_15px_rgba(168,85,247,0.5)] bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-600 hover:to-indigo-600 border border-purple-400/40"
-          >
-            Iniciar Ritual ✨
-          </Button>
+    <div className="space-y-5 rounded-xl border border-gray-800 bg-gray-900/60 p-5 sm:p-6 shadow-xl backdrop-blur-sm">
+      {/* Botão Místico Flutuante - O Despertar do Coração */}
+      <div className="fixed bottom-6 right-6 z-50 group flex flex-col items-end pointer-events-auto [margin-bottom:env(safe-area-inset-bottom)] [margin-right:env(safe-area-inset-right)]">
+        {/* Tooltip no hover para telas maiores */}
+        <div className="pointer-events-none mb-2 hidden sm:group-hover:block whitespace-nowrap rounded-lg border border-purple-500/60 bg-purple-950/95 px-3 py-1.5 text-xs font-semibold text-purple-200 shadow-[0_0_15px_rgba(168,85,247,0.3)] backdrop-blur-md transition-all animate-fade-in">
+          O Despertar do Coração (Criar com IA) ✨
         </div>
+        <button
+          type="button"
+          onClick={onOpenAwakeningModal}
+          className="relative h-14 w-14 sm:h-16 sm:w-16 flex items-center justify-center rounded-full bg-gradient-to-tr from-purple-950 via-purple-900 to-purple-800 border border-purple-400/60 shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.7)] hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer group shrink-0"
+          aria-label="O Despertar do Coração (Criar com IA)"
+        >
+          {/* Anel luminoso pulsante interno */}
+          <span className="absolute inset-0 rounded-full bg-purple-500/20 animate-pulse pointer-events-none" />
+          <span className="text-2xl sm:text-3xl transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 drop-shadow-[0_0_8px_rgba(236,72,153,0.6)]">🔮</span>
+        </button>
       </div>
 
-      <div className="border-b border-purple-900/30 pb-3">
-        <h3 className="text-lg font-bold text-white tracking-wide flex items-center gap-2">
-          <span className="text-amber-400">✦</span> Informações Básicas
-        </h3>
+      <div>
+        <h3 className="text-lg font-bold text-white tracking-wide">Informações Básicas</h3>
         <p className="text-xs text-gray-400 mt-0.5">
           Defina o nome, histórico e imagem do seu herói.
         </p>
       </div>
 
-      <div className="space-y-4">
-        <Input
-          label="Nome do Personagem *"
-          name="wizard-name"
-          type="text"
-          value={data.name}
-          onChange={(e) => updateData({ name: e.target.value })}
-          required
-          placeholder="Ex: Gandalf, Thorin, Lyra..."
-          autoComplete="off"
-          className="bg-gray-950/80 border-purple-900/40 text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-        />
+      <Input
+        label="Nome do Personagem *"
+        name="wizard-name"
+        type="text"
+        value={data.name}
+        onChange={(e) => updateData({ name: e.target.value })}
+        required
+        placeholder="Ex: Gandalf, Thorin, Lyra..."
+        autoComplete="off"
+        className="bg-gray-900/90 text-white border-gray-700/80 focus:border-purple-500"
+      />
 
-        <div>
-          <label className="mb-1.5 block text-sm font-semibold text-gray-200">
-            Descrição / Background <span className="text-xs font-normal text-gray-400">(opcional)</span>
-          </label>
+      <div className="space-y-1.5">
+        <label className="block text-sm font-medium text-gray-300">
+          Descrição / Background <span className="text-xs font-normal text-gray-400">(opcional)</span>
+        </label>
+        <div className="relative rounded-lg border border-gray-700/80 bg-gray-900/90 p-1.5 focus-within:border-purple-500 focus-within:ring-1 focus-within:ring-purple-500/50 transition-all">
           <textarea
             value={data.description}
             onChange={(e) => updateData({ description: e.target.value })}
-            placeholder="Um breve histórico, personalidade ou aparência..."
+            placeholder="Um breve histórico, personalidade ou aparência do herói..."
             rows={4}
             maxLength={500}
-            className="w-full rounded-xl border border-purple-900/40 bg-gray-950/80 p-3.5 text-sm text-white placeholder-gray-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 focus:outline-none transition-all shadow-inner"
+            className="w-full min-h-[120px] resize-y rounded-md bg-transparent p-2 text-sm text-white placeholder-gray-500 scrollbar-hide focus:outline-none"
           />
-          <div className="mt-1 flex justify-end">
-            <span className="text-[10px] font-mono text-purple-400">{data.description.length}/500 caracteres</span>
+          <div className="flex justify-end pt-1 pb-0.5 px-2 border-t border-gray-800/80">
+            <span className="text-[11px] font-medium text-gray-400">
+              <span className={data.description.length >= 480 ? "text-amber-400 font-bold" : "text-gray-400"}>
+                {data.description.length}
+              </span>
+              /500 caracteres
+            </span>
           </div>
         </div>
+      </div>
 
-        <div>
-          <label className="mb-1.5 block text-sm font-semibold text-gray-200">
-            URL da Imagem / Avatar <span className="text-xs font-normal text-gray-400">(opcional)</span>
-          </label>
-          <Input
-            label=""
-            name="wizard-image-url"
-            type="url"
-            value={data.imageUrl ?? ""}
-            onChange={(e) => updateData({ imageUrl: e.target.value || null })}
-            placeholder="https://exemplo.com/minha-foto.png"
-            className="bg-gray-950/80 border-purple-900/40 text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-          />
-          {data.imageUrl && (
-            <div className="mt-3 flex items-center gap-3 rounded-xl border border-purple-900/30 bg-purple-950/20 p-3">
-              <span className="text-xs font-semibold text-purple-300">Preview do Avatar:</span>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={data.imageUrl}
-                alt="Preview"
-                className="h-12 w-12 rounded-full border-2 border-purple-500 object-cover shadow-[0_0_10px_rgba(168,85,247,0.4)]"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
-                }}
-              />
-            </div>
-          )}
-        </div>
+      <div className="space-y-1.5">
+        <label className="block text-sm font-medium text-gray-300">
+          URL da Imagem / Avatar <span className="text-xs font-normal text-gray-400">(opcional)</span>
+        </label>
+        <Input
+          label=""
+          name="wizard-image-url"
+          type="url"
+          value={data.imageUrl ?? ""}
+          onChange={(e) => updateData({ imageUrl: e.target.value || null })}
+          placeholder="https://exemplo.com/minha-foto.png"
+          className="bg-gray-900/90 text-white border-gray-700/80 focus:border-purple-500"
+        />
+        {data.imageUrl && (
+          <div className="mt-3 flex items-center gap-3 rounded-lg border border-gray-800 bg-gray-950/50 p-2.5">
+            <span className="text-xs text-gray-400 font-medium">Preview:</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={data.imageUrl}
+              alt="Preview"
+              className="h-12 w-12 rounded-full border-2 border-purple-500 object-cover shadow-[0_0_10px_rgba(168,85,247,0.3)]"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
