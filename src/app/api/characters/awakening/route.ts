@@ -2,6 +2,20 @@ import { NextResponse } from "next/server";
 import { heartAwakeningSchema, HeartAwakeningInput } from "@/lib/validators/character";
 import { getNinerouterConfig, queryNinerouter } from "@/lib/server/ninerouter";
 import { logger } from "@/lib/logger";
+import { db } from "@/lib/db";
+import { rpgClasses, rpgRaces } from "@/lib/db/schema";
+
+interface DbClassItem {
+  id: string;
+  name: string;
+  description: string | null;
+}
+
+interface DbRaceItem {
+  id: string;
+  name: string;
+  description: string | null;
+}
 
 interface AwakeningResponse {
   prophecy: string;
@@ -13,10 +27,15 @@ interface AwakeningResponse {
     empatia: number;
   };
   suggestedClass: string;
+  suggestedRace?: string;
   suggestedTrait: string;
 }
 
-function calculateFallback(body: HeartAwakeningInput): AwakeningResponse {
+function calculateFallback(
+  body: HeartAwakeningInput,
+  dbClasses: DbClassItem[],
+  dbRaces: DbRaceItem[]
+): AwakeningResponse {
   // Base attributes: 8 each (total 40) + 8 bonus points = 48 total
   const attrs = {
     forca: 8,
@@ -59,14 +78,51 @@ function calculateFallback(body: HeartAwakeningInput): AwakeningResponse {
     attrs.empatia += 1;
   }
 
-  // Determine suggested class based on highest attribute
+  // Determine highest attribute
   const highest = Object.entries(attrs).sort((a, b) => b[1] - a[1])[0][0];
-  let suggestedClass = "Místico";
-  if (highest === "forca") suggestedClass = "Guerreiro";
-  else if (highest === "destreza") suggestedClass = "Ladino";
-  else if (highest === "vigor") suggestedClass = "Guardião";
-  else if (highest === "inteligencia") suggestedClass = "Mago";
-  else if (highest === "empatia") suggestedClass = "Bardo";
+
+  // Try to match registered DB class names prioritize DB classes
+  let suggestedClass = "";
+  if (dbClasses.length > 0) {
+    const desiredKeyword =
+      highest === "forca"
+        ? ["guerreiro", "bárbaro", "paladino", "fighter", "barbarian"]
+        : highest === "destreza"
+        ? ["ladino", "patrulheiro", "caçador", "rogue", "ranger"]
+        : highest === "vigor"
+        ? ["guardião", "defensor", "guardian", "paladino"]
+        : highest === "inteligencia"
+        ? ["mago", "místico", "feiticeiro", "wizard", "sorcerer", "alquimista"]
+        : ["bardo", "clérigo", "bard", "cleric"];
+
+    const found = dbClasses.find((c) =>
+      desiredKeyword.some((kw) => c.name.toLowerCase().includes(kw))
+    );
+    suggestedClass = found ? found.name : dbClasses[0].name;
+  } else {
+    if (highest === "forca") suggestedClass = "Guerreiro";
+    else if (highest === "destreza") suggestedClass = "Ladino";
+    else if (highest === "vigor") suggestedClass = "Guardião";
+    else if (highest === "inteligencia") suggestedClass = "Mago";
+    else if (highest === "empatia") suggestedClass = "Bardo";
+  }
+
+  // Pick suggested race prioritize DB races
+  let suggestedRace: string | undefined = undefined;
+  if (dbRaces.length > 0) {
+    // Pick race based on q2Impulse or q1Origin
+    const desiredRaceKeyword =
+      body.q2Impulse === "floresta"
+        ? ["elfo", "elf", "silvestre"]
+        : body.q2Impulse === "colina"
+        ? ["anão", "dwarf", "humano"]
+        : ["humano", "human", "tritão", "marino"];
+
+    const foundRace = dbRaces.find((r) =>
+      desiredRaceKeyword.some((kw) => r.name.toLowerCase().includes(kw))
+    );
+    suggestedRace = foundRace ? foundRace.name : dbRaces[0].name;
+  }
 
   // Deterministic poetic prophecy based on choices
   const originText =
@@ -100,6 +156,7 @@ function calculateFallback(body: HeartAwakeningInput): AwakeningResponse {
     prophecy,
     attributes: attrs,
     suggestedClass,
+    suggestedRace,
     suggestedTrait,
   };
 }
@@ -118,20 +175,49 @@ export async function POST(request: Request) {
 
     const inputData = parsed.data;
 
+    // Fetch classes and races registered in DB
+    const dbClasses: DbClassItem[] = await db
+      .select({ id: rpgClasses.id, name: rpgClasses.name, description: rpgClasses.description })
+      .from(rpgClasses);
+
+    const dbRaces: DbRaceItem[] = await db
+      .select({ id: rpgRaces.id, name: rpgRaces.name, description: rpgRaces.description })
+      .from(rpgRaces);
+
+    // Format classes and races for AI context
+    const classesFormatted =
+      dbClasses.length > 0
+        ? dbClasses
+            .map((c) => `- ${c.name}${c.description ? `: ${c.description}` : ""}`)
+            .join("\n")
+        : "Nenhuma classe cadastrada no momento.";
+
+    const racesFormatted =
+      dbRaces.length > 0
+        ? dbRaces.map((r) => `- ${r.name}`).join("\n")
+        : "Nenhuma raça cadastrada no momento.";
+
     // Check if 9Router is configured
     const cfg = getNinerouterConfig();
     if (!cfg.hasKey) {
       logger.info("9Router não configurado ou sem chave. Usando fallback determinístico.");
-      return NextResponse.json(calculateFallback(inputData));
+      return NextResponse.json(calculateFallback(inputData, dbClasses, dbRaces));
     }
 
     const systemPrompt = `Você é o Oráculo do Despertar do Coração em um RPG de fantasia dark/misteriosa.
 Sua missão é interpretar as escolhas sagradas do jogador e gerar uma profecia poética e a distribuição de atributos do personagem.
 
+Classes Disponíveis no Sistema:
+${classesFormatted}
+
+Raças/Ancestralidades Disponíveis no Sistema:
+${racesFormatted}
+
 Regras de Saída (JSON estrito):
 - "prophecy": string em português, poética, evocativa, de 3 a 5 frases, integrando a relíquia escolhida (${inputData.chosenRelic}), a relíquia sacrificada (${inputData.sacrificedRelic}), a origem (${inputData.q1Origin}), o impulso (${inputData.q2Impulse}) e o fim (${inputData.q3End}).
 - "attributes": objeto JSON com exatamente 5 chaves ("forca", "destreza", "vigor", "inteligencia", "empatia"). Cada chave deve ter valor inteiro >= 8. A SOMA TOTAL DOS 5 ATRIBUTOS DEVE SER EXATAMENTE 48.
-- "suggestedClass": nome de uma classe sugestiva (ex: "Místico", "Guerreiro", "Ladino", "Feiticeiro", "Guardião", "Bardo").
+- "suggestedClass": DEVE obrigatoriamente ser o NOME EXATO de uma das classes listadas acima.
+- "suggestedRace": (opcional) DEVE obrigatoriamente ser o NOME EXATO de uma das raças listadas acima, se aplicável ao conceito.
 - "suggestedTrait": um traço único sugestivo (ex: "Olhar do Destino", "Coração Selado").
 
 Retorne APENAS o JSON válido no seguinte formato:
@@ -139,6 +225,7 @@ Retorne APENAS o JSON válido no seguinte formato:
   "prophecy": "...",
   "attributes": { "forca": 10, "destreza": 8, "vigor": 10, "inteligencia": 12, "empatia": 8 },
   "suggestedClass": "...",
+  "suggestedRace": "...",
   "suggestedTrait": "..."
 }`;
 
@@ -179,16 +266,17 @@ Retorne APENAS o JSON válido no seguinte formato:
               empatia: parsedAi.attributes.empatia,
             },
             suggestedClass: parsedAi.suggestedClass,
+            ...(parsedAi.suggestedRace ? { suggestedRace: parsedAi.suggestedRace } : {}),
             suggestedTrait: parsedAi.suggestedTrait,
           });
         }
       }
 
       logger.warn("Soma de atributos da IA diferente de 48 ou formato inválido. Usando fallback.");
-      return NextResponse.json(calculateFallback(inputData));
+      return NextResponse.json(calculateFallback(inputData, dbClasses, dbRaces));
     } catch (aiErr) {
       logger.warn({ err: aiErr }, "Erro ao chamar IA 9Router no Despertar do Coração. Usando fallback.");
-      return NextResponse.json(calculateFallback(inputData));
+      return NextResponse.json(calculateFallback(inputData, dbClasses, dbRaces));
     }
   } catch (error) {
     logger.error({ err: error }, "Erro interno no endpoint de despertar");

@@ -193,6 +193,28 @@ export function CharacterWizard() {
       }
     }
 
+    let matchedRaceId: string | null = null;
+    if (result.suggestedRace) {
+      try {
+        const res = await fetch("/api/races", { credentials: "include" });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.data && Array.isArray(json.data)) {
+            const raceList = json.data as RaceData[];
+            const suggestedRaceLower = result.suggestedRace.trim().toLowerCase();
+            const foundRace = raceList.find(
+              (r) => r.name.trim().toLowerCase() === suggestedRaceLower
+            );
+            if (foundRace) {
+              matchedRaceId = foundRace.id;
+            }
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
     setWizardData((prev) => {
       let newDescription = prev.description;
       if (result.prophecy) {
@@ -206,11 +228,12 @@ export function CharacterWizard() {
         attributes: { ...result.attributes },
         description: newDescription,
         ...(matchedClassId ? { classId: matchedClassId } : {}),
+        ...(matchedRaceId ? { raceId: matchedRaceId } : {}),
       };
     });
 
     addToast(
-      "O ritual despertou a alma de seu personagem! Atributos e classe foram pré-preenchidos.",
+      "O ritual despertou a alma de seu personagem! Atributos e detalhes foram pré-preenchidos.",
       "info"
     );
     setShowAwakeningModal(false);

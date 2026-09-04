@@ -13,6 +13,7 @@ export interface HeartAwakeningResult {
     empatia: number;
   };
   suggestedClass: string;
+  suggestedRace?: string;
   suggestedTrait: string;
 }
 
@@ -577,6 +578,12 @@ export function HeartAwakeningModal({
                                 Classe Sugerida:{" "}
                                 <span className="font-bold text-white">{awakeningResult.suggestedClass}</span>
                               </p>
+                              {awakeningResult.suggestedRace && (
+                                <p>
+                                  Raça Sugerida:{" "}
+                                  <span className="font-bold text-white">{awakeningResult.suggestedRace}</span>
+                                </p>
+                              )}
                               <p>
                                 Traço Revelado:{" "}
                                 <span className="font-bold text-purple-300">{awakeningResult.suggestedTrait}</span>
