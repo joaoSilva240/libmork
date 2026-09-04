@@ -3,7 +3,7 @@
 // =============================================================================
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { rollDie, rollDice, rollD20WithModifier, rollDualD20Sum, rollWithAdvantage, rollWithDisadvantage, resolveTest, rollDeathSave, rollExpression, getExpression } from '../dice';
+import { rollDie, rollDice, rollD20WithModifier, rollDualD20Sum, rollWithAdvantage, rollWithDisadvantage, resolveTest, rollDeathSave, rollExpression, getExpression, normalizeSkillExpression } from '../dice';
 
 describe('dice — rollDie', () => {
   let randomSpy: ReturnType<typeof vi.spyOn>;
@@ -249,5 +249,59 @@ describe('dice — rollExpression', () => {
     const result = rollExpression(10);
     expect(result.valid).toBe(true);
     expect(result.total).toBe(10);
+  });
+});
+
+describe('dice — normalizeSkillExpression', () => {
+  const baseAttributes = {
+    forca: 16, // mod = +3
+    destreza: 14, // mod = +2
+    vigor: 12, // mod = +1
+    inteligencia: 18, // mod = +4
+    empatia: 10, // mod = 0
+  };
+
+  const modifiers = {
+    forca: 3,
+    destreza: 2,
+    vigor: 1,
+    inteligencia: 4,
+    empatia: 0,
+  };
+
+  it('substitui 1d20 + Destreza pelo valor do modificador (+2) e NÃO pelo valor base (14)', () => {
+    // Prova que 1d20 + Destreza usa o modificador (2) e não o atributo base (14)
+    expect(baseAttributes.destreza).toBe(14);
+    expect(modifiers.destreza).toBe(2);
+    expect(normalizeSkillExpression('1d20 + Destreza', modifiers)).toBe('1d20 + 2');
+    expect(normalizeSkillExpression('1d20 + Destreza', modifiers)).not.toBe('1d20 + 14');
+  });
+
+  it('normaliza quando expressão é apenas um atributo ou contém atributo com e sem acento', () => {
+    expect(normalizeSkillExpression('força', modifiers)).toBe('1d20 + 3');
+    expect(normalizeSkillExpression('forca', modifiers)).toBe('1d20 + 3');
+    expect(normalizeSkillExpression('1d20 + Força', modifiers)).toBe('1d20 + 3');
+    expect(normalizeSkillExpression('inteligência', modifiers)).toBe('1d20 + 4');
+    expect(normalizeSkillExpression('inteligencia', modifiers)).toBe('1d20 + 4');
+    expect(normalizeSkillExpression('1d20 + Inteligência', modifiers)).toBe('1d20 + 4');
+  });
+
+  it('preserve fórmulas numéricas', () => {
+    expect(normalizeSkillExpression('1d20 + 5', modifiers)).toBe('1d20 + 5');
+    expect(normalizeSkillExpression('2d6 + 1', modifiers)).toBe('2d6 + 1');
+  });
+
+  it('retorna null para expressão com token alfabético desconhecido e nomes/descrições narrativos', () => {
+    expect(normalizeSkillExpression('1d20 + carisma', modifiers)).toBe(null);
+    expect(normalizeSkillExpression('agilidade + 2', modifiers)).toBe(null);
+    expect(normalizeSkillExpression('Ataque de Espada Sangrenta', modifiers)).toBe(null);
+    expect(normalizeSkillExpression('Bola de Fogo + 3', modifiers)).toBe(null);
+  });
+
+  it('retorna 1d20 para valores vazios ou null/undefined', () => {
+    expect(normalizeSkillExpression(null, modifiers)).toBe('1d20');
+    expect(normalizeSkillExpression(undefined, modifiers)).toBe('1d20');
+    expect(normalizeSkillExpression('', modifiers)).toBe('1d20');
+    expect(normalizeSkillExpression('   ', modifiers)).toBe('1d20');
   });
 });

@@ -8,7 +8,7 @@ import { DecorativeFrame } from "@/components/ui/DecorativeFrame";
 import { Spinner } from "@/components/ui";
 import { ToastContainer } from "@/components/ui/Toast";
 import type { CombatSessionState, Combatant } from "@/lib/engine";
-import { applyHealing, applyResolvedDamage, getExpression, hydrateCombatantMana, rollExpression, spendCombatActions, spendSpell } from "@/lib/engine";
+import { applyHealing, applyResolvedDamage, getExpression, hydrateCombatantMana, normalizeSkillExpression, rollExpression, spendCombatActions, spendSpell } from "@/lib/engine";
 
 const TYPE_LABELS: Record<ContentType, string> = {
   skills: "Perícias",
@@ -79,6 +79,7 @@ function normalizeActionDamage(content: Record<string, unknown>): string | numbe
 
 type CharacterContentProps = {
   characterId: string;
+  characterAttributeModifiers?: Record<string, number>;
   defaultType?: ContentType;
   allowedTypes?: ContentType[];
   isTurnLocked?: boolean;
@@ -97,6 +98,7 @@ type CharacterContentProps = {
 
 export function CharacterContent({
   characterId,
+  characterAttributeModifiers,
   defaultType = "skills",
   allowedTypes,
   isTurnLocked = false,
@@ -206,8 +208,8 @@ export function CharacterContent({
 
       setTimeout(() => {
         const name = String(row.content.name || "Perícia");
-        const exprValue = getExpression(row.content.rollExpression);
-        const expr = exprValue === null ? "1d20" : String(exprValue);
+        const rawExpression = getExpression(row.content.rollExpression);
+        const expr = normalizeSkillExpression(rawExpression, characterAttributeModifiers ?? {}) ?? "1d20";
         const rollResult = rollExpression(expr, 1);
 
         if (campaignId) {
