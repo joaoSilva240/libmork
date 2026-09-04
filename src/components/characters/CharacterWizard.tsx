@@ -594,12 +594,93 @@ function WizardStepBasicInfo({
         <button
           type="button"
           onClick={onOpenAwakeningModal}
-          className="relative h-14 w-14 sm:h-16 sm:w-16 flex items-center justify-center rounded-full bg-gradient-to-tr from-purple-950 via-purple-900 to-purple-800 border border-purple-400/60 shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.7)] hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer group shrink-0"
+          className="relative h-14 w-14 sm:h-16 sm:w-16 flex items-center justify-center transition-all duration-300 hover:scale-110 hover:rotate-6 active:scale-95 cursor-pointer group shrink-0 drop-shadow-[0_0_15px_rgba(168,85,247,0.6)] focus:outline-none"
           aria-label="O Despertar do Coração (Criar com IA)"
         >
-          {/* Anel luminoso pulsante interno */}
-          <span className="absolute inset-0 rounded-full bg-purple-500/20 animate-pulse pointer-events-none" />
-          <span className="text-2xl sm:text-3xl transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 drop-shadow-[0_0_8px_rgba(236,72,153,0.6)]">🔮</span>
+          {/* Glow pulsante místico com clip-path de D20 */}
+          <div className="absolute inset-0 bg-purple-500/30 animate-pulse pointer-events-none [clip-path:polygon(50%_0%,93.3%_25%,93.3%_75%,50%_100%,6.7%_75%,6.7%_25%)]" />
+
+          {/* SVG D20 (Icosaedro de RPG) */}
+          <svg viewBox="0 0 100 100" className="w-full h-full relative z-10 overflow-visible">
+            <defs>
+              {/* Gradiente de fundo de cristal/gema mística roxa/indigo */}
+              <linearGradient id="d20-bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#3b0764" />
+                <stop offset="50%" stopColor="#581c87" />
+                <stop offset="100%" stopColor="#1e1b4b" />
+              </linearGradient>
+
+              {/* Gradiente dourado místico para facetas e o número 20 */}
+              <linearGradient id="d20-gold-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#fef08a" />
+                <stop offset="50%" stopColor="#f59e0b" />
+                <stop offset="100%" stopColor="#b45309" />
+              </linearGradient>
+
+              {/* Reflexo cristalino superior */}
+              <linearGradient id="d20-shine-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#ffffff" stopOpacity="0.35" />
+                <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+              </linearGradient>
+            </defs>
+
+            {/* Hexágono Base / Silhueta do D20 */}
+            <polygon
+              points="50,4 92,26 92,74 50,96 8,74 8,26"
+              fill="url(#d20-bg-gradient)"
+              stroke="url(#d20-gold-gradient)"
+              strokeWidth="2.5"
+              strokeLinejoin="round"
+            />
+
+            {/* Sombras e Reflexos 3D das Facetas de Cristal */}
+            <polygon points="50,4 92,26 70,36" fill="rgba(236, 72, 153, 0.15)" />
+            <polygon points="50,4 8,26 30,36" fill="rgba(192, 132, 252, 0.25)" />
+            <polygon points="50,4 70,36 30,36" fill="url(#d20-shine-gradient)" />
+            <polygon points="92,26 92,74 70,36" fill="rgba(126, 34, 206, 0.2)" />
+            <polygon points="92,74 50,70 70,36" fill="rgba(88, 28, 135, 0.3)" />
+            <polygon points="92,74 50,96 50,70" fill="rgba(58, 12, 115, 0.4)" />
+            <polygon points="50,96 8,74 50,70" fill="rgba(46, 16, 101, 0.5)" />
+            <polygon points="8,74 30,36 50,70" fill="rgba(88, 28, 135, 0.3)" />
+            <polygon points="8,74 8,26 30,36" fill="rgba(126, 34, 206, 0.2)" />
+            <polygon points="30,36 70,36 50,70" fill="rgba(168, 85, 247, 0.35)" />
+
+            {/* Linhas Finas Douradas/Roxas das Facetas do D20 */}
+            <polygon
+              points="30,36 70,36 50,70"
+              fill="none"
+              stroke="url(#d20-gold-gradient)"
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+            />
+            <line x1="50" y1="4" x2="30" y2="36" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
+            <line x1="50" y1="4" x2="70" y2="36" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
+            <line x1="92" y1="26" x2="70" y2="36" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
+            <line x1="92" y1="74" x2="70" y2="36" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
+            <line x1="92" y1="74" x2="50" y2="70" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
+            <line x1="50" y1="96" x2="50" y2="70" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
+            <line x1="8" y1="74" x2="50" y2="70" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
+            <line x1="8" y1="74" x2="30" y2="36" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
+            <line x1="8" y1="26" x2="30" y2="36" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
+
+            {/* Número 20 Gravado no Centro */}
+            <text
+              x="50"
+              y="49"
+              textAnchor="middle"
+              dominantBaseline="central"
+              fill="url(#d20-gold-gradient)"
+              className="font-black text-[20px] tracking-wider select-none font-serif"
+              style={{
+                filter: "drop-shadow(0px 1px 3px rgba(0, 0, 0, 0.9))",
+              }}
+            >
+              20
+            </text>
+
+            {/* Detalhe místico pulsante no topo */}
+            <circle cx="50" cy="30" r="1.5" fill="#fef08a" className="animate-pulse" />
+          </svg>
         </button>
       </div>
 
