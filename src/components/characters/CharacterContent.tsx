@@ -6,7 +6,7 @@ import { useSocket, DICE_ROLL_LOADING_DELAY } from "@/context/SocketContext";
 import { TargetSelectionModal } from "@/components/combat/TargetSelectionModal";
 import { DecorativeFrame } from "@/components/ui/DecorativeFrame";
 import { Spinner } from "@/components/ui";
-import { SpellFilledIcon } from "@/components/ui/Icons";
+import { SpellFilledIcon, InventoryFilledIcon } from "@/components/ui/Icons";
 import { ToastContainer } from "@/components/ui/Toast";
 import type { CombatSessionState, Combatant } from "@/lib/engine";
 import { applyHealing, applyResolvedDamage, getExpression, hydrateCombatantMana, normalizeSkillExpression, rollExpression, spendCombatActions, spendSpell } from "@/lib/engine";
@@ -97,7 +97,7 @@ type CharacterContentProps = {
   onEndRolling?: () => void;
 };
 
-function SpellIcon({ src }: { src?: unknown }) {
+function ContentImageIcon({ src, type }: { src?: unknown; type: ContentType }) {
   const [hasError, setHasError] = useState(false);
   const imageUrl = typeof src === "string" ? src.trim() : "";
 
@@ -112,6 +112,10 @@ function SpellIcon({ src }: { src?: unknown }) {
         className="h-8 w-8 shrink-0 rounded-md object-cover border border-purple-500/40"
       />
     );
+  }
+
+  if (type === "items") {
+    return <InventoryFilledIcon className="h-6 w-6 shrink-0 text-purple-400" />;
   }
 
   return <SpellFilledIcon className="h-6 w-6 shrink-0 text-purple-400" />;
@@ -488,7 +492,7 @@ export function CharacterContent({
               }
 
               return (
-                <div className="space-y-2 mt-auto pb-2">
+                <div className="space-y-2 pb-2">
                   {displayRows.map((row) => {
                     const isLinked = data.linked.some((linked) => linked.content.id === row.content.id);
                     const isAvailableOnly = !isLinked;
@@ -506,8 +510,8 @@ export function CharacterContent({
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          {activeType === "spells" && (
-                            <SpellIcon src={row.content.imageUrl} />
+                          {(activeType === "spells" || activeType === "items") && (
+                            <ContentImageIcon src={row.content.imageUrl} type={activeType} />
                           )}
                           <div className="min-w-0">
                             <p className="text-xs font-bold text-white truncate">
@@ -579,7 +583,7 @@ export function CharacterContent({
         )}
 
         {displayTypes.length > 1 && (
-          <div className="mt-auto flex justify-center items-center gap-2 pt-3 border-t border-gray-800 flex-wrap">
+          <div className="mt-2 flex justify-center items-center gap-2 pt-2 border-t border-gray-800 flex-wrap">
             {displayTypes.map((type) => (
               <button
                 key={type}
