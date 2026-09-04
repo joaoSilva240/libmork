@@ -78,6 +78,8 @@ type SpellData = {
 
 const STORAGE_KEY = "libmork_character_wizard_draft_v2";
 
+const STEP_GLYPHS = ["A", "B", "C", "D", "E", "F", "G"];
+
 const STEPS = [
   { label: "Básico", shortLabel: "Básico" },
   { label: "Raça", shortLabel: "Raça" },
@@ -510,15 +512,19 @@ function WizardStepper({
               }`}
             >
               <span
-                className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-extrabold transition-all duration-200 ${
+                className={`flex h-7 w-7 items-center justify-center rounded-full transition-all duration-200 ${
                   isActive
                     ? "bg-purple-600 text-white shadow-[0_0_10px_rgba(168,85,247,0.5)]"
                     : isCompleted
-                      ? "bg-emerald-600 text-white"
+                      ? "bg-emerald-600 text-white text-xs font-extrabold"
                       : "bg-gray-800 text-gray-400 border border-gray-700/80"
                 }`}
               >
-                {isCompleted ? "✓" : idx + 1}
+                {isCompleted ? (
+                  "✓"
+                ) : (
+                  <span className="font-fantasy text-lg leading-none">{STEP_GLYPHS[idx]}</span>
+                )}
               </span>
               <span
                 className={`text-xs font-semibold whitespace-nowrap tracking-wide ${
