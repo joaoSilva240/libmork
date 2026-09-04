@@ -159,46 +159,46 @@ export function HeartAwakeningModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md transition-all">
-      <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-purple-900/60 bg-gradient-to-b from-gray-950 via-purple-950/40 to-gray-950 p-6 sm:p-8 text-gray-100 shadow-[0_0_50px_rgba(112,26,117,0.3)]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 sm:p-4 backdrop-blur-md transition-all w-full overflow-hidden">
+      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-purple-900/60 bg-gradient-to-b from-gray-950 via-purple-950/40 to-gray-950 p-4 sm:p-8 text-gray-100 shadow-[0_0_50px_rgba(112,26,117,0.3)]">
         
         {/* Decorative ambient elements */}
         <div className="pointer-events-none absolute -top-24 -left-24 h-64 w-64 rounded-full bg-purple-600/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 -right-24 h-64 w-64 rounded-full bg-blue-600/10 blur-3xl" />
 
         {/* Modal Header */}
-        <div className="relative mb-6 flex items-center justify-between border-b border-purple-900/40 pb-4">
+        <div className="relative mb-4 sm:mb-6 flex items-center justify-between border-b border-purple-900/40 pb-3 sm:pb-4">
           <div>
-            <h2 className="text-xl sm:text-2xl font-extrabold tracking-wider text-purple-200 uppercase drop-shadow-[0_2px_10px_rgba(168,85,247,0.4)]">
+            <h2 className="text-lg sm:text-2xl font-extrabold tracking-wider text-purple-200 uppercase drop-shadow-[0_2px_10px_rgba(168,85,247,0.4)]">
               O Despertar do Coração
             </h2>
-            <p className="text-xs text-purple-400/80 font-mono mt-0.5">
+            <p className="text-[11px] sm:text-xs text-purple-400/80 font-mono mt-0.5">
               Passo {step} de 3 — {step === 1 ? "A Escolha das Relíquias" : step === 2 ? "O Questionário das Vozes Sem Rosto" : "O Despertar"}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-2 text-gray-400 hover:bg-purple-950 hover:text-white transition-colors"
+            className="rounded-full p-1.5 sm:p-2 text-gray-400 hover:bg-purple-950 hover:text-white transition-colors"
           >
             ✕
           </button>
         </div>
 
         {/* Modal Content */}
-        <div className="relative min-h-[360px] flex flex-col justify-between">
+        <div className="relative min-h-[300px] sm:min-h-[360px] flex flex-col justify-between">
           
           {/* STEP 1: A Escolha das Relíquias */}
           {step === 1 && (
-            <div className="space-y-6 animate-fadeIn">
+            <div className="space-y-5 sm:space-y-6 animate-fadeIn">
               <div>
-                <h3 className="text-sm font-bold uppercase tracking-wider text-purple-300 mb-1">
+                <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-purple-300 mb-1">
                   1. Escolha sua Relíquia Dominante
                 </h3>
-                <p className="text-xs text-gray-400">
+                <p className="text-[11px] sm:text-xs text-gray-400">
                   Esta relíquia guiará os pilares da sua força interior.
                 </p>
-                <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                <div className="mt-2 sm:mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
                   {RELICS.map((relic) => {
                     const isChosen = chosenRelic === relic.id;
                     const isSacrificed = sacrificedRelic === relic.id;
@@ -210,7 +210,7 @@ export function HeartAwakeningModal({
                         onClick={() => {
                           setChosenRelic(relic.id);
                         }}
-                        className={`group relative flex flex-col justify-between rounded-xl border p-4 text-left transition-all duration-200 ${
+                        className={`group relative flex flex-col justify-between rounded-xl border p-3 sm:p-4 text-left transition-all duration-200 ${
                           isChosen
                             ? "border-purple-500 bg-purple-950/70 shadow-[0_0_15px_rgba(168,85,247,0.3)] ring-1 ring-purple-400"
                             : isSacrificed
@@ -219,16 +219,16 @@ export function HeartAwakeningModal({
                         }`}
                       >
                         <div>
-                          <div className="text-2xl mb-2">{relic.icon}</div>
+                          <div className="text-xl sm:text-2xl mb-1 sm:mb-2">{relic.icon}</div>
                           <div className="font-bold text-xs text-white group-hover:text-purple-300">
                             {relic.name}
                           </div>
-                          <p className="mt-1 text-[11px] text-gray-400 italic leading-relaxed">
+                          <p className="mt-1 text-[10px] sm:text-[11px] text-gray-400 italic leading-relaxed">
                             &quot;{relic.quote}&quot;
                           </p>
                         </div>
                         {isChosen && (
-                          <span className="mt-3 inline-block rounded bg-purple-600 px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
+                          <span className="mt-2 sm:mt-3 inline-block rounded bg-purple-600 px-2 py-0.5 text-[9px] sm:text-[10px] font-bold text-white uppercase tracking-wider">
                             Escolhida
                           </span>
                         )}
@@ -239,13 +239,13 @@ export function HeartAwakeningModal({
               </div>
 
               <div>
-                <h3 className="text-sm font-bold uppercase tracking-wider text-purple-300 mb-1">
+                <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-purple-300 mb-1">
                   2. Escolha uma Relíquia para Sacrificar
                 </h3>
-                <p className="text-xs text-gray-400">
+                <p className="text-[11px] sm:text-xs text-gray-400">
                   Aquilo de que você se desfaz para alcançar o despertar.
                 </p>
-                <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                <div className="mt-2 sm:mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
                   {RELICS.map((relic) => {
                     const isChosen = chosenRelic === relic.id;
                     const isSacrificed = sacrificedRelic === relic.id;
@@ -257,7 +257,7 @@ export function HeartAwakeningModal({
                         onClick={() => {
                           setSacrificedRelic(relic.id);
                         }}
-                        className={`group relative flex flex-col justify-between rounded-xl border p-4 text-left transition-all duration-200 ${
+                        className={`group relative flex flex-col justify-between rounded-xl border p-3 sm:p-4 text-left transition-all duration-200 ${
                           isSacrificed
                             ? "border-red-500/80 bg-red-950/50 shadow-[0_0_15px_rgba(239,68,68,0.2)] ring-1 ring-red-400"
                             : isChosen
@@ -266,16 +266,16 @@ export function HeartAwakeningModal({
                         }`}
                       >
                         <div>
-                          <div className="text-2xl mb-2">{relic.icon}</div>
+                          <div className="text-xl sm:text-2xl mb-1 sm:mb-2">{relic.icon}</div>
                           <div className="font-bold text-xs text-white group-hover:text-red-300">
                             {relic.name}
                           </div>
-                          <p className="mt-1 text-[11px] text-gray-400 italic leading-relaxed">
+                          <p className="mt-1 text-[10px] sm:text-[11px] text-gray-400 italic leading-relaxed">
                             &quot;{relic.quote}&quot;
                           </p>
                         </div>
                         {isSacrificed && (
-                          <span className="mt-3 inline-block rounded bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
+                          <span className="mt-2 sm:mt-3 inline-block rounded bg-red-600 px-2 py-0.5 text-[9px] sm:text-[10px] font-bold text-white uppercase tracking-wider">
                             Sacrificada
                           </span>
                         )}
@@ -285,12 +285,12 @@ export function HeartAwakeningModal({
                 </div>
               </div>
 
-              <div className="flex justify-end pt-4 border-t border-purple-900/30">
+              <div className="flex justify-end pt-3 sm:pt-4 border-t border-purple-900/30">
                 <Button
                   onClick={handleNextStep1}
                   disabled={!chosenRelic || !sacrificedRelic || chosenRelic === sacrificedRelic}
                   variant="master"
-                  className="px-6 py-2 text-sm font-semibold"
+                  className="w-full sm:w-auto px-6 py-2 text-xs sm:text-sm font-semibold"
                 >
                   Avançar para as Vozes →
                 </Button>
@@ -300,26 +300,26 @@ export function HeartAwakeningModal({
 
           {/* STEP 2: O Questionário das Vozes Sem Rosto */}
           {step === 2 && (
-            <div className="space-y-5 animate-fadeIn">
+            <div className="space-y-4 sm:space-y-5 animate-fadeIn">
               {/* Pergunta 1: Origem */}
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-purple-300 mb-2">
+                <h4 className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-purple-300 mb-1.5 sm:mb-2">
                   Pergunta 1 — Qual lembrança guardas do passado?
                 </h4>
-                <div className="grid gap-2 sm:grid-cols-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5">
                   {Q1_OPTIONS.map((opt) => (
                     <button
                       key={opt.id}
                       type="button"
                       onClick={() => setQ1Origin(opt.id)}
-                      className={`rounded-xl border p-3 text-left transition-all text-xs ${
+                      className={`rounded-xl border p-2.5 sm:p-3 text-left transition-all text-xs ${
                         q1Origin === opt.id
                           ? "border-purple-500 bg-purple-950/70 text-white font-semibold shadow-[0_0_10px_rgba(168,85,247,0.3)]"
                           : "border-purple-900/30 bg-gray-900/50 text-gray-300 hover:border-purple-700/50 hover:bg-purple-950/20"
                       }`}
                     >
                       <div className="font-bold text-purple-200 mb-0.5">{opt.title}</div>
-                      <div className="text-[11px] text-gray-400 italic">&quot;{opt.desc}&quot;</div>
+                      <div className="text-[10px] sm:text-[11px] text-gray-400 italic">&quot;{opt.desc}&quot;</div>
                     </button>
                   ))}
                 </div>
@@ -327,23 +327,23 @@ export function HeartAwakeningModal({
 
               {/* Pergunta 2: Impulso */}
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-purple-300 mb-2">
+                <h4 className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-purple-300 mb-1.5 sm:mb-2">
                   Pergunta 2 — Para onde teu olhar se dirige quando a tempestade se aproxima?
                 </h4>
-                <div className="grid gap-2 sm:grid-cols-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5">
                   {Q2_OPTIONS.map((opt) => (
                     <button
                       key={opt.id}
                       type="button"
                       onClick={() => setQ2Impulse(opt.id)}
-                      className={`rounded-xl border p-3 text-left transition-all text-xs ${
+                      className={`rounded-xl border p-2.5 sm:p-3 text-left transition-all text-xs ${
                         q2Impulse === opt.id
                           ? "border-purple-500 bg-purple-950/70 text-white font-semibold shadow-[0_0_10px_rgba(168,85,247,0.3)]"
                           : "border-purple-900/30 bg-gray-900/50 text-gray-300 hover:border-purple-700/50 hover:bg-purple-950/20"
                       }`}
                     >
                       <div className="font-bold text-purple-200 mb-0.5">{opt.title}</div>
-                      <div className="text-[11px] text-gray-400 italic">&quot;{opt.desc}&quot;</div>
+                      <div className="text-[10px] sm:text-[11px] text-gray-400 italic">&quot;{opt.desc}&quot;</div>
                     </button>
                   ))}
                 </div>
@@ -351,33 +351,33 @@ export function HeartAwakeningModal({
 
               {/* Pergunta 3: O Fim */}
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-purple-300 mb-2">
+                <h4 className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-purple-300 mb-1.5 sm:mb-2">
                   Pergunta 3 — Qual segredo confessarias apenas ao silêncio?
                 </h4>
-                <div className="grid gap-2 sm:grid-cols-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5">
                   {Q3_OPTIONS.map((opt) => (
                     <button
                       key={opt.id}
                       type="button"
                       onClick={() => setQ3End(opt.id)}
-                      className={`rounded-xl border p-3 text-left transition-all text-xs ${
+                      className={`rounded-xl border p-2.5 sm:p-3 text-left transition-all text-xs ${
                         q3End === opt.id
                           ? "border-purple-500 bg-purple-950/70 text-white font-semibold shadow-[0_0_10px_rgba(168,85,247,0.3)]"
                           : "border-purple-900/30 bg-gray-900/50 text-gray-300 hover:border-purple-700/50 hover:bg-purple-950/20"
                       }`}
                     >
                       <div className="font-bold text-purple-200 mb-0.5">{opt.title}</div>
-                      <div className="text-[11px] text-gray-400 italic">&quot;{opt.desc}&quot;</div>
+                      <div className="text-[10px] sm:text-[11px] text-gray-400 italic">&quot;{opt.desc}&quot;</div>
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-4 border-t border-purple-900/30">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 sm:pt-4 border-t border-purple-900/30">
                 <Button
                   onClick={() => setStep(1)}
                   variant="secondary"
-                  className="px-4 py-2 text-xs"
+                  className="w-full sm:w-auto px-4 py-2 text-xs"
                 >
                   ← Voltar às Relíquias
                 </Button>
@@ -385,7 +385,7 @@ export function HeartAwakeningModal({
                   onClick={handleFetchAwakening}
                   disabled={!q1Origin || !q2Impulse || !q3End}
                   variant="master"
-                  className="px-6 py-2 text-sm font-semibold"
+                  className="w-full sm:w-auto px-6 py-2 text-xs sm:text-sm font-semibold"
                 >
                   Consultar o Oráculo ✨
                 </Button>

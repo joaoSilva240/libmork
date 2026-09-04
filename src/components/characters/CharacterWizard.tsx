@@ -530,26 +530,20 @@ function WizardStepBasicInfo({
 }) {
   return (
     <div className="space-y-4 rounded-xl border border-gray-800 bg-gray-900/60 p-5">
-      {/* Banner / Botão Místico - O Despertar do Coração */}
-      <div className="relative overflow-hidden rounded-xl border border-purple-800/60 bg-gradient-to-r from-purple-950/80 via-purple-900/40 to-gray-900 p-4 shadow-[0_0_20px_rgba(147,51,234,0.15)]">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div>
-            <h4 className="text-sm font-bold text-purple-200 flex items-center gap-1.5">
-              <span>🔮</span> O Despertar do Coração (Criar com Ritual & IA)
-            </h4>
-            <p className="mt-1 text-xs text-purple-300/80">
-              Responda ao Oráculo e revele a profecia, atributos e classe ideais para o seu herói.
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="master"
-            onClick={onOpenAwakeningModal}
-            className="whitespace-nowrap px-4 py-2 text-xs font-semibold shadow-[0_0_12px_rgba(168,85,247,0.4)]"
-          >
-            Iniciar Ritual ✨
-          </Button>
+      {/* Botão Místico Flutuante - O Despertar do Coração */}
+      <div className="fixed bottom-6 right-6 z-40 group flex flex-col items-end">
+        {/* Tooltip no hover para telas maiores */}
+        <div className="pointer-events-none mb-2 hidden sm:group-hover:block whitespace-nowrap rounded-lg border border-purple-500/60 bg-purple-950/90 px-3 py-1.5 text-xs font-medium text-purple-200 shadow-lg backdrop-blur-sm transition-opacity">
+          O Despertar do Coração (Criar com IA) ✨
         </div>
+        <button
+          type="button"
+          onClick={onOpenAwakeningModal}
+          className="rounded-full h-12 w-12 sm:h-14 sm:w-14 flex items-center justify-center bg-gradient-to-tr from-purple-950 to-purple-800 border border-purple-500/60 shadow-[0_0_20px_rgba(168,85,247,0.5)] hover:scale-105 transition-all cursor-pointer group"
+          aria-label="O Despertar do Coração (Criar com IA)"
+        >
+          <span className="text-xl sm:text-2xl transition-transform duration-200 group-hover:rotate-12">🔮</span>
+        </button>
       </div>
 
       <h3 className="text-lg font-semibold text-white">Informações Básicas</h3>
