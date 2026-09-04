@@ -90,6 +90,8 @@ export function HeartAwakeningModal({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [awakeningResult, setAwakeningResult] = useState<HeartAwakeningResult | null>(null);
   const [displayedText, setDisplayedText] = useState<string>("");
+  const [isFlipped, setIsFlipped] = useState<boolean>(false);
+  const [imageError, setImageError] = useState<boolean>(false);
 
   // Control typing effect
   useEffect(() => {
@@ -124,6 +126,7 @@ export function HeartAwakeningModal({
 
     setIsLoading(true);
     setErrorMsg(null);
+    setIsFlipped(false);
     setStep(3);
 
     try {
@@ -547,71 +550,178 @@ export function HeartAwakeningModal({
               ) : (
                 awakeningResult && (
                   <>
-                    <div className="relative my-auto rounded-2xl border border-purple-800/40 bg-purple-950/30 p-6 sm:p-8 backdrop-blur-md shadow-inner overflow-hidden">
-                      {/* Mystical watermark icon */}
-                      <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-5 select-none text-9xl font-serif">
-                        ✦
-                      </div>
+                    <div
+                      onClick={() => setIsFlipped(!isFlipped)}
+                      className="group cursor-pointer w-full max-w-sm sm:max-w-md mx-auto max-h-[75vh] flex flex-col justify-between overflow-hidden perspective-1000"
+                      style={{ perspective: "1000px" }}
+                    >
+                      <div
+                        className={`relative w-full min-h-[400px] sm:min-h-[430px] transition-transform duration-700 ease-in-out transform-style-3d ${
+                          isFlipped ? "rotate-y-180" : ""
+                        }`}
+                        style={{
+                          transformStyle: "preserve-3d",
+                          transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
+                        }}
+                      >
+                        {/* FRENTE DA CARTA */}
+                        <div
+                          className="absolute inset-0 rounded-2xl border-4 border-yellow-300/80 bg-gradient-to-b from-gray-950 via-purple-950/90 to-gray-950 p-4 sm:p-5 shadow-[0_0_30px_rgba(253,224,71,0.3)] backface-hidden flex flex-col justify-between"
+                          style={{
+                            backfaceVisibility: "hidden",
+                            borderColor: "#fde047",
+                          }}
+                        >
+                          {/* Moldura / Borda Dupla Mística Decorada */}
+                          <div
+                            className="pointer-events-none absolute inset-1.5 rounded-xl border-2 border-yellow-200/40"
+                            style={{ borderColor: "#fef08a" }}
+                          />
 
-                      <div className="relative z-10 space-y-6">
-                        {/* Profecia */}
-                        <div>
-                          <h4 className="text-xs font-bold uppercase tracking-widest text-purple-400 mb-2">
-                            Profecia Revelada
-                          </h4>
-                          <p className="font-serif text-base sm:text-lg italic leading-relaxed text-purple-100 min-h-[90px]">
-                            {displayedText}
-                            {displayedText.length < awakeningResult.prophecy.length && (
-                              <span className="inline-block w-2 h-4 ml-1 bg-purple-400 animate-ping" />
+                          {/* Cantos ornados */}
+                          <div className="pointer-events-none absolute top-2 left-2 text-yellow-300 text-xs">✦</div>
+                          <div className="pointer-events-none absolute top-2 right-2 text-yellow-300 text-xs">✦</div>
+                          <div className="pointer-events-none absolute bottom-2 left-2 text-yellow-300 text-xs">✦</div>
+                          <div className="pointer-events-none absolute bottom-2 right-2 text-yellow-300 text-xs">✦</div>
+
+                          {/* Topo da Carta */}
+                          <div className="text-center pt-1">
+                            <span className="font-serif text-xs font-bold uppercase tracking-widest text-yellow-300 drop-shadow-[0_0_5px_rgba(253,224,71,0.5)]">
+                              XIX - O DESPERTAR
+                            </span>
+                          </div>
+
+                          {/* Imagem Real da Carta de Tarot / Arte Mística Fallback */}
+                          <div className="my-1 flex flex-col items-center justify-center">
+                            {!imageError ? (
+                              <img
+                                src="https://upload.wikimedia.org/wikipedia/commons/9/90/RWS_Tarot_19_Sun.jpg"
+                                alt="O Despertar - Tarot"
+                                onError={() => setImageError(true)}
+                                className="h-32 sm:h-36 object-contain rounded-lg shadow-md border border-yellow-300/40 my-1"
+                              />
+                            ) : (
+                              <div className="relative flex items-center justify-center w-28 h-28 rounded-full border border-yellow-300/40 bg-purple-900/30 shadow-inner my-1">
+                                {/* Sol radiante / Constelação Arcana */}
+                                <svg viewBox="0 0 100 100" className="w-20 h-20 text-yellow-300 animate-spin-slow">
+                                  <circle cx="50" cy="50" r="18" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" />
+                                  <circle cx="50" cy="50" r="8" fill="currentColor" opacity="0.8" />
+                                  {/* Raios de Sol */}
+                                  <line x1="50" y1="10" x2="50" y2="24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                                  <line x1="50" y1="76" x2="50" y2="90" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                                  <line x1="10" y1="50" x2="24" y2="50" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                                  <line x1="76" y1="50" x2="90" y2="50" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                                  <line x1="22" y1="22" x2="32" y2="32" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                  <line x1="68" y1="68" x2="78" y2="78" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                  <line x1="22" y1="78" x2="32" y2="68" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                  <line x1="68" y1="32" x2="78" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                </svg>
+                                <div className="absolute inset-0 rounded-full bg-yellow-300/10 blur-md pointer-events-none" />
+                              </div>
                             )}
-                          </p>
+                          </div>
+
+                          {/* Profecia Poética */}
+                          <div className="px-2 text-center my-auto">
+                            <p className="text-xs sm:text-sm font-serif leading-snug max-h-24 overflow-y-auto scrollbar-hide italic text-purple-100">
+                              {displayedText}
+                              {displayedText.length < awakeningResult.prophecy.length && (
+                                <span className="inline-block w-2 h-4 ml-1 bg-yellow-300 animate-ping" />
+                              )}
+                            </p>
+                          </div>
+
+                          {/* Rodapé e Instrução */}
+                          <div className="text-center pb-1 pt-2 border-t border-yellow-300/30">
+                            <p className="text-[10px] sm:text-[11px] font-semibold text-yellow-300/90 tracking-wide animate-pulse">
+                              ✨ Clique para virar a carta e ver os atributos do destino
+                            </p>
+                          </div>
                         </div>
 
-                        {/* Detalhes Sugeridos & Atributos */}
-                        <div className="grid gap-4 sm:grid-cols-2 pt-4 border-t border-purple-900/40">
-                          <div>
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-purple-400 block mb-1">
-                              Sugestões do Destino
+                        {/* VERSO DA CARTA */}
+                        <div
+                          className="absolute inset-0 rounded-2xl border-4 border-yellow-300/80 bg-gradient-to-b from-purple-950 via-gray-950 to-purple-950 p-4 sm:p-5 shadow-[0_0_30px_rgba(253,224,71,0.3)] backface-hidden flex flex-col justify-between rotate-y-180"
+                          style={{
+                            backfaceVisibility: "hidden",
+                            borderColor: "#fde047",
+                            transform: "rotateY(180deg)",
+                          }}
+                        >
+                          {/* Moldura / Borda Dupla Mística Decorada */}
+                          <div
+                            className="pointer-events-none absolute inset-1.5 rounded-xl border-2 border-yellow-200/40"
+                            style={{ borderColor: "#fef08a" }}
+                          />
+
+                          {/* Cantos ornados */}
+                          <div className="pointer-events-none absolute top-2 left-2 text-yellow-300 text-xs">✦</div>
+                          <div className="pointer-events-none absolute top-2 right-2 text-yellow-300 text-xs">✦</div>
+                          <div className="pointer-events-none absolute bottom-2 left-2 text-yellow-300 text-xs">✦</div>
+                          <div className="pointer-events-none absolute bottom-2 right-2 text-yellow-300 text-xs">✦</div>
+
+                          {/* Topo da Carta Verso */}
+                          <div className="text-center pt-1">
+                            <span className="font-serif text-xs font-bold uppercase tracking-widest text-yellow-300 drop-shadow-[0_0_5px_rgba(253,224,71,0.5)]">
+                              ATRIBUTOS DESPERTADOS
                             </span>
-                            <div className="text-xs text-gray-300 space-y-1">
-                              <p>
-                                Classe Sugerida:{" "}
+                          </div>
+
+                          {/* Atributos Despertados & Detalhes */}
+                          <div className="space-y-3 my-auto px-1 sm:px-2">
+                            {/* Grid de Atributos */}
+                            <div>
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-yellow-300/80 block mb-1.5 text-center">
+                                Atributos
+                              </span>
+                              <div className="grid grid-cols-5 gap-1 sm:gap-1.5 text-center">
+                                <div className="rounded-lg border border-yellow-300/30 bg-purple-950/70 p-1.5 sm:p-2">
+                                  <div className="text-[9px] sm:text-[10px] text-yellow-200/70 font-semibold">FOR</div>
+                                  <div className="text-sm sm:text-base font-bold text-yellow-300">{awakeningResult.attributes.forca}</div>
+                                </div>
+                                <div className="rounded-lg border border-yellow-300/30 bg-purple-950/70 p-1.5 sm:p-2">
+                                  <div className="text-[9px] sm:text-[10px] text-yellow-200/70 font-semibold">DES</div>
+                                  <div className="text-sm sm:text-base font-bold text-yellow-300">{awakeningResult.attributes.destreza}</div>
+                                </div>
+                                <div className="rounded-lg border border-yellow-300/30 bg-purple-950/70 p-1.5 sm:p-2">
+                                  <div className="text-[9px] sm:text-[10px] text-yellow-200/70 font-semibold">VIG</div>
+                                  <div className="text-sm sm:text-base font-bold text-yellow-300">{awakeningResult.attributes.vigor}</div>
+                                </div>
+                                <div className="rounded-lg border border-yellow-300/30 bg-purple-950/70 p-1.5 sm:p-2">
+                                  <div className="text-[9px] sm:text-[10px] text-yellow-200/70 font-semibold">INT</div>
+                                  <div className="text-sm sm:text-base font-bold text-yellow-300">{awakeningResult.attributes.inteligencia}</div>
+                                </div>
+                                <div className="rounded-lg border border-yellow-300/30 bg-purple-950/70 p-1.5 sm:p-2">
+                                  <div className="text-[9px] sm:text-[10px] text-yellow-200/70 font-semibold">EMP</div>
+                                  <div className="text-sm sm:text-base font-bold text-yellow-300">{awakeningResult.attributes.empatia}</div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Informações Sugeridas */}
+                            <div className="rounded-xl border border-yellow-300/25 bg-black/40 p-2.5 sm:p-3 space-y-1.5 text-xs text-purple-200">
+                              <p className="flex justify-between border-b border-yellow-300/20 pb-1">
+                                <span className="text-yellow-200/80">Classe Sugerida:</span>
                                 <span className="font-bold text-white">{awakeningResult.suggestedClass}</span>
                               </p>
                               {awakeningResult.suggestedRace && (
-                                <p>
-                                  Raça Sugerida:{" "}
+                                <p className="flex justify-between border-b border-yellow-300/20 pb-1">
+                                  <span className="text-yellow-200/80">Raça Sugerida:</span>
                                   <span className="font-bold text-white">{awakeningResult.suggestedRace}</span>
                                 </p>
                               )}
-                              <p>
-                                Traço Revelado:{" "}
-                                <span className="font-bold text-purple-300">{awakeningResult.suggestedTrait}</span>
+                              <p className="flex justify-between pt-0.5">
+                                <span className="text-yellow-200/80">Traço Revelado:</span>
+                                <span className="font-bold text-yellow-300">{awakeningResult.suggestedTrait}</span>
                               </p>
                             </div>
                           </div>
 
-                          <div>
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-purple-400 block mb-1">
-                              Atributos Despertados
-                            </span>
-                            <div className="flex flex-wrap gap-2 text-xs">
-                              <span className="rounded bg-purple-900/60 border border-purple-700/50 px-2 py-0.5 text-purple-200">
-                                FOR: <strong>{awakeningResult.attributes.forca}</strong>
-                              </span>
-                              <span className="rounded bg-purple-900/60 border border-purple-700/50 px-2 py-0.5 text-purple-200">
-                                DES: <strong>{awakeningResult.attributes.destreza}</strong>
-                              </span>
-                              <span className="rounded bg-purple-900/60 border border-purple-700/50 px-2 py-0.5 text-purple-200">
-                                VIG: <strong>{awakeningResult.attributes.vigor}</strong>
-                              </span>
-                              <span className="rounded bg-purple-900/60 border border-purple-700/50 px-2 py-0.5 text-purple-200">
-                                INT: <strong>{awakeningResult.attributes.inteligencia}</strong>
-                              </span>
-                              <span className="rounded bg-purple-900/60 border border-purple-700/50 px-2 py-0.5 text-purple-200">
-                                EMP: <strong>{awakeningResult.attributes.empatia}</strong>
-                              </span>
-                            </div>
+                          {/* Rodapé e Instrução */}
+                          <div className="text-center pb-1 pt-2 border-t border-yellow-300/30">
+                            <p className="text-[10px] sm:text-[11px] font-semibold text-yellow-300/90 tracking-wide animate-pulse">
+                              ✨ Clique para virar a carta
+                            </p>
                           </div>
                         </div>
                       </div>

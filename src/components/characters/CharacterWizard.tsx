@@ -233,9 +233,10 @@ export function CharacterWizard() {
     });
 
     addToast(
-      "O ritual despertou a alma de seu personagem! Atributos e detalhes foram pré-preenchidos.",
+      "O ritual despertou o seu destino! Suas opções foram selecionadas e você avançou para a revisão final.",
       "info"
     );
+    setCurrentStep(6);
     setShowAwakeningModal(false);
   }, [classes, addToast]);
 
