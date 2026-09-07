@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ATTRIBUTES,
@@ -14,6 +14,8 @@ import { getDerivedStats, getModifier } from "@/lib/engine/attributes";
 import { Button, Input, Spinner } from "@/components/ui";
 import { Toast } from "@/components/ui/Toast";
 import { generateUUID } from "@/lib/utils/uuid";
+import { HeartAwakeningModal } from "@/components/characters/HeartAwakeningModal";
+import type { HeartAwakeningResult } from "@/components/characters/HeartAwakeningModal";
 
 // =============================================================================
 // Types
@@ -76,6 +78,8 @@ type SpellData = {
 
 const STORAGE_KEY = "libmork_character_wizard_draft_v2";
 
+const STEP_GLYPHS = ["A", "B", "C", "D", "E", "F", "G"];
+
 const STEPS = [
   { label: "Básico", shortLabel: "Básico" },
   { label: "Raça", shortLabel: "Raça" },
@@ -130,6 +134,111 @@ export function CharacterWizard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toasts, setToasts] = useState<Array<{ id: string; message: string; type?: "error" | "success" | "info" | "warning" }>>([]);
   const [hydrated, setHydrated] = useState(false);
+  const [showAwakeningModal, setShowAwakeningModal] = useState(false);
+  const [classes, setClasses] = useState<ClassData[]>([]);
+
+  const addToast = useCallback((message: string, type: "error" | "success" | "info" | "warning" = "error") => {
+    const id = generateUUID();
+    setToasts((prev) => [...prev, { id, message, type }]);
+  }, []);
+
+  const removeToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  // Carregar lista de classes pré-carregadas para correspondência de classe sugerida
+  useEffect(() => {
+    let cancelled = false;
+    async function loadClasses() {
+      try {
+        const res = await fetch("/api/classes", { credentials: "include" });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (!cancelled && json.data) {
+          setClasses(json.data);
+        }
+      } catch {
+        // ignore
+      }
+    }
+    void loadClasses();
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleAwakeningComplete = useCallback(async (result: HeartAwakeningResult) => {
+    let classList = classes;
+    if (classList.length === 0) {
+      try {
+        const res = await fetch("/api/classes", { credentials: "include" });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.data) {
+            classList = json.data;
+            setClasses(json.data);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    let matchedClassId: string | null = null;
+    if (result.suggestedClass) {
+      const suggestedLower = result.suggestedClass.trim().toLowerCase();
+      const foundClass = classList.find(
+        (c) => c.name.trim().toLowerCase() === suggestedLower
+      );
+      if (foundClass) {
+        matchedClassId = foundClass.id;
+      }
+    }
+
+    let matchedRaceId: string | null = null;
+    if (result.suggestedRace) {
+      try {
+        const res = await fetch("/api/races", { credentials: "include" });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.data && Array.isArray(json.data)) {
+            const raceList = json.data as RaceData[];
+            const suggestedRaceLower = result.suggestedRace.trim().toLowerCase();
+            const foundRace = raceList.find(
+              (r) => r.name.trim().toLowerCase() === suggestedRaceLower
+            );
+            if (foundRace) {
+              matchedRaceId = foundRace.id;
+            }
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    setWizardData((prev) => {
+      let newDescription = prev.description;
+      if (result.prophecy) {
+        newDescription = prev.description
+          ? `${prev.description}\n\n${result.prophecy}`
+          : result.prophecy;
+      }
+
+      return {
+        ...prev,
+        attributes: { ...result.attributes },
+        description: newDescription,
+        ...(matchedClassId ? { classId: matchedClassId } : {}),
+        ...(matchedRaceId ? { raceId: matchedRaceId } : {}),
+      };
+    });
+
+    addToast(
+      "O ritual despertou o seu destino! Suas opções foram selecionadas e você avançou para a revisão final.",
+      "info"
+    );
+    setCurrentStep(6);
+    setShowAwakeningModal(false);
+  }, [classes, addToast]);
 
   // Clear legacy localStorage draft if present
   useEffect(() => {
@@ -167,15 +276,6 @@ export function CharacterWizard() {
       // Ignore quota errors
     }
   }, [wizardData, hydrated]);
-
-  const addToast = useCallback((message: string, type: "error" | "success" | "info" | "warning" = "error") => {
-    const id = generateUUID();
-    setToasts((prev) => [...prev, { id, message, type }]);
-  }, []);
-
-  const removeToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
 
   const updateData = useCallback((partial: Partial<WizardData>) => {
     setWizardData((prev) => ({ ...prev, ...partial }));
@@ -236,9 +336,11 @@ export function CharacterWizard() {
       };
 
       if (wizardData.description?.trim()) {
-        payload.description = wizardData.description.trim();
+        payload.description = wizardData.description.trim().slice(0, 2000);
       }
-      if (wizardData.imageUrl) payload.imageUrl = wizardData.imageUrl;
+      if (wizardData.imageUrl && wizardData.imageUrl.trim() !== "") {
+        payload.imageUrl = wizardData.imageUrl;
+      }
       if (wizardData.raceId) payload.raceId = wizardData.raceId;
       if (wizardData.classId) payload.classId = wizardData.classId;
       if (wizardData.campaignId) payload.campaignId = wizardData.campaignId;
@@ -255,7 +357,8 @@ export function CharacterWizard() {
       const data = await response.json();
 
       if (!response.ok) {
-        addToast(data.error || "Erro ao criar personagem.", "error");
+        const errorMessage = data.errors?.[0]?.message || data.error || "Erro ao criar personagem.";
+        addToast(errorMessage, "error");
         return;
       }
 
@@ -280,7 +383,7 @@ export function CharacterWizard() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 pb-8">
+    <div className="mx-auto w-full max-w-7xl px-2 sm:px-6 pb-8">
       {/* Toast Container */}
       {toasts.length > 0 && (
         <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2">
@@ -295,58 +398,74 @@ export function CharacterWizard() {
         </div>
       )}
 
-      {/* Título */}
-      <h2 className="mb-6 text-2xl font-bold text-white">Criar Personagem</h2>
-
-      {/* Stepper (7 Etapas) */}
-      <WizardStepper currentStep={currentStep} onStepClick={setCurrentStep} wizardData={wizardData} validateStep={validateStep} />
-
-      {/* Conteúdo da Etapa */}
-      <div className="mt-6">
-        {currentStep === 0 && (
-          <WizardStepBasicInfo data={wizardData} updateData={updateData} />
-        )}
-        {currentStep === 1 && (
-          <WizardStepRace data={wizardData} updateData={updateData} />
-        )}
-        {currentStep === 2 && (
-          <WizardStepClass data={wizardData} updateData={updateData} />
-        )}
-        {currentStep === 3 && (
-          <WizardStepAttributes data={wizardData} updateData={updateData} />
-        )}
-        {currentStep === 4 && (
-          <WizardStepSkills data={wizardData} updateData={updateData} />
-        )}
-        {currentStep === 5 && (
-          <WizardStepSpells data={wizardData} updateData={updateData} />
-        )}
-        {currentStep === 6 && (
-          <WizardStepReview data={wizardData} />
-        )}
+      {/* Cabeçalho e Stepper Fixos no Topo */}
+      <div className="sticky top-0 z-30 bg-gray-950/95 backdrop-blur-md pt-4 pb-3 border-b border-purple-900/30 mb-6">
+        <h2 className="mb-4 text-2xl font-bold text-white font-serif">Criar Personagem</h2>
+        <WizardStepper currentStep={currentStep} onStepClick={setCurrentStep} wizardData={wizardData} validateStep={validateStep} />
       </div>
 
-      {/* Navegação */}
-      <div className="mt-6 flex items-center justify-between gap-4">
-        <Button
-          variant="secondary"
-          onClick={goBack}
-          disabled={currentStep === 0 || isSubmitting}
-          className="min-w-[100px]"
-        >
-          Voltar
-        </Button>
-
-        {currentStep < STEPS.length - 1 ? (
-          <Button onClick={goNext} disabled={isSubmitting} className="min-w-[100px]">
-            Próximo
-          </Button>
-        ) : (
-          <Button onClick={handleSubmit} isLoading={isSubmitting} className="min-w-[160px]">
-            Criar Personagem
-          </Button>
-        )}
+      {/* Conteúdo com Rolagem Independente */}
+      <div className="max-h-[calc(100vh-200px)] overflow-y-auto pr-1 pb-20">
+        {/* Conteúdo da Etapa */}
+        <div>
+          {currentStep === 0 && (
+            <WizardStepBasicInfo
+              data={wizardData}
+              updateData={updateData}
+              onOpenAwakeningModal={() => setShowAwakeningModal(true)}
+            />
+          )}
+          {currentStep === 1 && (
+            <WizardStepRace data={wizardData} updateData={updateData} />
+          )}
+          {currentStep === 2 && (
+            <WizardStepClass data={wizardData} updateData={updateData} />
+          )}
+          {currentStep === 3 && (
+            <WizardStepAttributes data={wizardData} updateData={updateData} />
+          )}
+          {currentStep === 4 && (
+            <WizardStepSkills data={wizardData} updateData={updateData} />
+          )}
+          {currentStep === 5 && (
+            <WizardStepSpells data={wizardData} updateData={updateData} />
+          )}
+          {currentStep === 6 && (
+            <WizardStepReview data={wizardData} />
+          )}
+        </div>
       </div>
+
+      {/* Barra de Navegação Fixa na Parte Inferior */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-gray-950/95 backdrop-blur-md border-t border-gray-800/80 py-3 px-4 sm:px-8 shadow-2xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+          <Button
+            variant="secondary"
+            onClick={goBack}
+            disabled={currentStep === 0 || isSubmitting}
+            className="min-w-[100px]"
+          >
+            Voltar
+          </Button>
+
+          {currentStep < STEPS.length - 1 ? (
+            <Button onClick={goNext} disabled={isSubmitting} className="min-w-[100px]">
+              Próximo
+            </Button>
+          ) : (
+            <Button onClick={handleSubmit} isLoading={isSubmitting} className="min-w-[160px]">
+              Criar Personagem
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Heart Awakening Modal */}
+      <HeartAwakeningModal
+        isOpen={showAwakeningModal}
+        onClose={() => setShowAwakeningModal(false)}
+        onComplete={handleAwakeningComplete}
+      />
     </div>
   );
 }
@@ -366,6 +485,8 @@ function WizardStepper({
   wizardData: WizardData;
   validateStep: (step: number) => boolean;
 }) {
+  const activeStepRef = useRef<HTMLButtonElement | null>(null);
+
   const completedSteps = useMemo(() => {
     const completed = new Set<number>();
     if (wizardData.name.trim().length >= 2) completed.add(0);
@@ -375,57 +496,80 @@ function WizardStepper({
     return completed;
   }, [wizardData.name, currentStep]);
 
-  return (
-    <div className="flex items-center justify-between gap-1 overflow-x-auto pb-2">
-      {STEPS.map((step, idx) => {
-        const isActive = idx === currentStep;
-        const isCompleted = completedSteps.has(idx) && !isActive;
+  useEffect(() => {
+    if (activeStepRef.current) {
+      activeStepRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "center",
+      });
+    }
+  }, [currentStep]);
 
-        return (
-          <button
-            key={idx}
-            type="button"
-            onClick={() => {
-              if (idx < currentStep) {
-                onStepClick(idx);
-              } else if (idx > currentStep) {
-                let canAdvance = true;
-                for (let s = currentStep; s < idx; s++) {
-                  if (!validateStep(s)) {
-                    canAdvance = false;
-                    break;
+  return (
+    <div className="relative">
+      <div className="flex items-center justify-between gap-2 overflow-x-auto pb-3 pt-1 scroll-smooth scrollbar-hide px-1 snap-x">
+        {STEPS.map((step, idx) => {
+          const isActive = idx === currentStep;
+          const isCompleted = completedSteps.has(idx) && !isActive;
+
+          return (
+            <button
+              key={idx}
+              ref={isActive ? activeStepRef : null}
+              type="button"
+              onClick={() => {
+                if (idx < currentStep) {
+                  onStepClick(idx);
+                } else if (idx > currentStep) {
+                  let canAdvance = true;
+                  for (let s = currentStep; s < idx; s++) {
+                    if (!validateStep(s)) {
+                      canAdvance = false;
+                      break;
+                    }
                   }
+                  if (canAdvance) onStepClick(idx);
                 }
-                if (canAdvance) onStepClick(idx);
-              }
-            }}
-            className={`flex flex-col items-center gap-1 rounded-lg px-2 py-2 transition-all duration-200 ${
-              isActive
-                ? "scale-105"
-                : "opacity-70 hover:opacity-100"
-            }`}
-          >
-            <span
-              className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-all duration-200 ${
+              }}
+              className={`flex flex-col items-center gap-1.5 rounded-xl px-3 py-2 transition-all duration-200 shrink-0 snap-center border ${
                 isActive
-                  ? "bg-purple-600 text-white shadow-[0_0_12px_rgba(147,51,234,0.4)]"
+                  ? "bg-purple-950/60 border-purple-500/80 shadow-[0_0_12px_rgba(168,85,247,0.25)]"
                   : isCompleted
-                    ? "bg-green-600 text-white"
-                    : "bg-gray-800 text-gray-400 border border-gray-700"
+                    ? "bg-gray-900/60 border-emerald-500/30 opacity-90 hover:opacity-100"
+                    : "bg-gray-900/40 border-gray-800/80 opacity-60 hover:opacity-100"
               }`}
             >
-              {isCompleted ? "✓" : idx + 1}
-            </span>
-            <span
-              className={`text-[10px] font-medium whitespace-nowrap ${
-                isActive ? "text-purple-300 font-bold" : isCompleted ? "text-green-400" : "text-gray-400"
-              }`}
-            >
-              {step.shortLabel}
-            </span>
-          </button>
-        );
-      })}
+              <span
+                className={`flex h-7 w-7 items-center justify-center rounded-full transition-all duration-200 ${
+                  isActive
+                    ? "bg-purple-600 text-white shadow-[0_0_10px_rgba(168,85,247,0.5)]"
+                    : isCompleted
+                      ? "bg-emerald-600 text-white text-xs font-extrabold"
+                      : "bg-gray-800 text-gray-400 border border-gray-700/80"
+                }`}
+              >
+                {isCompleted ? (
+                  "✓"
+                ) : (
+                  <span className="font-fantasy text-lg leading-none">{STEP_GLYPHS[idx]}</span>
+                )}
+              </span>
+              <span
+                className={`text-xs font-semibold whitespace-nowrap tracking-wide ${
+                  isActive
+                    ? "text-purple-300 font-bold"
+                    : isCompleted
+                      ? "text-emerald-400"
+                      : "text-gray-400"
+                }`}
+              >
+                {step.shortLabel}
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -437,16 +581,119 @@ function WizardStepper({
 function WizardStepBasicInfo({
   data,
   updateData,
+  onOpenAwakeningModal,
 }: {
   data: WizardData;
   updateData: (partial: Partial<WizardData>) => void;
+  onOpenAwakeningModal: () => void;
 }) {
   return (
-    <div className="space-y-4 rounded-xl border border-gray-800 bg-gray-900/60 p-5">
-      <h3 className="text-lg font-semibold text-white">Informações Básicas</h3>
-      <p className="text-xs text-gray-400">
-        Defina o nome, histórico e imagem do seu herói.
-      </p>
+    <div className="space-y-5 rounded-xl border border-gray-800 bg-gray-900/60 p-5 sm:p-6 shadow-xl backdrop-blur-sm">
+      {/* Botão Místico Flutuante - O Despertar do Coração */}
+      <div className="fixed bottom-6 right-6 z-50 group flex flex-col items-end pointer-events-auto [margin-bottom:env(safe-area-inset-bottom)] [margin-right:env(safe-area-inset-right)]">
+        {/* Tooltip no hover para telas maiores */}
+        <div className="pointer-events-none mb-2 hidden sm:group-hover:block whitespace-nowrap rounded-lg border border-purple-500/60 bg-purple-950/95 px-3 py-1.5 text-xs font-semibold text-purple-200 shadow-[0_0_15px_rgba(168,85,247,0.3)] backdrop-blur-md transition-all animate-fade-in">
+          O Despertar do Coração (Criar com IA) ✨
+        </div>
+        <button
+          type="button"
+          onClick={onOpenAwakeningModal}
+          className="relative h-14 w-14 sm:h-16 sm:w-16 flex items-center justify-center transition-all duration-300 hover:scale-110 hover:rotate-6 active:scale-95 cursor-pointer group shrink-0 drop-shadow-[0_0_15px_rgba(168,85,247,0.6)] focus:outline-none"
+          aria-label="O Despertar do Coração (Criar com IA)"
+        >
+          {/* Glow pulsante místico com clip-path de D20 */}
+          <div className="absolute inset-0 bg-purple-500/30 animate-pulse pointer-events-none [clip-path:polygon(50%_0%,93.3%_25%,93.3%_75%,50%_100%,6.7%_75%,6.7%_25%)]" />
+
+          {/* SVG D20 (Icosaedro de RPG) */}
+          <svg viewBox="0 0 100 100" className="w-full h-full relative z-10 overflow-visible">
+            <defs>
+              {/* Gradiente de fundo de cristal/gema mística roxa/indigo */}
+              <linearGradient id="d20-bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#3b0764" />
+                <stop offset="50%" stopColor="#581c87" />
+                <stop offset="100%" stopColor="#1e1b4b" />
+              </linearGradient>
+
+              {/* Gradiente dourado místico para facetas e o número 20 */}
+              <linearGradient id="d20-gold-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#fef08a" />
+                <stop offset="50%" stopColor="#f59e0b" />
+                <stop offset="100%" stopColor="#b45309" />
+              </linearGradient>
+
+              {/* Reflexo cristalino superior */}
+              <linearGradient id="d20-shine-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#ffffff" stopOpacity="0.35" />
+                <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+              </linearGradient>
+            </defs>
+
+            {/* Hexágono Base / Silhueta do D20 */}
+            <polygon
+              points="50,4 92,26 92,74 50,96 8,74 8,26"
+              fill="url(#d20-bg-gradient)"
+              stroke="url(#d20-gold-gradient)"
+              strokeWidth="2.5"
+              strokeLinejoin="round"
+            />
+
+            {/* Sombras e Reflexos 3D das Facetas de Cristal */}
+            <polygon points="50,4 92,26 70,36" fill="rgba(236, 72, 153, 0.15)" />
+            <polygon points="50,4 8,26 30,36" fill="rgba(192, 132, 252, 0.25)" />
+            <polygon points="50,4 70,36 30,36" fill="url(#d20-shine-gradient)" />
+            <polygon points="92,26 92,74 70,36" fill="rgba(126, 34, 206, 0.2)" />
+            <polygon points="92,74 50,70 70,36" fill="rgba(88, 28, 135, 0.3)" />
+            <polygon points="92,74 50,96 50,70" fill="rgba(58, 12, 115, 0.4)" />
+            <polygon points="50,96 8,74 50,70" fill="rgba(46, 16, 101, 0.5)" />
+            <polygon points="8,74 30,36 50,70" fill="rgba(88, 28, 135, 0.3)" />
+            <polygon points="8,74 8,26 30,36" fill="rgba(126, 34, 206, 0.2)" />
+            <polygon points="30,36 70,36 50,70" fill="rgba(168, 85, 247, 0.35)" />
+
+            {/* Linhas Finas Douradas/Roxas das Facetas do D20 */}
+            <polygon
+              points="30,36 70,36 50,70"
+              fill="none"
+              stroke="url(#d20-gold-gradient)"
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+            />
+            <line x1="50" y1="4" x2="30" y2="36" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
+            <line x1="50" y1="4" x2="70" y2="36" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
+            <line x1="92" y1="26" x2="70" y2="36" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
+            <line x1="92" y1="74" x2="70" y2="36" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
+            <line x1="92" y1="74" x2="50" y2="70" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
+            <line x1="50" y1="96" x2="50" y2="70" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
+            <line x1="8" y1="74" x2="50" y2="70" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
+            <line x1="8" y1="74" x2="30" y2="36" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
+            <line x1="8" y1="26" x2="30" y2="36" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
+
+            {/* Número 20 Gravado no Centro */}
+            <text
+              x="50"
+              y="49"
+              textAnchor="middle"
+              dominantBaseline="central"
+              fill="url(#d20-gold-gradient)"
+              className="font-black text-[20px] tracking-wider select-none font-serif"
+              style={{
+                filter: "drop-shadow(0px 1px 3px rgba(0, 0, 0, 0.9))",
+              }}
+            >
+              20
+            </text>
+
+            {/* Detalhe místico pulsante no topo */}
+            <circle cx="50" cy="30" r="1.5" fill="#fef08a" className="animate-pulse" />
+          </svg>
+        </button>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-bold text-white tracking-wide">Informações Básicas</h3>
+        <p className="text-xs text-gray-400 mt-0.5">
+          Defina o nome, histórico e imagem do seu herói.
+        </p>
+      </div>
 
       <Input
         label="Nome do Personagem *"
@@ -457,27 +704,36 @@ function WizardStepBasicInfo({
         required
         placeholder="Ex: Gandalf, Thorin, Lyra..."
         autoComplete="off"
-        className="bg-gray-900 text-white"
+        className="bg-gray-900/90 text-white border-gray-700/80 focus:border-purple-500"
       />
 
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gray-300">
-          Descrição / Background (opcional)
+      <div className="space-y-1.5">
+        <label className="block text-sm font-medium text-gray-300">
+          Descrição / Background <span className="text-xs font-normal text-gray-400">(opcional)</span>
         </label>
-        <textarea
-          value={data.description}
-          onChange={(e) => updateData({ description: e.target.value })}
-          placeholder="Um breve histórico, personalidade ou aparência..."
-          rows={3}
-          maxLength={500}
-          className="w-full rounded-lg border border-gray-700 bg-gray-900 p-3 text-sm text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
-        />
-        <span className="text-[10px] text-gray-500">{data.description.length}/500 caracteres</span>
+        <div className="relative rounded-lg border border-gray-700/80 bg-gray-900/90 p-1.5 focus-within:border-purple-500 focus-within:ring-1 focus-within:ring-purple-500/50 transition-all">
+          <textarea
+            value={data.description}
+            onChange={(e) => updateData({ description: e.target.value })}
+            placeholder="Um breve histórico, personalidade ou aparência do herói..."
+            rows={4}
+            maxLength={500}
+            className="w-full min-h-[120px] resize-y rounded-md bg-transparent p-2 text-sm text-white placeholder-gray-500 scrollbar-hide focus:outline-none"
+          />
+          <div className="flex justify-end pt-1 pb-0.5 px-2 border-t border-gray-800/80">
+            <span className="text-[11px] font-medium text-gray-400">
+              <span className={data.description.length >= 480 ? "text-amber-400 font-bold" : "text-gray-400"}>
+                {data.description.length}
+              </span>
+              /500 caracteres
+            </span>
+          </div>
+        </div>
       </div>
 
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gray-300">
-          URL da Imagem / Avatar (opcional)
+      <div className="space-y-1.5">
+        <label className="block text-sm font-medium text-gray-300">
+          URL da Imagem / Avatar <span className="text-xs font-normal text-gray-400">(opcional)</span>
         </label>
         <Input
           label=""
@@ -486,16 +742,16 @@ function WizardStepBasicInfo({
           value={data.imageUrl ?? ""}
           onChange={(e) => updateData({ imageUrl: e.target.value || null })}
           placeholder="https://exemplo.com/minha-foto.png"
-          className="bg-gray-900 text-white"
+          className="bg-gray-900/90 text-white border-gray-700/80 focus:border-purple-500"
         />
         {data.imageUrl && (
-          <div className="mt-3 flex items-center gap-3">
-            <span className="text-xs text-gray-400">Preview:</span>
+          <div className="mt-3 flex items-center gap-3 rounded-lg border border-gray-800 bg-gray-950/50 p-2.5">
+            <span className="text-xs text-gray-400 font-medium">Preview:</span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={data.imageUrl}
               alt="Preview"
-              className="h-12 w-12 rounded-full border border-purple-500 object-cover"
+              className="h-12 w-12 rounded-full border-2 border-purple-500 object-cover shadow-[0_0_10px_rgba(168,85,247,0.3)]"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = "none";
               }}
@@ -590,7 +846,7 @@ function WizardStepRace({
       ) : filteredRaces.length === 0 ? (
         <p className="text-xs text-gray-500 py-6 text-center">Nenhuma raça encontrada.</p>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredRaces.map((race) => {
             const isSelected = data.raceId === race.id;
             return (
@@ -728,7 +984,7 @@ function WizardStepClass({
       ) : filteredClasses.length === 0 ? (
         <p className="text-xs text-gray-500 py-6 text-center">Nenhuma classe cadastrada.</p>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredClasses.map((cls) => {
             const isSelected = data.classId === cls.id;
             return (
@@ -993,7 +1249,7 @@ function WizardStepSkills({
         <p className="text-xs text-gray-500 py-6 text-center">Nenhuma perícia encontrada.</p>
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {paginatedSkills.map((skill) => {
               const isSelected = data.skills.includes(skill.id);
               const isDisabled = !isSelected && selectedCount >= maxSlots;
@@ -1178,7 +1434,7 @@ function WizardStepSpells({
         <p className="text-xs text-gray-500 py-6 text-center">Nenhuma magia de 1º Círculo encontrada.</p>
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {paginatedSpells.map((spell) => {
               const isSelected = data.spells.includes(spell.id);
               const isDisabled = !isSelected && selectedCount >= maxSpells;
@@ -1337,7 +1593,7 @@ function WizardStepReview({ data }: { data: WizardData }) {
       </div>
 
       {/* Atributos e Estatísticas Derivadas */}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 grid-cols-1 md:grid-cols-2">
         <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
           <h5 className="mb-2 text-xs font-bold text-purple-400 uppercase tracking-wider">
             Atributos Principais

@@ -60,6 +60,59 @@ export function getNinerouterConfig(): NinerouterConfig {
   };
 }
 
+/**
+ * Executes a query/prompt against 9Router (OpenAI-compatible /chat/completions).
+ */
+export async function queryNinerouter(
+  systemPrompt: string,
+  userPrompt: string,
+  options?: { responseFormatJson?: boolean }
+): Promise<string> {
+  const cfg = getNinerouterConfig();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (cfg.hasKey) {
+    headers["Authorization"] = `Bearer ${cfg.key}`;
+  }
+
+  const bodyObj: Record<string, unknown> = {
+    model: cfg.model,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
+    stream: false,
+  };
+
+  if (options?.responseFormatJson) {
+    bodyObj.response_format = { type: "json_object" };
+  }
+
+  const { response } = await fetchNinerouterWithFallback(
+    "/chat/completions",
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify(bodyObj),
+    },
+    NINE_TIMEOUT_MS
+  );
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`Ninerouter HTTP error ${response.status}: ${text}`);
+  }
+
+  const data = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
+  const content = data?.choices?.[0]?.message?.content;
+  if (!content) {
+    throw new Error("Ninerouter returned empty content");
+  }
+
+  return content;
+}
+
 export function isTailscaleCgnatUrl(url: string): boolean {
   // Spec wants detection de "100.83.170.1". Also cover CGNAT broadly.
   return url.includes("100.83.170.1") || /100\.(6[4-9]|[7-9]\d|1[0-1]\d|12[0-7])\./.test(url);

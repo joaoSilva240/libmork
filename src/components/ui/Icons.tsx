@@ -38,6 +38,14 @@ export function CampaignsFilledIcon({ className = "w-6 h-6" }: { className?: str
   );
 }
 
+export function SpellFilledIcon({ className = "w-6 h-6" }: { className?: string }) {
+  return (
+    <span aria-hidden="true" className={`font-dings text-[2.1rem] leading-none inline-flex items-center justify-center ${className}`}>
+      P
+    </span>
+  );
+}
+
 export function ArrowLeftIcon({ className = "w-5 h-5" }: { className?: string }) {
   return (
     <svg

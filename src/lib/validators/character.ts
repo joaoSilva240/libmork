@@ -24,11 +24,11 @@ export const attributesSchema = z.object({
  */
 export const createCharacterSchema = z.object({
   name: z.string().min(2, "Nome deve ter no mínimo 2 caracteres").max(100),
-  description: z.string().max(500).optional().nullable(),
+  description: z.string().max(2000).optional().nullable(),
   classId: z.string().uuid().optional().nullable(),
   raceId: z.string().uuid().optional().nullable(),
   campaignId: z.string().uuid().optional().nullable(),
-  imageUrl: z.string().url().optional().nullable(),
+  imageUrl: z.union([z.string().url(), z.literal("")]).optional().nullable(),
   attributes: attributesSchema.optional(),
   skills: z.array(z.string().uuid()).optional().default([]),
   spells: z.array(z.string().uuid()).optional().default([]),
@@ -52,6 +52,19 @@ export const createCharacterSchema = z.object({
 );
 
 export type CreateCharacterInput = z.infer<typeof createCharacterSchema>;
+
+export const heartAwakeningSchema = z.object({
+  chosenRelic: z.enum(["conflito", "salvaguarda", "segredo"]),
+  sacrificedRelic: z.enum(["conflito", "salvaguarda", "segredo"]),
+  q1Origin: z.enum(["carta", "moeda", "amuleto"]),
+  q2Impulse: z.enum(["colina", "floresta", "mar"]),
+  q3End: z.enum(["luzes", "cidade", "odiar"]),
+}).refine(data => data.chosenRelic !== data.sacrificedRelic, {
+  message: "A relíquia sacrificada deve ser diferente da escolhida",
+  path: ["sacrificedRelic"]
+});
+
+export type HeartAwakeningInput = z.infer<typeof heartAwakeningSchema>;
 
 /**
  * Schema de atualização de personagem (RF-009).

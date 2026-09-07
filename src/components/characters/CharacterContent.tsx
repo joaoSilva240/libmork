@@ -6,9 +6,10 @@ import { useSocket, DICE_ROLL_LOADING_DELAY } from "@/context/SocketContext";
 import { TargetSelectionModal } from "@/components/combat/TargetSelectionModal";
 import { DecorativeFrame } from "@/components/ui/DecorativeFrame";
 import { Spinner } from "@/components/ui";
+import { SpellFilledIcon, InventoryFilledIcon } from "@/components/ui/Icons";
 import { ToastContainer } from "@/components/ui/Toast";
 import type { CombatSessionState, Combatant } from "@/lib/engine";
-import { applyHealing, applyResolvedDamage, getExpression, hydrateCombatantMana, rollExpression, spendCombatActions, spendSpell } from "@/lib/engine";
+import { applyHealing, applyResolvedDamage, getExpression, hydrateCombatantMana, normalizeSkillExpression, rollExpression, spendCombatActions, spendSpell } from "@/lib/engine";
 
 const TYPE_LABELS: Record<ContentType, string> = {
   skills: "Perícias",
@@ -79,6 +80,7 @@ function normalizeActionDamage(content: Record<string, unknown>): string | numbe
 
 type CharacterContentProps = {
   characterId: string;
+  characterAttributeModifiers?: Record<string, number>;
   defaultType?: ContentType;
   allowedTypes?: ContentType[];
   isTurnLocked?: boolean;
@@ -95,8 +97,33 @@ type CharacterContentProps = {
   onEndRolling?: () => void;
 };
 
+function ContentImageIcon({ src, type }: { src?: unknown; type: ContentType }) {
+  const [hasError, setHasError] = useState(false);
+  const imageUrl = typeof src === "string" ? src.trim() : "";
+
+  if (imageUrl && !hasError) {
+    return (
+      <img
+        src={imageUrl}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        onError={() => setHasError(true)}
+        className="h-8 w-8 shrink-0 rounded-md object-cover border border-purple-500/40"
+      />
+    );
+  }
+
+  if (type === "items") {
+    return <InventoryFilledIcon className="h-6 w-6 shrink-0 text-purple-400" />;
+  }
+
+  return <SpellFilledIcon className="h-6 w-6 shrink-0 text-purple-400" />;
+}
+
 export function CharacterContent({
   characterId,
+  characterAttributeModifiers,
   defaultType = "skills",
   allowedTypes,
   isTurnLocked = false,
@@ -206,8 +233,8 @@ export function CharacterContent({
 
       setTimeout(() => {
         const name = String(row.content.name || "Perícia");
-        const exprValue = getExpression(row.content.rollExpression);
-        const expr = exprValue === null ? "1d20" : String(exprValue);
+        const rawExpression = getExpression(row.content.rollExpression);
+        const expr = normalizeSkillExpression(rawExpression, characterAttributeModifiers ?? {}) ?? "1d20";
         const rollResult = rollExpression(expr, 1);
 
         if (campaignId) {
@@ -465,7 +492,7 @@ export function CharacterContent({
               }
 
               return (
-                <div className="space-y-2 mt-auto pb-2">
+                <div className="space-y-2 pb-2">
                   {displayRows.map((row) => {
                     const isLinked = data.linked.some((linked) => linked.content.id === row.content.id);
                     const isAvailableOnly = !isLinked;
@@ -482,37 +509,42 @@ export function CharacterContent({
                             : ""
                         }`}
                       >
-                        <div>
-                          <p className="text-xs font-bold text-white">
-                            {row.content.name as string}
-                          </p>
-                          <div className="mt-1 flex flex-wrap gap-2">
-                            {activeType === "skills" && (
-                              row.junction.trained ? (
-                                <span className="rounded bg-purple-950 px-2 py-0.5 text-[10px] font-bold text-purple-300 border border-purple-800/60">
-                                  ★ Treinada
+                        <div className="flex items-center gap-3 min-w-0">
+                          {(activeType === "spells" || activeType === "items") && (
+                            <ContentImageIcon src={row.content.imageUrl} type={activeType} />
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-white truncate">
+                              {row.content.name as string}
+                            </p>
+                            <div className="mt-1 flex flex-wrap gap-2">
+                              {activeType === "skills" && (
+                                row.junction.trained ? (
+                                  <span className="rounded bg-purple-950 px-2 py-0.5 text-[10px] font-bold text-purple-300 border border-purple-800/60">
+                                    ★ Treinada
+                                  </span>
+                                ) : (
+                                  <span className="rounded bg-gray-900 px-2 py-0.5 text-[10px] font-medium text-gray-400 border border-gray-800">
+                                    Não Treinada
+                                  </span>
+                                )
+                              )}
+                              {activeType === "items" && "quantity" in row.junction && (
+                                <span className="text-[11px] text-gray-400 font-medium">
+                                  Quantidade: {row.junction.quantity || 1}
                                 </span>
-                              ) : (
-                                <span className="rounded bg-gray-900 px-2 py-0.5 text-[10px] font-medium text-gray-400 border border-gray-800">
-                                  Não Treinada
+                              )}
+                              {activeType === "conditions" && "permanent" in row.junction && row.junction.permanent && (
+                                <span className="rounded bg-red-950 px-2 py-0.5 text-[10px] font-bold text-red-300 border border-red-800/60">
+                                  Permanente
                                 </span>
-                              )
-                            )}
-                            {activeType === "items" && "quantity" in row.junction && (
-                              <span className="text-[11px] text-gray-400 font-medium">
-                                Quantidade: {row.junction.quantity || 1}
-                              </span>
-                            )}
-                            {activeType === "conditions" && "permanent" in row.junction && row.junction.permanent && (
-                              <span className="rounded bg-red-950 px-2 py-0.5 text-[10px] font-bold text-red-300 border border-red-800/60">
-                                Permanente
-                              </span>
-                            )}
-                            {activeType === "spells" && (
-                              <span className="text-[11px] text-purple-300 font-medium">
-                                Círculo {String(row.content.circle)} · {String(row.content.manaCost)} Mana
-                              </span>
-                            )}
+                              )}
+                              {activeType === "spells" && (
+                                <span className="text-[11px] text-purple-300 font-medium">
+                                  Círculo {String(row.content.circle)} · {String(row.content.manaCost)} Mana
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                         {activeType === "conditions" && (
@@ -551,7 +583,7 @@ export function CharacterContent({
         )}
 
         {displayTypes.length > 1 && (
-          <div className="mt-auto flex justify-center items-center gap-2 pt-3 border-t border-gray-800 flex-wrap">
+          <div className="mt-2 flex justify-center items-center gap-2 pt-2 border-t border-gray-800 flex-wrap">
             {displayTypes.map((type) => (
               <button
                 key={type}

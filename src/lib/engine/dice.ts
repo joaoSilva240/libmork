@@ -21,6 +21,56 @@ export function rollDice(count: number, sides: number): number[] {
 export type ExpressionValue = string | number | null | undefined | Record<string, unknown>;
 
 /**
+ * Normaliza expressões de perícias substituindo tokens de atributos por seus valores.
+ */
+export function normalizeSkillExpression(
+  expression: string | number | null | undefined,
+  modifiers: Record<string, number>
+): string | null {
+  if (expression === null || expression === undefined) return "1d20";
+  const str = String(expression).trim();
+  if (!str) return "1d20";
+
+  // Mapeamento de atributos aceitos (com e sem acento) para a chave normatizada do mapa
+  const attrMap: Record<string, string> = {
+    forca: "forca",
+    força: "forca",
+    destreza: "destreza",
+    vigor: "vigor",
+    inteligencia: "inteligencia",
+    inteligência: "inteligencia",
+    empatia: "empatia",
+  };
+
+  // Se a expressão for composta apenas por um atributo aceito (case-insensitive)
+  const lower = str.toLowerCase();
+  if (attrMap[lower]) {
+    const key = attrMap[lower];
+    const val = modifiers[key] ?? 0;
+    return `1d20 + ${val}`;
+  }
+
+  // Substituir tokens com regex boundary (\b)
+  // Rejeita a expressão se houver qualquer token alfabético desconhecido
+  let hasUnknownAlphaToken = false;
+
+  const result = str.replace(/[a-zA-ZáéíóúãõâêîôûçÁÉÍÓÚÃÕÂÊÎÔÛÇ]+/g, (match) => {
+    const mLower = match.toLowerCase();
+    if (mLower === "d") return match; // Dado 'd' / 'D'
+    if (attrMap[mLower]) {
+      const key = attrMap[mLower];
+      const val = modifiers[key] ?? 0;
+      return String(val);
+    }
+    hasUnknownAlphaToken = true;
+    return match;
+  });
+
+  if (hasUnknownAlphaToken) return null;
+  return result;
+}
+
+/**
  * Obtém uma fórmula dos formatos usados pelos importadores. A busca é limitada
  * a dados JSON e nunca interpreta código ou expressões JavaScript.
  */

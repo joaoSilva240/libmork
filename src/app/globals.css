@@ -22,6 +22,10 @@
   --accent-hover: #c084fc;
   --accent-dark: #7e22ce;
   --accent-glow: rgba(147, 51, 234, 0.15);
+
+  /* Variáveis de Fonte */
+  --font-cinzel: 'Cinzel', serif;
+  --font-cinzel-decorative: 'Cinzel Decorative', fantasy, serif;
 }
 
 @theme {
@@ -45,6 +49,25 @@
   --color-accent-hover: var(--accent-hover);
   --color-accent-dark: var(--accent-dark);
   --color-accent-glow: var(--accent-glow);
+
+  --font-serif: var(--font-cinzel);
+  --font-fantasy-title: var(--font-cinzel-decorative);
+}
+
+.font-serif {
+  font-family: var(--font-cinzel);
+}
+
+.font-fantasy-title {
+  font-family: var(--font-cinzel-decorative);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-cinzel);
+}
+
+.btn-rpg {
+  font-family: var(--font-cinzel);
 }
 
 @font-face {
