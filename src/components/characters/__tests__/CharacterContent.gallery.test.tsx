@@ -1,6 +1,12 @@
 import { render, screen, waitFor, fireEvent, within } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { CharacterContent } from "../CharacterContent";
+import {
+  CharacterContent,
+  getContentName,
+  getContentDescription,
+  getContentExtraEffect,
+  parseClassBenefits,
+} from "../CharacterContent";
 
 const { mockRollDice, mockRequestDefenseReaction, mockUpdateActorStatus } = vi.hoisted(() => ({
   mockRollDice: vi.fn(),
@@ -1111,6 +1117,393 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Nenhuma classe vinculada ao personagem")).toBeInTheDocument();
+    });
+  });
+
+  describe("AI Translation with API Fallback (#UI-011)", () => {
+    it("prioritizes AI translation (name, description, extraEffect) over original API fields in cards and detail modal", async () => {
+      const mockSpells = [
+        {
+          junction: { id: "spell-ai-1" },
+          content: {
+            id: "sp-ai-1",
+            name: "Magic Missile",
+            description: "Fires glowing darts of magical force.",
+            circle: 1,
+            manaCost: 2,
+            translation: {
+              name: "Míssil Mágico",
+              description: "Dispara dardos brilhantes de energia mágica.",
+              extraEffect: "Cada dardo atinge infalivelmente a criatura.",
+            },
+          },
+        },
+      ];
+      const mockItems = [
+        {
+          junction: { id: "item-ai-1", quantity: 2 },
+          content: {
+            id: "it-ai-1",
+            name: "Healing Potion",
+            description: "A magical red liquid that restores health.",
+            translation: {
+              name: "Poção de Cura",
+              description: "Um líquido mágico vermelho que restaura vida.",
+            },
+          },
+        },
+      ];
+      const mockConditions = [
+        {
+          junction: { id: "cond-ai-1", permanent: false },
+          content: {
+            id: "cd-ai-1",
+            name: "Poisoned",
+            description: "Suffers continuous poison damage.",
+            translation: {
+              name: "Envenenado",
+              description: "Sofre dano contínuo por veneno.",
+            },
+          },
+        },
+      ];
+
+      globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+        if (url.includes("/content/spells")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ data: { linked: mockSpells, available: [] } }),
+          });
+        }
+        if (url.includes("/content/items")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ data: { linked: mockItems, available: [] } }),
+          });
+        }
+        if (url.includes("/content/conditions")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ data: { linked: mockConditions, available: [] } }),
+          });
+        }
+        return Promise.resolve({
+          ok: false,
+          json: () => Promise.resolve({ error: "Not found" }),
+        });
+      });
+
+      render(
+        <CharacterContent
+          characterId="char-123"
+          defaultType="items"
+          allowedTypes={["items", "spells", "conditions"]}
+        />
+      );
+
+      // Verify translated names in gallery cards
+      await waitFor(() => {
+        expect(screen.getByText("Míssil Mágico")).toBeInTheDocument();
+        expect(screen.getByText("Poção de Cura")).toBeInTheDocument();
+        expect(screen.getByText("Envenenado")).toBeInTheDocument();
+      });
+
+      expect(screen.queryByText("Magic Missile")).not.toBeInTheDocument();
+      expect(screen.queryByText("Healing Potion")).not.toBeInTheDocument();
+      expect(screen.queryByText("Poisoned")).not.toBeInTheDocument();
+
+      // Open Spell modal: verify translated name, description and extra effect
+      const spellCard = screen.getByText("Míssil Mágico").closest(".snap-start")!;
+      fireEvent.click(spellCard);
+
+      expect(screen.getByRole("dialog", { name: "Míssil Mágico" })).toBeInTheDocument();
+      expect(screen.getByText("Dispara dardos brilhantes de energia mágica.")).toBeInTheDocument();
+      expect(screen.getByText("Efeito Extra")).toBeInTheDocument();
+      expect(screen.getByText("Cada dardo atinge infalivelmente a criatura.")).toBeInTheDocument();
+      expect(screen.queryByText("Fires glowing darts of magical force.")).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByLabelText("Fechar"));
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+      // Open Item modal: verify translated name and description
+      const itemCard = screen.getByText("Poção de Cura").closest(".snap-start")!;
+      fireEvent.click(itemCard);
+
+      expect(screen.getByRole("dialog", { name: "Poção de Cura" })).toBeInTheDocument();
+      expect(screen.getByText("Um líquido mágico vermelho que restaura vida.")).toBeInTheDocument();
+      expect(screen.queryByText("A magical red liquid that restores health.")).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByLabelText("Fechar"));
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+      // Open Condition modal: verify translated name and description
+      const condCard = screen.getByText("Envenenado").closest(".snap-start")!;
+      fireEvent.click(condCard);
+
+      expect(screen.getByRole("dialog", { name: "Envenenado" })).toBeInTheDocument();
+      expect(screen.getByText("Sofre dano contínuo por veneno.")).toBeInTheDocument();
+      expect(screen.queryByText("Suffers continuous poison damage.")).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByLabelText("Fechar"));
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("gracefully falls back to original API fields when translation is missing, null or empty", async () => {
+      const mockSpells = [
+        {
+          junction: { id: "spell-fb-1" },
+          content: {
+            id: "sp-fb-1",
+            name: "Fireball",
+            description: "A bright streak flashes from your pointing finger.",
+            circle: 3,
+            manaCost: 5,
+            translation: null,
+          },
+        },
+      ];
+      const mockItems = [
+        {
+          junction: { id: "item-fb-1", quantity: 1 },
+          content: {
+            id: "it-fb-1",
+            name: "Iron Sword",
+            description: "A standard martial weapon.",
+            translation: { name: "  ", description: "" },
+          },
+        },
+      ];
+      const mockConditions = [
+        {
+          junction: { id: "cond-fb-1", permanent: true },
+          content: {
+            id: "cd-fb-1",
+            name: "Blinded",
+            sourceData: {
+              system: {
+                description: {
+                  value: "A blinded creature can't see and automatically fails ability checks.",
+                },
+              },
+            },
+          },
+        },
+      ];
+
+      globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+        if (url.includes("/content/spells")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ data: { linked: mockSpells, available: [] } }),
+          });
+        }
+        if (url.includes("/content/items")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ data: { linked: mockItems, available: [] } }),
+          });
+        }
+        if (url.includes("/content/conditions")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ data: { linked: mockConditions, available: [] } }),
+          });
+        }
+        return Promise.resolve({
+          ok: false,
+          json: () => Promise.resolve({ error: "Not found" }),
+        });
+      });
+
+      render(
+        <CharacterContent
+          characterId="char-123"
+          defaultType="items"
+          allowedTypes={["items", "spells", "conditions"]}
+        />
+      );
+
+      // Verify fallback names in gallery cards
+      await waitFor(() => {
+        expect(screen.getByText("Fireball")).toBeInTheDocument();
+        expect(screen.getByText("Iron Sword")).toBeInTheDocument();
+        expect(screen.getByText("Blinded")).toBeInTheDocument();
+      });
+
+      // Verify fallback description in spell modal
+      fireEvent.click(screen.getByText("Fireball").closest(".snap-start")!);
+      expect(screen.getByText("A bright streak flashes from your pointing finger.")).toBeInTheDocument();
+      fireEvent.click(screen.getByLabelText("Fechar"));
+
+      // Verify fallback description in item modal
+      fireEvent.click(screen.getByText("Iron Sword").closest(".snap-start")!);
+      expect(screen.getByText("A standard martial weapon.")).toBeInTheDocument();
+      fireEvent.click(screen.getByLabelText("Fechar"));
+
+      // Verify fallback to sourceData.system.description.value in condition modal
+      fireEvent.click(screen.getByText("Blinded").closest(".snap-start")!);
+      expect(screen.getByText("A blinded creature can't see and automatically fails ability checks.")).toBeInTheDocument();
+      fireEvent.click(screen.getByLabelText("Fechar"));
+    });
+
+    it("prioritizes class feature translation over API fields with graceful fallback", async () => {
+      const mockBenefits = [
+        {
+          id: "feat-trans",
+          level: 1,
+          benefits: {
+            advantages: ["Second Wind"],
+            description: "You have a limited well of stamina that you can draw upon.",
+            hp_bonus: 5,
+            mana_bonus: 0,
+            translation: {
+              advantages: ["Retomar o Fôlego"],
+              description: "Você possui uma reserva limitada de vigor da qual pode extrair forças.",
+            },
+          },
+        },
+        {
+          id: "feat-trans-name",
+          level: 2,
+          benefits: {
+            name: "Action Surge",
+            description: "You can push yourself beyond your normal limits.",
+            hp_bonus: 0,
+            mana_bonus: 5,
+            translation: {
+              name: "Surto de Ação",
+              description: "Você pode se esforçar além dos seus limites normais.",
+            },
+          },
+        },
+        {
+          id: "feat-fallback",
+          level: 3,
+          benefits: {
+            advantages: ["Extra Attack"],
+            description: "You can attack twice whenever you take the Attack action.",
+            hp_bonus: 0,
+            mana_bonus: 0,
+          },
+        },
+      ];
+
+      globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+        if (url.includes("/content/spells") || url.includes("/content/items") || url.includes("/content/conditions")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ data: { linked: [], available: [] } }),
+          });
+        }
+        if (url.includes("/classes/fighter-cls/benefits")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ data: mockBenefits }),
+          });
+        }
+        return Promise.resolve({
+          ok: false,
+          json: () => Promise.resolve({ error: "Not found" }),
+        });
+      });
+
+      render(
+        <CharacterContent
+          characterId="char-123"
+          characterClassId="fighter-cls"
+          characterLevel={3}
+          defaultType="items"
+          allowedTypes={["items", "spells", "conditions"]}
+        />
+      );
+
+      // Verify translated and fallback feature names in gallery
+      await waitFor(() => {
+        expect(screen.getByText("Retomar o Fôlego")).toBeInTheDocument();
+        expect(screen.getByText("Surto de Ação")).toBeInTheDocument();
+        expect(screen.getByText("Extra Attack")).toBeInTheDocument();
+      });
+
+      expect(screen.queryByText("Second Wind")).not.toBeInTheDocument();
+      expect(screen.queryByText("Action Surge")).not.toBeInTheDocument();
+
+      // Open translated feat modal
+      fireEvent.click(screen.getByText("Retomar o Fôlego").closest(".snap-start")!);
+      expect(screen.getByRole("dialog", { name: "Retomar o Fôlego" })).toBeInTheDocument();
+      expect(screen.getByText("Você possui uma reserva limitada de vigor da qual pode extrair forças.")).toBeInTheDocument();
+      expect(screen.queryByText("You have a limited well of stamina that you can draw upon.")).not.toBeInTheDocument();
+      fireEvent.click(screen.getByLabelText("Fechar"));
+
+      // Open fallback feat modal
+      fireEvent.click(screen.getByText("Extra Attack").closest(".snap-start")!);
+      expect(screen.getByRole("dialog", { name: "Extra Attack" })).toBeInTheDocument();
+      expect(screen.getByText("You can attack twice whenever you take the Attack action.")).toBeInTheDocument();
+      fireEvent.click(screen.getByLabelText("Fechar"));
+    });
+
+    it("validates helper functions unit logic directly", () => {
+      // getContentName
+      expect(getContentName(null, "Fallback")).toBe("Fallback");
+      expect(getContentName({}, "Fallback")).toBe("Fallback");
+      expect(getContentName({ name: "API Name" })).toBe("API Name");
+      expect(getContentName({ name: "API Name", translation: { name: "Traduzido" } })).toBe("Traduzido");
+      expect(getContentName({ name: "API Name", translation: { name: "  " } })).toBe("API Name");
+
+      // getContentDescription
+      expect(getContentDescription(null, "Fallback")).toBe("Fallback");
+      expect(getContentDescription({}, "Fallback")).toBe("Fallback");
+      expect(getContentDescription({ description: "Desc API" })).toBe("Desc API");
+      expect(getContentDescription({ description: "Desc API", translation: { description: "Desc IA" } })).toBe("Desc IA");
+      expect(
+        getContentDescription({
+          translation: { system: { description: { value: "Desc IA System" } } },
+        })
+      ).toBe("Desc IA System");
+      expect(
+        getContentDescription({
+          sourceData: { system: { description: { value: "Desc Source System" } } },
+        })
+      ).toBe("Desc Source System");
+
+      // getContentExtraEffect
+      expect(getContentExtraEffect(null)).toBeNull();
+      expect(getContentExtraEffect({})).toBeNull();
+      expect(getContentExtraEffect({ extraEffect: "API Extra" })).toBe("API Extra");
+      expect(getContentExtraEffect({ extraEffect: "API Extra", translation: { extraEffect: "IA Extra" } })).toBe("IA Extra");
+      expect(getContentExtraEffect({ translation: { extra_effect: "IA Snake Extra" } })).toBe("IA Snake Extra");
+
+      // parseClassBenefits
+      const parsed = parseClassBenefits([
+        {
+          level: 1,
+          benefits: {
+            translation: { advantages: ["Tradução Array 1", "Tradução Array 2"] },
+            advantages: ["Original"],
+            description: "Ben Desc",
+          },
+        },
+        {
+          level: 2,
+          benefits: {
+            translation: { name: "Nome Traduzido" },
+            name: "Original Name",
+          },
+        },
+        {
+          level: 3,
+          benefits: {
+            translation: { description: "Descrição que ultrapassa trinta e cinco caracteres para teste de corte" },
+          },
+        },
+        {
+          level: 4,
+          benefits: {},
+        },
+      ]);
+      expect(parsed[0].name).toBe("Tradução Array 1, Tradução Array 2");
+      expect(parsed[1].name).toBe("Nome Traduzido");
+      expect(parsed[2].name).toBe("Descrição que ultrapassa trinta e c");
+      expect(parsed[3].name).toBe("Habilidade Nv. 4");
     });
   });
 });

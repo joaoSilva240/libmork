@@ -87,6 +87,56 @@ function normalizeActionDamage(content: Record<string, unknown>): string | numbe
   return null;
 }
 
+export function getContentName(content: Record<string, unknown> | null | undefined, fallback = ""): string {
+  if (!content) return fallback;
+  const translation = (content.translation && typeof content.translation === "object" ? content.translation : null) as Record<string, unknown> | null;
+  if (typeof translation?.name === "string" && translation.name.trim()) {
+    return translation.name.trim();
+  }
+  if (typeof content.name === "string" && content.name.trim()) {
+    return content.name.trim();
+  }
+  return fallback;
+}
+
+export function getContentDescription(content: Record<string, unknown> | null | undefined, fallback = ""): string {
+  if (!content) return fallback;
+  const translation = (content.translation && typeof content.translation === "object" ? content.translation : null) as Record<string, unknown> | null;
+  if (typeof translation?.description === "string" && translation.description.trim()) {
+    return translation.description.trim();
+  }
+  const transSystem = (translation?.system && typeof translation.system === "object" ? translation.system : null) as Record<string, unknown> | null;
+  const transSysDesc = transSystem?.description && typeof transSystem.description === "object" ? (transSystem.description as Record<string, unknown>).value : null;
+  if (typeof transSysDesc === "string" && transSysDesc.trim()) {
+    return transSysDesc.trim();
+  }
+  if (typeof content.description === "string" && content.description.trim()) {
+    return content.description.trim();
+  }
+  const sourceData = (content.sourceData && typeof content.sourceData === "object" ? content.sourceData : null) as Record<string, unknown> | null;
+  const sourceSystem = (sourceData?.system && typeof sourceData.system === "object" ? sourceData.system : null) as Record<string, unknown> | null;
+  const sourceDesc = sourceSystem?.description && typeof sourceSystem.description === "object" ? (sourceSystem.description as Record<string, unknown>).value : null;
+  if (typeof sourceDesc === "string" && sourceDesc.trim()) {
+    return sourceDesc.trim();
+  }
+  return fallback;
+}
+
+export function getContentExtraEffect(content: Record<string, unknown> | null | undefined): string | null {
+  if (!content) return null;
+  const translation = (content.translation && typeof content.translation === "object" ? content.translation : null) as Record<string, unknown> | null;
+  if (typeof translation?.extraEffect === "string" && translation.extraEffect.trim()) {
+    return translation.extraEffect.trim();
+  }
+  if (typeof translation?.extra_effect === "string" && translation.extra_effect.trim()) {
+    return translation.extra_effect.trim();
+  }
+  if (typeof content.extraEffect === "string" && content.extraEffect.trim()) {
+    return content.extraEffect.trim();
+  }
+  return null;
+}
+
 type CharacterContentProps = {
   characterId: string;
   characterAttributeModifiers?: Record<string, number>;
@@ -117,23 +167,50 @@ type ClassBenefitItem = {
   manaBonus: number;
 };
 
-function parseClassBenefits(data: unknown): ClassBenefitItem[] {
+export function parseClassBenefits(data: unknown): ClassBenefitItem[] {
   if (!Array.isArray(data)) return [];
   return data.map((raw: unknown) => {
     const b = (raw || {}) as Record<string, unknown>;
     const ben = (b.benefits || {}) as Record<string, unknown>;
-    const name = Array.isArray(ben.advantages) && ben.advantages.length > 0
-      ? ben.advantages.map(String).join(", ")
-      : typeof ben.advantages === "string" && ben.advantages.trim()
-      ? ben.advantages.trim()
-      : typeof ben.description === "string" && ben.description.trim()
-      ? ben.description.slice(0, 35)
-      : `Habilidade Nv. ${b.level}`;
+    const translation = (ben.translation && typeof ben.translation === "object"
+      ? ben.translation
+      : b.translation && typeof b.translation === "object"
+      ? b.translation
+      : null) as Record<string, unknown> | null;
+
+    let name = "";
+    if (Array.isArray(translation?.advantages) && translation.advantages.length > 0) {
+      name = translation.advantages.map(String).join(", ");
+    } else if (typeof translation?.advantages === "string" && translation.advantages.trim()) {
+      name = translation.advantages.trim();
+    } else if (typeof translation?.name === "string" && translation.name.trim()) {
+      name = translation.name.trim();
+    } else if (typeof translation?.description === "string" && translation.description.trim()) {
+      name = translation.description.trim().slice(0, 35);
+    } else if (Array.isArray(ben.advantages) && ben.advantages.length > 0) {
+      name = ben.advantages.map(String).join(", ");
+    } else if (typeof ben.advantages === "string" && ben.advantages.trim()) {
+      name = ben.advantages.trim();
+    } else if (typeof ben.name === "string" && ben.name.trim()) {
+      name = ben.name.trim();
+    } else if (typeof ben.description === "string" && ben.description.trim()) {
+      name = ben.description.trim().slice(0, 35);
+    } else {
+      name = `Habilidade Nv. ${b.level}`;
+    }
+
+    const description =
+      typeof translation?.description === "string" && translation.description.trim()
+        ? translation.description.trim()
+        : typeof ben.description === "string"
+        ? ben.description
+        : "";
+
     return {
       id: (typeof b.id === "string" && b.id) || `feat-${b.level}`,
       level: Number(b.level) || 1,
       name,
-      description: typeof ben.description === "string" ? ben.description : "",
+      description,
       hpBonus: Number(ben.hp_bonus) || 0,
       manaBonus: Number(ben.mana_bonus) || 0,
     };
@@ -455,7 +532,7 @@ export function CharacterContent({
       return;
     }
 
-    const name = String(row.content.name || (rowType === "spells" ? "Magia" : "Item"));
+    const name = getContentName(row.content, rowType === "spells" ? "Magia" : "Item");
     const rawExpr = getExpression(row.content.rollExpression);
     const expr = rawExpr !== null ? String(rawExpr) : "1d20";
     const rollResult = rollExpression(expr, 1);
@@ -498,7 +575,7 @@ export function CharacterContent({
       setIsBusy(true);
 
       setTimeout(() => {
-        const name = String(row.content.name || "Perícia");
+        const name = getContentName(row.content, "Perícia");
         const rawExpression = getExpression(row.content.rollExpression);
         const expr = normalizeSkillExpression(rawExpression, characterAttributeModifiers ?? {}) ?? "1d20";
         const rollResult = rollExpression(expr, 1);
@@ -546,8 +623,8 @@ export function CharacterContent({
       showToast("Seu personagem não está no turno atual do combate.");
       return;
     }
-    const name = String(row.content.name || "Ação");
-    const desc = String(row.content.description || "").toLowerCase();
+    const name = getContentName(row.content, "Ação");
+    const desc = getContentDescription(row.content).toLowerCase();
     const isHealing = name.toLowerCase().includes("cura") || name.toLowerCase().includes("poção") || desc.includes("cura") || desc.includes("recupera");
     const exprValue = getExpression(row.content.rollExpression);
     const isSpell = rowType === "spells";
@@ -747,6 +824,7 @@ export function CharacterContent({
                 <div className="flex gap-2 overflow-x-auto pb-2 pt-1 scroll-smooth scrollbar-hide snap-x">
                   {galleryData.spells.map((row) => {
                     const actionCost = Math.min(3, Math.max(1, getSpellActionCost(Number(row.content.circle) || 1, row.content.actionCostOverride != null ? Number(row.content.actionCostOverride) : null)));
+                    const spellName = getContentName(row.content, "Magia");
                     return (
                       <div
                         key={row.junction.id}
@@ -781,8 +859,8 @@ export function CharacterContent({
 
                         {/* Detalhes do Card */}
                         <div className="relative z-20 flex flex-col items-center justify-end w-full min-w-0">
-                          <p className="text-[11px] font-bold text-white truncate w-full" title={String(row.content.name || "")}>
-                            {String(row.content.name || "Magia")}
+                          <p className="text-[11px] font-bold text-white truncate w-full" title={spellName}>
+                            {spellName}
                           </p>
                           <span className="mt-0.5 text-[10px] text-purple-300 font-medium truncate w-full leading-tight">
                             Círculo {String(row.content.circle ?? 1)}
@@ -814,6 +892,7 @@ export function CharacterContent({
                     const isEquipped = equippedItemIds.includes(itemId);
                     const qty = row.junction.quantity ?? 1;
                     const actionCost = Math.min(3, Math.max(1, typeof row.content.actionCostOverride === "number" ? row.content.actionCostOverride : 1));
+                    const itemName = getContentName(row.content, "Item");
                     return (
                       <div
                         key={row.junction.id}
@@ -852,8 +931,8 @@ export function CharacterContent({
 
                         {/* Detalhes do Card */}
                         <div className="relative z-20 flex flex-col items-center justify-end w-full min-w-0">
-                          <p className="text-[11px] font-bold text-white truncate w-full" title={String(row.content.name || "")}>
-                            {String(row.content.name || "Item")}
+                          <p className="text-[11px] font-bold text-white truncate w-full" title={itemName}>
+                            {itemName}
                           </p>
                           <div className="mt-0.5 flex items-center justify-center gap-1 flex-wrap">
                             {isEquipped && (
@@ -886,6 +965,7 @@ export function CharacterContent({
                 <div className="flex gap-2 overflow-x-auto pb-2 pt-1 scroll-smooth scrollbar-hide snap-x">
                   {galleryData.conditions.map((row) => {
                     const actionCost = typeof row.content.actionCostOverride === "number" && row.content.actionCostOverride > 0 ? Math.min(3, row.content.actionCostOverride) : null;
+                    const conditionName = getContentName(row.content, "Condição");
                     return (
                       <div
                         key={row.junction.id}
@@ -922,8 +1002,8 @@ export function CharacterContent({
 
                         {/* Detalhes do Card */}
                         <div className="relative z-20 flex flex-col items-center justify-end w-full min-w-0">
-                          <p className="text-[11px] font-bold text-white truncate w-full" title={String(row.content.name || "")}>
-                            {String(row.content.name || "Condição")}
+                          <p className="text-[11px] font-bold text-white truncate w-full" title={conditionName}>
+                            {conditionName}
                           </p>
                           {"permanent" in row.junction && row.junction.permanent ? (
                             <span className="mt-0.5 rounded bg-rose-950/80 px-1.5 py-0.2 text-[9px] font-bold text-rose-300 border border-rose-800/60">
@@ -1054,6 +1134,7 @@ export function CharacterContent({
                   {displayRows.map((row) => {
                     const isClickable = activeType === "skills" || activeType === "spells" || activeType === "items";
                     const isLocked = activeType === "skills" ? false : isTurnLocked;
+                    const rowName = getContentName(row.content, "Item");
 
                     return (
                       <div
@@ -1079,8 +1160,8 @@ export function CharacterContent({
                             </div>
                           )}
                           <div className="min-w-0">
-                            <p className="text-xs font-bold text-white truncate">
-                              {row.content.name as string}
+                            <p className="text-xs font-bold text-white truncate" title={rowName}>
+                              {rowName}
                             </p>
                             <div className="mt-1 flex flex-wrap gap-2">
                               {activeType === "skills" && (
@@ -1178,7 +1259,9 @@ export function CharacterContent({
           const testExpr = getExpression(row.content.rollExpression) ?? (type === "spells" ? "1d20" : null);
           const damageValue = normalizeActionDamage(row.content);
           const damageExpr = damageValue !== null ? String(damageValue) : null;
-          const name = String(row.content.name || (type === "spells" ? "Magia" : type === "items" ? "Item" : "Condição"));
+          const name = getContentName(row.content, type === "spells" ? "Magia" : type === "items" ? "Item" : "Condição");
+          const description = getContentDescription(row.content);
+          const extraEffect = getContentExtraEffect(row.content);
           const categoryLabel = type === "spells" ? "Magia" : type === "items" ? "Item" : "Condição";
           const equipButtonLabel = `${isItemEquipped ? "🛡️ Desequipar" : "🗡️ Equipar"}${combatState?.active ? " (1 ação)" : ""}`;
 
@@ -1355,11 +1438,21 @@ export function CharacterContent({
                   )}
 
                   {/* Descrição */}
-                  {Boolean(row.content.description) && (
+                  {Boolean(description) && (
                     <div className="space-y-1">
                       <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">Descrição</span>
                       <div className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap rounded-lg bg-gray-900/40 p-3 border border-gray-800/60">
-                        {String(row.content.description)}
+                        {description}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Efeito Extra */}
+                  {Boolean(extraEffect) && (
+                    <div className="space-y-1">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-purple-400 block">Efeito Extra</span>
+                      <div className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap rounded-lg bg-purple-950/20 p-3 border border-purple-800/40">
+                        {extraEffect}
                       </div>
                     </div>
                   )}
