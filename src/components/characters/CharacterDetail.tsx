@@ -11,7 +11,6 @@ import { ShareLink } from "@/components/characters/ShareLink";
 import { ImageUpload } from "@/components/characters/ImageUpload";
 import { CharacterContent } from "@/components/characters/CharacterContent";
 import { NfcManager } from "@/components/characters/NfcManager";
-import { DecorativeFrame } from "@/components/ui/DecorativeFrame";
 import { Spinner } from "@/components/ui";
 import {
   StatusFilledIcon,
@@ -85,6 +84,7 @@ export function CharacterDetail() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>("status");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [showSkillsToast, setShowSkillsToast] = useState(false);
 
   // Combate & Interações ao vivo
   const [combatState, setCombatState] = useState<CombatSessionState | null>(null);
@@ -135,6 +135,19 @@ export function CharacterDetail() {
   useEffect(() => {
     combatStateRef.current = combatState;
   }, [combatState]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !character?.id) return;
+    try {
+      const dismissed = localStorage.getItem(`libmork_dismissed_skills_toast_${character.id}`);
+      if (!dismissed) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setShowSkillsToast(true);
+      }
+    } catch {
+      // Silencia erro de localStorage indisponível/bloqueado
+    }
+  }, [character?.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -587,6 +600,17 @@ export function CharacterDetail() {
     }, DICE_ROLL_LOADING_DELAY);
   };
 
+  const handleDismissSkillsToast = () => {
+    setShowSkillsToast(false);
+    if (typeof window !== "undefined" && character?.id) {
+      try {
+        localStorage.setItem(`libmork_dismissed_skills_toast_${character.id}`, "true");
+      } catch {
+        // Silencia erro de escrita no localStorage
+      }
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-1 items-center justify-center min-h-[400px] flex-col space-y-3">
@@ -692,103 +716,94 @@ export function CharacterDetail() {
 
         {/* TAB 1: STATUS */}
         {activeTab === "status" && (
-          <div className="space-y-8 animate-in fade-in duration-200 flex-1 flex flex-col justify-end">
-            {/* Header Hero Card */}
-            <DecorativeFrame className="rounded-2xl shadow-lg" innerClassName="p-4">
-            <div className="relative overflow-hidden">
+          <div className="space-y-4 animate-in fade-in duration-200 flex-1 flex flex-col justify-end">
+            {/* Header Hero Card com Síntese de Status (Vida, Mana, Bloqueio, Nível, Nome, XP) */}
+            <div className="relative overflow-hidden rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900 to-gray-950 p-4 shadow-lg space-y-3">
               <div className="flex items-center gap-4">
                 {character.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={character.imageUrl}
                     alt={character.name}
-                    className="h-20 w-20 shrink-0 rounded-2xl border-2 border-purple-600/60 object-cover shadow-md"
+                    className="h-16 w-16 shrink-0 rounded-2xl border-2 border-purple-600/60 object-cover shadow-md"
                   />
                 ) : (
-                  <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border-2 border-purple-700/60 bg-purple-950/60 text-2xl font-black text-purple-300">
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-2 border-purple-700/60 bg-purple-950/60 text-xl font-black text-purple-300">
                     {character.name.slice(0, 2).toUpperCase()}
                   </div>
                 )}
 
                 <div className="min-w-0 flex-1">
-                  <span className="inline-block rounded-md bg-purple-950/80 px-2 py-0.5 text-[10px] font-bold text-purple-300 border border-purple-800/60">
-                    Nível {character.level}
-                  </span>
-                  <h2 className="mt-1 truncate text-xl font-bold text-white tracking-tight">{character.name}</h2>
-                  <p className="text-xs text-gray-400">{character.xp} XP total</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="inline-block rounded-md bg-purple-950/80 px-2 py-0.5 text-[10px] font-bold text-purple-300 border border-purple-800/60">
+                      Nível {character.level}
+                    </span>
+                    <span
+                      className="inline-flex items-center gap-1 rounded-md bg-gray-900/90 px-2 py-0.5 text-[10px] font-bold text-gray-200 border border-gray-800"
+                      title="Bloqueio: mitigação tática com Vigor"
+                    >
+                      <span className="text-gray-400 font-semibold">Bloqueio</span>
+                      <span className="text-white font-black">{stats.block}</span>
+                    </span>
+                  </div>
 
-                  {/* XP Progress Bar */}
-                  <div className="mt-2.5 space-y-1">
-                    <div className="flex justify-between text-[10px] text-gray-400 font-medium">
-                      <span>Progresso XP</span>
-                      <span>{character.xp % 100} / 100 XP</span>
-                    </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-800">
-                      <div
-                        className="h-full bg-gradient-to-r from-purple-600 to-blue-500 transition-all duration-300"
-                        style={{ width: `${character.xp % 100}%` }}
-                      />
-                    </div>
+                  <h2 className="mt-1 truncate text-lg font-bold text-white tracking-tight">{character.name}</h2>
+                  <p className="text-[11px] text-gray-400">{character.xp} XP total</p>
+                </div>
+              </div>
+
+              {/* Barras de Status: Vida, Mana e XP */}
+              <div className="space-y-2 border-t border-gray-800/80 pt-2.5">
+                {/* Vida (HP) */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[10px] font-medium">
+                    <span className="font-bold text-red-400 uppercase tracking-wider">Vida (HP)</span>
+                    <span className="text-red-300 font-semibold">
+                      {character.hitPointsCurrent} / {character.hitPointsMax}
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-900">
+                    <div
+                      className="h-full bg-red-500 transition-all duration-300"
+                      style={{ width: `${hpPercent}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Mana (MP) */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[10px] font-medium">
+                    <span className="font-bold text-blue-400 uppercase tracking-wider">Mana (MP)</span>
+                    <span className="text-blue-300 font-semibold">
+                      {character.manaPointsCurrent} / {character.manaPointsMax}
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-900">
+                    <div
+                      className="h-full bg-blue-500 transition-all duration-300"
+                      style={{ width: `${manaPercent}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Progresso XP */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[10px] text-gray-400 font-medium">
+                    <span>Progresso XP</span>
+                    <span>{character.xp % 100} / 100 XP</span>
+                  </div>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-800">
+                    <div
+                      className="h-full bg-gradient-to-r from-purple-600 to-blue-500 transition-all duration-300"
+                      style={{ width: `${character.xp % 100}%` }}
+                    />
                   </div>
                 </div>
               </div>
             </div>
-            </DecorativeFrame>
-
-            {/* Combat Stats: HP, Mana, Bloqueio */}
-            <div className="grid grid-cols-3 gap-6">
-              {/* HP Card */}
-              <DecorativeFrame className="flex flex-col justify-between rounded-2xl shadow-sm" innerClassName="p-3">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider">VIDA (HP)</span>
-                    <span className="text-[10px] text-red-300 font-semibold">{Math.round(hpPercent)}%</span>
-                  </div>
-                  <p className="mt-1 text-lg font-black text-red-400">
-                    {character.hitPointsCurrent} <span className="text-xs font-normal text-red-300/70">/ {character.hitPointsMax}</span>
-                  </p>
-                </div>
-
-                <div className="mt-2 space-y-2">
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-900">
-                    <div className="h-full bg-red-500 transition-all duration-300" style={{ width: `${hpPercent}%` }} />
-                  </div>
-                </div>
-              </DecorativeFrame>
-
-              {/* Mana Card */}
-              <DecorativeFrame className="flex flex-col justify-between rounded-2xl shadow-sm" innerClassName="p-3">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">MANA (MP)</span>
-                    <span className="text-[10px] text-blue-300 font-semibold">{Math.round(manaPercent)}%</span>
-                  </div>
-                  <p className="mt-1 text-lg font-black text-blue-400">
-                    {character.manaPointsCurrent} <span className="text-xs font-normal text-blue-300/70">/ {character.manaPointsMax}</span>
-                  </p>
-                </div>
-
-                <div className="mt-2 space-y-2">
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-900">
-                    <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${manaPercent}%` }} />
-                  </div>
-                </div>
-              </DecorativeFrame>
-
-              {/* Bloqueio / Defesa Card */}
-              <DecorativeFrame className="flex flex-col justify-between rounded-2xl shadow-sm" innerClassName="p-3">
-                <div>
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">BLOQUEIO</span>
-                  <p className="mt-1 text-2xl font-black text-white">{stats.block}</p>
-                </div>
-                <div className="mt-2">
-                  <p className="text-[10px] text-gray-500 leading-tight">Mitigação tática com Vigor</p>
-                </div>
-              </DecorativeFrame>
-            </div>
 
             {/* Atributos do Personagem com Rolagem Instantânea */}
-            <DecorativeFrame className="rounded-2xl shadow-sm" innerClassName="p-4">
+            <div className="rounded-2xl border border-gray-800 bg-gray-900/80 p-4 shadow-sm">
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-gray-300">Atributos Principais</h3>
                 <span className="text-[10px] text-purple-400 font-medium">Toque para rolar d20</span>
@@ -828,40 +843,58 @@ export function CharacterDetail() {
                    );
                  })}
               </div>
-            </DecorativeFrame>
+            </div>
           </div>
         )}
 
         {/* TAB 2: PERÍCIAS */}
         {activeTab === "skills" && (
-          <div className="space-y-8 animate-in fade-in duration-200 flex-1 flex flex-col justify-end">
-            <DecorativeFrame className="rounded-2xl shadow-sm" innerClassName="p-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-purple-300">
-                Perícias & Treinamento
-              </h3>
-              <p className="mt-1 text-xs text-gray-300">
-                Slots de perícias treinadas disponíveis por Inteligência:{" "}
-                <span className="font-bold text-purple-400">{stats.trainedSkillSlots}</span>
-              </p>
-            </DecorativeFrame>
+          <div className="space-y-4 animate-in fade-in duration-200 flex-1 flex flex-col">
+            {showSkillsToast && (
+              <div className="fixed top-16 left-4 right-4 z-40 mx-auto max-w-md animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="flex items-start justify-between gap-3 rounded-2xl border border-purple-600/70 bg-gray-900/95 p-3.5 shadow-2xl backdrop-blur-md">
+                  <div className="flex items-start gap-2.5 min-w-0">
+                    <span className="text-base leading-none mt-0.5" aria-hidden="true">💡</span>
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-purple-300">
+                        Perícias & Treinamento
+                      </h4>
+                      <p className="mt-0.5 text-xs text-gray-300 leading-snug">
+                        Slots de perícias treinadas disponíveis por Inteligência:{" "}
+                        <span className="font-bold text-purple-400">{stats.trainedSkillSlots}</span>
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleDismissSkillsToast}
+                    aria-label="Fechar e não mostrar novamente"
+                    title="Fechar e não mostrar novamente"
+                    className="shrink-0 rounded-lg p-1 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
+                  >
+                    <span className="text-xs font-bold leading-none block px-1.5 py-0.5">✕</span>
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Gerenciador completo de Perícias */}
-              <CharacterContent characterId={character.id} characterAttributeModifiers={stats.modifiers} campaignId={character.campaignId} characterManaCurrent={character.manaPointsCurrent} characterManaMax={character.manaPointsMax} combatState={combatState} onCombatStateChange={handleCombatStateChange} onActorStatusChange={handleActorStatusChange} onActionResult={handleActionResult} combatants={combatState?.combatants ?? []} defaultType="skills" allowedTypes={["skills"]} isTurnLocked={isTurnLocked} onStartRolling={() => setIsRollingDice(true)} onEndRolling={() => setIsRollingDice(false)} onPersistActorStatus={async (actor, hp, mana) => { if (actor.characterId !== character.id && actor.id !== character.id && actor.type !== "npc" && !actor.npcId) return; const response = await fetch(`/api/campaigns/${character.campaignId}/actors/${actor.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hitPointsCurrent: hp, ...(mana == null ? {} : { manaPointsCurrent: mana }), reason: "combate" }) }); if (!response.ok) setError("Estado atualizado em tempo real, mas a persistência falhou."); }} />
+              <CharacterContent characterId={character.id} characterClassId={character.classId} characterLevel={character.level} characterAttributeModifiers={stats.modifiers} campaignId={character.campaignId} characterManaCurrent={character.manaPointsCurrent} characterManaMax={character.manaPointsMax} combatState={combatState} onCombatStateChange={handleCombatStateChange} onActorStatusChange={handleActorStatusChange} onActionResult={handleActionResult} combatants={combatState?.combatants ?? []} defaultType="skills" allowedTypes={["skills"]} isTurnLocked={isTurnLocked} onStartRolling={() => setIsRollingDice(true)} onEndRolling={() => setIsRollingDice(false)} onPersistActorStatus={async (actor, hp, mana) => { if (actor.characterId !== character.id && actor.id !== character.id && actor.type !== "npc" && !actor.npcId) return; const response = await fetch(`/api/campaigns/${character.campaignId}/actors/${actor.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hitPointsCurrent: hp, ...(mana == null ? {} : { manaPointsCurrent: mana }), reason: "combate" }) }); if (!response.ok) setError("Estado atualizado em tempo real, mas a persistência falhou."); }} />
           </div>
         )}
 
         {/* TAB 3: INVENTÁRIO */}
         {activeTab === "inventory" && (
-          <div className="space-y-4 animate-in fade-in duration-200 flex-1 flex flex-col justify-between">
+          <div className="space-y-4 animate-in fade-in duration-200 flex-1 flex flex-col">
             {/* Conteúdo da Ficha (Itens, Magias, Habilidades, Condições) */}
-              <CharacterContent characterId={character.id} characterAttributeModifiers={stats.modifiers} campaignId={character.campaignId} characterManaCurrent={character.manaPointsCurrent} characterManaMax={character.manaPointsMax} combatState={combatState} onCombatStateChange={handleCombatStateChange} onActorStatusChange={handleActorStatusChange} onActionResult={handleActionResult} combatants={combatState?.combatants ?? []} defaultType="items" allowedTypes={["items", "spells", "conditions"]} isTurnLocked={isTurnLocked} onStartRolling={() => setIsRollingDice(true)} onEndRolling={() => setIsRollingDice(false)} onPersistActorStatus={async (actor, hp, mana) => { if (actor.characterId !== character.id && actor.id !== character.id && actor.type !== "npc" && !actor.npcId) return; const response = await fetch(`/api/campaigns/${character.campaignId}/actors/${actor.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hitPointsCurrent: hp, ...(mana == null ? {} : { manaPointsCurrent: mana }), reason: "combate" }) }); if (!response.ok) setError("Estado atualizado em tempo real, mas a persistência falhou."); }} />
+              <CharacterContent characterId={character.id} characterClassId={character.classId} characterLevel={character.level} characterAttributeModifiers={stats.modifiers} campaignId={character.campaignId} characterManaCurrent={character.manaPointsCurrent} characterManaMax={character.manaPointsMax} combatState={combatState} onCombatStateChange={handleCombatStateChange} onActorStatusChange={handleActorStatusChange} onActionResult={handleActionResult} combatants={combatState?.combatants ?? []} defaultType="items" allowedTypes={["items", "spells", "conditions"]} isTurnLocked={isTurnLocked} onStartRolling={() => setIsRollingDice(true)} onEndRolling={() => setIsRollingDice(false)} onPersistActorStatus={async (actor, hp, mana) => { if (actor.characterId !== character.id && actor.id !== character.id && actor.type !== "npc" && !actor.npcId) return; const response = await fetch(`/api/campaigns/${character.campaignId}/actors/${actor.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hitPointsCurrent: hp, ...(mana == null ? {} : { manaPointsCurrent: mana }), reason: "combate" }) }); if (!response.ok) setError("Estado atualizado em tempo real, mas a persistência falhou."); }} />
           </div>
         )}
 
         {/* TAB 4: CONFIGURAÇÕES */}
         {activeTab === "settings" && (
-          <div className="space-y-8 animate-in fade-in duration-200 flex-1 flex flex-col justify-end">
-            <DecorativeFrame className="rounded-2xl shadow-sm" innerClassName="p-4 space-y-4">
+          <div className="space-y-4 animate-in fade-in duration-200 flex-1 flex flex-col justify-end">
+            <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 space-y-4 shadow-sm">
               <h3 className="text-xs font-bold uppercase tracking-wider text-gray-300">
                 Gerenciamento da Ficha
               </h3>
@@ -919,7 +952,7 @@ export function CharacterDetail() {
                   {isDeleting ? "Excluindo Ficha..." : "🗑️ Excluir Personagem"}
                 </button>
               </div>
-            </DecorativeFrame>
+            </div>
           </div>
         )}
       </main>

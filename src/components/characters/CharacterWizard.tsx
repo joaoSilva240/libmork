@@ -106,6 +106,156 @@ const DEFAULT_ATTRIBUTES: Record<Attribute, number> = {
   empatia: ATTRIBUTE_BASE_VALUE,
 };
 
+// =============================================================================
+// Race Image & Theme Utilities
+// =============================================================================
+
+function normalizeRaceName(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function getRaceThemeColors(raceName: string): { from: string; via: string; to: string } {
+  const normalized = normalizeRaceName(raceName);
+
+  const themeMap: Record<string, { from: string; via: string; to: string }> = {
+    anao:       { from: "#78350f", via: "#854d0e", to: "#431407" },
+    dwarf:      { from: "#78350f", via: "#854d0e", to: "#431407" },
+    elfo:       { from: "#064e3b", via: "#166534", to: "#042f2e" },
+    elf:        { from: "#064e3b", via: "#166534", to: "#042f2e" },
+    gnomo:      { from: "#4c1d95", via: "#6b21a8", to: "#4a044e" },
+    gnome:      { from: "#4c1d95", via: "#6b21a8", to: "#4a044e" },
+    goblin:     { from: "#365314", via: "#15803d", to: "#422006" },
+    halfling:   { from: "#9a3412", via: "#b45309", to: "#713f12" },
+    pequenino:  { from: "#9a3412", via: "#b45309", to: "#713f12" },
+    humano:     { from: "#1e293b", via: "#374151", to: "#18181b" },
+    human:      { from: "#1e293b", via: "#374151", to: "#18181b" },
+    leshy:      { from: "#14532d", via: "#065f46", to: "#1a2e05" },
+    orc:        { from: "#7f1d1d", via: "#9f1239", to: "#450a0a" },
+    "meio-orc": { from: "#991b1b", via: "#44403c", to: "#1f2937" },
+    "half-orc": { from: "#991b1b", via: "#44403c", to: "#1f2937" },
+    catfolk:    { from: "#92400e", via: "#c2410c", to: "#713f12" },
+    "povo-gato":{ from: "#92400e", via: "#c2410c", to: "#713f12" },
+    kobold:     { from: "#713f12", via: "#92400e", to: "#431407" },
+    ratfolk:    { from: "#292524", via: "#374151", to: "#1c1917" },
+    "povo-rato":{ from: "#292524", via: "#374151", to: "#1c1917" },
+    tengu:      { from: "#0c4a6e", via: "#1e40af", to: "#1e1b4b" },
+    automaton:  { from: "#164e63", via: "#115e59", to: "#1e3a5f" },
+    automato:   { from: "#164e63", via: "#115e59", to: "#1e3a5f" },
+    fetchling:  { from: "#111827", via: "#1e293b", to: "#0a0a0a" },
+    dragonborn: { from: "#991b1b", via: "#c2410c", to: "#92400e" },
+    draconato:  { from: "#991b1b", via: "#c2410c", to: "#92400e" },
+    "meio-elfo":{ from: "#065f46", via: "#0f766e", to: "#14532d" },
+    "half-elf": { from: "#065f46", via: "#0f766e", to: "#14532d" },
+    tiefling:   { from: "#881337", via: "#9f1239", to: "#581c87" },
+  };
+
+  return themeMap[normalized] ?? { from: "#1f2937", via: "#374151", to: "#111827" };
+}
+
+function getRaceBackgroundStyle(race: RaceData): React.CSSProperties {
+  const colors = getRaceThemeColors(race.name);
+  return {
+    background: `linear-gradient(to bottom right, ${colors.from}, ${colors.via}, ${colors.to})`,
+  };
+}
+
+function getSelectedRaceBackgroundStyle(race: RaceData): React.CSSProperties {
+  const colors = getRaceThemeColors(race.name);
+  return {
+    background: `linear-gradient(to bottom right, ${colors.from}, ${colors.via}, ${colors.to})`,
+    opacity: 0.15,
+  };
+}
+
+function getImageUrl(race: RaceData): string | null {
+  if (race.imageUrl && race.imageUrl.trim() !== "") return race.imageUrl;
+  return null;
+}
+
+// Class theme colors by name
+function getClassThemeColors(className: string): { from: string; via: string; to: string } {
+  const normalized = normalizeRaceName(className); // reuse existing normalizer
+  const themeMap: Record<string, { from: string; via: string; to: string }> = {
+    guerreiro:   { from: "#991b1b", via: "#b91c1c", to: "#7f1d1d" },
+    warrior:     { from: "#991b1b", via: "#b91c1c", to: "#7f1d1d" },
+    fighter:     { from: "#991b1b", via: "#b91c1c", to: "#7f1d1d" },
+    mago:        { from: "#1e3a8a", via: "#1d4ed8", to: "#1e1b4b" },
+    wizard:      { from: "#1e3a8a", via: "#1d4ed8", to: "#1e1b4b" },
+    ladrao:      { from: "#365314", via: "#4d7c0f", to: "#1a2e05" },
+    rogue:       { from: "#365314", via: "#4d7c0f", to: "#1a2e05" },
+    clerigo:     { from: "#713f12", via: "#ca8a04", to: "#78350f" },
+    cleric:      { from: "#713f12", via: "#ca8a04", to: "#78350f" },
+    ranger:      { from: "#064e3b", via: "#047857", to: "#022c22" },
+    patrulheiro: { from: "#064e3b", via: "#047857", to: "#022c22" },
+    bardo:       { from: "#581c87", via: "#7c3aed", to: "#4c1d95" },
+    bard:        { from: "#581c87", via: "#7c3aed", to: "#4c1d95" },
+    druida:      { from: "#14532d", via: "#15803d", to: "#052e16" },
+    druid:       { from: "#14532d", via: "#15803d", to: "#052e16" },
+    paladino:    { from: "#78350f", via: "#d97706", to: "#451a03" },
+    paladin:     { from: "#78350f", via: "#d97706", to: "#451a03" },
+    barbaro:     { from: "#7f1d1d", via: "#dc2626", to: "#450a0a" },
+    barbarian:   { from: "#7f1d1d", via: "#dc2626", to: "#450a0a" },
+    monge:       { from: "#713f12", via: "#a16207", to: "#422006" },
+    monk:        { from: "#713f12", via: "#a16207", to: "#422006" },
+    feiticeiro:  { from: "#4c1d95", via: "#6d28d9", to: "#2e1065" },
+    sorcerer:    { from: "#4c1d95", via: "#6d28d9", to: "#2e1065" },
+    bruxo:       { from: "#1e1b4b", via: "#4338ca", to: "#0c0a2e" },
+    warlock:     { from: "#1e1b4b", via: "#4338ca", to: "#0c0a2e" },
+    artifice:    { from: "#164e63", via: "#0891b2", to: "#083344" },
+    artificer:   { from: "#164e63", via: "#0891b2", to: "#083344" },
+  };
+  return themeMap[normalized] ?? { from: "#1f2937", via: "#374151", to: "#111827" };
+}
+
+function getClassBackgroundStyle(name: string): React.CSSProperties {
+  const colors = getClassThemeColors(name);
+  return {
+    background: `linear-gradient(to bottom right, ${colors.from}, ${colors.via}, ${colors.to})`,
+  };
+}
+
+// Skill theme colors by keyAttribute
+function getSkillThemeColors(keyAttribute: string): { from: string; via: string; to: string } {
+  const attrMap: Record<string, { from: string; via: string; to: string }> = {
+    forca:        { from: "#991b1b", via: "#b91c1c", to: "#7f1d1d" },
+    destreza:     { from: "#065f46", via: "#059669", to: "#022c22" },
+    vigor:        { from: "#9a3412", via: "#c2410c", to: "#7c2d12" },
+    inteligencia: { from: "#1e3a8a", via: "#2563eb", to: "#1e1b4b" },
+    empatia:      { from: "#581c87", via: "#7c3aed", to: "#4c1d95" },
+  };
+  return attrMap[keyAttribute] ?? { from: "#1f2937", via: "#374151", to: "#111827" };
+}
+
+function getSkillBackgroundStyle(keyAttribute: string): React.CSSProperties {
+  const colors = getSkillThemeColors(keyAttribute);
+  return {
+    background: `linear-gradient(to bottom right, ${colors.from}, ${colors.via}, ${colors.to})`,
+  };
+}
+
+// Spell theme colors by circle
+function getSpellThemeColors(circle: number): { from: string; via: string; to: string } {
+  const circleMap: Record<number, { from: string; via: string; to: string }> = {
+    1: { from: "#1e3a8a", via: "#3b82f6", to: "#1e1b4b" },
+    2: { from: "#4c1d95", via: "#8b5cf6", to: "#2e1065" },
+    3: { from: "#881337", via: "#e11d48", to: "#4c0519" },
+    4: { from: "#78350f", via: "#f59e0b", to: "#451a03" },
+    5: { from: "#064e3b", via: "#10b981", to: "#022c22" },
+  };
+  return circleMap[circle] ?? { from: "#1f2937", via: "#374151", to: "#111827" };
+}
+
+function getSpellBackgroundStyle(circle: number): React.CSSProperties {
+  const colors = getSpellThemeColors(circle);
+  return {
+    background: `linear-gradient(to bottom right, ${colors.from}, ${colors.via}, ${colors.to})`,
+  };
+}
+
 function getInitialWizardData(campaignId: string | null): WizardData {
   return {
     name: "",
@@ -136,6 +286,16 @@ export function CharacterWizard() {
   const [hydrated, setHydrated] = useState(false);
   const [showAwakeningModal, setShowAwakeningModal] = useState(false);
   const [classes, setClasses] = useState<ClassData[]>([]);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
+  const [pendingImagePreview, setPendingImagePreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pendingImagePreview && pendingImagePreview.startsWith("blob:")) {
+        URL.revokeObjectURL(pendingImagePreview);
+      }
+    };
+  }, [pendingImagePreview]);
 
   const addToast = useCallback((message: string, type: "error" | "success" | "info" | "warning" = "error") => {
     const id = generateUUID();
@@ -255,6 +415,7 @@ export function CharacterWizard() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved) as Partial<WizardData>;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setWizardData((prev) => ({
           ...prev,
           ...parsed,
@@ -362,6 +523,21 @@ export function CharacterWizard() {
         return;
       }
 
+      // Upload pending image if exists
+      if (pendingImageFile && data.data?.id) {
+        try {
+          const formData = new FormData();
+          formData.append("image", pendingImageFile);
+          await fetch(`/api/characters/${data.data.id}/image`, {
+            method: "POST",
+            body: formData,
+            credentials: "include",
+          });
+        } catch {
+          // Image upload failure is non-critical, character was created
+        }
+      }
+
       // Limpar draft do localStorage
       try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
 
@@ -372,7 +548,7 @@ export function CharacterWizard() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [wizardData, currentStep, validateStep, addToast, router]);
+  }, [wizardData, currentStep, validateStep, addToast, router, pendingImageFile]);
 
   if (!hydrated) {
     return (
@@ -413,6 +589,19 @@ export function CharacterWizard() {
               data={wizardData}
               updateData={updateData}
               onOpenAwakeningModal={() => setShowAwakeningModal(true)}
+              pendingImagePreview={pendingImagePreview}
+              onImageFileChange={(file: File | null) => {
+                if (pendingImagePreview && pendingImagePreview.startsWith("blob:")) {
+                  URL.revokeObjectURL(pendingImagePreview);
+                }
+                setPendingImageFile(file);
+                if (file) {
+                  setPendingImagePreview(URL.createObjectURL(file));
+                  updateData({ imageUrl: null }); // clear URL when file selected
+                } else {
+                  setPendingImagePreview(null);
+                }
+              }}
             />
           )}
           {currentStep === 1 && (
@@ -431,7 +620,7 @@ export function CharacterWizard() {
             <WizardStepSpells data={wizardData} updateData={updateData} />
           )}
           {currentStep === 6 && (
-            <WizardStepReview data={wizardData} />
+            <WizardStepReview data={wizardData} pendingImagePreview={pendingImagePreview} />
           )}
         </div>
       </div>
@@ -582,11 +771,16 @@ function WizardStepBasicInfo({
   data,
   updateData,
   onOpenAwakeningModal,
+  pendingImagePreview,
+  onImageFileChange,
 }: {
   data: WizardData;
   updateData: (partial: Partial<WizardData>) => void;
   onOpenAwakeningModal: () => void;
+  pendingImagePreview: string | null;
+  onImageFileChange: (file: File | null) => void;
 }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   return (
     <div className="space-y-5 rounded-xl border border-gray-800 bg-gray-900/60 p-5 sm:p-6 shadow-xl backdrop-blur-sm">
       {/* Botão Místico Flutuante - O Despertar do Coração */}
@@ -733,31 +927,59 @@ function WizardStepBasicInfo({
 
       <div className="space-y-1.5">
         <label className="block text-sm font-medium text-gray-300">
-          URL da Imagem / Avatar <span className="text-xs font-normal text-gray-400">(opcional)</span>
+          Imagem / Avatar <span className="text-xs font-normal text-gray-400">(opcional)</span>
         </label>
-        <Input
-          label=""
-          name="wizard-image-url"
-          type="url"
-          value={data.imageUrl ?? ""}
-          onChange={(e) => updateData({ imageUrl: e.target.value || null })}
-          placeholder="https://exemplo.com/minha-foto.png"
-          className="bg-gray-900/90 text-white border-gray-700/80 focus:border-purple-500"
-        />
-        {data.imageUrl && (
-          <div className="mt-3 flex items-center gap-3 rounded-lg border border-gray-800 bg-gray-950/50 p-2.5">
-            <span className="text-xs text-gray-400 font-medium">Preview:</span>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={data.imageUrl}
-              alt="Preview"
-              className="h-12 w-12 rounded-full border-2 border-purple-500 object-cover shadow-[0_0_10px_rgba(168,85,247,0.3)]"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
+        <div className="flex items-center gap-4">
+          {/* Preview */}
+          {(pendingImagePreview || data.imageUrl) ? (
+            <div className="relative shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={pendingImagePreview || data.imageUrl!}
+                alt="Preview"
+                className="h-16 w-16 rounded-full border-2 border-purple-500 object-cover shadow-[0_0_10px_rgba(168,85,247,0.3)]"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  onImageFileChange(null);
+                  updateData({ imageUrl: null });
+                }}
+                className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] text-white hover:bg-red-500 transition-colors"
+                aria-label="Remover imagem"
+              >
+                ✕
+              </button>
+            </div>
+          ) : (
+            <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-gray-700 bg-gray-900/50 text-gray-500 shrink-0">
+              <span className="font-fantasy text-2xl">A</span>
+            </div>
+          )}
+
+          <div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(e) => {
+                const file = e.target.files?.[0] ?? null;
+                onImageFileChange(file);
+                if (fileInputRef.current) fileInputRef.current.value = "";
               }}
+              className="hidden"
             />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs font-medium text-gray-300 hover:border-purple-500 hover:text-purple-300 transition-all"
+            >
+              {(pendingImagePreview || data.imageUrl) ? "Trocar imagem" : "Enviar imagem"}
+            </button>
+            <p className="mt-1 text-[10px] text-gray-500">JPG, PNG ou WEBP · máx. 5MB</p>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
@@ -812,91 +1034,146 @@ function WizardStepRace({
   );
 
   return (
-    <div className="space-y-4 rounded-xl border border-gray-800 bg-gray-900/60 p-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-white">Escolha a Raça</h3>
-          <p className="text-xs text-gray-400">
-            A raça define traços, velocidade e bônus de vida inicial.
-          </p>
+    <div className="relative overflow-hidden space-y-4 rounded-xl border border-gray-800 bg-gray-900/60 p-5">
+      {selectedRace && (
+        <>
+          {getImageUrl(selectedRace) ? (
+            <div className="absolute inset-0 z-0 blur-sm">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={getImageUrl(selectedRace)!}
+                alt=""
+                className="h-full w-full object-cover"
+                style={{ opacity: 0.15 }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = "none";
+                }}
+              />
+            </div>
+          ) : (
+            <div
+              className="absolute inset-0 z-0 blur-sm"
+              style={getSelectedRaceBackgroundStyle(selectedRace)}
+            />
+          )}
+        </>
+      )}
+
+      <div className="relative z-10">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-white">Escolha a Raça</h3>
+            <p className="text-xs text-gray-400">
+              A raça define traços, velocidade e bônus de vida inicial.
+            </p>
+          </div>
+          {data.raceId && (
+            <button
+              type="button"
+              onClick={() => updateData({ raceId: null })}
+              className="text-xs text-purple-400 hover:underline"
+            >
+              Limpar seleção
+            </button>
+          )}
         </div>
-        {data.raceId && (
-          <button
-            type="button"
-            onClick={() => updateData({ raceId: null })}
-            className="text-xs text-purple-400 hover:underline"
-          >
-            Limpar seleção
-          </button>
+
+        <input
+          type="text"
+          placeholder="Buscar raça por nome..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="mt-4 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
+        />
+
+        {isLoading ? (
+          <div className="flex min-h-[150px] items-center justify-center mt-4">
+            <Spinner size="md" />
+          </div>
+        ) : filteredRaces.length === 0 ? (
+          <p className="text-xs text-gray-500 py-6 text-center mt-4">Nenhuma raça encontrada.</p>
+        ) : (
+          <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mt-4">
+            {filteredRaces.map((race) => {
+              const isSelected = data.raceId === race.id;
+              const raceImage = getImageUrl(race);
+              return (
+                <div
+                  key={race.id}
+                  onClick={() => updateData({ raceId: isSelected ? null : race.id })}
+                  className={`relative overflow-hidden cursor-pointer rounded-xl border min-h-[140px] p-4 transition-all ${
+                    isSelected
+                      ? "border-purple-500 bg-purple-950/40 shadow-lg shadow-purple-950/50"
+                      : "border-gray-800 bg-gray-900 hover:border-gray-700"
+                  }`}
+                >
+                  {raceImage ? (
+                    <div className="absolute inset-0 z-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={raceImage}
+                        alt=""
+                        className="h-full w-full object-cover"
+                        style={{ opacity: 0.3 }}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                      <div
+                        className="absolute inset-0"
+                        style={{
+                          background: "linear-gradient(to top, rgb(17 24 39), rgb(17 24 39 / 0.8), transparent)",
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      className="absolute inset-0 z-0"
+                      style={{ ...getRaceBackgroundStyle(race), opacity: 0.3 }}
+                    />
+                  )}
+
+                  <div className="relative z-10">
+                    <div className="flex items-start justify-between gap-2">
+                      <h4 className="font-bold text-white text-sm">{race.name}</h4>
+                      {isSelected && (
+                        <span className="rounded bg-purple-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                          Selecionada
+                        </span>
+                      )}
+                    </div>
+
+                    {race.description && (
+                      <p className="mt-1 text-xs text-gray-400 line-clamp-2">{race.description}</p>
+                    )}
+
+                    <div className="mt-3 flex flex-wrap gap-1.5 text-[10px]">
+                      {race.hitPointsBonus > 0 && (
+                        <span className="rounded bg-red-950 border border-red-800/60 px-1.5 py-0.5 text-red-300 font-semibold">
+                          +{race.hitPointsBonus} HP
+                        </span>
+                      )}
+                      <span className="rounded bg-gray-800 px-1.5 py-0.5 text-gray-300">
+                        Desloc: {race.speed}ft
+                      </span>
+                      <span className="rounded bg-gray-800 px-1.5 py-0.5 text-gray-300">
+                        Tamanho: {race.size}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {selectedRace && (
+          <div className="mt-4 rounded-lg border border-purple-800/50 bg-purple-950/30 p-3 text-xs text-purple-200">
+            <span className="font-bold text-purple-300">Bônus da Raça selecionada ({selectedRace.name}):</span>{" "}
+            +{selectedRace.hitPointsBonus} HP base máximo.
+          </div>
         )}
       </div>
-
-      <input
-        type="text"
-        placeholder="Buscar raça por nome..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
-      />
-
-      {isLoading ? (
-        <div className="flex min-h-[150px] items-center justify-center">
-          <Spinner size="md" />
-        </div>
-      ) : filteredRaces.length === 0 ? (
-        <p className="text-xs text-gray-500 py-6 text-center">Nenhuma raça encontrada.</p>
-      ) : (
-        <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredRaces.map((race) => {
-            const isSelected = data.raceId === race.id;
-            return (
-              <div
-                key={race.id}
-                onClick={() => updateData({ raceId: isSelected ? null : race.id })}
-                className={`cursor-pointer rounded-xl border p-4 transition-all ${
-                  isSelected
-                    ? "border-purple-500 bg-purple-950/40 shadow-lg shadow-purple-950/50"
-                    : "border-gray-800 bg-gray-900 hover:border-gray-700"
-                }`}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <h4 className="font-bold text-white text-sm">{race.name}</h4>
-                  {isSelected && (
-                    <span className="rounded bg-purple-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                      Selecionada
-                    </span>
-                  )}
-                </div>
-
-                {race.description && (
-                  <p className="mt-1 text-xs text-gray-400 line-clamp-2">{race.description}</p>
-                )}
-
-                <div className="mt-3 flex flex-wrap gap-1.5 text-[10px]">
-                  {race.hitPointsBonus > 0 && (
-                    <span className="rounded bg-red-950 border border-red-800/60 px-1.5 py-0.5 text-red-300 font-semibold">
-                      +{race.hitPointsBonus} HP
-                    </span>
-                  )}
-                  <span className="rounded bg-gray-800 px-1.5 py-0.5 text-gray-300">
-                    Desloc: {race.speed}ft
-                  </span>
-                  <span className="rounded bg-gray-800 px-1.5 py-0.5 text-gray-300">
-                    Tamanho: {race.size}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {selectedRace && (
-        <div className="mt-4 rounded-lg border border-purple-800/50 bg-purple-950/30 p-3 text-xs text-purple-200">
-          <span className="font-bold text-purple-300">Bônus da Raça selecionada ({selectedRace.name}):</span>{" "}
-          +{selectedRace.hitPointsBonus} HP base máximo.
-        </div>
-      )}
     </div>
   );
 }
@@ -991,12 +1268,17 @@ function WizardStepClass({
               <div
                 key={cls.id}
                 onClick={() => updateData({ classId: isSelected ? null : cls.id })}
-                className={`cursor-pointer rounded-xl border p-4 transition-all ${
+                className={`relative overflow-hidden cursor-pointer rounded-xl border p-4 transition-all ${
                   isSelected
                     ? "border-purple-500 bg-purple-950/40 shadow-lg shadow-purple-950/50"
                     : "border-gray-800 bg-gray-900 hover:border-gray-700"
                 }`}
               >
+                <div
+                  className="absolute inset-0 z-0"
+                  style={{ ...getClassBackgroundStyle(cls.name), opacity: 0.3 }}
+                />
+                <div className="relative z-10">
                 <div className="flex items-start justify-between gap-2">
                   <h4 className="font-bold text-white text-sm">{cls.name}</h4>
                   {isSelected && (
@@ -1016,6 +1298,7 @@ function WizardStepClass({
                     {cls.initialItems.map((i) => i.name).join(", ")}
                   </div>
                 )}
+                </div>
               </div>
             );
           })}
@@ -1258,7 +1541,7 @@ function WizardStepSkills({
                 <div
                   key={skill.id}
                   onClick={() => !isDisabled && toggleSkill(skill.id)}
-                  className={`flex items-start gap-3 rounded-xl border p-3.5 transition-all ${
+                  className={`relative overflow-hidden flex items-start gap-3 rounded-xl border p-3.5 transition-all ${
                     isDisabled ? "opacity-40 cursor-not-allowed border-gray-800 bg-gray-950" : "cursor-pointer"
                   } ${
                     isSelected
@@ -1266,6 +1549,11 @@ function WizardStepSkills({
                       : "border-gray-800 bg-gray-900 hover:border-gray-700"
                   }`}
                 >
+                  <div
+                    className="absolute inset-0 z-0"
+                    style={{ ...getSkillBackgroundStyle(skill.keyAttribute), opacity: 0.3 }}
+                  />
+                  <div className="relative z-10 flex items-start gap-3 w-full">
                   <input
                     type="checkbox"
                     checked={isSelected}
@@ -1273,6 +1561,7 @@ function WizardStepSkills({
                     disabled={isDisabled}
                     className="mt-1 h-4 w-4 rounded border-gray-700 bg-gray-900 text-purple-600 focus:ring-purple-500"
                   />
+
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between">
                       <h4 className="font-bold text-white text-xs truncate">{skill.name}</h4>
@@ -1288,6 +1577,7 @@ function WizardStepSkills({
                         {skill.rollExpression}
                       </span>
                     )}
+                  </div>
                   </div>
                 </div>
               );
@@ -1444,7 +1734,7 @@ function WizardStepSpells({
                 <div
                   key={spell.id}
                   onClick={() => !isDisabled && toggleSpell(spell.id)}
-                  className={`flex items-start gap-3 rounded-xl border p-3.5 transition-all ${
+                  className={`relative overflow-hidden flex items-start gap-3 rounded-xl border p-3.5 transition-all ${
                     isDisabled ? "opacity-40 cursor-not-allowed border-gray-800 bg-gray-950" : "cursor-pointer"
                   } ${
                     isSelected
@@ -1452,6 +1742,11 @@ function WizardStepSpells({
                       : "border-gray-800 bg-gray-900 hover:border-gray-700"
                   }`}
                 >
+                  <div
+                    className="absolute inset-0 z-0"
+                    style={{ ...getSpellBackgroundStyle(spell.circle), opacity: 0.3 }}
+                  />
+                  <div className="relative z-10 flex items-start gap-3 w-full">
                   <input
                     type="checkbox"
                     checked={isSelected}
@@ -1476,6 +1771,7 @@ function WizardStepSpells({
                       <span>⚡ {actionCost} ação(ões)</span>
                       {spell.useType && <span className="capitalize">• {spell.useType}</span>}
                     </div>
+                  </div>
                   </div>
                 </div>
               );
@@ -1513,7 +1809,7 @@ function WizardStepSpells({
 // Step 6: Revisão & Confirmação
 // =============================================================================
 
-function WizardStepReview({ data }: { data: WizardData }) {
+function WizardStepReview({ data, pendingImagePreview }: { data: WizardData; pendingImagePreview?: string | null }) {
   const [raceName, setRaceName] = useState<string | null>(null);
   const [className, setClassName] = useState<string | null>(null);
   const [initialItemsList, setInitialItemsList] = useState<Array<{ name: string; quantity: number }>>([]);
@@ -1569,10 +1865,10 @@ function WizardStepReview({ data }: { data: WizardData }) {
 
       {/* Resumo do Personagem */}
       <div className="flex items-center gap-4 rounded-xl border border-purple-900/60 bg-purple-950/30 p-4">
-        {data.imageUrl ? (
+        {(pendingImagePreview || data.imageUrl) ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={data.imageUrl}
+            src={pendingImagePreview || data.imageUrl!}
             alt={data.name}
             className="h-16 w-16 rounded-full border-2 border-purple-500 object-cover shrink-0"
           />
