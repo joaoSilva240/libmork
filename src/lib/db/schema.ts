@@ -149,6 +149,7 @@ export const campaigns = pgTable("campaigns", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   name: varchar("name", { length: 200 }).notNull(),
+  description: text("description"),
   rulesEngine: varchar("rules_engine", { length: 20 }).notNull().default("d20_mod"),
   pvpEnabled: boolean("pvp_enabled").notNull().default(false),
   difficultyModifierShadowPoints: integer("difficulty_modifier_shadow_points")

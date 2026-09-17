@@ -77,8 +77,12 @@ describe("PlayerDashboard - Import Character Modal", () => {
       expect(screen.getByText("Test Campaign")).toBeInTheDocument();
     });
 
-    // Click the import button
-    const importButton = screen.getByText("↩ Importar Personagem Existente");
+    // Click the campaign card to open overlay
+    const campaignCard = screen.getByRole("button", { name: /Ver detalhes da campanha Test Campaign/i });
+    fireEvent.click(campaignCard);
+
+    // Click the import button inside the overlay
+    const importButton = await screen.findByText("↩ Importar Personagem Existente");
     fireEvent.click(importButton);
 
     // Modal should be visible
@@ -136,7 +140,9 @@ describe("PlayerDashboard - Import Character Modal", () => {
       expect(screen.getByText("Middle Earth")).toBeInTheDocument();
     });
 
-    const importButton = screen.getByText("↩ Importar Personagem Existente");
+    const campaignCard = screen.getByRole("button", { name: /Ver detalhes da campanha/i });
+    fireEvent.click(campaignCard);
+    const importButton = await screen.findByText("↩ Importar Personagem Existente");
     fireEvent.click(importButton);
 
     await waitFor(() => {
@@ -232,7 +238,9 @@ describe("PlayerDashboard - Import Character Modal", () => {
       expect(screen.getByText("Campaign Alpha")).toBeInTheDocument();
     });
 
-    const importButton = screen.getByText("↩ Importar Personagem Existente");
+    const campaignCard = screen.getByRole("button", { name: /Ver detalhes da campanha/i });
+    fireEvent.click(campaignCard);
+    const importButton = await screen.findByText("↩ Importar Personagem Existente");
     fireEvent.click(importButton);
 
     await waitFor(() => {
@@ -302,7 +310,9 @@ describe("PlayerDashboard - Import Character Modal", () => {
       expect(screen.getByText("Duplicate Campaign")).toBeInTheDocument();
     });
 
-    const importButton = screen.getByText("↩ Importar Personagem Existente");
+    const campaignCard = screen.getByRole("button", { name: /Ver detalhes da campanha/i });
+    fireEvent.click(campaignCard);
+    const importButton = await screen.findByText("↩ Importar Personagem Existente");
     fireEvent.click(importButton);
 
     await waitFor(() => {
@@ -363,7 +373,9 @@ describe("PlayerDashboard - Import Character Modal", () => {
       expect(screen.getByText("Full Campaign")).toBeInTheDocument();
     });
 
-    const importButton = screen.getByText("↩ Importar Personagem Existente");
+    const campaignCard = screen.getByRole("button", { name: /Ver detalhes da campanha/i });
+    fireEvent.click(campaignCard);
+    const importButton = await screen.findByText("↩ Importar Personagem Existente");
     fireEvent.click(importButton);
 
     // Toast should appear instead of modal

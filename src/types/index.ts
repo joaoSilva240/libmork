@@ -97,6 +97,7 @@ export type Campaign = {
   id: string;
   masterId: string;
   name: string;
+  description: string | null;
   rulesEngine: RulesEngine;
   pvpEnabled: boolean;
   difficultyModifierShadowPoints: number;
@@ -315,6 +316,7 @@ export type CampaignPlayerInvite = {
 export type PlayerCampaign = {
   id: string;
   name: string;
+  description: string | null;
   rulesEngine: RulesEngine;
   pvpEnabled: boolean;
   master: {

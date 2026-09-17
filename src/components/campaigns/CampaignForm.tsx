@@ -8,6 +8,7 @@ import type { RulesEngine } from "@/lib/utils/constants";
 export function CampaignForm() {
   const router = useRouter();
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [rulesEngine, setRulesEngine] = useState<RulesEngine>("d20_mod");
   const [pvpEnabled, setPvpEnabled] = useState(false);
   const [difficultyModifierShadowPoints, setDifficultyModifierShadowPoints] = useState(0);
@@ -26,6 +27,7 @@ export function CampaignForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
+          description: description || null,
           rulesEngine,
           pvpEnabled,
           difficultyModifierShadowPoints,
@@ -63,6 +65,21 @@ export function CampaignForm() {
           disabled={isLoading}
           className="bg-gray-900 text-white"
         />
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">
+            Detalhes da Campanha
+          </label>
+          <textarea
+            name="description"
+            rows={4}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            disabled={isLoading}
+            placeholder="Descreva o cenário, premissa ou regras gerais da campanha..."
+            className="w-full rounded-lg border border-gray-700 bg-gray-900 px-4 py-2 text-white placeholder-gray-500 focus:ring-2 focus:ring-purple-600 focus:border-transparent outline-none text-sm"
+          />
+        </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-1">

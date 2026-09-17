@@ -48,6 +48,7 @@ export async function GET() {
       .select({
         id: campaigns.id,
         name: campaigns.name,
+        description: campaigns.description,
         rulesEngine: campaigns.rulesEngine,
         pvpEnabled: campaigns.pvpEnabled,
         masterId: users.id,
@@ -90,6 +91,7 @@ export async function GET() {
     const data = campaignRows.map((camp) => ({
       id: camp.id,
       name: camp.name,
+      description: camp.description,
       rulesEngine: camp.rulesEngine,
       pvpEnabled: camp.pvpEnabled,
       master: {

@@ -10,6 +10,7 @@ import { RULES_ENGINES } from "@/lib/utils/constants";
  */
 export const createCampaignSchema = z.object({
   name: z.string().min(2, "Nome deve ter no mínimo 2 caracteres").max(200),
+  description: z.string().max(5000).optional().nullable(),
   rulesEngine: z.enum(RULES_ENGINES).default("d20_mod"),
   pvpEnabled: z.boolean().default(false),
   difficultyModifierShadowPoints: z.number().int().min(0).default(0),
@@ -22,6 +23,7 @@ export type CreateCampaignInput = z.infer<typeof createCampaignSchema>;
  */
 export const updateCampaignSchema = z.object({
   name: z.string().min(2).max(200).optional(),
+  description: z.string().max(5000).optional().nullable(),
   rulesEngine: z.enum(RULES_ENGINES).optional(),
   pvpEnabled: z.boolean().optional(),
   difficultyModifierShadowPoints: z.number().int().min(0).optional(),

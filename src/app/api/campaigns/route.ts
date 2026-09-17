@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, rulesEngine, pvpEnabled, difficultyModifierShadowPoints } =
+    const { name, description, rulesEngine, pvpEnabled, difficultyModifierShadowPoints } =
       validation.data;
 
     const [newCampaign] = await db
@@ -81,6 +81,7 @@ export async function POST(request: NextRequest) {
       .values({
         masterId: session.user.id,
         name,
+        description,
         rulesEngine,
         pvpEnabled,
         difficultyModifierShadowPoints,
