@@ -1506,4 +1506,171 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
       expect(parsed[3].name).toBe("Habilidade Nv. 4");
     });
   });
+
+  describe("Free Roll Mana Validation and Deduction (Task #1)", () => {
+    const mockSpells = [
+      {
+        junction: { id: "spell-j1" },
+        content: { id: "sp-1", name: "Bola de Fogo", circle: 3, manaCost: 5, rollExpression: "1d20", damage: "8d6" },
+      },
+    ];
+
+    it("displays error toast and blocks roll if mana is insufficient", async () => {
+      globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+        if (url.includes("/content/spells")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ data: { linked: mockSpells, available: [] } }),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ data: { linked: [], available: [] } }),
+        });
+      });
+
+      render(
+        <CharacterContent
+          characterId="char-123"
+          characterManaCurrent={3}
+          characterManaMax={10}
+          defaultType="items"
+          allowedTypes={["items", "spells", "conditions"]}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("Bola de Fogo")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("Bola de Fogo").closest(".snap-start")!);
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole("button", { name: "🎲 Sem combate" }));
+
+      expect(screen.getByText("Mana insuficiente para conjurar esta magia.")).toBeInTheDocument();
+      expect(mockRollDice).not.toHaveBeenCalled();
+    });
+
+    it("deducts mana and persists via onPersistActorStatus when inside a campaign", async () => {
+      globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+        if (url.includes("/content/spells")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ data: { linked: mockSpells, available: [] } }),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ data: { linked: [], available: [] } }),
+        });
+      });
+
+      const onActorStatusChange = vi.fn();
+      const onPersistActorStatus = vi.fn().mockResolvedValue(undefined);
+      const onActionResult = vi.fn();
+
+      render(
+        <CharacterContent
+          characterId="char-123"
+          campaignId="camp-xyz"
+          characterManaCurrent={10}
+          characterManaMax={20}
+          defaultType="items"
+          allowedTypes={["items", "spells", "conditions"]}
+          onActorStatusChange={onActorStatusChange}
+          onPersistActorStatus={onPersistActorStatus}
+          onActionResult={onActionResult}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("Bola de Fogo")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("Bola de Fogo").closest(".snap-start")!);
+      fireEvent.click(screen.getByRole("button", { name: "🎲 Sem combate" }));
+
+      expect(onActorStatusChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: "char-123",
+          manaCurrent: 5,
+        })
+      );
+      expect(onPersistActorStatus).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: "char-123",
+          manaCurrent: 5,
+        }),
+        expect.any(Number),
+        5
+      );
+      expect(mockRollDice).toHaveBeenCalledWith(
+        expect.objectContaining({
+          campaignId: "camp-xyz",
+          actorId: "char-123",
+          rollType: "Bola de Fogo (Livre)",
+        })
+      );
+    });
+
+    it("deducts mana and persists via PATCH /api/characters/:id when outside a campaign", async () => {
+      globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+        if (url.includes("/content/spells")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ data: { linked: mockSpells, available: [] } }),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ data: { linked: [], available: [] } }),
+        });
+      });
+
+      const onActorStatusChange = vi.fn();
+      const onActionResult = vi.fn();
+
+      render(
+        <CharacterContent
+          characterId="char-456"
+          campaignId={null}
+          characterManaCurrent={8}
+          characterManaMax={15}
+          defaultType="items"
+          allowedTypes={["items", "spells", "conditions"]}
+          onActorStatusChange={onActorStatusChange}
+          onActionResult={onActionResult}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("Bola de Fogo")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("Bola de Fogo").closest(".snap-start")!);
+      fireEvent.click(screen.getByRole("button", { name: "🎲 Sem combate" }));
+
+      expect(onActorStatusChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: "char-456",
+          manaCurrent: 3,
+        })
+      );
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        "/api/characters/char-456",
+        expect.objectContaining({
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ manaPointsCurrent: 3, reason: "magia livre" }),
+        })
+      );
+      expect(mockRollDice).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actorId: "char-456",
+          rollType: "Bola de Fogo (Livre)",
+        })
+      );
+    });
+  });
 });
