@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Cinzel, Cinzel_Decorative } from "next/font/google";
+import QueryProvider from "@/components/providers/QueryProvider";
 import { SocketProvider } from "@/context/SocketContext";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import CsrfInit from "@/components/CsrfInit";
@@ -31,7 +32,9 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" data-theme="default-dark" suppressHydrationWarning className={`${cinzel.variable} ${cinzelDecorative.variable}`}>
       <body className="antialiased" suppressHydrationWarning>
-        <SocketProvider>{children}</SocketProvider>
+        <QueryProvider>
+          <SocketProvider>{children}</SocketProvider>
+        </QueryProvider>
         <ServiceWorkerRegistrar />
         <CsrfInit />
       </body>

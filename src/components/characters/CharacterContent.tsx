@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/client/queryKeys";
+import {
+  useCharacterContentQuery,
+  useCharacterGalleryContentQuery,
+  useClassBenefitsQuery,
+} from "@/hooks/queries/useCharacterContentQueries";
 import type { ContentType } from "@/lib/validators/content";
 import { useSocket, DICE_ROLL_LOADING_DELAY } from "@/context/SocketContext";
 import { TargetSelectionModal } from "@/components/combat/TargetSelectionModal";
@@ -278,24 +285,46 @@ export function CharacterContent({
   characterClassId,
   characterLevel,
 }: CharacterContentProps) {
+  const queryClient = useQueryClient();
   const isGalleryMode = Boolean(allowedTypes?.includes("items") && allowedTypes?.includes("spells"));
   const [activeType, setActiveType] = useState<ContentType>(defaultType);
-  const [classBenefits, setClassBenefits] = useState<ClassBenefitItem[]>([]);
   const [selectedClassBenefit, setSelectedClassBenefit] = useState<ClassBenefitItem | null>(null);
-  const [data, setData] = useState<{ linked: LinkedRow[]; available: Record<string, unknown>[] }>({
-    linked: [],
-    available: [],
-  });
-  const [galleryData, setGalleryData] = useState<{
-    spells: LinkedRow[];
-    items: LinkedRow[];
-    conditions: LinkedRow[];
-  }>({
-    spells: [],
-    items: [],
-    conditions: [],
-  });
   const [prevCharacterId, setPrevCharacterId] = useState(characterId);
+
+  // TanStack Query hooks
+  const contentQuery = useCharacterContentQuery(characterId, activeType, {
+    enabled: !isGalleryMode,
+  });
+  const galleryQueries = useCharacterGalleryContentQuery(characterId, {
+    enabled: isGalleryMode,
+  });
+  const classBenefitsQuery = useClassBenefitsQuery(characterClassId, {
+    enabled: isGalleryMode,
+  });
+
+  // Derive data from queries
+  const data = isGalleryMode
+    ? { linked: [], available: [] }
+    : contentQuery.data?.data ?? { linked: [], available: [] };
+
+  const galleryData = isGalleryMode
+    ? {
+        spells: galleryQueries.spells.data?.data.linked ?? [],
+        items: galleryQueries.items.data?.data.linked ?? [],
+        conditions: galleryQueries.conditions.data?.data.linked ?? [],
+      }
+    : { spells: [], items: [], conditions: [] };
+
+  const classBenefits = isGalleryMode && classBenefitsQuery.data?.data
+    ? parseClassBenefits(classBenefitsQuery.data.data)
+    : [];
+
+  const isLoading = isGalleryMode
+    ? galleryQueries.spells.isLoading ||
+      galleryQueries.items.isLoading ||
+      galleryQueries.conditions.isLoading ||
+      (Boolean(characterClassId) && classBenefitsQuery.isLoading)
+    : contentQuery.isLoading;
   const [equippedItemIds, setEquippedItemIds] = useState<string[]>(() => {
     if (typeof window === "undefined") return [];
     try {
@@ -323,7 +352,6 @@ export function CharacterContent({
     row: LinkedRow;
     type: "spells" | "items" | "conditions";
   } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [toasts, setToasts] = useState<Array<{ id: string; message: string; type?: "error" | "success" | "info" | "warning" }>>([]);
   const [isBusy, setIsBusy] = useState(false);
   const { rollDice, requestDefenseReaction, updateActorStatus } = useSocket();
@@ -349,130 +377,26 @@ export function CharacterContent({
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   };
 
-  const loadContent = useCallback(async () => {
-    try {
-      if (isGalleryMode) {
-        const [spellsRes, itemsRes, conditionsRes, benefitsRes] = await Promise.all([
-          fetch(`/api/characters/${characterId}/content/spells`, { credentials: "include" }),
-          fetch(`/api/characters/${characterId}/content/items`, { credentials: "include" }),
-          fetch(`/api/characters/${characterId}/content/conditions`, { credentials: "include" }),
-          characterClassId
-            ? fetch(`/api/classes/${characterClassId}/benefits`, { credentials: "include" })
-            : Promise.resolve(null),
-        ]);
-        const [spellsJson, itemsJson, conditionsJson, benJson] = await Promise.all([
-          spellsRes.json(),
-          itemsRes.json(),
-          conditionsRes.json(),
-          benefitsRes && benefitsRes.ok ? benefitsRes.json() : Promise.resolve(null),
-        ]);
-
-        if (!spellsRes.ok || !itemsRes.ok || !conditionsRes.ok) {
-          showToast("Erro ao carregar conteúdo");
-          return;
-        }
-
-        setGalleryData({
-          spells: spellsRes.ok && spellsJson.data?.linked ? spellsJson.data.linked : [],
-          items: itemsRes.ok && itemsJson.data?.linked ? itemsJson.data.linked : [],
-          conditions: conditionsRes.ok && conditionsJson.data?.linked ? conditionsJson.data.linked : [],
-        });
-
-        if (characterClassId && benJson?.data) {
-          setClassBenefits(parseClassBenefits(benJson.data));
-        } else {
-          setClassBenefits([]);
-        }
-      } else {
-        const response = await fetch(`/api/characters/${characterId}/content/${activeType}`, {
-          credentials: "include",
-        });
-        const result = await response.json();
-
-        if (!response.ok) {
-          showToast(result.error || "Erro ao carregar conteúdo");
-          return;
-        }
-
-        setData(result.data);
-      }
-    } catch {
-      showToast("Erro de conexão. Tente novamente.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [characterId, activeType, isGalleryMode, characterClassId]);
-
+  // Error handling for queries
   useEffect(() => {
-    let cancelled = false;
-
-    (async () => {
-      setIsLoading(true);
-      try {
-        if (isGalleryMode) {
-          const [spellsRes, itemsRes, conditionsRes, benefitsRes] = await Promise.all([
-            fetch(`/api/characters/${characterId}/content/spells`, { credentials: "include" }),
-            fetch(`/api/characters/${characterId}/content/items`, { credentials: "include" }),
-            fetch(`/api/characters/${characterId}/content/conditions`, { credentials: "include" }),
-            characterClassId
-              ? fetch(`/api/classes/${characterClassId}/benefits`, { credentials: "include" })
-              : Promise.resolve(null),
-          ]);
-          const [spellsJson, itemsJson, conditionsJson, benJson] = await Promise.all([
-            spellsRes.json(),
-            itemsRes.json(),
-            conditionsRes.json(),
-            benefitsRes && benefitsRes.ok ? benefitsRes.json() : Promise.resolve(null),
-          ]);
-
-          if (cancelled) return;
-
-          if (!spellsRes.ok || !itemsRes.ok || !conditionsRes.ok) {
-            showToast("Erro ao carregar conteúdo");
-            return;
-          }
-
-          setGalleryData({
-            spells: spellsRes.ok && spellsJson.data?.linked ? spellsJson.data.linked : [],
-            items: itemsRes.ok && itemsJson.data?.linked ? itemsJson.data.linked : [],
-            conditions: conditionsRes.ok && conditionsJson.data?.linked ? conditionsJson.data.linked : [],
-          });
-
-          if (characterClassId && benJson?.data) {
-            setClassBenefits(parseClassBenefits(benJson.data));
-          } else {
-            setClassBenefits([]);
-          }
-        } else {
-          const response = await fetch(`/api/characters/${characterId}/content/${activeType}`, {
-            credentials: "include",
-          });
-          const result = await response.json();
-
-          if (cancelled) return;
-
-          if (!response.ok) {
-            showToast(result.error || "Erro ao carregar conteúdo");
-            return;
-          }
-
-          setData(result.data);
-        }
-      } catch {
-        if (!cancelled) {
-          showToast("Erro de conexão. Tente novamente.");
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
+    if (isGalleryMode) {
+      if (galleryQueries.spells.isError || galleryQueries.items.isError || galleryQueries.conditions.isError) {
+        showToast("Erro ao carregar conteúdo");
       }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [characterId, activeType, isGalleryMode, characterClassId]);
+    } else {
+      if (contentQuery.isError) {
+        const errorMsg = contentQuery.error instanceof Error ? contentQuery.error.message : "Erro ao carregar conteúdo";
+        showToast(errorMsg || "Erro ao carregar conteúdo");
+      }
+    }
+  }, [
+    isGalleryMode,
+    galleryQueries.spells.isError,
+    galleryQueries.items.isError,
+    galleryQueries.conditions.isError,
+    contentQuery.isError,
+    contentQuery.error,
+  ]);
 
   const handleToggleEquip = (itemId: string) => {
     const isCurrentlyEquipped = equippedItemIds.includes(itemId);
@@ -819,17 +743,9 @@ export function CharacterContent({
         return;
       }
 
-      setData((prev) => ({
-        ...prev,
-        linked: prev.linked.filter((row) => row.junction.id !== junctionId),
-      }));
-      setGalleryData((prev) => ({
-        spells: prev.spells.filter((row) => row.junction.id !== junctionId),
-        items: prev.items.filter((row) => row.junction.id !== junctionId),
-        conditions: prev.conditions.filter((row) => row.junction.id !== junctionId),
-      }));
-
-      await loadContent();
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.characterContent.byType(characterId, rowType),
+      });
     } catch {
       showToast("Erro de conexão. Tente novamente.");
     } finally {

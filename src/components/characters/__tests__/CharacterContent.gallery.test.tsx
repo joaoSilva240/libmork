@@ -1,4 +1,15 @@
 import { render, screen, waitFor, fireEvent, within } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode } from "react";
+
+function renderWithQuery(ui: ReactNode) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const rendered = render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+  return {
+    ...rendered,
+    rerender: (nextUi: ReactNode) => rendered.rerender(<QueryClientProvider client={queryClient}>{nextUi}</QueryClientProvider>),
+  };
+}
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   CharacterContent,
@@ -78,7 +89,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
       });
     });
 
-    render(
+    renderWithQuery(
       <CharacterContent
         characterId="char-123"
         defaultType="items"
@@ -159,7 +170,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
       })
     );
 
-    render(
+    renderWithQuery(
       <CharacterContent
         characterId="char-123"
         defaultType="items"
@@ -201,7 +212,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
       });
     });
 
-    render(
+    renderWithQuery(
       <CharacterContent
         characterId="char-123"
         defaultType="items"
@@ -246,7 +257,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
       });
     });
 
-    render(
+    renderWithQuery(
       <CharacterContent
         characterId="char-123"
         defaultType="skills"
@@ -310,7 +321,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
       });
     });
 
-    render(
+    renderWithQuery(
       <CharacterContent
         characterId="char-123"
         defaultType="items"
@@ -368,7 +379,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
       });
     });
 
-    render(
+    renderWithQuery(
       <CharacterContent
         characterId="char-123"
         defaultType="items"
@@ -421,7 +432,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
       });
     });
 
-    render(
+    renderWithQuery(
       <CharacterContent
         characterId="char-123"
         defaultType="items"
@@ -531,7 +542,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
     const onCombatStateChange = vi.fn();
     const onActorStatusChange = vi.fn();
 
-    render(
+    renderWithQuery(
       <CharacterContent
         characterId="char-123"
         defaultType="items"
@@ -639,7 +650,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
       ],
     };
 
-    const { rerender } = render(
+    const { rerender } = renderWithQuery(
       <CharacterContent
         characterId="char-123"
         defaultType="items"
@@ -741,7 +752,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
     // Pre-equip the bow in localStorage
     localStorage.setItem("libmork_equipped_items_char-123", JSON.stringify(["it-bow-1"]));
 
-    render(
+    renderWithQuery(
       <CharacterContent
         characterId="char-123"
         campaignId="camp-abc"
@@ -826,7 +837,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
       });
     });
 
-    render(
+    renderWithQuery(
       <CharacterContent
         characterId="char-123"
         defaultType="items"
@@ -908,7 +919,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
       });
     });
 
-    render(
+    renderWithQuery(
       <CharacterContent
         characterId="char-123"
         characterClassId="warrior-cls"
@@ -979,7 +990,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
       });
     });
 
-    render(
+    renderWithQuery(
       <CharacterContent
         characterId="char-123"
         characterClassId="warrior-cls"
@@ -1042,7 +1053,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
       });
     });
 
-    render(
+    renderWithQuery(
       <CharacterContent
         characterId="char-123"
         characterClassId="monk-cls"
@@ -1091,7 +1102,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
       });
     });
 
-    const { rerender } = render(
+    const { rerender } = renderWithQuery(
       <CharacterContent
         characterId="char-123"
         characterClassId="empty-cls"
@@ -1193,7 +1204,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         });
       });
 
-      render(
+      renderWithQuery(
         <CharacterContent
           characterId="char-123"
           defaultType="items"
@@ -1315,7 +1326,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         });
       });
 
-      render(
+      renderWithQuery(
         <CharacterContent
           characterId="char-123"
           defaultType="items"
@@ -1407,7 +1418,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         });
       });
 
-      render(
+      renderWithQuery(
         <CharacterContent
           characterId="char-123"
           characterClassId="fighter-cls"
@@ -1529,7 +1540,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         });
       });
 
-      render(
+      renderWithQuery(
         <CharacterContent
           characterId="char-123"
           characterManaCurrent={3}
@@ -1570,7 +1581,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
       const onPersistActorStatus = vi.fn().mockResolvedValue(undefined);
       const onActionResult = vi.fn();
 
-      render(
+      renderWithQuery(
         <CharacterContent
           characterId="char-123"
           campaignId="camp-xyz"
@@ -1631,7 +1642,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
       const onActorStatusChange = vi.fn();
       const onActionResult = vi.fn();
 
-      render(
+      renderWithQuery(
         <CharacterContent
           characterId="char-456"
           campaignId={null}

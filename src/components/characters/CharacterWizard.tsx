@@ -16,6 +16,7 @@ import { Toast } from "@/components/ui/Toast";
 import { generateUUID } from "@/lib/utils/uuid";
 import { HeartAwakeningModal } from "@/components/characters/HeartAwakeningModal";
 import type { HeartAwakeningResult } from "@/components/characters/HeartAwakeningModal";
+import { useClassesQuery, useContentByTypeQuery, useRacesQuery } from "@/hooks/queries/useMetadataQueries";
 
 // =============================================================================
 // Types
@@ -285,7 +286,10 @@ export function CharacterWizard() {
   const [toasts, setToasts] = useState<Array<{ id: string; message: string; type?: "error" | "success" | "info" | "warning" }>>([]);
   const [hydrated, setHydrated] = useState(false);
   const [showAwakeningModal, setShowAwakeningModal] = useState(false);
-  const [classes, setClasses] = useState<ClassData[]>([]);
+  const { data: classesResponse } = useClassesQuery();
+  const { data: racesResponse } = useRacesQuery();
+  const classes = classesResponse?.data ?? [];
+  const races = racesResponse?.data ?? [];
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const [pendingImagePreview, setPendingImagePreview] = useState<string | null>(null);
 
@@ -306,46 +310,11 @@ export function CharacterWizard() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  // Carregar lista de classes pré-carregadas para correspondência de classe sugerida
-  useEffect(() => {
-    let cancelled = false;
-    async function loadClasses() {
-      try {
-        const res = await fetch("/api/classes", { credentials: "include" });
-        if (!res.ok) return;
-        const json = await res.json();
-        if (!cancelled && json.data) {
-          setClasses(json.data);
-        }
-      } catch {
-        // ignore
-      }
-    }
-    void loadClasses();
-    return () => { cancelled = true; };
-  }, []);
-
-  const handleAwakeningComplete = useCallback(async (result: HeartAwakeningResult) => {
-    let classList = classes;
-    if (classList.length === 0) {
-      try {
-        const res = await fetch("/api/classes", { credentials: "include" });
-        if (res.ok) {
-          const json = await res.json();
-          if (json.data) {
-            classList = json.data;
-            setClasses(json.data);
-          }
-        }
-      } catch {
-        // ignore
-      }
-    }
-
+  const handleAwakeningComplete = useCallback((result: HeartAwakeningResult) => {
     let matchedClassId: string | null = null;
     if (result.suggestedClass) {
       const suggestedLower = result.suggestedClass.trim().toLowerCase();
-      const foundClass = classList.find(
+      const foundClass = classes.find(
         (c) => c.name.trim().toLowerCase() === suggestedLower
       );
       if (foundClass) {
@@ -355,23 +324,12 @@ export function CharacterWizard() {
 
     let matchedRaceId: string | null = null;
     if (result.suggestedRace) {
-      try {
-        const res = await fetch("/api/races", { credentials: "include" });
-        if (res.ok) {
-          const json = await res.json();
-          if (json.data && Array.isArray(json.data)) {
-            const raceList = json.data as RaceData[];
-            const suggestedRaceLower = result.suggestedRace.trim().toLowerCase();
-            const foundRace = raceList.find(
-              (r) => r.name.trim().toLowerCase() === suggestedRaceLower
-            );
-            if (foundRace) {
-              matchedRaceId = foundRace.id;
-            }
-          }
-        }
-      } catch {
-        // ignore
+      const suggestedRaceLower = result.suggestedRace.trim().toLowerCase();
+      const foundRace = races.find(
+        (r) => r.name.trim().toLowerCase() === suggestedRaceLower
+      );
+      if (foundRace) {
+        matchedRaceId = foundRace.id;
       }
     }
 
@@ -398,7 +356,7 @@ export function CharacterWizard() {
     );
     setCurrentStep(6);
     setShowAwakeningModal(false);
-  }, [classes, addToast]);
+  }, [classes, races, addToast]);
 
   // Clear legacy localStorage draft if present
   useEffect(() => {
@@ -996,29 +954,9 @@ function WizardStepRace({
   data: WizardData;
   updateData: (partial: Partial<WizardData>) => void;
 }) {
-  const [races, setRaces] = useState<RaceData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: racesResponse, isLoading } = useRacesQuery();
+  const races = racesResponse?.data ?? [];
   const [search, setSearch] = useState("");
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadRaces() {
-      try {
-        const res = await fetch("/api/races", { credentials: "include" });
-        if (!res.ok) return;
-        const json = await res.json();
-        if (!cancelled && json.data) {
-          setRaces(json.data);
-        }
-      } catch {
-        // Ignora erro
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    }
-    void loadRaces();
-    return () => { cancelled = true; };
-  }, []);
 
   const filteredRaces = useMemo(() => {
     if (!search.trim()) return races;
@@ -1189,29 +1127,9 @@ function WizardStepClass({
   data: WizardData;
   updateData: (partial: Partial<WizardData>) => void;
 }) {
-  const [classes, setClasses] = useState<ClassData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: classesResponse, isLoading } = useClassesQuery();
+  const classes = classesResponse?.data ?? [];
   const [search, setSearch] = useState("");
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadClasses() {
-      try {
-        const res = await fetch("/api/classes", { credentials: "include" });
-        if (!res.ok) return;
-        const json = await res.json();
-        if (!cancelled && json.data) {
-          setClasses(json.data);
-        }
-      } catch {
-        // Ignora erro
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    }
-    void loadClasses();
-    return () => { cancelled = true; };
-  }, []);
 
   const filteredClasses = useMemo(() => {
     if (!search.trim()) return classes;
@@ -1428,34 +1346,12 @@ function WizardStepSkills({
   data: WizardData;
   updateData: (partial: Partial<WizardData>) => void;
 }) {
-  const [skills, setSkills] = useState<SkillData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: skillsResponse, isLoading } = useContentByTypeQuery("skills");
+  const skills = skillsResponse?.data ?? [];
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
   const ITEMS_PER_PAGE = 10;
-
-  // Buscar lista de perícias da biblioteca
-  useEffect(() => {
-    let cancelled = false;
-    async function loadSkills() {
-      try {
-        const res = await fetch("/api/content/skills", { credentials: "include" });
-        if (res.ok) {
-          const json = await res.json();
-          if (!cancelled && Array.isArray(json.data)) {
-            setSkills(json.data);
-          }
-        }
-      } catch {
-        // Ignora erro
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    }
-    void loadSkills();
-    return () => { cancelled = true; };
-  }, []);
 
   const filteredSkills = useMemo(() => {
     if (!search.trim()) return skills;
@@ -1622,32 +1518,12 @@ function WizardStepSpells({
   data: WizardData;
   updateData: (partial: Partial<WizardData>) => void;
 }) {
-  const [spells, setSpells] = useState<SpellData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: spellsResponse, isLoading } = useContentByTypeQuery("spells");
+  const spells = spellsResponse?.data ?? [];
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
   const ITEMS_PER_PAGE = 10;
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadSpells() {
-      try {
-        const res = await fetch("/api/content/spells", { credentials: "include" });
-        if (!res.ok) return;
-        const json = await res.json();
-        if (!cancelled && json.data) {
-          setSpells(json.data);
-        }
-      } catch {
-        // Ignora erro
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    }
-    void loadSpells();
-    return () => { cancelled = true; };
-  }, []);
 
   // No nível 1, apenas magias de Círculo 1
   const level1Spells = useMemo(() => spells.filter((s) => s.circle === 1), [spells]);
@@ -1810,44 +1686,16 @@ function WizardStepSpells({
 // =============================================================================
 
 function WizardStepReview({ data, pendingImagePreview }: { data: WizardData; pendingImagePreview?: string | null }) {
-  const [raceName, setRaceName] = useState<string | null>(null);
-  const [className, setClassName] = useState<string | null>(null);
-  const [initialItemsList, setInitialItemsList] = useState<Array<{ name: string; quantity: number }>>([]);
-  const [raceHpBonus, setRaceHpBonus] = useState(0);
-
-  useEffect(() => {
-    async function loadInfo() {
-      if (data.raceId) {
-        try {
-          const res = await fetch("/api/races", { credentials: "include" });
-          if (res.ok) {
-            const json = await res.json();
-            const found = (json.data || []).find((r: RaceData) => r.id === data.raceId);
-            if (found) {
-              setRaceName(found.name);
-              setRaceHpBonus(found.hitPointsBonus || 0);
-            }
-          }
-        } catch { /* ignore */ }
-      }
-      if (data.classId) {
-        try {
-          const res = await fetch("/api/classes", { credentials: "include" });
-          if (res.ok) {
-            const json = await res.json();
-            const found = (json.data || []).find((c: ClassData) => c.id === data.classId);
-            if (found) {
-              setClassName(found.name);
-              if (found.initialItems) {
-                setInitialItemsList(found.initialItems);
-              }
-            }
-          }
-        } catch { /* ignore */ }
-      }
-    }
-    void loadInfo();
-  }, [data.raceId, data.classId]);
+  const { data: racesResponse } = useRacesQuery();
+  const { data: classesResponse } = useClassesQuery();
+  const races = racesResponse?.data ?? [];
+  const classes = classesResponse?.data ?? [];
+  const selectedRace = races.find((race) => race.id === data.raceId);
+  const selectedClass = classes.find((characterClass) => characterClass.id === data.classId);
+  const raceName = selectedRace?.name ?? null;
+  const className = selectedClass?.name ?? null;
+  const initialItemsList = selectedClass?.initialItems ?? [];
+  const raceHpBonus = selectedRace?.hitPointsBonus ?? 0;
 
   const derived = useMemo(
     () => getDerivedStats(data.attributes, 1),
