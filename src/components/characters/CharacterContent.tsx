@@ -18,6 +18,7 @@ import {
   spendCombatActions,
   spendSpell,
   getSpellActionCost,
+  hasEnoughMana,
 } from "@/lib/engine";
 
 const TYPE_LABELS: Record<ContentType, string> = {
@@ -152,6 +153,8 @@ type CharacterContentProps = {
   onActionResult?: (result: { title: string; formula: string; result: number; detail: string }) => void;
   characterManaCurrent?: number | null;
   characterManaMax?: number | null;
+  characterHpCurrent?: number | null;
+  characterHpMax?: number | null;
   onStartRolling?: () => void;
   onEndRolling?: () => void;
   characterClassId?: string | null;
@@ -268,6 +271,8 @@ export function CharacterContent({
   onActionResult,
   characterManaCurrent,
   characterManaMax,
+  characterHpCurrent,
+  characterHpMax,
   onStartRolling,
   onEndRolling,
   characterClassId,
@@ -532,7 +537,46 @@ export function CharacterContent({
       return;
     }
 
+    const manaCost = rowType === "spells" ? Number(row.content.manaCost) || 0 : 0;
+    const currentMana = characterManaCurrent ?? 0;
+    if (rowType === "spells" && manaCost > 0 && !hasEnoughMana(currentMana, manaCost)) {
+      showToast("Mana insuficiente para conjurar esta magia.");
+      return;
+    }
+
     const name = getContentName(row.content, rowType === "spells" ? "Magia" : "Item");
+    const currentActor = combatants.find((actor) => actor.characterId === characterId || actor.id === characterId);
+    const newMana = Math.max(0, currentMana - manaCost);
+    if (rowType === "spells" && manaCost > 0) {
+      const actor: Combatant = currentActor
+        ? { ...currentActor, manaCurrent: newMana, manaMax: characterManaMax ?? currentActor.manaMax }
+        : {
+            id: characterId,
+            characterId,
+            name: "Jogador",
+            type: "character",
+            initiative: 0,
+            actionsRemaining: 0,
+            maxActions: 0,
+            hpCurrent: characterHpCurrent ?? 0,
+            hpMax: characterHpMax ?? 0,
+            manaCurrent: newMana,
+            manaMax: characterManaMax ?? undefined,
+            vigor: 0,
+            destreza: 0,
+            level: characterLevel ?? 1,
+          };
+      onActorStatusChange?.(actor);
+      if (campaignId) {
+        void onPersistActorStatus?.(actor, actor.hpCurrent, newMana);
+      } else {
+        void fetch(`/api/characters/${characterId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ manaPointsCurrent: newMana, reason: "magia livre" }),
+        });
+      }
+    }
     const rawExpr = getExpression(row.content.rollExpression);
     const expr = rawExpr !== null ? String(rawExpr) : "1d20";
     const rollResult = rollExpression(expr, 1);
