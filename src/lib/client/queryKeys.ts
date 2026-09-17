@@ -20,4 +20,7 @@ export const queryKeys = {
       ["characters", characterId, "content", type] as const,
   },
   classBenefits: (classId: string) => ["classes", classId, "benefits"] as const,
+  player: {
+    campaigns: () => ["player", "campaigns"] as const,
+  },
 } as const;
