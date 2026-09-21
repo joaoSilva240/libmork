@@ -772,7 +772,7 @@ export function CharacterDetail() {
   return (
     <div className="relative mx-auto min-h-screen max-w-md bg-gray-950 text-gray-100 pb-[calc(6rem+env(safe-area-inset-bottom))] shadow-2xl font-sans">
       {/* Top Header Mobile Bar */}
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-gray-800/80 bg-gray-900/90 px-4 py-3 backdrop-blur-md">
+      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-gray-800/80 bg-gray-900/90 px-4 py-3 backdrop-blur-md">
         <Link
           href="/player"
           className="flex items-center gap-2 text-sm font-bold text-gray-200 hover:text-white"
@@ -787,7 +787,7 @@ export function CharacterDetail() {
 
       {/* Banner de Combate Ativo */}
       {combatState?.active && combatState.combatants.length > 0 && (
-        <div className="bg-purple-950/80 border-b border-purple-800/60 px-4 py-2 text-xs flex items-center justify-between">
+        <div className="relative z-30 bg-purple-950/80 border-b border-purple-800/60 px-4 py-2 text-xs flex items-center justify-between">
           <span className="font-bold text-purple-300 flex items-center gap-1.5">
             ⚔️ Combate Rodada {combatState.round}
           </span>
@@ -841,105 +841,108 @@ export function CharacterDetail() {
           </div>
         )}
 
-        {/* TAB 1: STATUS */}
-        {activeTab === "status" && (
-          <div className="space-y-4 animate-in fade-in duration-200 flex-1 flex flex-col justify-end">
-            {/* Header Hero Card com Síntese de Status (Vida, Mana, Bloqueio, Nível, Nome, XP) */}
-            <div className="relative overflow-hidden rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900 to-gray-950 p-4 shadow-lg space-y-3">
-              <div className="flex items-center gap-4">
-                {character.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={character.imageUrl}
-                    alt={character.name}
-                    className="h-16 w-16 shrink-0 rounded-2xl border-2 border-purple-600/60 object-cover shadow-md"
-                  />
-                ) : (
-                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-2 border-purple-700/60 bg-purple-950/60 text-xl font-black text-purple-300">
-                    {character.name.slice(0, 2).toUpperCase()}
-                  </div>
-                )}
+        {/* Header Hero Card com Síntese de Status (Fixo/Sticky em todas as abas) */}
+        <div
+          className={`sticky ${isCombatActive ? "top-[6.5rem]" : "top-14"} z-30 overflow-hidden rounded-2xl border border-gray-800/90 bg-gray-950/95 backdrop-blur-md p-3.5 shadow-xl space-y-2.5 transition-all`}
+          data-testid="character-status-summary"
+        >
+          <div className="flex items-center gap-3.5">
+            {character.imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={character.imageUrl}
+                alt={character.name}
+                className="h-20 w-20 shrink-0 rounded-2xl border-2 border-purple-600/60 object-cover shadow-md"
+              />
+            ) : (
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border-2 border-purple-700/60 bg-purple-950/60 text-2xl font-black text-purple-300">
+                {character.name.slice(0, 2).toUpperCase()}
+              </div>
+            )}
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="inline-block rounded-md bg-purple-950/80 px-2 py-0.5 text-[10px] font-bold text-purple-300 border border-purple-800/60">
-                        Nível {character.level}
-                      </span>
-                      <span
-                        className="inline-flex items-center gap-1 rounded-md bg-gray-900/90 px-2 py-0.5 text-[10px] font-bold text-gray-200 border border-gray-800"
-                        title="Bloqueio: mitigação tática com Vigor"
-                      >
-                        <span className="text-gray-400 font-semibold">Bloqueio</span>
-                        <span className="text-white font-black">{stats.block}</span>
-                      </span>
-                    </div>
-                    <RestPopover
-                      currentHp={character.hitPointsCurrent}
-                      maxHp={character.hitPointsMax}
-                      currentMana={character.manaPointsCurrent}
-                      maxMana={character.manaPointsMax}
-                      vigor={character.attributes?.vigor ?? 10}
-                      onSelectRest={handleRest}
-                      disabled={isResting}
-                    />
-                  </div>
-
-                  <h2 className="mt-1 truncate text-lg font-bold text-white tracking-tight">{character.name}</h2>
-                  <p className="text-[11px] text-gray-400">{character.xp} XP total</p>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="inline-block rounded-md bg-purple-950/80 px-2 py-0.5 text-[10px] font-bold text-purple-300 border border-purple-800/60">
+                    Nível {character.level}
+                  </span>
+                  <span
+                    className="inline-flex items-center gap-1 rounded-md bg-gray-900/90 px-2 py-0.5 text-[10px] font-bold text-gray-200 border border-gray-800"
+                    title="Bloqueio: mitigação tática com Vigor"
+                  >
+                    <span className="text-gray-400 font-semibold">Bloqueio</span>
+                    <span className="text-white font-black">{stats.block}</span>
+                  </span>
                 </div>
+                <RestPopover
+                  currentHp={character.hitPointsCurrent}
+                  maxHp={character.hitPointsMax}
+                  currentMana={character.manaPointsCurrent}
+                  maxMana={character.manaPointsMax}
+                  vigor={character.attributes?.vigor ?? 10}
+                  onSelectRest={handleRest}
+                  disabled={isResting}
+                />
               </div>
 
-              {/* Barras de Status: Vida, Mana e XP */}
-              <div className="space-y-2 border-t border-gray-800/80 pt-2.5">
-                {/* Vida (HP) */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] font-medium">
-                    <span className="font-bold text-red-400 uppercase tracking-wider">Vida (HP)</span>
-                    <span className="text-red-300 font-semibold">
-                      {character.hitPointsCurrent} / {character.hitPointsMax}
-                    </span>
-                  </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-900">
-                    <div
-                      className="h-full bg-red-500 transition-all duration-300"
-                      style={{ width: `${hpPercent}%` }}
-                    />
-                  </div>
-                </div>
+              <h2 className="mt-1 truncate text-lg font-bold text-white tracking-tight">{character.name}</h2>
+              <p className="text-[11px] text-gray-400">{character.xp} XP total</p>
+            </div>
+          </div>
 
-                {/* Mana (MP) */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] font-medium">
-                    <span className="font-bold text-blue-400 uppercase tracking-wider">Mana (MP)</span>
-                    <span className="text-blue-300 font-semibold">
-                      {character.manaPointsCurrent} / {character.manaPointsMax}
-                    </span>
-                  </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-900">
-                    <div
-                      className="h-full bg-blue-500 transition-all duration-300"
-                      style={{ width: `${manaPercent}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Progresso XP */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] text-gray-400 font-medium">
-                    <span>Progresso XP</span>
-                    <span>{character.xp % 100} / 100 XP</span>
-                  </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-800">
-                    <div
-                      className="h-full bg-gradient-to-r from-purple-600 to-blue-500 transition-all duration-300"
-                      style={{ width: `${character.xp % 100}%` }}
-                    />
-                  </div>
-                </div>
+          {/* Barras de Status: Vida, Mana e XP */}
+          <div className="space-y-1.5 border-t border-gray-800/80 pt-2">
+            {/* Vida (HP) */}
+            <div className="space-y-0.5">
+              <div className="flex justify-between text-[10px] font-medium leading-none">
+                <span className="font-bold text-red-400 uppercase tracking-wider">Vida (HP)</span>
+                <span className="text-red-300 font-semibold">
+                  {character.hitPointsCurrent} / {character.hitPointsMax}
+                </span>
+              </div>
+              <div className="h-1 w-full overflow-hidden rounded-full bg-gray-900">
+                <div
+                  className="h-full bg-red-500 transition-all duration-300"
+                  style={{ width: `${hpPercent}%` }}
+                />
               </div>
             </div>
 
+            {/* Mana (MP) */}
+            <div className="space-y-0.5">
+              <div className="flex justify-between text-[10px] font-medium leading-none">
+                <span className="font-bold text-blue-400 uppercase tracking-wider">Mana (MP)</span>
+                <span className="text-blue-300 font-semibold">
+                  {character.manaPointsCurrent} / {character.manaPointsMax}
+                </span>
+              </div>
+              <div className="h-1 w-full overflow-hidden rounded-full bg-gray-900">
+                <div
+                  className="h-full bg-blue-500 transition-all duration-300"
+                  style={{ width: `${manaPercent}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Progresso XP */}
+            <div className="space-y-0.5">
+              <div className="flex justify-between text-[10px] text-gray-400 font-medium leading-none">
+                <span>Progresso XP</span>
+                <span>{character.xp % 100} / 100 XP</span>
+              </div>
+              <div className="h-1 w-full overflow-hidden rounded-full bg-gray-800">
+                <div
+                  className="h-full bg-gradient-to-r from-purple-600 to-blue-500 transition-all duration-300"
+                  style={{ width: `${character.xp % 100}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* TAB 1: STATUS */}
+        {activeTab === "status" && (
+          <div className="space-y-4 animate-in fade-in duration-200 flex-1 flex flex-col">
             {/* Atributos do Personagem com Rolagem Instantânea */}
             <div className="rounded-2xl border border-gray-800 bg-gray-900/80 p-4 shadow-sm">
               <div className="mb-3 flex items-center justify-between">
@@ -989,7 +992,7 @@ export function CharacterDetail() {
         {activeTab === "skills" && (
           <div className="space-y-4 animate-in fade-in duration-200 flex-1 flex flex-col">
             {showSkillsToast && (
-              <div className="fixed top-16 left-4 right-4 z-40 mx-auto max-w-md animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="fixed top-16 left-4 right-4 z-50 mx-auto max-w-md animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="flex items-start justify-between gap-3 rounded-2xl border border-purple-600/70 bg-gray-900/95 p-3.5 shadow-2xl backdrop-blur-md">
                   <div className="flex items-start gap-2.5 min-w-0">
                     <span className="text-base leading-none mt-0.5" aria-hidden="true">💡</span>
