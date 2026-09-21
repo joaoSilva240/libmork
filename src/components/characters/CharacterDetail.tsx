@@ -643,7 +643,7 @@ export function CharacterDetail() {
   const manaPercent = Math.min(100, Math.max(0, (character.manaPointsCurrent / Math.max(character.manaPointsMax, 1)) * 100));
 
   return (
-    <div className="relative mx-auto min-h-screen max-w-md bg-gray-950 text-gray-100 pb-24 shadow-2xl font-sans">
+    <div className="relative mx-auto min-h-screen max-w-md bg-gray-950 text-gray-100 pb-[calc(6rem+env(safe-area-inset-bottom))] shadow-2xl font-sans">
       {/* Top Header Mobile Bar */}
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-gray-800/80 bg-gray-900/90 px-4 py-3 backdrop-blur-md">
         <Link
@@ -671,7 +671,7 @@ export function CharacterDetail() {
       )}
 
       {/* Main Tab Content */}
-      <main className="p-4 pb-24 space-y-4 min-h-[calc(100vh-120px)] flex flex-col">
+      <main className="p-4 pb-[calc(6rem+env(safe-area-inset-bottom))] space-y-4 min-h-[calc(100vh-120px)] flex flex-col">
         {isTurnLocked && (
           <div className="flex items-center justify-center gap-1.5 rounded-full border border-amber-800/60 bg-amber-950/40 px-3 py-1 text-xs font-bold text-amber-300 shadow-sm w-fit mx-auto">
             🔒 <span>Turno de {currentCombatant?.name}</span>

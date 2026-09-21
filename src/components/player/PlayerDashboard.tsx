@@ -65,9 +65,9 @@ export function PlayerDashboard() {
 
         const data = await response.json();
         setCharacters(data.data || []);
-      } catch (err: any) {
+      } catch (err: unknown) {
         clearTimeout(timeoutId);
-        if (err.name === "AbortError") {
+        if (err instanceof Error && err.name === "AbortError") {
           setCharactersError("Tempo esgotado. Verifique sua conexão.");
         } else {
           setCharactersError("Erro de conexão. Tente novamente.");
@@ -188,7 +188,7 @@ export function PlayerDashboard() {
   }, []);
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-6 pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
       <header className="flex items-center justify-between border border-secondary-border bg-secondary-card p-4 rounded-xl shadow-md">
         <div>
           <h1 className="text-xl font-bold text-secondary-pure">Libmork — Jogador</h1>
@@ -348,6 +348,11 @@ export function PlayerDashboard() {
             )}
         </div>
       )}
+
+      <ToastContainer
+        toasts={toasts}
+        onRemove={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))}
+      />
 
       <BottomNav
         activeId={activeTab}
@@ -511,10 +516,6 @@ export function PlayerDashboard() {
         </div>
       )}
 
-      <ToastContainer
-        toasts={toasts}
-        onRemove={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))}
-      />
     </div>
   );
 }

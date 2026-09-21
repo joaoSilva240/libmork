@@ -4,8 +4,8 @@ export default function PlayerLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-dominant-deep text-secondary-pure">
-      <main className="container mx-auto p-4">{children}</main>
+    <div className="min-h-[100dvh] bg-dominant-deep text-secondary-pure">
+      <main className="container mx-auto px-4 pt-4 pb-0 min-h-[100dvh]">{children}</main>
     </div>
   );
 }
