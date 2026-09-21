@@ -400,6 +400,33 @@ export const characterCampaigns = pgTable(
 // =============================================================================
 
 /**
+ * LIBRARY_DOCUMENT — Documento de regras/suplementos (Issue #6).
+ * Referenciado por URL externa ou repositório configurado sem upload binário.
+ */
+export const libraryDocuments = pgTable(
+  "library_documents",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    title: varchar("title", { length: 255 }).notNull(),
+    description: text("description"),
+    coverUrl: varchar("cover_url", { length: 1000 }),
+    externalUrl: varchar("external_url", { length: 1000 }).notNull(),
+    provider: varchar("provider", { length: 50 }).notNull().default("external"),
+    category: varchar("category", { length: 50 }).notNull().default("livro-base"),
+    tags: text("tags").array(),
+    isOfficial: boolean("is_official").notNull().default(false),
+    isPublic: boolean("is_public").notNull().default(true),
+    campaignId: uuid("campaign_id").references(() => campaigns.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_library_doc_campaign").on(table.campaignId),
+    index("idx_library_doc_category").on(table.category),
+  ],
+);
+
+/**
  * SKILL — Perícia (D-20, D-35, D-40).
  */
 export const skills = pgTable(
@@ -709,6 +736,7 @@ export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
   duels: many(duels),
   npcCampaigns: many(npcCampaigns),
   logs: many(campaignLogs),
+  libraryDocuments: many(libraryDocuments),
 }));
 
 export const worldsRelations = relations(worlds, ({ one, many }) => ({
@@ -861,3 +889,11 @@ export const duelParticipantsRelations = relations(duelParticipants, ({ one }) =
     references: [characters.id],
   }),
 }));
+
+export const libraryDocumentsRelations = relations(libraryDocuments, ({ one }) => ({
+  campaign: one(campaigns, {
+    fields: [libraryDocuments.campaignId],
+    references: [campaigns.id],
+  }),
+}));
+
