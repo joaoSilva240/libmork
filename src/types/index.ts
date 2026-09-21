@@ -225,6 +225,26 @@ export type Condition = {
   description: string | null;
 };
 
+export interface LibraryDocument {
+  id: string;
+  title: string;
+  description: string | null;
+  coverUrl: string | null;
+  externalUrl: string;
+  provider: string;
+  category: string;
+  tags: string[] | null;
+  isOfficial: boolean;
+  isPublic: boolean;
+  campaignId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  pdfProxyUrl?: string | null;
+  acquisitionUrl?: string | null;
+  webReaderUrl?: string | null;
+}
+
+
 export type Npc = {
   id: string;
   worldId: string | null;

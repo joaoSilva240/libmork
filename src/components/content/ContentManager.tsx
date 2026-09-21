@@ -12,6 +12,7 @@ import { LibraryClassFeatures } from "@/components/classes/LibraryClassFeatures"
 import { LibraryRaces } from "@/components/races/LibraryRaces";
 import { LibraryNpcs } from "@/components/npcs/LibraryNpcs";
 import { LibraryWorlds } from "@/components/worlds/LibraryWorlds";
+import { LibraryDocuments } from "@/components/library/LibraryDocuments";
 import { useRef } from "react";
 import { getCsrfToken } from "@/lib/client/csrf";
 
@@ -32,7 +33,7 @@ type TypeConfig = {
   showInList: string[];
 };
 
-type ManagerContentType = ContentType | "classes" | "class-features" | "races" | "npcs" | "worlds";
+type ManagerContentType = ContentType | "classes" | "class-features" | "races" | "npcs" | "worlds" | "documents";
 
 const TYPE_CONFIGS: Record<ManagerContentType, TypeConfig> = {
   skills: {
@@ -107,6 +108,11 @@ const TYPE_CONFIGS: Record<ManagerContentType, TypeConfig> = {
     fields: [],
     showInList: [],
   },
+  documents: {
+    label: "Regras / PDFs",
+    fields: [],
+    showInList: [],
+  },
 };
 
 const CONTENT_TYPE_ORDER: ManagerContentType[] = [
@@ -119,6 +125,7 @@ const CONTENT_TYPE_ORDER: ManagerContentType[] = [
   "races",
   "npcs",
   "worlds",
+  "documents",
 ];
 
 type ContentManagerProps = {
@@ -331,6 +338,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
     openPf2eCatalog?: () => void;
   } | null>(null);
   const worldActionsRef = useRef<{ openCreate: () => void } | null>(null);
+  const documentActionsRef = useRef<{ openCreate: () => void; openTome?: () => void } | null>(null);
   const isCampaignContext = basePath.includes("/api/campaigns/");
   const availableTypes = isCampaignContext
     ? CONTENT_TYPE_ORDER.filter((t) => t !== "npcs" && t !== "worlds" && t !== "classes" && t !== "class-features" && t !== "races")
@@ -588,7 +596,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
   };
 
   useEffect(() => {
-    if (activeType === "classes" || activeType === "class-features" || activeType === "races" || activeType === "npcs" || activeType === "worlds") {
+    if (activeType === "classes" || activeType === "class-features" || activeType === "races" || activeType === "npcs" || activeType === "worlds" || activeType === "documents") {
       setIsLoading(false);
       return;
     }
@@ -915,7 +923,20 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
             </button>
           )}
 
-          {activeType !== "classes" && activeType !== "class-features" && activeType !== "races" && activeType !== "npcs" && activeType !== "worlds" && (
+          {activeType === "documents" && (
+            <>
+              <button
+                type="button"
+                onClick={() => documentActionsRef.current?.openTome?.()}
+                className="rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2.5 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg flex items-center gap-1.5"
+                title="Abrir Tome"
+              >
+                <span>Tome</span>
+              </button>
+            </>
+          )}
+
+          {activeType !== "classes" && activeType !== "class-features" && activeType !== "races" && activeType !== "npcs" && activeType !== "worlds" && activeType !== "documents" && (
             <>
               <button
                 type="button"
@@ -972,7 +993,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
             ))}
           </div>
 
-          {activeType !== "classes" && activeType !== "class-features" && activeType !== "races" && activeType !== "npcs" && activeType !== "worlds" && (
+          {activeType !== "classes" && activeType !== "class-features" && activeType !== "races" && activeType !== "npcs" && activeType !== "worlds" && activeType !== "documents" && (
             <input
               type="text"
               placeholder={`Buscar ${config.label.toLowerCase()} por nome...`}
@@ -1199,6 +1220,11 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
         <LibraryNpcs onRegisterActions={(actions) => (npcActionsRef.current = actions)} />
       ) : activeType === "worlds" ? (
         <LibraryWorlds onRegisterActions={(actions) => (worldActionsRef.current = actions)} />
+      ) : activeType === "documents" ? (
+        <LibraryDocuments
+          campaignId={isCampaignContext ? basePath.split("/")[3] : null}
+          onRegisterActions={(actions) => (documentActionsRef.current = actions)}
+        />
       ) : (
         /* Área Principal de Conteúdo (Full Width) */
         <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 shadow-xl flex flex-col max-h-[calc(100vh-16rem)]">
