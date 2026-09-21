@@ -79,3 +79,24 @@ export function LogOutIcon({ className = "w-5 h-5" }: { className?: string }) {
     </svg>
   );
 }
+
+export function BedIcon({ className = "w-5 h-5" }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+      aria-hidden="true"
+      className={className}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M2.25 18V6a1.5 1.5 0 011.5-1.5h1.5A1.5 1.5 0 016.75 6v12M2.25 18h19.5M21.75 18v-7.5a2.25 2.25 0 00-2.25-2.25H6.75M6.75 18v-3.75h15V18M6.75 10.5a1.5 1.5 0 011.5-1.5h2.25a1.5 1.5 0 011.5 1.5v1.5H6.75v-1.5z"
+      />
+    </svg>
+  );
+}
+

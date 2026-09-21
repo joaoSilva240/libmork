@@ -11,6 +11,10 @@ import { ShareLink } from "@/components/characters/ShareLink";
 import { ImageUpload } from "@/components/characters/ImageUpload";
 import { CharacterContent } from "@/components/characters/CharacterContent";
 import { NfcManager } from "@/components/characters/NfcManager";
+import { RestPopover } from "@/components/characters/RestPopover";
+import { calculateRest, REST_OPTIONS, type RestType } from "@/lib/engine/rest";
+import { ToastContainer } from "@/components/ui/Toast";
+import { generateUUID } from "@/lib/utils/uuid";
 import { Spinner } from "@/components/ui";
 import {
   StatusFilledIcon,
@@ -85,6 +89,16 @@ export function CharacterDetail() {
   const [activeTab, setActiveTab] = useState<TabType>("status");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showSkillsToast, setShowSkillsToast] = useState(false);
+  const [isResting, setIsResting] = useState(false);
+  const [toasts, setToasts] = useState<Array<{ id: string; message: string; type?: "error" | "success" | "info" | "warning" }>>([]);
+
+  const addToast = (message: string, type: "error" | "success" | "info" | "warning" = "info") => {
+    setToasts((prev) => [...prev, { id: generateUUID(), message, type }]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
 
   // Combate & Interações ao vivo
   const [combatState, setCombatState] = useState<CombatSessionState | null>(null);
@@ -527,6 +541,119 @@ export function CharacterDetail() {
     router.push("/player");
   };
 
+  const handleRest = async (restType: RestType) => {
+    if (!character || isResting) return;
+
+    const result = calculateRest({
+      currentHp: character.hitPointsCurrent,
+      maxHp: character.hitPointsMax,
+      currentMana: character.manaPointsCurrent,
+      maxMana: character.manaPointsMax,
+      vigor: character.attributes?.vigor ?? 10,
+      restType,
+    });
+
+    if (result.hpRecovered === 0 && result.manaRecovered === 0) {
+      addToast("Você já está com a vida e a mana totalmente recuperadas!", "info");
+      return;
+    }
+
+    const prevHp = character.hitPointsCurrent;
+    const prevMana = character.manaPointsCurrent;
+
+    // Atualização otimista imediata no estado local
+    setCharacter((prev) =>
+      prev
+        ? {
+            ...prev,
+            hitPointsCurrent: result.newHp,
+            manaPointsCurrent: result.newMana,
+          }
+        : prev
+    );
+
+    setIsResting(true);
+
+    try {
+      const response = await fetch(`/api/characters/${character.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          hitPointsCurrent: result.newHp,
+          manaPointsCurrent: result.newMana,
+        }),
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        // Rollback se a requisição falhar
+        setCharacter((prev) =>
+          prev
+            ? {
+                ...prev,
+                hitPointsCurrent: prevHp,
+                manaPointsCurrent: prevMana,
+              }
+            : prev
+        );
+        addToast("Falha ao salvar descanso. Tente novamente.", "error");
+        return;
+      }
+
+      // Sincronizar status em tempo real via socket / campanha se aplicável
+      if (character.campaignId) {
+        updateActorStatus({
+          campaignId: character.campaignId,
+          actorId: character.id,
+          currentHp: result.newHp,
+          maxHp: character.hitPointsMax,
+          currentMana: result.newMana,
+          maxMana: character.manaPointsMax,
+        });
+
+        if (combatState?.active) {
+          const myCombatant = combatState.combatants.find(
+            (c) => c.id === character.id || c.characterId === character.id
+          );
+          if (myCombatant) {
+            const nextSession: CombatSessionState = {
+              ...combatState,
+              combatants: combatState.combatants.map((c) =>
+                c.id === myCombatant.id
+                  ? {
+                      ...c,
+                      hpCurrent: result.newHp,
+                      manaCurrent: result.newMana,
+                    }
+                  : c
+              ),
+            };
+            updateCombatState(nextSession);
+          }
+        }
+      }
+
+      addToast(
+        `${REST_OPTIONS[restType].label}: recuperados +${result.hpRecovered} HP e +${result.manaRecovered} MP.`,
+        "success"
+      );
+    } catch {
+      // Rollback se ocorrer erro de conexão
+      setCharacter((prev) =>
+        prev
+          ? {
+              ...prev,
+              hitPointsCurrent: prevHp,
+              manaPointsCurrent: prevMana,
+            }
+          : prev
+      );
+      addToast("Falha ao salvar descanso. Tente novamente.", "error");
+    } finally {
+      setIsResting(false);
+    }
+  };
+
   const isCombatActive = Boolean(combatState?.active && combatState.combatants.length > 0);
   const myCombatant = isCombatActive && character
     ? combatState?.combatants.find((c) => c.id === character.id || c.characterId === character.id)
@@ -734,17 +861,28 @@ export function CharacterDetail() {
                 )}
 
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="inline-block rounded-md bg-purple-950/80 px-2 py-0.5 text-[10px] font-bold text-purple-300 border border-purple-800/60">
-                      Nível {character.level}
-                    </span>
-                    <span
-                      className="inline-flex items-center gap-1 rounded-md bg-gray-900/90 px-2 py-0.5 text-[10px] font-bold text-gray-200 border border-gray-800"
-                      title="Bloqueio: mitigação tática com Vigor"
-                    >
-                      <span className="text-gray-400 font-semibold">Bloqueio</span>
-                      <span className="text-white font-black">{stats.block}</span>
-                    </span>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="inline-block rounded-md bg-purple-950/80 px-2 py-0.5 text-[10px] font-bold text-purple-300 border border-purple-800/60">
+                        Nível {character.level}
+                      </span>
+                      <span
+                        className="inline-flex items-center gap-1 rounded-md bg-gray-900/90 px-2 py-0.5 text-[10px] font-bold text-gray-200 border border-gray-800"
+                        title="Bloqueio: mitigação tática com Vigor"
+                      >
+                        <span className="text-gray-400 font-semibold">Bloqueio</span>
+                        <span className="text-white font-black">{stats.block}</span>
+                      </span>
+                    </div>
+                    <RestPopover
+                      currentHp={character.hitPointsCurrent}
+                      maxHp={character.hitPointsMax}
+                      currentMana={character.manaPointsCurrent}
+                      maxMana={character.manaPointsMax}
+                      vigor={character.attributes?.vigor ?? 10}
+                      onSelectRest={handleRest}
+                      disabled={isResting}
+                    />
                   </div>
 
                   <h2 className="mt-1 truncate text-lg font-bold text-white tracking-tight">{character.name}</h2>
@@ -1101,6 +1239,9 @@ export function CharacterDetail() {
           onPermanentDeath={handlePermanentDeath}
         />
       )}
+
+      {/* Toast Container para notificações de descanso e ações */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   );
 }
