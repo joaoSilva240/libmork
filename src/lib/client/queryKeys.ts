@@ -16,6 +16,7 @@ export const queryKeys = {
     detail: (type: string, id: string) => ["content", type, id] as const,
   },
   characterContent: {
+    all: (characterId: string) => ["characters", characterId, "content"] as const,
     byType: (characterId: string, type: string) =>
       ["characters", characterId, "content", type] as const,
   },
