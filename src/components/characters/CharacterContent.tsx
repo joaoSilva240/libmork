@@ -354,7 +354,13 @@ export function CharacterContent({
   } | null>(null);
   const [toasts, setToasts] = useState<Array<{ id: string; message: string; type?: "error" | "success" | "info" | "warning" }>>([]);
   const [isBusy, setIsBusy] = useState(false);
-  const { rollDice, requestDefenseReaction, updateActorStatus } = useSocket();
+  const {
+    rollDice,
+    requestDefenseReaction,
+    updateActorStatus,
+    subscribeCharacterInventoryChange,
+    notifyCharacterInventoryChange,
+  } = useSocket();
   const actorSocketId = (actor: Combatant) => actor.characterId ?? actor.npcId ?? actor.id;
   const [selectedActionItem, setSelectedActionItem] = useState<{
     name: string;
@@ -397,6 +403,29 @@ export function CharacterContent({
     contentQuery.isError,
     contentQuery.error,
   ]);
+
+  useEffect(() => {
+    if (typeof subscribeCharacterInventoryChange !== "function") return;
+    const unsubscribe = subscribeCharacterInventoryChange((payload) => {
+      // Se a alteração for desta campanha e para este personagem:
+      if (payload.characterId !== characterId) return;
+      if (campaignId && payload.campaignId && payload.campaignId !== campaignId) return;
+
+      // Invalida o TanStack Query para carregar os dados frescos instantaneamente
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.characterContent.byType(characterId, payload.contentType),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.characterContent.all(characterId),
+      });
+    });
+
+    return () => {
+      if (typeof unsubscribe === "function") {
+        unsubscribe();
+      }
+    };
+  }, [characterId, campaignId, queryClient, subscribeCharacterInventoryChange]);
 
   const handleToggleEquip = (itemId: string) => {
     const isCurrentlyEquipped = equippedItemIds.includes(itemId);
@@ -746,6 +775,17 @@ export function CharacterContent({
       await queryClient.invalidateQueries({
         queryKey: queryKeys.characterContent.byType(characterId, rowType),
       });
+
+      if (campaignId) {
+        notifyCharacterInventoryChange({
+          campaignId,
+          characterId,
+          changeType: rowType === "items" ? "item-removed" : rowType === "spells" ? "spell-removed" : "skill-removed",
+          contentType: rowType as "items" | "spells" | "skills",
+          contentId: junctionId,
+          junctionId,
+        });
+      }
     } catch {
       showToast("Erro de conexão. Tente novamente.");
     } finally {

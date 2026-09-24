@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSocket } from "@/context/SocketContext";
 import type { Npc } from "@/types";
 import type { RosterPlayer, RosterActor } from "@/components/campaigns/ActorOverlay";
 
@@ -14,6 +15,13 @@ type PlayerInviteData = {
 };
 
 export function CampaignInvites({ campaignId }: { campaignId: string }) {
+  const {
+    subscribeCampaignInviteCreated,
+    subscribeCampaignInviteRevoked,
+    notifyCampaignInviteCreated,
+    notifyCampaignInviteRevoked,
+  } = useSocket();
+
   const [players, setPlayers] = useState<PlayerInviteData[]>([]);
   const [actors, setActors] = useState<RosterActor[]>([]);
   const [actorSearchQuery, setActorSearchQuery] = useState("");
@@ -91,10 +99,34 @@ export function CampaignInvites({ campaignId }: { campaignId: string }) {
 
     void loadData();
 
+    const unsubscribeInviteCreated = subscribeCampaignInviteCreated((payload) => {
+      if (payload.campaignId !== campaignId) return;
+      setPlayers((prev) =>
+        prev.map((player) =>
+          player.id === payload.invite.userId
+            ? { ...player, isInvited: true, inviteId: payload.invite.id }
+            : player
+        )
+      );
+    });
+
+    const unsubscribeInviteRevoked = subscribeCampaignInviteRevoked((payload) => {
+      if (payload.campaignId !== campaignId) return;
+      setPlayers((prev) =>
+        prev.map((player) =>
+          player.id === payload.userId || player.inviteId === payload.inviteId
+            ? { ...player, isInvited: false, inviteId: null }
+            : player
+        )
+      );
+    });
+
     return () => {
       cancelled = true;
+      unsubscribeInviteCreated();
+      unsubscribeInviteRevoked();
     };
-  }, [campaignId]);
+  }, [campaignId, subscribeCampaignInviteCreated, subscribeCampaignInviteRevoked]);
 
   const handleInvite = async (userId: string) => {
     setError(null);
@@ -120,6 +152,18 @@ export function CampaignInvites({ campaignId }: { campaignId: string }) {
             : player
         )
       );
+
+      notifyCampaignInviteCreated({
+        campaignId,
+        invite: {
+          id: data.data.id,
+          userId,
+          createdAt: data.data.createdAt || new Date().toISOString(),
+        },
+        player: {
+          id: userId,
+        },
+      });
     } catch {
       setError("Erro de conexão ao convidar jogador.");
     } finally {
@@ -151,6 +195,12 @@ export function CampaignInvites({ campaignId }: { campaignId: string }) {
             : p
         )
       );
+
+      notifyCampaignInviteRevoked({
+        campaignId,
+        inviteId: targetId,
+        userId: player.id,
+      });
     } catch {
       setError("Erro de conexão ao remover convite.");
     } finally {

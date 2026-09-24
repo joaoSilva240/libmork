@@ -160,6 +160,34 @@ findAvailablePort(initialPort).then((port) => {
         if (finishPayload.campaignId) io.to(`campaign:${finishPayload.campaignId}`).emit("duel-finished", finishPayload);
       });
 
+      // Logs da Campanha (Issue #13 - Alta Prioridade 1)
+      socket.on("create-campaign-log", (payload) => {
+        if (!payload || !payload.campaignId || !payload.log) return;
+        io.to(`campaign:${payload.campaignId}`).emit("campaign-log-created", payload);
+      });
+
+      socket.on("update-campaign-log", (payload) => {
+        if (!payload || !payload.campaignId || !payload.log) return;
+        io.to(`campaign:${payload.campaignId}`).emit("campaign-log-updated", payload);
+      });
+
+      // Inventário de Personagem (Issue #13 - Alta Prioridade 2)
+      socket.on("notify-character-inventory-change", (payload) => {
+        if (!payload || !payload.campaignId || !payload.characterId) return;
+        io.to(`campaign:${payload.campaignId}`).emit("character-inventory-changed", payload);
+      });
+
+      // Convites de Campanha (Issue #13 - Alta Prioridade 3)
+      socket.on("notify-campaign-invite-created", (payload) => {
+        if (!payload || !payload.campaignId || !payload.invite) return;
+        io.to(`campaign:${payload.campaignId}`).emit("campaign-invite-created", payload);
+      });
+
+      socket.on("notify-campaign-invite-revoked", (payload) => {
+        if (!payload || !payload.campaignId || !payload.inviteId) return;
+        io.to(`campaign:${payload.campaignId}`).emit("campaign-invite-revoked", payload);
+      });
+
       // Sair explicitamente de uma campanha
       socket.on("leave-campaign", ({ campaignId }) => {
         if (!campaignId) return;
