@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { io, Socket } from "socket.io-client";
+import type { CampaignLog } from "@/types";
 
 // 3-second loading delay constant (3000ms)
 export const DICE_ROLL_LOADING_DELAY = 3000;
@@ -77,6 +78,41 @@ export interface DuelInviteResponsePayload {
   permanentResults: boolean;
 }
 
+export interface CampaignLogPayload {
+  campaignId: string;
+  log: CampaignLog;
+}
+
+export interface CharacterInventoryChangePayload {
+  campaignId: string;
+  characterId: string;
+  changeType: "item-added" | "item-removed" | "spell-added" | "spell-removed" | "skill-added" | "skill-removed";
+  contentType: "items" | "spells" | "skills";
+  contentId: string;
+  junctionId?: string;
+  content?: Record<string, unknown>;
+}
+
+export interface CampaignInviteCreatedPayload {
+  campaignId: string;
+  invite: {
+    id: string;
+    userId: string;
+    createdAt: string;
+  };
+  player: {
+    id: string;
+    displayName?: string;
+    email?: string;
+  };
+}
+
+export interface CampaignInviteRevokedPayload {
+  campaignId: string;
+  inviteId: string;
+  userId: string;
+}
+
 interface SocketContextValue {
   socket: Socket | null;
   isConnected: boolean;
@@ -104,6 +140,22 @@ interface SocketContextValue {
   subscribeDuelResponse: (handler: (payload: DuelInviteResponsePayload) => void) => () => void;
   subscribeDuelState: (handler: (state: DuelSessionState) => void) => () => void;
   subscribeDuelFinish: (handler: (payload: { campaignId: string; duelId: string; winnerId?: string }) => void) => () => void;
+
+  // Logs
+  broadcastCampaignLog: (payload: CampaignLogPayload) => void;
+  broadcastCampaignLogUpdate: (payload: CampaignLogPayload) => void;
+  subscribeCampaignLogCreated: (callback: (payload: CampaignLogPayload) => void) => () => void;
+  subscribeCampaignLogUpdated: (callback: (payload: CampaignLogPayload) => void) => () => void;
+
+  // Inventário
+  notifyCharacterInventoryChange: (payload: CharacterInventoryChangePayload) => void;
+  subscribeCharacterInventoryChange: (callback: (payload: CharacterInventoryChangePayload) => void) => () => void;
+
+  // Convites
+  notifyCampaignInviteCreated: (payload: CampaignInviteCreatedPayload) => void;
+  notifyCampaignInviteRevoked: (payload: CampaignInviteRevokedPayload) => void;
+  subscribeCampaignInviteCreated: (callback: (payload: CampaignInviteCreatedPayload) => void) => () => void;
+  subscribeCampaignInviteRevoked: (callback: (payload: CampaignInviteRevokedPayload) => void) => () => void;
 }
 
 const SocketContext = createContext<SocketContextValue | undefined>(undefined);
@@ -408,6 +460,136 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  const broadcastCampaignLog = useCallback(
+    (payload: CampaignLogPayload) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("create-campaign-log", payload);
+      }
+    },
+    [socket]
+  );
+
+  const broadcastCampaignLogUpdate = useCallback(
+    (payload: CampaignLogPayload) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("update-campaign-log", payload);
+      }
+    },
+    [socket]
+  );
+
+  const notifyCharacterInventoryChange = useCallback(
+    (payload: CharacterInventoryChangePayload) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("notify-character-inventory-change", payload);
+      }
+    },
+    [socket]
+  );
+
+  const notifyCampaignInviteCreated = useCallback(
+    (payload: CampaignInviteCreatedPayload) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("notify-campaign-invite-created", payload);
+      }
+    },
+    [socket]
+  );
+
+  const notifyCampaignInviteRevoked = useCallback(
+    (payload: CampaignInviteRevokedPayload) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("notify-campaign-invite-revoked", payload);
+      }
+    },
+    [socket]
+  );
+
+  const subscribeCampaignLogCreated = useCallback(
+    (callback: (payload: CampaignLogPayload) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on("campaign-log-created", callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off("campaign-log-created", callback);
+        }
+      };
+    },
+    [socket]
+  );
+
+  const subscribeCampaignLogUpdated = useCallback(
+    (callback: (payload: CampaignLogPayload) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on("campaign-log-updated", callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off("campaign-log-updated", callback);
+        }
+      };
+    },
+    [socket]
+  );
+
+  const subscribeCharacterInventoryChange = useCallback(
+    (callback: (payload: CharacterInventoryChangePayload) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on("character-inventory-changed", callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off("character-inventory-changed", callback);
+        }
+      };
+    },
+    [socket]
+  );
+
+  const subscribeCampaignInviteCreated = useCallback(
+    (callback: (payload: CampaignInviteCreatedPayload) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on("campaign-invite-created", callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off("campaign-invite-created", callback);
+        }
+      };
+    },
+    [socket]
+  );
+
+  const subscribeCampaignInviteRevoked = useCallback(
+    (callback: (payload: CampaignInviteRevokedPayload) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on("campaign-invite-revoked", callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off("campaign-invite-revoked", callback);
+        }
+      };
+    },
+    [socket]
+  );
+
   return (
     <SocketContext.Provider
       value={{
@@ -437,6 +619,16 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         subscribeDuelResponse,
         subscribeDuelState,
         subscribeDuelFinish,
+        broadcastCampaignLog,
+        broadcastCampaignLogUpdate,
+        subscribeCampaignLogCreated,
+        subscribeCampaignLogUpdated,
+        notifyCharacterInventoryChange,
+        subscribeCharacterInventoryChange,
+        notifyCampaignInviteCreated,
+        notifyCampaignInviteRevoked,
+        subscribeCampaignInviteCreated,
+        subscribeCampaignInviteRevoked,
       }}
     >
       {children}

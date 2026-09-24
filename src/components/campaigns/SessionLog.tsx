@@ -3,8 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CampaignLog } from "@/types";
 import { Spinner } from "@/components/ui";
-
-const POLL_INTERVAL_MS = 4000;
+import { useSocket } from "@/context/SocketContext";
 
 type SessionLogProps = {
   campaignId: string;
@@ -16,12 +15,20 @@ export function SessionLog({ campaignId }: SessionLogProps) {
   const [error, setError] = useState<string | null>(null);
   const [rollInputs, setRollInputs] = useState<Record<string, string>>({});
   const [submittingId, setSubmittingId] = useState<string | null>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const {
+    subscribeCampaignLogCreated,
+    subscribeCampaignLogUpdated,
+    broadcastCampaignLogUpdate,
+    isConnected,
+  } = useSocket();
+
+  const wasConnectedRef = useRef(isConnected);
 
   const loadLogs = useCallback(async () => {
     try {
       const response = await fetch(`/api/campaigns/${campaignId}/logs?limit=100`, {
-        credentials: "include"
+        credentials: "include",
       });
       const data = await response.json();
 
@@ -39,49 +46,42 @@ export function SessionLog({ campaignId }: SessionLogProps) {
     }
   }, [campaignId]);
 
+  // Carregamento REST inicial e subscrições Socket.IO
   useEffect(() => {
-    let cancelled = false;
+    void loadLogs();
 
-    const load = async () => {
-      try {
-        const response = await fetch(`/api/campaigns/${campaignId}/logs?limit=100`, {
-          credentials: "include"
-        });
-        const data = await response.json();
-
-        if (cancelled) return;
-
-        if (!response.ok) {
-          setError(data.error || "Erro ao carregar logs");
-          return;
+    const unsubscribeCreated = subscribeCampaignLogCreated((payload) => {
+      if (payload.campaignId !== campaignId || !payload.log) return;
+      setLogs((prev) => {
+        // Deduplicação estrita por id
+        if (prev.some((item) => item.id === payload.log.id)) {
+          return prev;
         }
+        // Insere no início (mais recente) e limita em 100
+        return [payload.log, ...prev].slice(0, 100);
+      });
+    });
 
-        setLogs(data.data);
-        setError(null);
-      } catch {
-        if (!cancelled) {
-          setError("Erro de conexão. Tente novamente.");
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    void load();
-
-    timerRef.current = setInterval(() => {
-      void loadLogs();
-    }, POLL_INTERVAL_MS);
+    const unsubscribeUpdated = subscribeCampaignLogUpdated((payload) => {
+      if (payload.campaignId !== campaignId || !payload.log) return;
+      setLogs((prev) =>
+        prev.map((item) => (item.id === payload.log.id ? payload.log : item))
+      );
+    });
 
     return () => {
-      cancelled = true;
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
+      unsubscribeCreated();
+      unsubscribeUpdated();
     };
-  }, [campaignId, loadLogs]);
+  }, [campaignId, loadLogs, subscribeCampaignLogCreated, subscribeCampaignLogUpdated]);
+
+  // Reconciliação automática quando isConnected muda de false para true
+  useEffect(() => {
+    if (!wasConnectedRef.current && isConnected) {
+      void loadLogs();
+    }
+    wasConnectedRef.current = isConnected;
+  }, [isConnected, loadLogs]);
 
   const submitRollResult = async (logId: string) => {
     const raw = rollInputs[logId];
@@ -108,7 +108,10 @@ export function SessionLog({ campaignId }: SessionLogProps) {
       }
 
       setRollInputs((prev) => ({ ...prev, [logId]: "" }));
-      await loadLogs();
+      setLogs((prev) =>
+        prev.map((item) => (item.id === logId ? data.data : item))
+      );
+      broadcastCampaignLogUpdate({ campaignId, log: data.data });
     } catch {
       setError("Erro de conexão. Tente novamente.");
     } finally {
@@ -148,8 +151,29 @@ export function SessionLog({ campaignId }: SessionLogProps) {
 
   return (
     <div className="flex h-full flex-col rounded-lg border border-gray-800 bg-gray-900">
-      <div className="border-b border-gray-800 p-2">
-        <h2 className="text-sm font-bold text-white">Log da Sessão</h2>
+      <div className="flex items-center justify-between border-b border-gray-800 p-2">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-bold text-white">Log da Sessão</h2>
+          <span
+            className={`inline-block h-2 w-2 rounded-full ${
+              isConnected ? "bg-emerald-500" : "bg-amber-500 animate-pulse"
+            }`}
+            title={isConnected ? "Conectado via WebSocket" : "Desconectado do WebSocket"}
+          />
+        </div>
+        <button
+          onClick={() => void loadLogs()}
+          disabled={isLoading}
+          aria-label="Recarregar logs"
+          title="Recarregar logs"
+          className="rounded p-1 text-xs text-gray-400 hover:bg-gray-800 hover:text-white disabled:opacity-50 transition-colors"
+        >
+          {isLoading ? (
+            <span className="inline-block animate-spin">⟳</span>
+          ) : (
+            <span>⟳</span>
+          )}
+        </button>
       </div>
 
       <div className="max-h-[70vh] flex-1 space-y-1.5 overflow-y-auto p-2">
