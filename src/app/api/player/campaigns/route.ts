@@ -61,12 +61,14 @@ export async function GET() {
       .innerJoin(users, eq(campaigns.masterId, users.id))
       .where(inArray(campaigns.id, campaignIds));
 
-    const userCharLinks = await db
+    // Busca todos os personagens aprovados da campanha (roster completo)
+    const allCampaignCharacters = await db
       .select({
         campaignId: characterCampaigns.campaignId,
         id: characters.id,
         name: characters.name,
         imageUrl: characters.imageUrl,
+        ownerId: characters.ownerId,
         level: characters.level,
         hitPointsCurrent: characters.hitPointsCurrent,
         hitPointsMax: characters.hitPointsMax,
@@ -78,16 +80,32 @@ export async function GET() {
       .where(
         and(
           inArray(characterCampaigns.campaignId, campaignIds),
-          eq(characters.ownerId, session.user.id),
           eq(characterCampaigns.approvalStatus, "approved")
         )
       );
 
-    const charactersByCampaign = new Map<string, typeof userCharLinks>();
-    for (const link of userCharLinks) {
-      const list = charactersByCampaign.get(link.campaignId) ?? [];
-      list.push(link);
-      charactersByCampaign.set(link.campaignId, list);
+    const charactersByCampaign = new Map<string, typeof allCampaignCharacters>();
+    const rosterByCampaign = new Map<
+      string,
+      Array<{ id: string; name: string; imageUrl: string | null; isMine: boolean }>
+    >();
+
+    for (const link of allCampaignCharacters) {
+      const isMine = link.ownerId === session.user.id;
+      if (isMine) {
+        const list = charactersByCampaign.get(link.campaignId) ?? [];
+        list.push(link);
+        charactersByCampaign.set(link.campaignId, list);
+      }
+
+      const rosterList = rosterByCampaign.get(link.campaignId) ?? [];
+      rosterList.push({
+        id: link.id,
+        name: link.name,
+        imageUrl: link.imageUrl,
+        isMine,
+      });
+      rosterByCampaign.set(link.campaignId, rosterList);
     }
 
     const data = campaignRows.map((camp) => ({
@@ -113,6 +131,7 @@ export async function GET() {
         manaPointsCurrent: c.manaPointsCurrent,
         manaPointsMax: c.manaPointsMax,
       })),
+      roster: rosterByCampaign.get(camp.id) ?? [],
     }));
 
     return NextResponse.json({

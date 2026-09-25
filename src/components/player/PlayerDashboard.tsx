@@ -289,16 +289,23 @@ export function PlayerDashboard() {
 
                   <div className="relative z-10 flex flex-col justify-between h-full space-y-3">
                     <div>
-                      {/* Topo do Card: Nome e Mapa */}
+                      {/* Topo do Card: Nome e Tags no canto superior direito (PvP + Mapa) */}
                       <div className="flex items-start justify-between gap-2">
                         <h3 className="text-lg font-bold text-secondary-pure drop-shadow-md group-hover:text-purple-200 transition-colors truncate">
                           {campaign.name}
                         </h3>
-                        {campaign.worldMapUrl && (
-                          <span className="shrink-0 rounded-full bg-emerald-950/90 border border-emerald-700/60 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 drop-shadow">
-                            🗺️ Mapa
-                          </span>
-                        )}
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          {campaign.pvpEnabled && (
+                            <span className="rounded bg-accent-dark/90 border border-accent-vibrant/50 px-2 py-0.5 text-[10px] font-semibold text-secondary-pure drop-shadow">
+                              PvP
+                            </span>
+                          )}
+                          {campaign.worldMapUrl && (
+                            <span className="rounded-full bg-emerald-950/90 border border-emerald-700/60 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 drop-shadow">
+                              🗺️ Mapa
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {/* Mestre */}
@@ -306,7 +313,7 @@ export function PlayerDashboard() {
                         Mestre: <span className="font-medium text-white">{campaign.master.displayName}</span>
                       </p>
 
-                      {/* Tags de Regras, PvP e Mapa */}
+                      {/* Tags de Regras */}
                       <div className="mt-3 flex flex-wrap gap-2 text-xs text-secondary-muted">
                         <span className="inline-flex items-center gap-1 rounded bg-dominant-dark/90 border border-dominant-border px-2 py-1 text-white text-[11px] drop-shadow-sm">
                           {campaign.rulesEngine === "d20_mod" ? (
@@ -320,55 +327,86 @@ export function PlayerDashboard() {
                             "2d20 somado"
                           )}
                         </span>
-                        {campaign.pvpEnabled && (
-                          <span className="rounded bg-accent-dark/80 border border-accent-vibrant/40 px-2 py-1 text-secondary-pure text-[11px] drop-shadow-sm">
-                            PvP
-                          </span>
-                        )}
                       </div>
                     </div>
 
-                    {/* Meus Personagens Vinculados */}
+                    {/* Personagens da Campanha (Avatar Stack) */}
                     <div className="border-t border-secondary-border/60 pt-3">
-                      <h4 className="text-[11px] font-bold uppercase tracking-wider text-accent-hover mb-2">
-                        Meus Personagens ({campaign.characters.length})
-                      </h4>
+                      {(() => {
+                        const rosterItems =
+                          campaign.roster && campaign.roster.length > 0
+                            ? campaign.roster
+                            : campaign.characters.map((c) => ({
+                                id: c.id,
+                                name: c.name,
+                                imageUrl: c.imageUrl,
+                                isMine: true,
+                              }));
 
-                      {campaign.characters.length === 0 ? (
-                        <p className="text-xs text-gray-400 py-1">
-                          Nenhum personagem nesta campanha.
-                        </p>
-                      ) : (
-                        <div className="space-y-1.5">
-                          {campaign.characters.slice(0, 2).map((char) => (
-                            <div
-                              key={char.id}
-                              className="flex items-center gap-2"
-                            >
-                              {char.imageUrl ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                  src={char.imageUrl}
-                                  alt={char.name}
-                                  className="h-6 w-6 rounded-full object-cover shrink-0"
-                                />
-                              ) : (
-                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-dominant-dark text-accent-hover font-bold text-[10px] shrink-0 border border-dominant-border">
-                                  {char.name.charAt(0).toUpperCase()}
+                        if (rosterItems.length === 0) {
+                          return (
+                            <div className="flex items-center gap-2 py-1 text-xs text-gray-500">
+                              <span className="inline-block h-2 w-2 rounded-full bg-gray-700" />
+                              <span>Nenhum personagem vinculado</span>
+                            </div>
+                          );
+                        }
+
+                        // Ordenar: primeiro os do jogador (isMine === true), depois os outros
+                        const sortedRoster = [...rosterItems].sort((a, b) => {
+                          if (a.isMine === b.isMine) return 0;
+                          return a.isMine ? -1 : 1;
+                        });
+
+                        const maxVisible = 5;
+                        const visibleChars = sortedRoster.slice(0, maxVisible);
+                        const overflowCount = sortedRoster.length - maxVisible;
+
+                        return (
+                          <div className="flex items-center">
+                            <div className="flex items-center -space-x-2">
+                              {visibleChars.map((char) => (
+                                <div
+                                  key={char.id}
+                                  title={`${char.name}${char.isMine ? " (Seu personagem)" : ""}`}
+                                  className={`relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-transform hover:scale-110 hover:z-30 ${
+                                    char.isMine
+                                      ? "ring-2 ring-purple-500 z-20 shadow-md"
+                                      : "ring-2 ring-gray-900 z-10"
+                                  }`}
+                                >
+                                  {char.imageUrl ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                      src={char.imageUrl}
+                                      alt={char.name}
+                                      className="h-full w-full rounded-full object-cover"
+                                    />
+                                  ) : (
+                                    <div
+                                      className={`flex h-full w-full items-center justify-center rounded-full uppercase ${
+                                        char.isMine
+                                          ? "bg-purple-950 text-purple-200 border border-purple-600/60"
+                                          : "bg-gray-800 text-gray-300 border border-gray-700"
+                                      }`}
+                                    >
+                                      {char.name.charAt(0) || "?"}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                              {overflowCount > 0 && (
+                                <div
+                                  title={`+${overflowCount} outros personagens`}
+                                  className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-800 text-[11px] font-bold text-gray-300 ring-2 ring-gray-900 z-0"
+                                >
+                                  +{overflowCount}
                                 </div>
                               )}
-                              <p className="truncate text-xs font-medium text-white">
-                                {char.name}
-                              </p>
                             </div>
-                          ))}
-                          {campaign.characters.length > 2 && (
-                            <p className="text-xs text-secondary-muted pl-8">
-                              +{campaign.characters.length - 2} mais
-                            </p>
-                          )}
-                        </div>
-                      )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>

@@ -358,6 +358,12 @@ export type PlayerCampaign = {
     manaPointsCurrent: number;
     manaPointsMax: number;
   }>;
+  roster?: Array<{
+    id: string;
+    name: string;
+    imageUrl: string | null;
+    isMine: boolean;
+  }>;
 };
 
 // =============================================================================

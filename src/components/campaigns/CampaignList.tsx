@@ -117,11 +117,18 @@ export function CampaignList() {
                 <h3 className="text-lg font-bold text-secondary-pure drop-shadow-md group-hover:text-purple-200 transition-colors">
                   {campaign.name}
                 </h3>
-                {campaign.worldMapUrl && (
-                  <span className="shrink-0 rounded-full bg-emerald-950/90 border border-emerald-700/60 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 drop-shadow">
-                    🗺️ Mapa
-                  </span>
-                )}
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {campaign.pvpEnabled && (
+                    <span className="rounded bg-accent-dark/90 border border-accent-vibrant/50 px-2 py-0.5 text-[10px] font-semibold text-secondary-pure drop-shadow">
+                      PvP
+                    </span>
+                  )}
+                  {campaign.worldMapUrl && (
+                    <span className="rounded-full bg-emerald-950/90 border border-emerald-700/60 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 drop-shadow">
+                      🗺️ Mapa
+                    </span>
+                  )}
+                </div>
               </div>
 
               {campaign.description && (
@@ -143,11 +150,6 @@ export function CampaignList() {
                     "2d20 somado"
                   )}
                 </span>
-                {campaign.pvpEnabled && (
-                  <span className="rounded bg-accent-dark/80 border border-accent-vibrant/40 px-2 py-1 text-secondary-pure text-[11px] drop-shadow-sm">
-                    PvP
-                  </span>
-                )}
                 {campaign.difficultyModifierShadowPoints > 0 && (
                   <span className="rounded bg-accent/20 border border-accent/40 px-2 py-1 text-accent-hover text-[11px] drop-shadow-sm">
                     Sombra +{campaign.difficultyModifierShadowPoints}
