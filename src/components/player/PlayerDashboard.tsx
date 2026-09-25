@@ -258,11 +258,11 @@ export function PlayerDashboard() {
               </p>
             </div>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {campaigns.map((campaign) => (
                 <div
                   key={campaign.id}
-                  className="group relative overflow-hidden flex flex-col justify-between rounded-xl border border-gray-800 bg-gray-900/90 p-5 shadow-lg transition-all hover:border-gray-700 cursor-pointer"
+                  className="group relative overflow-hidden flex flex-col justify-between rounded-xl border border-secondary-border bg-secondary-card p-5 transition-all hover:border-accent hover:shadow-[0_0_20px_rgba(147,51,234,0.25)] cursor-pointer"
                   style={
                     campaign.coverImageUrl
                       ? {
@@ -284,47 +284,58 @@ export function PlayerDashboard() {
                   aria-label={`Ver detalhes da campanha ${campaign.name}`}
                 >
                   {campaign.coverImageUrl && (
-                    <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/85 to-gray-950/70 group-hover:via-gray-950/80 transition-colors pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/85 to-gray-950/65 group-hover:via-gray-950/75 transition-colors pointer-events-none" />
                   )}
 
-                  <div className="relative z-10 space-y-3">
-                    {/* Nome da Campanha */}
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="text-xl font-bold text-white truncate drop-shadow-md">
-                        {campaign.name}
-                      </h3>
-                      {campaign.worldMapUrl && (
-                        <span className="shrink-0 rounded-full bg-emerald-950/90 border border-emerald-700/60 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 drop-shadow">
-                          🗺️ Mapa Mundi
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Mestre */}
+                  <div className="relative z-10 flex flex-col justify-between h-full space-y-3">
                     <div>
-                      <p className="text-xs text-gray-300 drop-shadow-sm">
+                      {/* Topo do Card: Nome e Mapa */}
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="text-lg font-bold text-secondary-pure drop-shadow-md group-hover:text-purple-200 transition-colors truncate">
+                          {campaign.name}
+                        </h3>
+                        {campaign.worldMapUrl && (
+                          <span className="shrink-0 rounded-full bg-emerald-950/90 border border-emerald-700/60 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 drop-shadow">
+                            🗺️ Mapa
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Mestre */}
+                      <p className="mt-1 text-xs text-gray-300 drop-shadow-sm">
                         Mestre: <span className="font-medium text-white">{campaign.master.displayName}</span>
                       </p>
+
+                      {/* Tags de Regras, PvP e Mapa */}
+                      <div className="mt-3 flex flex-wrap gap-2 text-xs text-secondary-muted">
+                        <span className="inline-flex items-center gap-1 rounded bg-dominant-dark/90 border border-dominant-border px-2 py-1 text-white text-[11px] drop-shadow-sm">
+                          {campaign.rulesEngine === "d20_mod" ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
+                              src="/DD-Logo.png"
+                              alt="D&D"
+                              className="h-4 w-auto object-contain inline-block"
+                            />
+                          ) : (
+                            "2d20 somado"
+                          )}
+                        </span>
+                        {campaign.pvpEnabled && (
+                          <span className="rounded bg-accent-dark/80 border border-accent-vibrant/40 px-2 py-1 text-secondary-pure text-[11px] drop-shadow-sm">
+                            PvP
+                          </span>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Regras */}
-                    <div className="flex flex-wrap gap-2">
-                      <span className="rounded bg-purple-950/80 border border-purple-800/50 px-2 py-0.5 text-xs text-purple-300 font-medium">
-                        Regras:{" "}
-                        {campaign.rulesEngine === "dual_d20_sum"
-                          ? "2d20 somado"
-                          : "d20 + modificador"}
-                      </span>
-                    </div>
-
-                    {/* Meus Personagens */}
-                    <div className="border-t border-gray-800 pt-3">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-purple-400 mb-2">
+                    {/* Meus Personagens Vinculados */}
+                    <div className="border-t border-secondary-border/60 pt-3">
+                      <h4 className="text-[11px] font-bold uppercase tracking-wider text-accent-hover mb-2">
                         Meus Personagens ({campaign.characters.length})
                       </h4>
 
                       {campaign.characters.length === 0 ? (
-                        <p className="text-xs text-gray-500 py-1">
+                        <p className="text-xs text-gray-400 py-1">
                           Nenhum personagem nesta campanha.
                         </p>
                       ) : (
@@ -342,7 +353,7 @@ export function PlayerDashboard() {
                                   className="h-6 w-6 rounded-full object-cover shrink-0"
                                 />
                               ) : (
-                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-950 text-purple-300 font-bold text-[10px] shrink-0 border border-purple-800/60">
+                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-dominant-dark text-accent-hover font-bold text-[10px] shrink-0 border border-dominant-border">
                                   {char.name.charAt(0).toUpperCase()}
                                 </div>
                               )}
@@ -352,7 +363,7 @@ export function PlayerDashboard() {
                             </div>
                           ))}
                           {campaign.characters.length > 2 && (
-                            <p className="text-xs text-gray-400 pl-8">
+                            <p className="text-xs text-secondary-muted pl-8">
                               +{campaign.characters.length - 2} mais
                             </p>
                           )}

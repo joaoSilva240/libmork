@@ -133,15 +133,12 @@ export function CampaignList() {
               <div className="mt-3 flex flex-wrap gap-2 text-xs text-secondary-muted">
                 <span className="inline-flex items-center gap-1 rounded bg-dominant-dark/90 border border-dominant-border px-2 py-1 text-white text-[11px] drop-shadow-sm">
                   {campaign.rulesEngine === "d20_mod" ? (
-                    <>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src="/DD-Logo.png"
-                        alt="D&D Logo"
-                        className="h-3.5 w-auto object-contain inline-block"
-                      />
-                      <span>d20</span>
-                    </>
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src="/DD-Logo.png"
+                      alt="D&D"
+                      className="h-4 w-auto object-contain inline-block"
+                    />
                   ) : (
                     "2d20 somado"
                   )}
