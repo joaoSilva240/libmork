@@ -7,7 +7,7 @@ import { ATTRIBUTES, ATTRIBUTE_BASE_VALUE, ATTRIBUTE_FREE_POINTS } from "@/lib/u
 
 /**
  * Schema de atributos do personagem.
- * Base: 8 pontos em cada atributo + 8 pontos livres (D-17)
+ * Base: 8 pontos em cada atributo + 10 pontos livres (D-17, Issue #14)
  */
 export const attributesSchema = z.object({
   forca: z.number().int().min(1).max(30),
@@ -15,7 +15,20 @@ export const attributesSchema = z.object({
   vigor: z.number().int().min(1).max(30),
   inteligencia: z.number().int().min(1).max(30),
   empatia: z.number().int().min(1).max(30),
+  sorte: z.number().int().min(1).max(30),
 });
+
+/** Normalizes persisted legacy characters that predate the luck attribute. */
+export function normalizeAttributes(attributes: Partial<Record<(typeof ATTRIBUTES)[number], number>>): Record<(typeof ATTRIBUTES)[number], number> {
+  return {
+    forca: attributes.forca ?? ATTRIBUTE_BASE_VALUE,
+    destreza: attributes.destreza ?? ATTRIBUTE_BASE_VALUE,
+    vigor: attributes.vigor ?? ATTRIBUTE_BASE_VALUE,
+    inteligencia: attributes.inteligencia ?? ATTRIBUTE_BASE_VALUE,
+    empatia: attributes.empatia ?? ATTRIBUTE_BASE_VALUE,
+    sorte: attributes.sorte ?? ATTRIBUTE_BASE_VALUE,
+  };
+}
 
 /**
  * Schema de criação de personagem (RF-006).

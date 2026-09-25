@@ -1,16 +1,50 @@
 import { describe, it, expect } from "vitest";
-import { createCharacterSchema, updateCharacterSchema, attributesSchema } from "../character";
+import { createCharacterSchema, updateCharacterSchema, attributesSchema, normalizeAttributes } from "../character";
 
 describe("Character Validator Schemas", () => {
+  it("should validate attributesSchema requiring all 6 attributes including sorte", () => {
+    const valid = {
+      forca: 10,
+      destreza: 10,
+      vigor: 10,
+      inteligencia: 10,
+      empatia: 10,
+      sorte: 8,
+    };
+    expect(attributesSchema.safeParse(valid).success).toBe(true);
+
+    const missingSorte = {
+      forca: 10,
+      destreza: 10,
+      vigor: 10,
+      inteligencia: 10,
+      empatia: 10,
+    };
+    expect(attributesSchema.safeParse(missingSorte).success).toBe(false);
+  });
+
+  it("should fallback legacy attributes missing sorte to 8", () => {
+    const legacy = {
+      forca: 12,
+      destreza: 14,
+      vigor: 10,
+      inteligencia: 8,
+      empatia: 10,
+    };
+    const normalized = normalizeAttributes(legacy);
+    expect(normalized.sorte).toBe(8);
+    expect(normalized.forca).toBe(12);
+  });
   it("should validate character creation without campaignId", () => {
     const payload = {
       name: "Valeros",
       attributes: {
-        forca: 10,
+        forca: 12,
         destreza: 10,
         vigor: 10,
         inteligencia: 10,
-        empatia: 8, // 10+10+10+10+8 = 48 (5*8 + 8)
+        empatia: 8,
+        sorte: 8, // 12+10+10+10+8+8 = 58 (6*8 + 10)
       },
     };
 
@@ -31,7 +65,8 @@ describe("Character Validator Schemas", () => {
         destreza: 14,
         vigor: 10,
         inteligencia: 8,
-        empatia: 8, // 8+14+10+8+8 = 48
+        empatia: 10,
+        sorte: 8, // 8+14+10+8+10+8 = 58
       },
     };
 

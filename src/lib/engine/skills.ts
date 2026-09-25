@@ -2,7 +2,7 @@
 // Libmork — Motor de Regras: Perícias (D-20, D-35, D-40)
 // =============================================================================
 
-import { getModifier, getTrainedSkillSlots, type AttributeMap } from "./attributes";
+import { getModifier, getTrainedSkillSlots, normalizeAttributeMap, type AttributeMap } from "./attributes";
 
 /**
  * Resolve um teste de perícia.
@@ -14,14 +14,15 @@ import { getModifier, getTrainedSkillSlots, type AttributeMap } from "./attribut
  */
 export function getSkillTestModifier(
   keyAttribute: keyof AttributeMap,
-  attributes: AttributeMap,
+  attributes: Partial<AttributeMap>,
   trained: boolean,
 ): {
   modifier: number;
   advantage: boolean;
 } {
+  const normalized = normalizeAttributeMap(attributes);
   return {
-    modifier: getModifier(attributes[keyAttribute]),
+    modifier: getModifier(normalized[keyAttribute]),
     advantage: trained,
   };
 }

@@ -58,6 +58,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
       vigor: "10",
       inteligencia: "10",
       empatia: "10",
+      sorte: "10",
     } as Record<Attribute, string>,
   });
   const [isCreating, setIsCreating] = useState(false);
@@ -179,6 +180,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
     vigor: "10",
     inteligencia: "10",
     empatia: "10",
+    sorte: "10",
   };
 
   useEffect(() => {
@@ -304,6 +306,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
         vigor: String(npc.attributes.vigor),
         inteligencia: String(npc.attributes.inteligencia),
         empatia: String(npc.attributes.empatia),
+        sorte: String(npc.attributes.sorte ?? 8),
       },
     });
   };
@@ -848,10 +851,13 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                       </div>
                       <div className="mt-1 text-xs text-gray-500">
                         {ATTRIBUTES.map(
-                          (attr) =>
-                            ` ${attr.charAt(0).toUpperCase()}: ${npc.attributes[attr]} (${
-                              getModifier(npc.attributes[attr]) >= 0 ? "+" : ""
-                            }${getModifier(npc.attributes[attr])})`
+                          (attr) => {
+                            const val = npc.attributes[attr] ?? 8;
+                            const mod = getModifier(val);
+                            return ` ${attr.charAt(0).toUpperCase()}: ${val} (${
+                              mod >= 0 ? "+" : ""
+                            }${mod})`;
+                          }
                         ).join(" · ")}
                       </div>
                     </div>

@@ -6,7 +6,8 @@ import Link from "next/link";
 import type { Character } from "@/types";
 import { ATTRIBUTES } from "@/lib/utils/constants";
 import type { Attribute } from "@/lib/utils/constants";
-import { getDerivedStats, getModifier } from "@/lib/engine/attributes";
+import { getDerivedStats } from "@/lib/engine/attributes";
+import { rollD20WithModifier } from "@/lib/engine/dice";
 import { ShareLink } from "@/components/characters/ShareLink";
 import { ImageUpload } from "@/components/characters/ImageUpload";
 import { CharacterContent } from "@/components/characters/CharacterContent";
@@ -51,6 +52,7 @@ const ATTRIBUTE_LABELS: Record<Attribute, string> = {
   vigor: "Vigor",
   inteligencia: "Inteligência",
   empatia: "Empatia",
+  sorte: "Sorte",
 };
 
 const ATTRIBUTE_DINGS_LETTERS: Record<Attribute, string> = {
@@ -59,6 +61,7 @@ const ATTRIBUTE_DINGS_LETTERS: Record<Attribute, string> = {
   vigor: "J",
   inteligencia: "P",
   empatia: "K",
+  sorte: "S",
 };
 
 export function CharacterDetail() {
@@ -684,15 +687,15 @@ export function CharacterDetail() {
     setTimeout(() => {
       const stats = getDerivedStats(character.attributes, character.level);
       const mod = stats.modifiers[attr];
-      const array = new Uint32Array(1);
-      if (typeof window !== "undefined" && window.crypto) {
-        window.crypto.getRandomValues(array);
-      }
-      const d20 = (array[0] % 20) + 1;
-      const total = d20 + mod;
+      const luckMod = stats.modifiers.sorte;
+      const rollRes = rollD20WithModifier(mod, luckMod);
+      const total = rollRes.total;
       const label = ATTRIBUTE_LABELS[attr];
+      const luckDetail = rollRes.luckActivated && rollRes.luckRoll
+        ? ` [Sorte: ${rollRes.luckRoll.original} → ${rollRes.luckRoll.final}]`
+        : "";
       const formula = `1d20 + ${label} (${mod >= 0 ? `+${mod}` : mod})`;
-      const detail = `Dado [${d20}] ${mod >= 0 ? `+ ${mod}` : `- ${Math.abs(mod)}`} = ${total}`;
+      const detail = `Dado [${rollRes.luckRoll?.original ?? rollRes.die}]${luckDetail} ${mod >= 0 ? `+ ${mod}` : `- ${Math.abs(mod)}`} = ${total}`;
 
       setActiveRollResult({
         title: `Teste de ${label}`,

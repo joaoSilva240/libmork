@@ -13,6 +13,7 @@ const ATTRIBUTE_LABELS: Record<Attribute, string> = {
   vigor: "Vigor",
   inteligencia: "Inteligência",
   empatia: "Empatia",
+  sorte: "Sorte",
 };
 
 const DEFAULT_ATTRIBUTES: Record<Attribute, number> = {
@@ -21,6 +22,7 @@ const DEFAULT_ATTRIBUTES: Record<Attribute, number> = {
   vigor: ATTRIBUTE_BASE_VALUE,
   inteligencia: ATTRIBUTE_BASE_VALUE,
   empatia: ATTRIBUTE_BASE_VALUE,
+  sorte: ATTRIBUTE_BASE_VALUE,
 };
 
 export function CharacterForm() {

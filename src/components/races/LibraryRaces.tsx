@@ -40,6 +40,7 @@ const ATTRIBUTE_LABELS: Record<Attribute, string> = {
   vigor: "Vigor (VIG)",
   inteligencia: "Inteligência (INT)",
   empatia: "Empatia (EMP)",
+  sorte: "Sorte (SOR)",
 };
 
 const DEFAULT_RACE_ATTRIBUTES: Record<Attribute, number> = {
@@ -48,6 +49,7 @@ const DEFAULT_RACE_ATTRIBUTES: Record<Attribute, number> = {
   vigor: 0,
   inteligencia: 0,
   empatia: 0,
+  sorte: 0,
 };
 
 export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
