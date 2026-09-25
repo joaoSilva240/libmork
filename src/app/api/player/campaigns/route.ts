@@ -51,6 +51,8 @@ export async function GET() {
         description: campaigns.description,
         rulesEngine: campaigns.rulesEngine,
         pvpEnabled: campaigns.pvpEnabled,
+        coverImageUrl: campaigns.coverImageUrl,
+        worldMapUrl: campaigns.worldMapUrl,
         masterId: users.id,
         masterDisplayName: users.displayName,
         masterEmail: users.email,
@@ -94,6 +96,8 @@ export async function GET() {
       description: camp.description,
       rulesEngine: camp.rulesEngine,
       pvpEnabled: camp.pvpEnabled,
+      coverImageUrl: camp.coverImageUrl,
+      worldMapUrl: camp.worldMapUrl,
       master: {
         id: camp.masterId,
         displayName: camp.masterDisplayName,

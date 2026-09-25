@@ -262,7 +262,16 @@ export function PlayerDashboard() {
               {campaigns.map((campaign) => (
                 <div
                   key={campaign.id}
-                  className="flex flex-col justify-between rounded-xl border border-gray-800 bg-gray-900/90 p-5 shadow-lg transition-all hover:border-gray-700 cursor-pointer"
+                  className="group relative overflow-hidden flex flex-col justify-between rounded-xl border border-gray-800 bg-gray-900/90 p-5 shadow-lg transition-all hover:border-gray-700 cursor-pointer"
+                  style={
+                    campaign.coverImageUrl
+                      ? {
+                          backgroundImage: `url(${campaign.coverImageUrl})`,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                        }
+                      : undefined
+                  }
                   onClick={() => setSelectedCampaign(campaign)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
@@ -274,18 +283,27 @@ export function PlayerDashboard() {
                   tabIndex={0}
                   aria-label={`Ver detalhes da campanha ${campaign.name}`}
                 >
-                  <div className="space-y-3">
+                  {campaign.coverImageUrl && (
+                    <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/85 to-gray-950/70 group-hover:via-gray-950/80 transition-colors pointer-events-none" />
+                  )}
+
+                  <div className="relative z-10 space-y-3">
                     {/* Nome da Campanha */}
-                    <div>
-                      <h3 className="text-xl font-bold text-white truncate">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="text-xl font-bold text-white truncate drop-shadow-md">
                         {campaign.name}
                       </h3>
+                      {campaign.worldMapUrl && (
+                        <span className="shrink-0 rounded-full bg-emerald-950/90 border border-emerald-700/60 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 drop-shadow">
+                          🗺️ Mapa Mundi
+                        </span>
+                      )}
                     </div>
 
                     {/* Mestre */}
                     <div>
-                      <p className="text-xs text-gray-400">
-                        Mestre: <span className="font-medium text-gray-200">{campaign.master.displayName}</span>
+                      <p className="text-xs text-gray-300 drop-shadow-sm">
+                        Mestre: <span className="font-medium text-white">{campaign.master.displayName}</span>
                       </p>
                     </div>
 

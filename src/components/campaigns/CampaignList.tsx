@@ -97,21 +97,66 @@ export function CampaignList() {
           <Link
             key={campaign.id}
             href={`/master/campaigns/${campaign.id}`}
-            className="block rounded-lg border border-secondary-border bg-secondary-card p-4 transition-all hover:border-accent hover:shadow-[0_0_15px_rgba(147,51,234,0.2)]"
+            className="group relative overflow-hidden block rounded-xl border border-secondary-border bg-secondary-card p-5 transition-all hover:border-accent hover:shadow-[0_0_20px_rgba(147,51,234,0.25)]"
+            style={
+              campaign.coverImageUrl
+                ? {
+                    backgroundImage: `url(${campaign.coverImageUrl})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                  }
+                : undefined
+            }
           >
-            <h3 className="text-lg font-semibold text-secondary-pure">{campaign.name}</h3>
-            <div className="mt-2 flex flex-wrap gap-2 text-xs text-secondary-muted">
-              <span className="rounded bg-dominant-dark border border-dominant-border px-2 py-1">
-                {campaign.rulesEngine === "d20_mod" ? "d20 + mod" : "2d20 somado"}
-              </span>
-              {campaign.pvpEnabled && (
-                <span className="rounded bg-accent-dark/60 border border-accent-vibrant/30 px-2 py-1 text-secondary-pure">PvP</span>
+            {campaign.coverImageUrl && (
+              <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/85 to-gray-950/65 group-hover:via-gray-950/75 transition-colors pointer-events-none" />
+            )}
+
+            <div className="relative z-10">
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="text-lg font-bold text-secondary-pure drop-shadow-md group-hover:text-purple-200 transition-colors">
+                  {campaign.name}
+                </h3>
+                {campaign.worldMapUrl && (
+                  <span className="shrink-0 rounded-full bg-emerald-950/90 border border-emerald-700/60 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 drop-shadow">
+                    🗺️ Mapa
+                  </span>
+                )}
+              </div>
+
+              {campaign.description && (
+                <p className="mt-1 text-xs text-gray-300 line-clamp-2 drop-shadow-sm">
+                  {campaign.description}
+                </p>
               )}
-              {campaign.difficultyModifierShadowPoints > 0 && (
-                <span className="rounded bg-accent/20 border border-accent/40 px-2 py-1 text-accent-hover">
-                  Sombra +{campaign.difficultyModifierShadowPoints}
+
+              <div className="mt-3 flex flex-wrap gap-2 text-xs text-secondary-muted">
+                <span className="inline-flex items-center gap-1 rounded bg-dominant-dark/90 border border-dominant-border px-2 py-1 text-white text-[11px] drop-shadow-sm">
+                  {campaign.rulesEngine === "d20_mod" ? (
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/DD-Logo.png"
+                        alt="D&D Logo"
+                        className="h-3.5 w-auto object-contain inline-block"
+                      />
+                      <span>d20</span>
+                    </>
+                  ) : (
+                    "2d20 somado"
+                  )}
                 </span>
-              )}
+                {campaign.pvpEnabled && (
+                  <span className="rounded bg-accent-dark/80 border border-accent-vibrant/40 px-2 py-1 text-secondary-pure text-[11px] drop-shadow-sm">
+                    PvP
+                  </span>
+                )}
+                {campaign.difficultyModifierShadowPoints > 0 && (
+                  <span className="rounded bg-accent/20 border border-accent/40 px-2 py-1 text-accent-hover text-[11px] drop-shadow-sm">
+                    Sombra +{campaign.difficultyModifierShadowPoints}
+                  </span>
+                )}
+              </div>
             </div>
           </Link>
         ))}
