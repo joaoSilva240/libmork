@@ -386,4 +386,100 @@ describe("PlayerDashboard - Import Character Modal", () => {
     // Modal should NOT be visible
     expect(screen.queryByText("Importar Personagem")).not.toBeInTheDocument();
   });
+
+  it("should render campaign modal with roster, player character details, and badges", async () => {
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url === "/api/characters") {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ data: [] }),
+        });
+      }
+      if (url === "/api/player/campaigns") {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              data: [
+                {
+                  id: "camp-hero",
+                  name: "Epic Quest",
+                  description: "Uma jornada lendária pelos reinos perdidos.",
+                  rulesEngine: "d20_mod",
+                  pvpEnabled: true,
+                  worldMapUrl: "https://example.com/map.jpg",
+                  coverImageUrl: "https://example.com/cover.jpg",
+                  master: { displayName: "Dungeon Master" },
+                  characters: [
+                    {
+                      id: "char-player-1",
+                      name: "Sir Lancelot",
+                      imageUrl: "https://example.com/lancelot.png",
+                      level: 5,
+                      hitPointsCurrent: 45,
+                      hitPointsMax: 50,
+                      manaPointsCurrent: 20,
+                      manaPointsMax: 20,
+                    },
+                  ],
+                  roster: [
+                    {
+                      id: "char-player-1",
+                      name: "Sir Lancelot",
+                      imageUrl: "https://example.com/lancelot.png",
+                      isMine: true,
+                    },
+                    {
+                      id: "char-ally-2",
+                      name: "Gandalf",
+                      imageUrl: null,
+                      isMine: false,
+                    },
+                  ],
+                },
+              ],
+            }),
+        });
+      }
+      return Promise.resolve({ ok: false });
+    });
+
+    render(<PlayerDashboard />);
+
+    // Navegar para a aba de Campanhas
+    const campaignsTab = screen.getByText("Campanhas");
+    fireEvent.click(campaignsTab);
+
+    await waitFor(() => {
+      expect(screen.getByText("Epic Quest")).toBeInTheDocument();
+    });
+
+    // Abrir o modal de detalhes
+    const campaignCard = screen.getByRole("button", { name: /Ver detalhes da campanha Epic Quest/i });
+    fireEvent.click(campaignCard);
+
+    // Verificar banner, badges e dados
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Epic Quest", level: 2 })).toBeInTheDocument();
+      expect(screen.getByText(/PvP Habilitado/i)).toBeInTheDocument();
+      expect(screen.getByText(/Mapa Mundi/i)).toBeInTheDocument();
+      expect(screen.getByText("Uma jornada lendária pelos reinos perdidos.")).toBeInTheDocument();
+    });
+
+    // Roster da mesa
+    expect(screen.getByText(/Personagens da Mesa \(Roster\)/i)).toBeInTheDocument();
+    expect(screen.getByText("Gandalf")).toBeInTheDocument();
+    expect(screen.getByText("Seu Personagem")).toBeInTheDocument();
+
+    // Seção de Meus Personagens nesta campanha
+    expect(screen.getByText(/Meus Personagens nesta campanha/i)).toBeInTheDocument();
+    expect(screen.getAllByText("Sir Lancelot").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/Nível 5/i)).toBeInTheDocument();
+    expect(screen.getByText(/HP 45\/50/i)).toBeInTheDocument();
+    expect(screen.getByText(/Mana 20\/20/i)).toBeInTheDocument();
+
+    // Botão Abrir Ficha
+    const openSheetButton = screen.getByRole("link", { name: /Abrir Ficha/i });
+    expect(openSheetButton).toHaveAttribute("href", "/player/characters/char-player-1");
+  });
 });
