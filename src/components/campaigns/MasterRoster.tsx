@@ -13,6 +13,7 @@ import type { CombatSessionState } from "@/lib/engine";
 import { advanceCombatTurn, spendCombatActions } from "@/lib/engine";
 import { Spinner } from "@/components/ui";
 import { WorldSelectorModal } from "@/components/campaigns/WorldSelectorModal";
+import { ExternalLink, Minimize2 } from "lucide-react";
 
 const CombatTrackerModal = dynamic(() => import("@/components/combat/CombatTrackerModal").then(m => ({ default: m.CombatTrackerModal })), {
   ssr: false,
@@ -33,9 +34,17 @@ type MasterRosterProps = {
   campaignId: string;
   selectedWorldId: string;
   onWorldSelected?: (worldId: string) => void;
+  isPoppedOut?: boolean;
+  onTogglePopOut?: () => void;
 };
 
-export function MasterRoster({ campaignId, selectedWorldId, onWorldSelected }: MasterRosterProps) {
+export function MasterRoster({
+  campaignId,
+  selectedWorldId,
+  onWorldSelected,
+  isPoppedOut = false,
+  onTogglePopOut,
+}: MasterRosterProps) {
   const { isConnected, presenceList, joinCampaign, subscribeActorStatus, subscribeDiceRoll, subscribeCombatState } = useSocket();
   const [roster, setRoster] = useState<RosterData>({ players: [], npcs: [] });
   const [worlds, setWorlds] = useState<World[]>([]);
@@ -496,9 +505,21 @@ export function MasterRoster({ campaignId, selectedWorldId, onWorldSelected }: M
             isConnected ? "bg-emerald-950/80 text-emerald-400 border border-emerald-800" : "bg-rose-950/80 text-rose-400 border border-rose-800"
           }`}>
             <span className={`h-1.5 w-1.5 rounded-full ${isConnected ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
-            {isConnected ? "Ao Vivo" : "Conectando..."}
-          </span>
-        </div>
+           {isConnected ? "Ao Vivo" : "Conectando..."}
+           </span>
+
+           {onTogglePopOut && (
+             <button
+               onClick={onTogglePopOut}
+               className="flex items-center gap-1 rounded-lg border border-gray-700 bg-gray-800 px-2 py-0.5 text-xs font-semibold text-gray-300 hover:bg-gray-700"
+               title={isPoppedOut ? "Reencaixar Mesa no painel principal" : "Destacar Mesa em nova janela"}
+               aria-label={isPoppedOut ? "Reencaixar Mesa no painel principal" : "Destacar Mesa em nova janela"}
+             >
+               {isPoppedOut ? <Minimize2 className="h-3.5 w-3.5" /> : <ExternalLink className="h-3.5 w-3.5" />}
+               <span>{isPoppedOut ? "Reencaixar" : "Destacar"}</span>
+             </button>
+           )}
+         </div>
 
         {/* Presença de Participantes da Mesa (RF-026, D-37) */}
         <div className="flex items-center gap-2">
