@@ -258,11 +258,20 @@ export function PlayerDashboard() {
               </p>
             </div>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {campaigns.map((campaign) => (
                 <div
                   key={campaign.id}
-                  className="flex flex-col justify-between rounded-xl border border-gray-800 bg-gray-900/90 p-5 shadow-lg transition-all hover:border-gray-700 cursor-pointer"
+                  className="group relative overflow-hidden flex flex-col justify-between rounded-xl border border-secondary-border bg-secondary-card p-5 transition-all hover:border-accent hover:shadow-[0_0_20px_rgba(147,51,234,0.25)] cursor-pointer"
+                  style={
+                    campaign.coverImageUrl
+                      ? {
+                          backgroundImage: `url(${campaign.coverImageUrl})`,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                        }
+                      : undefined
+                  }
                   onClick={() => setSelectedCampaign(campaign)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
@@ -274,72 +283,130 @@ export function PlayerDashboard() {
                   tabIndex={0}
                   aria-label={`Ver detalhes da campanha ${campaign.name}`}
                 >
-                  <div className="space-y-3">
-                    {/* Nome da Campanha */}
+                  {campaign.coverImageUrl && (
+                    <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/85 to-gray-950/65 group-hover:via-gray-950/75 transition-colors pointer-events-none" />
+                  )}
+
+                  <div className="relative z-10 flex flex-col justify-between h-full space-y-3">
                     <div>
-                      <h3 className="text-xl font-bold text-white truncate">
-                        {campaign.name}
-                      </h3>
-                    </div>
-
-                    {/* Mestre */}
-                    <div>
-                      <p className="text-xs text-gray-400">
-                        Mestre: <span className="font-medium text-gray-200">{campaign.master.displayName}</span>
-                      </p>
-                    </div>
-
-                    {/* Regras */}
-                    <div className="flex flex-wrap gap-2">
-                      <span className="rounded bg-purple-950/80 border border-purple-800/50 px-2 py-0.5 text-xs text-purple-300 font-medium">
-                        Regras:{" "}
-                        {campaign.rulesEngine === "dual_d20_sum"
-                          ? "2d20 somado"
-                          : "d20 + modificador"}
-                      </span>
-                    </div>
-
-                    {/* Meus Personagens */}
-                    <div className="border-t border-gray-800 pt-3">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-purple-400 mb-2">
-                        Meus Personagens ({campaign.characters.length})
-                      </h4>
-
-                      {campaign.characters.length === 0 ? (
-                        <p className="text-xs text-gray-500 py-1">
-                          Nenhum personagem nesta campanha.
-                        </p>
-                      ) : (
-                        <div className="space-y-1.5">
-                          {campaign.characters.slice(0, 2).map((char) => (
-                            <div
-                              key={char.id}
-                              className="flex items-center gap-2"
-                            >
-                              {char.imageUrl ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                  src={char.imageUrl}
-                                  alt={char.name}
-                                  className="h-6 w-6 rounded-full object-cover shrink-0"
-                                />
-                              ) : (
-                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-950 text-purple-300 font-bold text-[10px] shrink-0 border border-purple-800/60">
-                                  {char.name.charAt(0).toUpperCase()}
-                                </div>
-                              )}
-                              <p className="truncate text-xs font-medium text-white">
-                                {char.name}
-                              </p>
-                            </div>
-                          ))}
-                          {campaign.characters.length > 2 && (
-                            <p className="text-xs text-gray-400 pl-8">
-                              +{campaign.characters.length - 2} mais
-                            </p>
+                      {/* Topo do Card: Nome e Tags no canto superior direito (PvP + Mapa) */}
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="text-lg font-bold text-secondary-pure drop-shadow-md group-hover:text-purple-200 transition-colors truncate">
+                          {campaign.name}
+                        </h3>
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          {campaign.pvpEnabled && (
+                            <span className="rounded bg-accent-dark/90 border border-accent-vibrant/50 px-2 py-0.5 text-[10px] font-semibold text-secondary-pure drop-shadow">
+                              PvP
+                            </span>
+                          )}
+                          {campaign.worldMapUrl && (
+                            <span className="rounded-full bg-emerald-950/90 border border-emerald-700/60 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 drop-shadow">
+                              🗺️ Mapa
+                            </span>
                           )}
                         </div>
-                      )}
+                      </div>
+
+                      {/* Mestre */}
+                      <p className="mt-1 text-xs text-gray-300 drop-shadow-sm">
+                        Mestre: <span className="font-medium text-white">{campaign.master.displayName}</span>
+                      </p>
+
+                      {/* Tags de Regras */}
+                      <div className="mt-3 flex flex-wrap gap-2 text-xs text-secondary-muted">
+                        <span className="inline-flex items-center gap-1 rounded bg-dominant-dark/90 border border-dominant-border px-2 py-1 text-white text-[11px] drop-shadow-sm">
+                          {campaign.rulesEngine === "d20_mod" ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
+                              src="/DD-Logo.png"
+                              alt="D&D"
+                              className="h-4 w-auto object-contain inline-block"
+                            />
+                          ) : (
+                            "2d20 somado"
+                          )}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Personagens da Campanha (Avatar Stack) */}
+                    <div className="border-t border-secondary-border/60 pt-3">
+                      {(() => {
+                        const rosterItems =
+                          campaign.roster && campaign.roster.length > 0
+                            ? campaign.roster
+                            : campaign.characters.map((c) => ({
+                                id: c.id,
+                                name: c.name,
+                                imageUrl: c.imageUrl,
+                                isMine: true,
+                              }));
+
+                        if (rosterItems.length === 0) {
+                          return (
+                            <div className="flex items-center gap-2 py-1 text-xs text-gray-500">
+                              <span className="inline-block h-2 w-2 rounded-full bg-gray-700" />
+                              <span>Nenhum personagem vinculado</span>
+                            </div>
+                          );
+                        }
+
+                        // Ordenar: primeiro os do jogador (isMine === true), depois os outros
+                        const sortedRoster = [...rosterItems].sort((a, b) => {
+                          if (a.isMine === b.isMine) return 0;
+                          return a.isMine ? -1 : 1;
+                        });
+
+                        const maxVisible = 5;
+                        const visibleChars = sortedRoster.slice(0, maxVisible);
+                        const overflowCount = sortedRoster.length - maxVisible;
+
+                        return (
+                          <div className="flex items-center">
+                            <div className="flex items-center -space-x-2">
+                              {visibleChars.map((char) => (
+                                <div
+                                  key={char.id}
+                                  title={`${char.name}${char.isMine ? " (Seu personagem)" : ""}`}
+                                  className={`relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-transform hover:scale-110 hover:z-30 ${
+                                    char.isMine
+                                      ? "ring-2 ring-purple-500 z-20 shadow-md"
+                                      : "ring-2 ring-gray-900 z-10"
+                                  }`}
+                                >
+                                  {char.imageUrl ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                      src={char.imageUrl}
+                                      alt={char.name}
+                                      className="h-full w-full rounded-full object-cover"
+                                    />
+                                  ) : (
+                                    <div
+                                      className={`flex h-full w-full items-center justify-center rounded-full uppercase ${
+                                        char.isMine
+                                          ? "bg-purple-950 text-purple-200 border border-purple-600/60"
+                                          : "bg-gray-800 text-gray-300 border border-gray-700"
+                                      }`}
+                                    >
+                                      {char.name.charAt(0) || "?"}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                              {overflowCount > 0 && (
+                                <div
+                                  title={`+${overflowCount} outros personagens`}
+                                  className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-800 text-[11px] font-bold text-gray-300 ring-2 ring-gray-900 z-0"
+                                >
+                                  +{overflowCount}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -380,49 +447,193 @@ export function PlayerDashboard() {
       />
 
       {/* Overlay de Detalhes da Campanha */}
-      {selectedCampaign !== null && importingCampaignId === null && (
-        <div
-          className="fixed inset-0 z-40 flex items-center justify-center bg-black/75 p-4"
-          onClick={() => setSelectedCampaign(null)}
-          role="presentation"
-        >
+      {selectedCampaign !== null && importingCampaignId === null && (() => {
+        const hasAliveCharacter = selectedCampaign.characters.some(
+          (char) => char.hitPointsCurrent > 0
+        );
+
+        return (
           <div
-            className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-gray-800 bg-gray-900 p-5 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="campaign-details-title"
+            className="fixed inset-0 z-40 flex items-center justify-center bg-black/75 p-4"
+            onClick={() => setSelectedCampaign(null)}
+            role="presentation"
           >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 id="campaign-details-title" className="text-2xl font-bold text-white">{selectedCampaign.name}</h2>
-                <p className="mt-1 text-sm text-gray-400">Mestre: <span className="text-gray-200">{selectedCampaign.master.displayName}</span></p>
-              </div>
-              <button type="button" aria-label="Fechar" onClick={() => setSelectedCampaign(null)} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white">✕</button>
-            </div>
-            <div className="mt-5 rounded-lg border border-gray-800 bg-gray-950/60 p-4">
-              <h3 className="text-sm font-semibold text-purple-300">Detalhes da Campanha</h3>
-              <p className="mt-2 whitespace-pre-wrap text-sm text-gray-300">{selectedCampaign.description || "Nenhuma descrição fornecida."}</p>
-            </div>
-            <h3 className="mt-5 text-sm font-semibold text-purple-300">Meus Personagens nesta campanha</h3>
-            <div className="mt-2 space-y-2">
-              {selectedCampaign.characters.length === 0 ? <p className="text-sm text-gray-500">Nenhum personagem nesta campanha.</p> : selectedCampaign.characters.map((char) => (
-                <div key={char.id} className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-950 p-3">
-                  <div className="flex items-center gap-3">
-                    {char.imageUrl ? <img src={char.imageUrl} alt={char.name} className="h-10 w-10 rounded-full object-cover" /> : <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-950 text-purple-300 font-bold">{char.name.charAt(0).toUpperCase()}</div>}
-                    <div><p className="font-semibold text-white">{char.name}</p><p className="text-xs text-gray-400">Nível {char.level} · HP {char.hitPointsCurrent}/{char.hitPointsMax} · Mana {char.manaPointsCurrent}/{char.manaPointsMax}</p></div>
-                  </div>
-                  <Link href={`/player/characters/${char.id}`} onClick={() => setSelectedCampaign(null)}><Button variant="secondary" className="px-3 py-1.5 text-xs">Abrir Ficha</Button></Link>
+            <div
+              className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-gray-800 bg-gray-900 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="campaign-details-title"
+            >
+              {/* Botão Fechar flutuante */}
+              <button
+                type="button"
+                aria-label="Fechar"
+                onClick={() => setSelectedCampaign(null)}
+                className="absolute top-3.5 right-3.5 z-30 rounded-lg bg-gray-950/80 backdrop-blur-md p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
+              >
+                ✕
+              </button>
+
+              {/* Banner Hero com a imagem da campanha */}
+              {selectedCampaign.coverImageUrl && (
+                <div className="relative h-40 sm:h-48 w-full overflow-hidden border-b border-gray-800/80">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={selectedCampaign.coverImageUrl}
+                    alt={selectedCampaign.name}
+                    className="h-full w-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-black/40" />
                 </div>
-              ))}
-            </div>
-            <div className="mt-5 space-y-2 border-t border-gray-800 pt-4">
-              <Link href={`/player/characters/new?campaignId=${selectedCampaign.id}`} className="block"><Button variant="primary" className="w-full justify-center">+ Criar Personagem nesta Campanha</Button></Link>
-              <button type="button" onClick={() => handleOpenImportModal(selectedCampaign.id, selectedCampaign.characters)} className="w-full rounded-xl border border-purple-800/60 bg-purple-950/40 py-2 text-sm font-semibold text-purple-300 hover:bg-purple-900/60">↩ Importar Personagem Existente</button>
+              )}
+
+              <div className="p-5 space-y-5">
+                {/* Topo do Modal: Badges e Informações da Campanha */}
+                <div className="pr-10">
+                  <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
+                    {/* Regras */}
+                    <span className="inline-flex items-center gap-1 rounded bg-dominant-dark/90 border border-dominant-border px-2 py-0.5 text-white text-[11px] font-medium drop-shadow-sm">
+                      {selectedCampaign.rulesEngine === "d20_mod" ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src="/DD-Logo.png"
+                          alt="D&D"
+                          className="h-3.5 w-auto object-contain inline-block"
+                        />
+                      ) : (
+                        "2d20 somado"
+                      )}
+                    </span>
+
+                    {/* PvP */}
+                    {selectedCampaign.pvpEnabled && (
+                      <span className="rounded bg-accent-dark/90 border border-accent-vibrant/50 px-2 py-0.5 text-[10px] font-semibold text-secondary-pure drop-shadow">
+                        PvP Habilitado
+                      </span>
+                    )}
+
+                    {/* Mapa */}
+                    {selectedCampaign.worldMapUrl && (
+                      <a
+                        href={selectedCampaign.worldMapUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 rounded-full bg-emerald-950/90 border border-emerald-700/60 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-300 drop-shadow hover:bg-emerald-900 transition-colors"
+                      >
+                        🗺️ Mapa Mundi
+                      </a>
+                    )}
+                  </div>
+
+                  <h2 id="campaign-details-title" className="text-2xl font-bold text-white leading-tight">
+                    {selectedCampaign.name}
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-400">
+                    Mestre: <span className="font-medium text-gray-200">{selectedCampaign.master.displayName}</span>
+                  </p>
+                </div>
+
+                {/* Detalhes / Descrição */}
+                <div className="rounded-lg border border-gray-800 bg-gray-950/60 p-4">
+                  <h3 className="text-sm font-semibold text-purple-300">Detalhes da Campanha</h3>
+                  <p className="mt-2 whitespace-pre-wrap text-sm text-gray-300 leading-relaxed">
+                    {selectedCampaign.description || "Nenhuma descrição fornecida."}
+                  </p>
+                </div>
+
+                {/* Meus Personagens nesta campanha */}
+                <div>
+                  <h3 className="text-sm font-semibold text-purple-300 mb-2.5">
+                    Meus Personagens nesta campanha
+                  </h3>
+                  <div className="space-y-2.5">
+                    {selectedCampaign.characters.length === 0 ? (
+                      <p className="text-sm text-gray-500">Nenhum personagem nesta campanha.</p>
+                    ) : (
+                      selectedCampaign.characters.map((char) => (
+                        <div
+                          key={char.id}
+                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-gray-800 bg-gray-950 p-3.5 transition-colors hover:border-gray-700 shadow-sm"
+                        >
+                          <div className="flex items-center gap-3.5 min-w-0">
+                            <div className="relative h-12 w-12 shrink-0">
+                              {char.imageUrl ? (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img
+                                  src={char.imageUrl}
+                                  alt={char.name}
+                                  className="h-full w-full rounded-full object-cover ring-2 ring-purple-500 shadow-md"
+                                />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center rounded-full bg-purple-950 text-purple-200 font-bold text-base uppercase ring-2 ring-purple-500 shadow-md">
+                                  {char.name.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-semibold text-white text-sm sm:text-base truncate">
+                                {char.name}
+                              </p>
+                              <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
+                                <span className="rounded bg-purple-950/80 border border-purple-800/60 px-2 py-0.5 text-[11px] font-medium text-purple-200">
+                                  Nível {char.level}
+                                </span>
+                                <span className="rounded bg-red-950/60 border border-red-800/50 px-2 py-0.5 text-[11px] font-medium text-red-300">
+                                  HP {char.hitPointsCurrent}/{char.hitPointsMax}
+                                </span>
+                                <span className="rounded bg-blue-950/60 border border-blue-800/50 px-2 py-0.5 text-[11px] font-medium text-blue-300">
+                                  Mana {char.manaPointsCurrent}/{char.manaPointsMax}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-end sm:shrink-0 pt-2 sm:pt-0 border-t border-gray-900 sm:border-t-0">
+                            <Link
+                              href={`/player/characters/${char.id}`}
+                              onClick={() => setSelectedCampaign(null)}
+                            >
+                              <Button variant="secondary" className="px-3.5 py-1.5 text-xs font-semibold">
+                                Abrir Ficha
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Ações da Campanha */}
+                {!hasAliveCharacter && (
+                  <div className="space-y-2 border-t border-gray-800 pt-4">
+                    <Link
+                      href={`/player/characters/new?campaignId=${selectedCampaign.id}`}
+                      className="block"
+                    >
+                      <Button variant="primary" className="w-full justify-center">
+                        + Criar Personagem nesta Campanha
+                      </Button>
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleOpenImportModal(
+                          selectedCampaign.id,
+                          selectedCampaign.characters
+                        )
+                      }
+                      className="w-full rounded-xl border border-purple-800/60 bg-purple-950/40 py-2 text-sm font-semibold text-purple-300 hover:bg-purple-900/60 transition-colors"
+                    >
+                      ↩ Importar Personagem Existente
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Modal de Importação de Personagem */}
       {importingCampaignId !== null && (

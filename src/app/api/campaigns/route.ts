@@ -4,10 +4,10 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { campaigns } from "@/lib/db/schema";
+import { campaigns, npcCampaigns, worlds } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { createCampaignSchema } from "@/lib/validators/campaign";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 
 /**
@@ -73,8 +73,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, description, rulesEngine, pvpEnabled, difficultyModifierShadowPoints } =
-      validation.data;
+    const {
+      name,
+      description,
+      rulesEngine,
+      pvpEnabled,
+      difficultyModifierShadowPoints,
+      coverImageUrl,
+      worldMapUrl,
+      initialNpcIds,
+      initialWorldIds,
+    } = validation.data;
 
     const [newCampaign] = await db
       .insert(campaigns)
@@ -85,8 +94,26 @@ export async function POST(request: NextRequest) {
         rulesEngine,
         pvpEnabled,
         difficultyModifierShadowPoints,
+        coverImageUrl,
+        worldMapUrl,
       })
       .returning();
+
+    if (initialNpcIds && initialNpcIds.length > 0) {
+      await db.insert(npcCampaigns).values(
+        initialNpcIds.map((npcId) => ({
+          campaignId: newCampaign.id,
+          npcId,
+        }))
+      );
+    }
+
+    if (initialWorldIds && initialWorldIds.length > 0) {
+      await db
+        .update(worlds)
+        .set({ campaignId: newCampaign.id })
+        .where(inArray(worlds.id, initialWorldIds));
+    }
 
     return NextResponse.json(
       {

@@ -129,20 +129,55 @@ export function CampaignDetail() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="mb-2 flex items-center justify-between gap-2 border-b border-gray-800/60 pb-1.5 shrink-0">
-        <div className="flex items-center gap-3">
-          <Link href="/master" className="text-xs font-semibold text-purple-400 hover:text-purple-300 transition-colors">
-            ← Voltar
-          </Link>
-          <h1 className="text-base font-bold text-white truncate">{campaign.name}</h1>
+      {/* Header Hero com Imagem de Capa e Gradiente */}
+      <div
+        className="relative overflow-hidden mb-2 rounded-xl border border-gray-800/80 bg-gray-900 px-4 py-2.5 shrink-0 shadow-lg"
+        style={
+          campaign.coverImageUrl
+            ? {
+                backgroundImage: `url(${campaign.coverImageUrl})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }
+            : undefined
+        }
+      >
+        {campaign.coverImageUrl && (
+          <div className="absolute inset-0 bg-gradient-to-r from-gray-950 via-gray-950/85 to-gray-950/60 pointer-events-none" />
+        )}
+
+        <div className="relative z-10 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <Link
+              href="/master"
+              className="text-xs font-semibold text-purple-400 hover:text-purple-300 transition-colors drop-shadow"
+            >
+              ← Voltar
+            </Link>
+            <div className="h-4 w-[1px] bg-gray-700/80 shrink-0" />
+            <h1 className="text-base font-bold text-white truncate drop-shadow-md">
+              {campaign.name}
+            </h1>
+            {campaign.worldMapUrl && (
+              <span className="shrink-0 rounded-full bg-emerald-950/90 border border-emerald-700/60 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 drop-shadow">
+                🗺️ Mapa Mundi
+              </span>
+            )}
+            <span className="hidden sm:inline-flex rounded bg-purple-950/80 border border-purple-800/50 px-2 py-0.5 text-[10px] text-purple-300 font-medium">
+              {campaign.rulesEngine === "dual_d20_sum" ? "2d20 somado" : "d20 + mod"}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="rounded-lg bg-red-900/70 border border-red-700/60 px-2.5 py-1 text-xs font-semibold text-red-200 hover:bg-red-800 transition disabled:opacity-50 drop-shadow"
+            >
+              {isDeleting ? "Excluindo..." : "Excluir"}
+            </button>
+          </div>
         </div>
-        <button
-          onClick={handleDelete}
-          disabled={isDeleting}
-          className="rounded-lg bg-red-900/60 border border-red-700/50 px-2.5 py-1 text-xs font-semibold text-red-200 hover:bg-red-800 transition disabled:opacity-50"
-        >
-          {isDeleting ? "Excluindo..." : "Excluir"}
-        </button>
       </div>
 
       <div className="flex-1 grid gap-2.5 lg:grid-cols-[220px_minmax(0,1fr)_240px] xl:grid-cols-[240px_minmax(0,1fr)_260px] overflow-hidden min-h-0">
