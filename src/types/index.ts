@@ -101,6 +101,8 @@ export type Campaign = {
   rulesEngine: RulesEngine;
   pvpEnabled: boolean;
   difficultyModifierShadowPoints: number;
+  coverImageUrl: string | null;
+  worldMapUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -339,6 +341,8 @@ export type PlayerCampaign = {
   description: string | null;
   rulesEngine: RulesEngine;
   pvpEnabled: boolean;
+  coverImageUrl?: string | null;
+  worldMapUrl?: string | null;
   master: {
     id: string;
     displayName: string;
@@ -353,6 +357,12 @@ export type PlayerCampaign = {
     hitPointsMax: number;
     manaPointsCurrent: number;
     manaPointsMax: number;
+  }>;
+  roster?: Array<{
+    id: string;
+    name: string;
+    imageUrl: string | null;
+    isMine: boolean;
   }>;
 };
 

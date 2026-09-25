@@ -156,6 +156,8 @@ export const campaigns = pgTable("campaigns", {
   difficultyModifierShadowPoints: integer("difficulty_modifier_shadow_points")
     .notNull()
     .default(0),
+  coverImageUrl: text("cover_image_url"),
+  worldMapUrl: text("world_map_url"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

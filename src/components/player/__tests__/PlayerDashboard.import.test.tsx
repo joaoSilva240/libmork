@@ -336,7 +336,7 @@ describe("PlayerDashboard - Import Character Modal", () => {
           json: () =>
             Promise.resolve({
               data: [
-                { id: "char-linked", name: "Already Linked", level: 1, hitPointsCurrent: 10, hitPointsMax: 10 },
+                { id: "char-linked", name: "Already Linked", level: 1, hitPointsCurrent: 0, hitPointsMax: 10 },
               ],
             }),
         });
@@ -354,7 +354,7 @@ describe("PlayerDashboard - Import Character Modal", () => {
                   rulesEngine: "dual_d20_sum",
                   master: { displayName: "GM" },
                   characters: [
-                    { id: "char-linked", name: "Already Linked", level: 1, hitPointsCurrent: 10, hitPointsMax: 10 },
+                    { id: "char-linked", name: "Already Linked", level: 1, hitPointsCurrent: 0, hitPointsMax: 10 },
                   ],
                 },
               ],
@@ -385,5 +385,163 @@ describe("PlayerDashboard - Import Character Modal", () => {
 
     // Modal should NOT be visible
     expect(screen.queryByText("Importar Personagem")).not.toBeInTheDocument();
+  });
+
+  it("should render campaign modal with roster, player character details, and badges", async () => {
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url === "/api/characters") {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ data: [] }),
+        });
+      }
+      if (url === "/api/player/campaigns") {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              data: [
+                {
+                  id: "camp-hero",
+                  name: "Epic Quest",
+                  description: "Uma jornada lendária pelos reinos perdidos.",
+                  rulesEngine: "d20_mod",
+                  pvpEnabled: true,
+                  worldMapUrl: "https://example.com/map.jpg",
+                  coverImageUrl: "https://example.com/cover.jpg",
+                  master: { displayName: "Dungeon Master" },
+                  characters: [
+                    {
+                      id: "char-player-1",
+                      name: "Sir Lancelot",
+                      imageUrl: "https://example.com/lancelot.png",
+                      level: 5,
+                      hitPointsCurrent: 45,
+                      hitPointsMax: 50,
+                      manaPointsCurrent: 20,
+                      manaPointsMax: 20,
+                    },
+                  ],
+                  roster: [
+                    {
+                      id: "char-player-1",
+                      name: "Sir Lancelot",
+                      imageUrl: "https://example.com/lancelot.png",
+                      isMine: true,
+                    },
+                    {
+                      id: "char-ally-2",
+                      name: "Gandalf",
+                      imageUrl: null,
+                      isMine: false,
+                    },
+                  ],
+                },
+              ],
+            }),
+        });
+      }
+      return Promise.resolve({ ok: false });
+    });
+
+    render(<PlayerDashboard />);
+
+    // Navegar para a aba de Campanhas
+    const campaignsTab = screen.getByText("Campanhas");
+    fireEvent.click(campaignsTab);
+
+    await waitFor(() => {
+      expect(screen.getByText("Epic Quest")).toBeInTheDocument();
+    });
+
+    // Abrir o modal de detalhes
+    const campaignCard = screen.getByRole("button", { name: /Ver detalhes da campanha Epic Quest/i });
+    fireEvent.click(campaignCard);
+
+    // Verificar banner, badges e dados
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Epic Quest", level: 2 })).toBeInTheDocument();
+      expect(screen.getByText(/PvP Habilitado/i)).toBeInTheDocument();
+      expect(screen.getByText(/Mapa Mundi/i)).toBeInTheDocument();
+      expect(screen.getByText("Uma jornada lendária pelos reinos perdidos.")).toBeInTheDocument();
+    });
+
+    // Seção de Meus Personagens nesta campanha
+    expect(screen.getByText(/Meus Personagens nesta campanha/i)).toBeInTheDocument();
+    expect(screen.getAllByText("Sir Lancelot").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/Nível 5/i)).toBeInTheDocument();
+    expect(screen.getByText(/HP 45\/50/i)).toBeInTheDocument();
+    expect(screen.getByText(/Mana 20\/20/i)).toBeInTheDocument();
+
+    // Botão Abrir Ficha
+    const openSheetButton = screen.getByRole("link", { name: /Abrir Ficha/i });
+    expect(openSheetButton).toHaveAttribute("href", "/player/characters/char-player-1");
+
+    // Como Sir Lancelot tem HP 45 (> 0), os botões de criar e importar NÃO devem aparecer
+    expect(screen.queryByText("+ Criar Personagem nesta Campanha")).not.toBeInTheDocument();
+    expect(screen.queryByText("↩ Importar Personagem Existente")).not.toBeInTheDocument();
+
+    // Roster da mesa não deve mais ser exibido
+    expect(screen.queryByText(/Personagens da Mesa \(Roster\)/i)).not.toBeInTheDocument();
+  });
+
+  it("should show create and import buttons when character is dead (hitPointsCurrent <= 0)", async () => {
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url === "/api/characters") {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ data: [] }),
+        });
+      }
+      if (url === "/api/player/campaigns") {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              data: [
+                {
+                  id: "camp-dead-char",
+                  name: "Graveyard Campaign",
+                  pvpEnabled: false,
+                  rulesEngine: "d20_mod",
+                  master: { displayName: "Grim Reaper" },
+                  characters: [
+                    {
+                      id: "char-dead-1",
+                      name: "Fallen Hero",
+                      level: 2,
+                      hitPointsCurrent: 0,
+                      hitPointsMax: 20,
+                      manaPointsCurrent: 0,
+                      manaPointsMax: 10,
+                    },
+                  ],
+                },
+              ],
+            }),
+        });
+      }
+      return Promise.resolve({ ok: false });
+    });
+
+    render(<PlayerDashboard />);
+
+    const campaignsTab = screen.getByText("Campanhas");
+    fireEvent.click(campaignsTab);
+
+    await waitFor(() => {
+      expect(screen.getByText("Graveyard Campaign")).toBeInTheDocument();
+    });
+
+    const campaignCard = screen.getByRole("button", { name: /Ver detalhes da campanha Graveyard Campaign/i });
+    fireEvent.click(campaignCard);
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Graveyard Campaign", level: 2 })).toBeInTheDocument();
+    });
+
+    // Como o personagem está com HP 0 (morto), os botões de criar e importar devem ser exibidos
+    expect(screen.getByText("+ Criar Personagem nesta Campanha")).toBeInTheDocument();
+    expect(screen.getByText("↩ Importar Personagem Existente")).toBeInTheDocument();
   });
 });

@@ -14,6 +14,10 @@ export const createCampaignSchema = z.object({
   rulesEngine: z.enum(RULES_ENGINES).default("d20_mod"),
   pvpEnabled: z.boolean().default(false),
   difficultyModifierShadowPoints: z.number().int().min(0).default(0),
+  coverImageUrl: z.string().url().or(z.string().startsWith("/")).optional().nullable(),
+  worldMapUrl: z.string().url().or(z.string().startsWith("/")).optional().nullable(),
+  initialNpcIds: z.array(z.string().uuid()).optional().default([]),
+  initialWorldIds: z.array(z.string().uuid()).optional().default([]),
 });
 
 export type CreateCampaignInput = z.infer<typeof createCampaignSchema>;
@@ -27,6 +31,8 @@ export const updateCampaignSchema = z.object({
   rulesEngine: z.enum(RULES_ENGINES).optional(),
   pvpEnabled: z.boolean().optional(),
   difficultyModifierShadowPoints: z.number().int().min(0).optional(),
+  coverImageUrl: z.string().url().or(z.string().startsWith("/")).optional().nullable(),
+  worldMapUrl: z.string().url().or(z.string().startsWith("/")).optional().nullable(),
 });
 
 export type UpdateCampaignInput = z.infer<typeof updateCampaignSchema>;
