@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Campaign, World } from "@/types";
-import { Spinner } from "@/components/ui";
+import { Spinner, WindowPortal } from "@/components/ui";
 import { CampaignInvites } from "@/components/campaigns/CampaignInvites";
 import { MasterRoster } from "@/components/campaigns/MasterRoster";
 import { SessionLog } from "@/components/campaigns/SessionLog";
@@ -27,6 +27,8 @@ export function CampaignDetail() {
   const worldsRequestId = useRef(0);
   const [overlayWorld, setOverlayWorld] = useState<{ id: string; name: string } | null>(null);
   const [rosterVersion, setRosterVersion] = useState(0);
+  const [isMesaPopped, setIsMesaPopped] = useState(false);
+  const [popupBlockedWarning, setPopupBlockedWarning] = useState(false);
 
   const loadWorlds = useCallback(async () => {
     const requestId = ++worldsRequestId.current;
@@ -180,7 +182,19 @@ export function CampaignDetail() {
         </div>
       </div>
 
-      <div className="flex-1 grid gap-2.5 lg:grid-cols-[220px_minmax(0,1fr)_240px] xl:grid-cols-[240px_minmax(0,1fr)_260px] overflow-hidden min-h-0">
+      {popupBlockedWarning && (
+        <div className="mb-2 flex items-center justify-between rounded-lg border border-amber-600/50 bg-amber-950/40 px-3 py-2 text-xs text-amber-200">
+          <span>O navegador bloqueou a abertura da janela da Mesa. Permita pop-ups para este site para usar esta função.</span>
+          <button
+            onClick={() => setPopupBlockedWarning(false)}
+            className="ml-2 font-bold text-amber-400 hover:underline"
+          >
+            Fechar
+          </button>
+        </div>
+      )}
+
+      <div className={`flex-1 grid gap-2.5 overflow-hidden min-h-0 ${isMesaPopped ? "lg:grid-cols-[1fr_1fr]" : "lg:grid-cols-[220px_minmax(0,1fr)_240px] xl:grid-cols-[240px_minmax(0,1fr)_260px]"}`}>
         {/* ===== Coluna esquerda — Gestão ===== */}
         <div className="space-y-3 overflow-y-auto min-h-0">
           <div className="rounded-lg border border-gray-800 bg-gray-900 p-3">
@@ -253,15 +267,17 @@ export function CampaignDetail() {
           <CampaignInvites key={`invites-${rosterVersion}`} campaignId={campaign.id} />
         </div>
 
-        {/* ===== Coluna central — Mesa (galeria de personagens) ===== */}
-        <div className="flex flex-col h-full min-h-0 overflow-hidden rounded-xl border border-gray-800 bg-gray-900 p-2.5">
-          <MasterRoster
-            key={`roster-${rosterVersion}`}
-            campaignId={campaign.id}
-            selectedWorldId={selectedWorldId}
-            onWorldSelected={setSelectedWorldId}
-          />
-        </div>
+        {!isMesaPopped && (
+          <div className="flex flex-col h-full min-h-0 overflow-hidden rounded-xl border border-gray-800 bg-gray-900 p-2.5">
+            <MasterRoster
+              key={`roster-${rosterVersion}`}
+              campaignId={campaign.id}
+              selectedWorldId={selectedWorldId}
+              onWorldSelected={setSelectedWorldId}
+              onTogglePopOut={() => setIsMesaPopped(true)}
+            />
+          </div>
+        )}
 
         {/* ===== Coluna direita — Log da sessão ===== */}
         <SessionLog campaignId={campaign.id} />
@@ -287,6 +303,29 @@ export function CampaignDetail() {
           onChanged={() => setRosterVersion((v) => v + 1)}
         />
       )}
+
+      <WindowPortal
+        isOpen={isMesaPopped}
+        onClose={() => setIsMesaPopped(false)}
+        title={`Mesa — ${campaign.name}`}
+        width={1280}
+        height={800}
+        onBlocked={() => {
+          setIsMesaPopped(false);
+          setPopupBlockedWarning(true);
+        }}
+      >
+        <div className="flex flex-col h-full w-full overflow-hidden bg-gray-950 p-2.5">
+          <MasterRoster
+            key={`roster-popped-${rosterVersion}`}
+            campaignId={campaign.id}
+            selectedWorldId={selectedWorldId}
+            onWorldSelected={setSelectedWorldId}
+            isPoppedOut={true}
+            onTogglePopOut={() => setIsMesaPopped(false)}
+          />
+        </div>
+      </WindowPortal>
     </div>
   );
 }
