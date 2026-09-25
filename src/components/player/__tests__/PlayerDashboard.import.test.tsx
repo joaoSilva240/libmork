@@ -336,7 +336,7 @@ describe("PlayerDashboard - Import Character Modal", () => {
           json: () =>
             Promise.resolve({
               data: [
-                { id: "char-linked", name: "Already Linked", level: 1, hitPointsCurrent: 10, hitPointsMax: 10 },
+                { id: "char-linked", name: "Already Linked", level: 1, hitPointsCurrent: 0, hitPointsMax: 10 },
               ],
             }),
         });
@@ -354,7 +354,7 @@ describe("PlayerDashboard - Import Character Modal", () => {
                   rulesEngine: "dual_d20_sum",
                   master: { displayName: "GM" },
                   characters: [
-                    { id: "char-linked", name: "Already Linked", level: 1, hitPointsCurrent: 10, hitPointsMax: 10 },
+                    { id: "char-linked", name: "Already Linked", level: 1, hitPointsCurrent: 0, hitPointsMax: 10 },
                   ],
                 },
               ],
@@ -466,11 +466,6 @@ describe("PlayerDashboard - Import Character Modal", () => {
       expect(screen.getByText("Uma jornada lendária pelos reinos perdidos.")).toBeInTheDocument();
     });
 
-    // Roster da mesa
-    expect(screen.getByText(/Personagens da Mesa \(Roster\)/i)).toBeInTheDocument();
-    expect(screen.getByText("Gandalf")).toBeInTheDocument();
-    expect(screen.getByText("Seu Personagem")).toBeInTheDocument();
-
     // Seção de Meus Personagens nesta campanha
     expect(screen.getByText(/Meus Personagens nesta campanha/i)).toBeInTheDocument();
     expect(screen.getAllByText("Sir Lancelot").length).toBeGreaterThanOrEqual(1);
@@ -481,5 +476,72 @@ describe("PlayerDashboard - Import Character Modal", () => {
     // Botão Abrir Ficha
     const openSheetButton = screen.getByRole("link", { name: /Abrir Ficha/i });
     expect(openSheetButton).toHaveAttribute("href", "/player/characters/char-player-1");
+
+    // Como Sir Lancelot tem HP 45 (> 0), os botões de criar e importar NÃO devem aparecer
+    expect(screen.queryByText("+ Criar Personagem nesta Campanha")).not.toBeInTheDocument();
+    expect(screen.queryByText("↩ Importar Personagem Existente")).not.toBeInTheDocument();
+
+    // Roster da mesa não deve mais ser exibido
+    expect(screen.queryByText(/Personagens da Mesa \(Roster\)/i)).not.toBeInTheDocument();
+  });
+
+  it("should show create and import buttons when character is dead (hitPointsCurrent <= 0)", async () => {
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url === "/api/characters") {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ data: [] }),
+        });
+      }
+      if (url === "/api/player/campaigns") {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              data: [
+                {
+                  id: "camp-dead-char",
+                  name: "Graveyard Campaign",
+                  pvpEnabled: false,
+                  rulesEngine: "d20_mod",
+                  master: { displayName: "Grim Reaper" },
+                  characters: [
+                    {
+                      id: "char-dead-1",
+                      name: "Fallen Hero",
+                      level: 2,
+                      hitPointsCurrent: 0,
+                      hitPointsMax: 20,
+                      manaPointsCurrent: 0,
+                      manaPointsMax: 10,
+                    },
+                  ],
+                },
+              ],
+            }),
+        });
+      }
+      return Promise.resolve({ ok: false });
+    });
+
+    render(<PlayerDashboard />);
+
+    const campaignsTab = screen.getByText("Campanhas");
+    fireEvent.click(campaignsTab);
+
+    await waitFor(() => {
+      expect(screen.getByText("Graveyard Campaign")).toBeInTheDocument();
+    });
+
+    const campaignCard = screen.getByRole("button", { name: /Ver detalhes da campanha Graveyard Campaign/i });
+    fireEvent.click(campaignCard);
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Graveyard Campaign", level: 2 })).toBeInTheDocument();
+    });
+
+    // Como o personagem está com HP 0 (morto), os botões de criar e importar devem ser exibidos
+    expect(screen.getByText("+ Criar Personagem nesta Campanha")).toBeInTheDocument();
+    expect(screen.getByText("↩ Importar Personagem Existente")).toBeInTheDocument();
   });
 });
