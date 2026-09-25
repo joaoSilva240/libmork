@@ -16,6 +16,10 @@ const ERROR_MESSAGES: Record<string, string> = {
   email_exists: 'E-mail já cadastrado.',
   invalid_data: 'Dados inválidos. Verifique as informações fornecidas.',
   server_error: 'Erro interno do servidor. Tente novamente mais tarde.',
+  account_linking_required: 'Já existe uma conta com este e-mail. Faça login para vincular.',
+  discord_email_unverified: 'E-mail do Discord não verificado.',
+  oauth_state_invalid: 'Sessão OAuth inválida ou expirada. Tente novamente.',
+  oauth_access_denied: 'Acesso cancelado no Discord.',
 };
 
 function RegisterForm() {
@@ -214,6 +218,13 @@ function RegisterForm() {
             Criar Conta
           </Button>
         </Form>
+
+        <a
+          href={`/api/auth/discord?redirect=${encodeURIComponent('/')}`}
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-[#5865F2] bg-[#5865F2] font-medium text-white transition-opacity hover:opacity-90"
+        >
+          Continuar com Discord
+        </a>
 
         <p className="text-center text-sm text-secondary-muted">
           Já tem uma conta?{' '}

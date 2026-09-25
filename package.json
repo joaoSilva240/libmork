@@ -20,6 +20,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@auth/drizzle-adapter": "^1.11.3",
     "@tanstack/react-query": "^5.103.1",
     "@tanstack/react-query-devtools": "^5.103.1",
     "bcryptjs": "^3.0.3",
@@ -30,6 +31,7 @@
     "leaflet": "^1.9.4",
     "lucide-react": "^1.37.0",
     "next": "16.3.3",
+    "next-auth": "^4.24.15",
     "pg": "^8.23.0",
     "pino": "^9.5.0",
     "postgres": "^3.4.9",

@@ -899,3 +899,33 @@ export const libraryDocumentsRelations = relations(libraryDocuments, ({ one }) =
   }),
 }));
 
+/**
+ * OAUTH_ACCOUNT — Vinculação de contas de provedores externos (Discord, etc.).
+ * Multi-provider, mantém users e sessions desacoplados.
+ */
+export const oauthAccounts = pgTable(
+  "oauth_accounts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    provider: varchar("provider", { length: 50 }).notNull(),
+    providerAccountId: varchar("provider_account_id", { length: 255 }).notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_oauth_provider_account").on(table.provider, table.providerAccountId),
+    index("idx_oauth_accounts_user").on(table.userId),
+  ],
+);
+
+export const oauthAccountsRelations = relations(oauthAccounts, ({ one }) => ({
+  user: one(users, {
+    fields: [oauthAccounts.userId],
+    references: [users.id],
+  }),
+}));
+
+

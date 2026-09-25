@@ -17,9 +17,21 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = getSafeRedirect(searchParams.get('redirect'));
-  const loginFailedMessage = searchParams.get('error') === 'login_failed'
-    ? 'E-mail ou senha inválidos. Se o problema persistir, verifique o cadastro.'
-    : undefined;
+  const errorParam = searchParams.get('error');
+  const loginFailedMessage =
+    errorParam === 'login_failed'
+      ? 'E-mail ou senha inválidos. Se o problema persistir, verifique o cadastro.'
+      : errorParam === 'account_linking_required'
+      ? 'Já existe uma conta com este e-mail. Faça login normalmente para vincular sua conta Discord.'
+      : errorParam === 'discord_email_unverified'
+      ? 'Seu e-mail no Discord não está verificado ou não foi compartilhado. Verifique sua conta no Discord e tente novamente.'
+      : errorParam === 'oauth_state_invalid'
+      ? 'Sessão de autenticação expirada ou inválida. Tente novamente.'
+      : errorParam === 'oauth_access_denied'
+      ? 'Acesso cancelado pelo usuário no Discord.'
+      : errorParam?.startsWith('oauth_')
+      ? 'Falha ao autenticar com Discord. Tente novamente.'
+      : undefined;
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -140,9 +152,16 @@ function LoginForm() {
             >
               Entrar
             </Button>
-          </Form>
+           </Form>
 
-          <p className="text-center text-sm text-secondary-muted">
+           <a
+             href={`/api/auth/discord?redirect=${encodeURIComponent(redirect || '/')}`}
+             className="flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-[#5865F2] bg-[#5865F2] font-medium text-white transition-opacity hover:opacity-90"
+           >
+             Continuar com Discord
+           </a>
+
+           <p className="text-center text-sm text-secondary-muted">
             Não tem uma conta?{' '}
             <Link href="/register" className="font-medium text-accent hover:text-accent-hover transition-colors">
               Criar conta

@@ -100,6 +100,38 @@ async function runMigrations() {
     `);
     console.log('✓ Indexes for library_documents ensured.');
 
+    console.log('\n--- 5. Applying oauth_accounts migration ---');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "oauth_accounts" (
+        "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+        "user_id" uuid NOT NULL,
+        "provider" varchar(50) NOT NULL,
+        "provider_account_id" varchar(255) NOT NULL,
+        "created_at" timestamp DEFAULT now() NOT NULL,
+        "updated_at" timestamp DEFAULT now() NOT NULL
+      );
+    `);
+    console.log('✓ Table oauth_accounts ensured.');
+
+    await client.query(`
+      DO $$ BEGIN
+        ALTER TABLE "oauth_accounts"
+          ADD CONSTRAINT "oauth_accounts_user_id_users_id_fk"
+          FOREIGN KEY ("user_id") REFERENCES "public"."users"("id")
+          ON DELETE cascade ON UPDATE no action;
+      EXCEPTION
+        WHEN duplicate_object THEN null;
+      END $$;
+    `);
+    console.log('✓ Foreign key oauth_accounts_user_id_users_id_fk ensured.');
+
+    await client.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS "idx_oauth_provider_account"
+        ON "oauth_accounts" USING btree ("provider", "provider_account_id");
+      CREATE INDEX IF NOT EXISTS "idx_oauth_accounts_user"
+        ON "oauth_accounts" USING btree ("user_id");
+    `);
+    console.log('✓ Indexes for oauth_accounts ensured.');
 
     console.log('\nAll migrations executed successfully!');
   } catch (error) {
