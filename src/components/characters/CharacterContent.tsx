@@ -532,9 +532,10 @@ export function CharacterContent({
     }
     const rawExpr = getExpression(row.content.rollExpression);
     const expr = rawExpr !== null ? String(rawExpr) : "1d20";
-    const rollResult = rollExpression(expr, 1);
+    const luckModifier = characterAttributeModifiers?.sorte ?? 0;
+    const rollResult = rollExpression(expr, 1, { luckModifier });
     const damageValue = normalizeActionDamage(row.content);
-    const damageResult = damageValue !== null ? rollExpression(String(damageValue), 0) : null;
+    const damageResult = damageValue !== null ? rollExpression(String(damageValue), 0, { luckModifier }) : null;
 
     const hasValidDamage = Boolean(damageResult && !damageResult.missing && damageResult.valid);
     const formula = hasValidDamage
@@ -575,7 +576,8 @@ export function CharacterContent({
         const name = getContentName(row.content, "Perícia");
         const rawExpression = getExpression(row.content.rollExpression);
         const expr = normalizeSkillExpression(rawExpression, characterAttributeModifiers ?? {}) ?? "1d20";
-        const rollResult = rollExpression(expr, 1);
+        const luckModifier = characterAttributeModifiers?.sorte ?? 0;
+        const rollResult = rollExpression(expr, 1, { luckModifier });
 
         if (campaignId) {
           rollDice({
@@ -666,8 +668,9 @@ export function CharacterContent({
       void onPersistActorStatus?.(updatedAttacker, updatedAttacker.hpCurrent, updatedAttacker.manaCurrent);
     }
 
+    const luckModifier = characterAttributeModifiers?.sorte ?? 0;
     if (selectedActionItem.isHealing) {
-      const healed = rollExpression(selectedActionItem.rollExpr, 0);
+      const healed = rollExpression(selectedActionItem.rollExpr, 0, { luckModifier });
       const healAmount = Math.max(0, healed.total);
       const currentTarget = spent.session.combatants.find((combatant) => combatant.id === target.id);
       if (!currentTarget) {
@@ -700,8 +703,8 @@ export function CharacterContent({
       });
       onActionResult?.({ title: selectedActionItem.name, formula: healed.formula, result: healAmount, detail: `${healed.detail}; Curou +${healAmount} HP em ${target.name}` });
     } else {
-      const attack = rollExpression((selectedActionItem.rollExpr || "1d20") as string, 1);
-      const damage = rollExpression(selectedActionItem.damageExpr, 0);
+      const attack = rollExpression((selectedActionItem.rollExpr || "1d20") as string, 1, { luckModifier });
+      const damage = rollExpression(selectedActionItem.damageExpr, 0, { luckModifier });
       const damageConfigured = !damage.missing && damage.valid;
       const damageNotice = damage.missing
         ? "Dano não configurado (nenhuma fórmula foi encontrada)."

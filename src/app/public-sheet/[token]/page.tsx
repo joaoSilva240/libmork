@@ -14,6 +14,7 @@ const ATTRIBUTE_LABELS: Record<Attribute, string> = {
   vigor: "Vigor",
   inteligencia: "Inteligência",
   empatia: "Empatia",
+  sorte: "Sorte",
 };
 
 const ATTRIBUTE_DINGS_LETTERS: Record<Attribute, string> = {
@@ -22,6 +23,7 @@ const ATTRIBUTE_DINGS_LETTERS: Record<Attribute, string> = {
   vigor: "J",
   inteligencia: "P",
   empatia: "K",
+  sorte: "S",
 };
 
 type PublicCharacter = {

@@ -11,8 +11,19 @@ import {
 } from "@/lib/utils/constants";
 import type { Attribute } from "@/lib/utils/constants";
 
-/** Mapa de atributos do personagem */
-export type AttributeMap = Record<Attribute, number>;
+/** Mapa de atributos do personagem; Sorte é opcional para personagens legados. */
+export type AttributeMap = Record<Exclude<Attribute, "sorte">, number> & Partial<Record<"sorte", number>>;
+
+export function normalizeAttributeMap(attributes: Partial<Record<Attribute, number>>): Record<Attribute, number> {
+  return {
+    forca: attributes.forca ?? ATTRIBUTE_BASE_VALUE,
+    destreza: attributes.destreza ?? ATTRIBUTE_BASE_VALUE,
+    vigor: attributes.vigor ?? ATTRIBUTE_BASE_VALUE,
+    inteligencia: attributes.inteligencia ?? ATTRIBUTE_BASE_VALUE,
+    empatia: attributes.empatia ?? ATTRIBUTE_BASE_VALUE,
+    sorte: attributes.sorte ?? ATTRIBUTE_BASE_VALUE,
+  };
+}
 
 /**
  * Calcula o modificador de um atributo (D-17).
@@ -57,27 +68,29 @@ export function getTrainedSkillSlots(inteligencia: number, level: number = 1): n
 /**
  * Calcula todos os status derivados de um personagem.
  */
-export function getDerivedStats(attributes: AttributeMap, level: number) {
+export function getDerivedStats(attributes: Partial<Record<Attribute, number>>, level: number) {
+  const normalized = normalizeAttributeMap(attributes);
   return {
-    hitPointsMax: getMaxHitPoints(attributes.vigor, level),
-    manaPointsMax: getMaxManaPoints(attributes.inteligencia, level),
-    block: getBlockValue(attributes.vigor, level),
-    trainedSkillSlots: getTrainedSkillSlots(attributes.inteligencia, level),
+    hitPointsMax: getMaxHitPoints(normalized.vigor, level),
+    manaPointsMax: getMaxManaPoints(normalized.inteligencia, level),
+    block: getBlockValue(normalized.vigor, level),
+    trainedSkillSlots: getTrainedSkillSlots(normalized.inteligencia, level),
     modifiers: Object.fromEntries(
-      ATTRIBUTES.map((attr) => [attr, getModifier(attributes[attr])]),
+      ATTRIBUTES.map((attr) => [attr, getModifier(normalized[attr])]),
     ) as Record<Attribute, number>,
   };
 }
 
 /**
- * Valida a distribuição de atributos na criação do personagem (D-17).
- * Cada atributo começa em 8, com 8 pontos livres. Soma total = 48.
+ * Valida a distribuição de atributos na criação do personagem (D-17, Issue #14).
+ * Cada atributo começa em 8, com 10 pontos livres. Soma total = 58.
  */
-export function validateCreationAttributes(attributes: AttributeMap): {
+export function validateCreationAttributes(attributes: Partial<Record<Attribute, number>>): {
   valid: boolean;
   error?: string;
 } {
-  const total = ATTRIBUTES.reduce((sum, attr) => sum + attributes[attr], 0);
+  const normalized = normalizeAttributeMap(attributes);
+  const total = ATTRIBUTES.reduce((sum, attr) => sum + normalized[attr], 0);
   const expectedTotal = ATTRIBUTES.length * ATTRIBUTE_BASE_VALUE + ATTRIBUTE_FREE_POINTS;
 
   if (total !== expectedTotal) {
@@ -88,7 +101,7 @@ export function validateCreationAttributes(attributes: AttributeMap): {
   }
 
   for (const attr of ATTRIBUTES) {
-    if (attributes[attr] < 1) {
+    if (normalized[attr] < 1) {
       return { valid: false, error: `${attr} não pode ser menor que 1` };
     }
   }

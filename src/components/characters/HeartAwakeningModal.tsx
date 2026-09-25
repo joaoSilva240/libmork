@@ -11,6 +11,7 @@ export interface HeartAwakeningResult {
     vigor: number;
     inteligencia: number;
     empatia: number;
+    sorte: number;
   };
   suggestedClass: string;
   suggestedRace?: string;

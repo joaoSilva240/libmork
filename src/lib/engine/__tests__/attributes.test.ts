@@ -78,6 +78,7 @@ describe('attributes — getDerivedStats', () => {
       vigor: 16,
       inteligencia: 10,
       empatia: 8,
+      sorte: 12,
     };
 
     const stats = getDerivedStats(attrs, 3);
@@ -91,17 +92,19 @@ describe('attributes — getDerivedStats', () => {
     expect(stats.modifiers.vigor).toBe(3);
     expect(stats.modifiers.inteligencia).toBe(0);
     expect(stats.modifiers.empatia).toBe(-1);
+    expect(stats.modifiers.sorte).toBe(1);
   });
 });
 
 describe('attributes — validateCreationAttributes', () => {
-  it('aceita distribuição válida (8+8+8+8+8 + 8 pontos livres = 48)', () => {
+  it('aceita distribuição válida (6*8 + 10 pontos livres = 58)', () => {
     const attrs: AttributeMap = {
       forca: 10,
       destreza: 10,
       vigor: 10,
       inteligencia: 10,
-      empatia: 8,
+      empatia: 10,
+      sorte: 8,
     };
     const result = validateCreationAttributes(attrs);
     expect(result.valid).toBe(true);
@@ -115,10 +118,11 @@ describe('attributes — validateCreationAttributes', () => {
       vigor: 20,
       inteligencia: 20,
       empatia: 20,
+      sorte: 20,
     };
     const result = validateCreationAttributes(attrs);
     expect(result.valid).toBe(false);
-    expect(result.error).toContain('Soma dos atributos deve ser 48');
+    expect(result.error).toContain('Soma dos atributos deve ser 58');
   });
 
   it('rejeita atributo menor que 1', () => {
@@ -128,6 +132,7 @@ describe('attributes — validateCreationAttributes', () => {
       vigor: 10,
       inteligencia: 10,
       empatia: 18,
+      sorte: 10,
     };
     const result = validateCreationAttributes(attrs);
     expect(result.valid).toBe(false);

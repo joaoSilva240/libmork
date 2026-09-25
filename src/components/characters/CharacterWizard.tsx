@@ -97,6 +97,7 @@ const ATTRIBUTE_LABELS: Record<Attribute, string> = {
   vigor: "Vigor",
   inteligencia: "Inteligência",
   empatia: "Empatia",
+  sorte: "Sorte",
 };
 
 const DEFAULT_ATTRIBUTES: Record<Attribute, number> = {
@@ -105,6 +106,7 @@ const DEFAULT_ATTRIBUTES: Record<Attribute, number> = {
   vigor: ATTRIBUTE_BASE_VALUE,
   inteligencia: ATTRIBUTE_BASE_VALUE,
   empatia: ATTRIBUTE_BASE_VALUE,
+  sorte: ATTRIBUTE_BASE_VALUE,
 };
 
 // =============================================================================
@@ -227,6 +229,7 @@ function getSkillThemeColors(keyAttribute: string): { from: string; via: string;
     vigor:        { from: "#9a3412", via: "#c2410c", to: "#7c2d12" },
     inteligencia: { from: "#1e3a8a", via: "#2563eb", to: "#1e1b4b" },
     empatia:      { from: "#581c87", via: "#7c3aed", to: "#4c1d95" },
+    sorte:        { from: "#854d0e", via: "#eab308", to: "#713f12" },
   };
   return attrMap[keyAttribute] ?? { from: "#1f2937", via: "#374151", to: "#111827" };
 }
@@ -343,7 +346,7 @@ export function CharacterWizard() {
 
       return {
         ...prev,
-        attributes: { ...result.attributes },
+        attributes: { ...prev.attributes, ...result.attributes },
         description: newDescription,
         ...(matchedClassId ? { classId: matchedClassId } : {}),
         ...(matchedRaceId ? { raceId: matchedRaceId } : {}),

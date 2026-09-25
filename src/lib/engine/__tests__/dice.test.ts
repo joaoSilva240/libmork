@@ -284,6 +284,7 @@ describe('dice — normalizeSkillExpression', () => {
     expect(normalizeSkillExpression('inteligência', modifiers)).toBe('1d20 + 4');
     expect(normalizeSkillExpression('inteligencia', modifiers)).toBe('1d20 + 4');
     expect(normalizeSkillExpression('1d20 + Inteligência', modifiers)).toBe('1d20 + 4');
+    expect(normalizeSkillExpression('sorte', { sorte: 2 })).toBe('1d20 + 2');
   });
 
   it('preserve fórmulas numéricas', () => {
@@ -303,5 +304,126 @@ describe('dice — normalizeSkillExpression', () => {
     expect(normalizeSkillExpression(undefined, modifiers)).toBe('1d20');
     expect(normalizeSkillExpression('', modifiers)).toBe('1d20');
     expect(normalizeSkillExpression('   ', modifiers)).toBe('1d20');
+  });
+});
+
+describe('dice — sorte (Issue #14)', () => {
+  it('modificador 0 não altera e não consome RNG adicional', () => {
+    let rngCalls = 0;
+    const rng = () => {
+      rngCalls++;
+      return 0.5; // d20 = 11
+    };
+    const res = rollD20WithModifier(2, 0, rng);
+    expect(res.die).toBe(11);
+    expect(res.total).toBe(13);
+    expect(res.luckActivated).toBe(false);
+    expect(rngCalls).toBe(1); // Consumiu apenas 1 chamada de RNG para o dado
+  });
+
+  it('modificador positivo ativa e escolhe o maior', () => {
+    const sequence = [0.1, 0.05, 0.9]; // 1º: rollDie=3; 2º: chance=0.05 (< 0.2, ativa); 3º: reroll=19
+    let idx = 0;
+    const rng = () => sequence[idx++];
+    const res = rollD20WithModifier(0, 1, rng);
+    expect(res.luckActivated).toBe(true);
+    expect(res.die).toBe(19);
+    expect(res.luckRoll?.original).toBe(3);
+    expect(res.luckRoll?.rolls).toEqual([3, 19]);
+  });
+
+  it('modificador negativo ativa e escolhe o menor', () => {
+    const sequence = [0.8, 0.05, 0.1]; // 1º: rollDie=17; 2º: chance=0.05 (< 0.2, ativa); 3º: reroll=3
+    let idx = 0;
+    const rng = () => sequence[idx++];
+    const res = rollD20WithModifier(0, -1, rng);
+    expect(res.luckActivated).toBe(true);
+    expect(res.die).toBe(3);
+    expect(res.luckRoll?.original).toBe(17);
+    expect(res.luckRoll?.rolls).toEqual([17, 3]);
+  });
+
+  it('vantagem: aplica vantagem primeiro e uma única camada de sorte no resultado escolhido', () => {
+    // 1º d20: 0.1 (3)
+    // 2º d20: 0.5 (11) -> escolhido 11
+    // chance de sorte: 0.05 (< 0.2, ativa)
+    // reroll sorte: 0.9 (19)
+    const sequence = [0.1, 0.5, 0.05, 0.9];
+    let idx = 0;
+    const rng = () => sequence[idx++];
+    const res = rollWithAdvantage(1, rng);
+    expect(res.dice).toEqual([3, 11]);
+    expect(res.result).toBe(19);
+    expect(res.luckActivated).toBe(true);
+    expect(res.luckRoll?.original).toBe(11);
+    expect(res.luckRoll?.rolls).toEqual([11, 19]);
+  });
+
+  it('desvantagem: aplica desvantagem primeiro e uma única camada de sorte no resultado escolhido', () => {
+    // 1º d20: 0.8 (17)
+    // 2º d20: 0.5 (11) -> escolhido 11
+    // chance de sorte: 0.05 (< 0.2, ativa)
+    // reroll sorte: 0.9 (19)
+    const sequence = [0.8, 0.5, 0.05, 0.9];
+    let idx = 0;
+    const rng = () => sequence[idx++];
+    const res = rollWithDisadvantage(1, rng);
+    expect(res.dice).toEqual([17, 11]);
+    expect(res.result).toBe(19); // 19 > 11 (sorte positiva escolhe maior)
+    expect(res.luckActivated).toBe(true);
+    expect(res.luckRoll?.original).toBe(11);
+  });
+
+  it('rollDeathSave com sorte', () => {
+    const sequence = [0.1, 0.05, 0.9]; // base=3, chance ativa, reroll=19
+    let idx = 0;
+    const rng = () => sequence[idx++];
+    const res = rollDeathSave(0, 1, rng); // DC = 10
+    expect(res.success).toBe(true);
+    expect(res.die).toBe(19);
+    expect(res.luckActivated).toBe(true);
+  });
+
+  it('rollExpression aplica sorte em cada dado com seus respectivos lados e não mexe em constantes', () => {
+    // Expressão "1d6 + 4" com sorte +1
+    // 1º: rollDie(6) -> 0.1 (1)
+    // 2º: chance -> 0.05 (< 0.2, ativa)
+    // 3º: reroll(6) -> 0.9 (6)
+    const sequence = [0.1, 0.05, 0.9];
+    let idx = 0;
+    const rng = () => sequence[idx++];
+    const res = rollExpression("1d6 + 4", 0, { luckModifier: 1, rng });
+    expect(res.total).toBe(10); // 6 + 4
+    expect(res.luckActivated).toBe(true);
+    expect(res.luckDetails?.[0].rolls).toEqual([1, 6]);
+  });
+
+  it('resolveTest sem dupla aplicação em d20_mod', () => {
+    let rngCalls = 0;
+    const rng = () => {
+      rngCalls++;
+      return 0.5; // d20 = 11
+    };
+    const res = resolveTest("d20_mod", 3, 10, false, 0, rng);
+    expect(res.total).toBe(14); // 11 + 3
+    expect(res.success).toBe(true);
+    expect(rngCalls).toBe(1); // Apenas 1 chamada de RNG
+  });
+
+  it('simulação estatística de 10.000 iterações com sorte +1 (taxa de ativação ~20%)', () => {
+    let activatedCount = 0;
+    const iterations = 10000;
+    for (let i = 0; i < iterations; i++) {
+      const res = rollD20WithModifier(0, 1);
+      if (res.luckActivated) {
+        activatedCount++;
+        // Se ativado, o resultado final deve ser >= original
+        expect(res.die).toBeGreaterThanOrEqual(res.luckRoll!.original);
+      }
+    }
+    const activationRate = activatedCount / iterations;
+    // Com 10.000 iterações, a taxa esperada é 0.20, com tolerância ±0.03
+    expect(activationRate).toBeGreaterThan(0.17);
+    expect(activationRate).toBeLessThan(0.23);
   });
 });

@@ -4,17 +4,17 @@
 // Valores fixos derivados das decisões do projeto.
 // =============================================================================
 
-/** Atributos base fixos do sistema (D-11) */
-export const ATTRIBUTES = ["forca", "destreza", "vigor", "inteligencia", "empatia"] as const;
+/** Atributos base fixos do sistema (D-11, Issue #14) */
+export const ATTRIBUTES = ["forca", "destreza", "vigor", "inteligencia", "empatia", "sorte"] as const;
 export type Attribute = (typeof ATTRIBUTES)[number];
 
-/** Valor inicial de cada atributo na criação (D-17) */
+/** Valor inicial de cada atributo na criação (D-17, Issue #14) */
 export const ATTRIBUTE_BASE_VALUE = 8;
 
-/** Pontos livres para distribuição na criação (D-17) */
-export const ATTRIBUTE_FREE_POINTS = 8;
+/** Pontos livres para distribuição na criação (D-17, Issue #14: 10 pontos) */
+export const ATTRIBUTE_FREE_POINTS = 10;
 
-/** Total de atributos na criação: 5×8 + 8 = 48 (D-17) */
+/** Total de atributos na criação: 6×8 + 10 = 58 (D-17, Issue #14) */
 export const ATTRIBUTE_CREATION_TOTAL = ATTRIBUTES.length * ATTRIBUTE_BASE_VALUE + ATTRIBUTE_FREE_POINTS;
 
 /** Nível máximo de referência (D-17) — sem teto rígido */
