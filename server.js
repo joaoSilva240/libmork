@@ -191,6 +191,21 @@ findAvailablePort(initialPort).then((port) => {
         io.to(`campaign:${payload.campaignId}`).emit("campaign-invite-revoked", payload);
       });
 
+      socket.on("join-qr-session", ({ qrSessionId }) => {
+        if (!qrSessionId) return;
+        socket.join(`qr:${qrSessionId}`);
+      });
+
+      socket.on("leave-qr-session", ({ qrSessionId }) => {
+        if (!qrSessionId) return;
+        socket.leave(`qr:${qrSessionId}`);
+      });
+
+      socket.on("qr-authorize-success", ({ qrSessionId, sessionToken, user }) => {
+        if (!qrSessionId) return;
+        io.to(`qr:${qrSessionId}`).emit("qr-authenticated", { sessionToken, user });
+      });
+
       // Sair explicitamente de uma campanha
       socket.on("leave-campaign", ({ campaignId }) => {
         if (!campaignId) return;
