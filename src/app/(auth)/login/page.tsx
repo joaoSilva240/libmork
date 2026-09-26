@@ -1,10 +1,12 @@
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Input, Button, Form } from '@/components/ui';
+import { QRCodeSVG } from 'qrcode.react';
+import { Input, Button, Form, Spinner } from '@/components/ui';
 import { getSafeRedirect } from '@/lib/auth/redirect';
+import { useSocket } from '@/context/SocketContext';
 
 const BUTTON_IMAGES = [
   '/Buttons/Button 1.png',
@@ -16,8 +18,19 @@ const BUTTON_IMAGES = [
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { socket } = useSocket();
   const redirect = getSafeRedirect(searchParams.get('redirect'));
   const errorParam = searchParams.get('error');
+
+  const [authMode, setAuthMode] = useState<'credentials' | 'qrcode'>('credentials');
+
+  // QR Code State
+  const [qrSessionId, setQrSessionId] = useState<string | null>(null);
+  const [qrAuthUrl, setQrAuthUrl] = useState<string | null>(null);
+  const [qrCountdown, setQrCountdown] = useState<number>(120);
+  const [isQrLoading, setIsQrLoading] = useState<boolean>(false);
+  const [qrError, setQrError] = useState<string | null>(null);
+
   const loginFailedMessage =
     errorParam === 'login_failed'
       ? 'E-mail ou senha inválidos. Se o problema persistir, verifique o cadastro.'
@@ -32,6 +45,7 @@ function LoginForm() {
       : errorParam?.startsWith('oauth_')
       ? 'Falha ao autenticar com Discord. Tente novamente.'
       : undefined;
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -49,10 +63,94 @@ function LoginForm() {
     return () => window.clearTimeout(timeoutId);
   }, []);
 
+  const generateQrCode = useCallback(async () => {
+    setIsQrLoading(true);
+    setQrError(null);
+    setQrCountdown(120);
+
+    try {
+      const res = await fetch('/api/auth/qr/generate', { method: 'POST' });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setQrError(data.error || 'Erro ao gerar QR Code');
+        return;
+      }
+
+      setQrSessionId(data.qrSessionId);
+      const fullUrl = `${window.location.origin}${data.authUrl}`;
+      setQrAuthUrl(fullUrl);
+
+      socket?.emit('join-qr-session', { qrSessionId: data.qrSessionId });
+    } catch {
+      setQrError('Erro de conexão ao gerar QR Code.');
+    } finally {
+      setIsQrLoading(false);
+    }
+  }, [socket]);
+
+  useEffect(() => {
+    if (authMode === 'qrcode' && !qrSessionId) {
+      generateQrCode();
+    }
+  }, [authMode, qrSessionId, generateQrCode]);
+
+  // Timer do QR Code
+  useEffect(() => {
+    if (authMode !== 'qrcode' || !qrSessionId || qrCountdown <= 0) return;
+
+    const timer = setInterval(() => {
+      setQrCountdown((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [authMode, qrSessionId, qrCountdown]);
+
+  // Handler de login efetuado com sucesso via QR Code
+  const handleQrLoginSuccess = useCallback(() => {
+    const targetUrl = redirect || '/';
+    window.location.href = targetUrl;
+  }, [redirect]);
+
+  // Escuta WebSocket para aprovação do QR Code
+  useEffect(() => {
+    if (!socket || !qrSessionId || authMode !== 'qrcode') return;
+
+    const handleQrAuth = () => {
+      handleQrLoginSuccess();
+    };
+
+    socket?.on('qr-authenticated', handleQrAuth);
+    return () => {
+      socket?.off('qr-authenticated', handleQrAuth);
+    };
+  }, [socket, qrSessionId, authMode, handleQrLoginSuccess]);
+
+  // Fallback Polling para checar status do QR Code
+  useEffect(() => {
+    if (authMode !== 'qrcode' || !qrSessionId || qrCountdown <= 0) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/auth/qr/check?token=${qrSessionId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.status === 'AUTHENTICATED') {
+            clearInterval(interval);
+            handleQrLoginSuccess();
+          }
+        }
+      } catch {
+        // Ignora falhas temporárias de polling
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [authMode, qrSessionId, qrCountdown, handleQrLoginSuccess]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Limpar erro do campo ao digitar
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
     }
@@ -75,7 +173,6 @@ function LoginForm() {
 
       if (!response.ok) {
         if (data.errors) {
-          // Erros de validação do Zod
           const fieldErrors: Record<string, string> = {};
           data.errors.forEach((err: { path: string[]; message: string }) => {
             fieldErrors[err.path[0]] = err.message;
@@ -87,7 +184,7 @@ function LoginForm() {
         return;
       }
 
-      const targetUrl = data.data?.redirect || redirect || "/";
+      const targetUrl = data.data?.redirect || redirect || '/';
       window.location.href = targetUrl;
     } catch {
       setErrors({ general: 'Erro de conexão. Tente novamente.' });
@@ -100,7 +197,7 @@ function LoginForm() {
     <div className="min-h-dvh flex flex-col lg:flex-row bg-dominant-deep text-secondary-pure px-4 py-8 lg:px-0 lg:py-0">
       {/* Lado Esquerdo - Formulário de Login (50% em desktop) */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-0 lg:p-12 bg-dominant-dark">
-        <div className="max-w-md w-full space-y-8 bg-secondary-card p-8 rounded-xl border border-dominant-border shadow-xl lg:bg-transparent lg:p-0 lg:rounded-none lg:border-0 lg:shadow-none">
+        <div className="max-w-md w-full space-y-6 bg-secondary-card p-8 rounded-xl border border-dominant-border shadow-xl lg:bg-transparent lg:p-0 lg:rounded-none lg:border-0 lg:shadow-none">
           <div>
             <h1 className="text-3xl font-bold text-center text-secondary-pure">
               Login
@@ -110,58 +207,135 @@ function LoginForm() {
             </p>
           </div>
 
-          <Form
-            method="post"
-            action="/api/auth/login"
-            onSubmit={handleSubmit}
-            error={errors.general || loginFailedMessage}
-          >
-            <input type="hidden" name="redirect" value={redirect || ''} />
-            <Input
-              label="E-mail"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              error={errors.email}
-              required
-              autoComplete="email"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              disabled={isLoading}
-            />
-
-            <Input
-              label="Senha"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              error={errors.password}
-              required
-              autoComplete="current-password"
-              disabled={isLoading}
-            />
-
-            <Button
-              type="submit"
-              className="w-full h-20 min-h-[70px]"
-              bgImage={buttonImage}
-              isLoading={isLoading}
+          {/* Abas de Modo de Autenticação */}
+          <div className="flex rounded-lg border border-gray-800 bg-gray-950 p-1 text-sm font-medium">
+            <button
+              type="button"
+              onClick={() => setAuthMode('credentials')}
+              className={`flex-1 rounded-md py-2 transition-all ${
+                authMode === 'credentials'
+                  ? 'bg-purple-600 text-white shadow'
+                  : 'text-gray-400 hover:text-white'
+              }`}
             >
-              Entrar
-            </Button>
-           </Form>
+              E-mail e Senha
+            </button>
+            <button
+              type="button"
+              onClick={() => setAuthMode('qrcode')}
+              className={`flex-1 rounded-md py-2 transition-all ${
+                authMode === 'qrcode'
+                  ? 'bg-purple-600 text-white shadow'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              📱 QR Code Celular
+            </button>
+          </div>
 
-           <a
-             href={`/api/auth/discord?redirect=${encodeURIComponent(redirect || '/')}`}
-             className="flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-[#5865F2] bg-[#5865F2] font-medium text-white transition-opacity hover:opacity-90"
-           >
-             Continuar com Discord
-           </a>
+          {authMode === 'credentials' ? (
+            <Form
+              method="post"
+              action="/api/auth/login"
+              onSubmit={handleSubmit}
+              error={errors.general || loginFailedMessage}
+            >
+              <input type="hidden" name="redirect" value={redirect || ''} />
+              <Input
+                label="E-mail"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                error={errors.email}
+                required
+                autoComplete="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                disabled={isLoading}
+              />
 
-           <p className="text-center text-sm text-secondary-muted">
+              <Input
+                label="Senha"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleChange}
+                error={errors.password}
+                required
+                autoComplete="current-password"
+                disabled={isLoading}
+              />
+
+              <Button
+                type="submit"
+                className="w-full h-20 min-h-[70px]"
+                bgImage={buttonImage}
+                isLoading={isLoading}
+              >
+                Entrar
+              </Button>
+            </Form>
+          ) : (
+            <div className="flex flex-col items-center justify-center space-y-4 rounded-xl border border-gray-800 bg-gray-950/60 p-6 text-center">
+              {isQrLoading ? (
+                <div className="py-12">
+                  <Spinner size="lg" />
+                  <p className="mt-4 text-xs text-gray-400">Gerando QR Code de acesso...</p>
+                </div>
+              ) : qrError ? (
+                <div className="py-6">
+                  <p className="text-sm text-red-400">{qrError}</p>
+                  <button
+                    type="button"
+                    onClick={generateQrCode}
+                    className="mt-4 rounded-lg bg-purple-600 px-4 py-2 text-xs font-bold text-white hover:bg-purple-500"
+                  >
+                    Tentar Novamente
+                  </button>
+                </div>
+              ) : qrCountdown <= 0 ? (
+                <div className="py-6">
+                  <span className="text-3xl block mb-2">⏳</span>
+                  <p className="text-sm font-semibold text-amber-400">QR Code Expirado</p>
+                  <p className="text-xs text-gray-400 mb-4">O tempo limite de 2 minutos foi atingido.</p>
+                  <button
+                    type="button"
+                    onClick={generateQrCode}
+                    className="rounded-lg bg-purple-600 px-4 py-2 text-xs font-bold text-white hover:bg-purple-500"
+                  >
+                    Gerar Novo QR Code
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="rounded-2xl border-4 border-purple-500/30 bg-white p-3 shadow-[0_0_25px_rgba(168,85,247,0.2)]">
+                    {qrAuthUrl && <QRCodeSVG value={qrAuthUrl} size={180} />}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Escaneie com a câmera do celular</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Você precisa estar logado no aplicativo/navegador do celular para autorizar.
+                    </p>
+                  </div>
+                  <div className="inline-flex items-center gap-2 rounded-full border border-purple-900/60 bg-purple-950/40 px-3 py-1 text-xs text-purple-300">
+                    <span>⏱️ Expira em:</span>
+                    <span className="font-mono font-bold">{qrCountdown}s</span>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          <a
+            href={`/api/auth/discord?redirect=${encodeURIComponent(redirect || '/')}`}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-[#5865F2] bg-[#5865F2] font-medium text-white transition-opacity hover:opacity-90"
+          >
+            Continuar com Discord
+          </a>
+
+          <p className="text-center text-sm text-secondary-muted">
             Não tem uma conta?{' '}
             <Link href="/register" className="font-medium text-accent hover:text-accent-hover transition-colors">
               Criar conta
@@ -190,3 +364,4 @@ export default function LoginPage() {
     </Suspense>
   );
 }
+

@@ -15,6 +15,10 @@ if (process.env.REDIS_URL) {
   }
 }
 
+export function getRedisClient(): Redis | null {
+  return redis;
+}
+
 export const cache = {
   async get<T>(key: string): Promise<T | null> {
     if (!redis) return null;
