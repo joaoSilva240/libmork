@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import type { RpgClass, InitialItem, Proficiencies, ClassLevelBenefit } from "@/types";
 import { ATTRIBUTES } from "@/lib/utils/constants";
 import type { Attribute } from "@/lib/utils/constants";
@@ -886,6 +887,19 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
     currentPage * pageSize
   );
 
+  const parentRef = useRef<HTMLDivElement>(null);
+  const rowVirtualizer = useVirtualizer({
+    count: paginatedClasses.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 200,
+    overscan: 5,
+  });
+
+  const virtualItems = rowVirtualizer.getVirtualItems();
+  const classItemsToRender = virtualItems.length > 0
+    ? virtualItems.map((v) => ({ index: v.index, key: v.key }))
+    : paginatedClasses.map((_, index) => ({ index, key: index }));
+
   // Renderizadores de formulários de itens e proficiências
   const renderItemsEditor = (
     items: DraftItem[],
@@ -1067,9 +1081,11 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
           </div>
         ) : (
           <>
-            <div className="flex-1 overflow-y-auto pr-1">
+            <div ref={parentRef} className="flex-1 overflow-y-auto pr-1">
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
-                {paginatedClasses.map((cls) => {
+                {classItemsToRender.map(({ index, key }) => {
+                  const cls = paginatedClasses[index];
+                  if (!cls) return null;
                   const initialItemsCount = (cls.initialItems || []).length;
                   const weapons = cls.proficiencies?.weapons || [];
                   const armor = cls.proficiencies?.armor || [];
@@ -1078,7 +1094,7 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
 
                   return (
                     <div
-                      key={cls.id}
+                      key={cls.id || key}
                       className="rounded-xl border border-gray-800 bg-gray-950 p-4 hover:border-purple-600/60 hover:shadow-lg transition-all flex flex-col justify-between group"
                     >
                       <div className="space-y-2.5">

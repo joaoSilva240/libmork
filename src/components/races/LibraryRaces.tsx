@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import type { RpgRace } from "@/types";
 import { ATTRIBUTES } from "@/lib/utils/constants";
 import type { Attribute } from "@/lib/utils/constants";
@@ -558,6 +559,19 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
   const totalPages = Math.ceil(filteredRaces.length / pageSize) || 1;
   const paginatedRaces = filteredRaces.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
+  const parentRef = useRef<HTMLDivElement>(null);
+  const raceVirtualizer = useVirtualizer({
+    count: paginatedRaces.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 220,
+    overscan: 5,
+  });
+
+  const virtualRaceItems = raceVirtualizer.getVirtualItems();
+  const raceItemsToRender = virtualRaceItems.length > 0
+    ? virtualRaceItems.map((v) => ({ index: v.index, key: v.key }))
+    : paginatedRaces.map((_, index) => ({ index, key: index }));
+
   const getSystemBadge = (system: string | null) => {
     if (system === "dnd5e") {
       return (
@@ -665,16 +679,19 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
-            {paginatedRaces.map((race) => {
-              const traits = (race.traits as Array<{ name: string; description?: string }>) || [];
-              const heritages = (race.heritages as Array<{ name: string; description?: string }>) || [];
-              const languages = (race.languages as string[]) || [];
-              const attrBonuses = (race.attributeBonuses as Record<string, number>) || {};
+          <div ref={parentRef} className="flex-1 overflow-y-auto pr-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
+              {raceItemsToRender.map(({ index, key }) => {
+                const race = paginatedRaces[index];
+                if (!race) return null;
+                const traits = (race.traits as Array<{ name: string; description?: string }>) || [];
+                const heritages = (race.heritages as Array<{ name: string; description?: string }>) || [];
+                const languages = (race.languages as string[]) || [];
+                const attrBonuses = (race.attributeBonuses as Record<string, number>) || {};
 
-              return (
-                <div
-                  key={race.id}
+                return (
+                  <div
+                    key={race.id || key}
                   className="group relative flex flex-col justify-between rounded-xl border border-gray-800 bg-gray-950/80 p-4 transition-all duration-200 hover:border-purple-500/50 hover:bg-gray-900 hover:shadow-lg hover:shadow-purple-950/20"
                 >
                   <div>
@@ -793,6 +810,7 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
                 </div>
               );
             })}
+            </div>
           </div>
         )}
 

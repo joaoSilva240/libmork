@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import type { LibraryDocument } from "@/types";
 import { Button, Spinner } from "@/components/ui";
 import { PdfViewerModal } from "./PdfViewerModal";
@@ -48,6 +49,19 @@ export function LibraryDocuments({
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingDoc, setEditingDoc] = useState<LibraryDocument | null>(null);
   const [viewingDoc, setViewingDoc] = useState<LibraryDocument | null>(null);
+
+  const parentRef = useRef<HTMLDivElement>(null);
+  const docVirtualizer = useVirtualizer({
+    count: documents.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 240,
+    overscan: 5,
+  });
+
+  const virtualDocItems = docVirtualizer.getVirtualItems();
+  const docItemsToRender = virtualDocItems.length > 0
+    ? virtualDocItems.map((v) => ({ index: v.index, key: v.key }))
+    : documents.map((_, index) => ({ index, key: index }));
 
   // Carregar dados de autenticação da sessão atual
   useEffect(() => {
@@ -276,8 +290,11 @@ export function LibraryDocuments({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,160px),240px))] auto-rows-max justify-center content-start gap-4 overflow-y-auto max-h-[calc(100vh-18rem)] pr-1">
-              {documents.map((doc, idx) => {
+            <div ref={parentRef} className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,160px),240px))] auto-rows-max justify-center content-start gap-4 overflow-y-auto max-h-[calc(100vh-18rem)] pr-1">
+              {docItemsToRender.map(({ index, key }) => {
+                const doc = documents[index];
+                if (!doc) return null;
+                const idx = index;
                 // Provedor formatado com badge
                 const providerColors: Record<string, string> = {
                   kavita: "bg-amber-950/80 text-amber-300 border-amber-800",
@@ -293,7 +310,7 @@ export function LibraryDocuments({
 
                 return (
                   <div
-                    key={doc.id ? `${doc.id}-${idx}` : `doc-${idx}`}
+                    key={doc.id ? `${doc.id}-${idx}` : `doc-${key}`}
                     tabIndex={0}
                     className="group relative flex flex-col justify-end aspect-[2/3] w-full max-w-[240px] h-auto mx-auto rounded-2xl overflow-hidden border border-gray-800 bg-gray-950 shadow-md hover:border-purple-500/80 hover:shadow-xl hover:shadow-purple-950/40 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all select-none cursor-pointer"
                   >
