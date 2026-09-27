@@ -164,6 +164,11 @@ findAvailablePort(initialPort).then((port) => {
       });
 
       // Logs da Campanha (Issue #13 - Alta Prioridade 1)
+      socket.on("toggle-establishment", (payload) => {
+        if (!payload || !payload.campaignId) return;
+        io.to(`campaign:${payload.campaignId}`).emit("establishment-status-updated", payload);
+      });
+
       socket.on("create-campaign-log", (payload) => {
         if (!payload || !payload.campaignId || !payload.log) return;
         io.to(`campaign:${payload.campaignId}`).emit("campaign-log-created", payload);

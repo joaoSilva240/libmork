@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Npc, Encounter } from "@/types";
+import type { Npc, Encounter, Establishment } from "@/types";
+import type { InventoryItem } from "@/components/characters/MarketplaceOverlay";
 import { Spinner } from "@/components/ui";
+import { useSocket } from "@/context/SocketContext";
 
 type WorldOverlayProps = {
   campaignId: string;
@@ -12,19 +14,24 @@ type WorldOverlayProps = {
   onChanged?: () => void;
 };
 
-type WorldTab = "npcs" | "encounters";
+type WorldTab = "npcs" | "encounters" | "establishments";
 
 export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChanged }: WorldOverlayProps) {
+  const { socket } = useSocket();
   const [activeTab, setActiveTab] = useState<WorldTab>("npcs");
   const [npcs, setNpcs] = useState<Npc[]>([]);
   const [campaignNpcIds, setCampaignNpcIds] = useState<string[]>([]);
   const [encounters, setEncounters] = useState<Encounter[]>([]);
+  const [establishments, setEstablishments] = useState<Establishment[]>([]);
+  const [selectedEstablishment, setSelectedEstablishment] = useState<Establishment | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedNpc, setSelectedNpc] = useState<Npc | null>(null);
   const [selectedEncounter, setSelectedEncounter] = useState<Encounter | null>(null);
   const [includeInCampaign, setIncludeInCampaign] = useState<Record<string, boolean>>({});
+
+  const [selectedEstInventory, setSelectedEstInventory] = useState<InventoryItem[]>([]);
 
   // Importação da Biblioteca para o Mundo
   const [showLibraryModal, setShowLibraryModal] = useState(false);
@@ -159,6 +166,67 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
     void load();
   }, [campaignId, worldId, activeTab]);
 
+  // Load Establishments
+  useEffect(() => {
+    if (activeTab !== "establishments") return;
+
+    const load = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(`/api/worlds/${worldId}/establishments`, {
+          credentials: "include"
+        });
+        const data = await response.json();
+
+        if (response.ok && data.data) {
+          setEstablishments(data.data);
+        } else {
+          // Fallback to world detail
+          const resWorld = await fetch(`/api/worlds/${worldId}`, { credentials: "include" });
+          const dataWorld = await resWorld.json();
+          if (resWorld.ok && dataWorld.data) {
+            setEstablishments(dataWorld.data.establishments || []);
+          } else {
+            setError(data.error || "Erro ao carregar estabelecimentos");
+          }
+        }
+      } catch {
+        setError("Erro de conexão. Tente novamente.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void load();
+  }, [worldId, activeTab]);
+
+  // Load Selected Establishment Inventory
+  useEffect(() => {
+    if (!selectedEstablishment || !worldId) {
+      setSelectedEstInventory([]);
+      return;
+    }
+
+    const estId = selectedEstablishment.id;
+
+    async function loadInventory() {
+      try {
+        const res = await fetch(`/api/worlds/${worldId}/establishments/${estId}/inventory`, {
+          credentials: "include",
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setSelectedEstInventory(data.data || []);
+        }
+      } catch {
+        // ignora erro
+      }
+    }
+
+    void loadInventory();
+  }, [selectedEstablishment, worldId]);
+
   const toggleInclude = async (npcId: string, currentlyIncluded: boolean) => {
     setIncludeInCampaign((prev) => ({ ...prev, [npcId]: true }));
 
@@ -230,12 +298,102 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
     }
   };
 
+  const handleToggleEstablishment = async (est: Establishment) => {
+    const nextIsOpen = !est.isOpen;
+    try {
+      const response = await fetch(`/api/worlds/${worldId}/establishments/${est.id}/toggle`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isOpen: nextIsOpen }),
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        setError(data.error || "Erro ao alternar status do estabelecimento");
+        return;
+      }
+
+      setEstablishments((prev) =>
+        prev.map((item) => (item.id === est.id ? { ...item, isOpen: nextIsOpen } : item))
+      );
+      if (selectedEstablishment?.id === est.id) {
+        setSelectedEstablishment((prev) => (prev ? { ...prev, isOpen: nextIsOpen } : null));
+      }
+
+      if (socket) {
+        socket.emit("toggle-establishment", {
+          campaignId,
+          establishment: { id: est.id, name: est.name },
+          isOpen: nextIsOpen,
+        });
+      }
+    } catch {
+      setError("Erro de conexão ao alternar estabelecimento.");
+    }
+  };
+
+  const handleAdjustTrust = async (est: Establishment, delta: number) => {
+    if (!worldId) return;
+    const newTrustLevel = (est.trustLevel || 0) + delta;
+    try {
+      const res = await fetch(`/api/worlds/${worldId}/establishments/${est.id}/toggle`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trustLevel: newTrustLevel }),
+        credentials: "include",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setEstablishments((prev) =>
+          prev.map((item) => (item.id === est.id ? { ...item, trustLevel: newTrustLevel } : item))
+        );
+        setSelectedEstablishment((prev) => (prev ? { ...prev, trustLevel: newTrustLevel } : null));
+
+        if (socket) {
+          socket.emit("toggle-establishment", {
+            campaignId,
+            establishment: { id: est.id, name: est.name },
+            isOpen: est.isOpen,
+            trustLevel: newTrustLevel,
+          });
+        }
+      }
+    } catch {
+      setError("Erro ao ajustar confiança.");
+    }
+  };
+
+  const handleDeleteInventoryItem = async (itemId: string) => {
+    if (!worldId || !selectedEstablishment) return;
+    if (!window.confirm("Remover este produto do estoque?")) return;
+
+    try {
+      const res = await fetch(
+        `/api/worlds/${worldId}/establishments/${selectedEstablishment.id}/inventory/${itemId}`,
+        { method: "DELETE", credentials: "include" }
+      );
+
+      if (res.ok) {
+        setSelectedEstInventory((prev) => prev.filter((item) => item.id !== itemId));
+      } else {
+        setError("Erro ao remover produto.");
+      }
+    } catch {
+      setError("Erro de conexão ao remover produto.");
+    }
+  };
+
   const filteredNpcs = npcs.filter((npc) =>
     npc.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const filteredEncounters = encounters.filter((enc) =>
     enc.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredEstablishments = establishments.filter((est) =>
+    est.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -264,6 +422,7 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
               setSearchQuery("");
               setSelectedNpc(null);
               setSelectedEncounter(null);
+              setSelectedEstablishment(null);
             }}
             className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
               activeTab === "npcs"
@@ -279,6 +438,7 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
               setSearchQuery("");
               setSelectedNpc(null);
               setSelectedEncounter(null);
+              setSelectedEstablishment(null);
             }}
             className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
               activeTab === "encounters"
@@ -288,12 +448,34 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
           >
             Encontros
           </button>
+          <button
+            onClick={() => {
+              setActiveTab("establishments");
+              setSearchQuery("");
+              setSelectedNpc(null);
+              setSelectedEncounter(null);
+              setSelectedEstablishment(null);
+            }}
+            className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+              activeTab === "establishments"
+                ? "bg-purple-600 text-white"
+                : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+            }`}
+          >
+            Estabelecimentos
+          </button>
         </div>
 
         <div className="mb-3 flex items-center justify-between gap-2">
           <input
             type="text"
-            placeholder={activeTab === "npcs" ? "Pesquisar NPCs..." : "Pesquisar Encontros..."}
+            placeholder={
+              activeTab === "npcs"
+                ? "Pesquisar NPCs..."
+                : activeTab === "encounters"
+                ? "Pesquisar Encontros..."
+                : "Pesquisar Estabelecimentos..."
+            }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white focus:border-transparent focus:ring-2 focus:ring-purple-600"
@@ -372,7 +554,7 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
                   })}
                 </div>
               )
-            ) : (
+            ) : activeTab === "encounters" ? (
               filteredEncounters.length === 0 ? (
                 <p className="text-center text-sm text-gray-500">Nenhum encontro criado ainda.</p>
               ) : (
@@ -403,6 +585,44 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
                             Ativo
                           </span>
                         )}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : (
+              filteredEstablishments.length === 0 ? (
+                <p className="text-center text-sm text-gray-500">Nenhum estabelecimento cadastrado.</p>
+              ) : (
+                <div className="space-y-1">
+                  {filteredEstablishments.map((est) => (
+                    <div
+                      key={est.id}
+                      className={`flex items-center justify-between rounded-lg border p-2 transition-colors ${
+                        selectedEstablishment?.id === est.id
+                          ? "border-purple-600 bg-purple-900/20"
+                          : "border-gray-800 bg-gray-900 hover:border-gray-700"
+                      }`}
+                    >
+                      <button
+                        onClick={() => setSelectedEstablishment(est)}
+                        className="flex flex-1 items-center gap-2 text-left min-w-0"
+                      >
+                        <span className="text-sm font-semibold text-white truncate">{est.name}</span>
+                        <span className="text-xs text-gray-400">
+                          {est.isOpen ? "🟢 Aberto" : "⚪ Fechado"}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleEstablishment(est)}
+                        className={`ml-2 rounded px-2.5 py-1 text-xs font-bold transition-colors ${
+                          est.isOpen
+                            ? "bg-rose-950/80 text-rose-300 border border-rose-800 hover:bg-rose-900"
+                            : "bg-emerald-950/80 text-emerald-300 border border-emerald-800 hover:bg-emerald-900"
+                        }`}
+                      >
+                        {est.isOpen ? "Fechar" : "Abrir"}
                       </button>
                     </div>
                   ))}
@@ -488,6 +708,111 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
                 <p className="text-xs text-gray-500">
                   Criado em {new Date(selectedEncounter.createdAt).toLocaleDateString("pt-BR")}
                 </p>
+              </div>
+            ) : activeTab === "establishments" && selectedEstablishment ? (
+              <div>
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-white">{selectedEstablishment.name}</h3>
+                  <span
+                    className={`rounded px-2 py-0.5 text-xs font-bold ${
+                      selectedEstablishment.isOpen
+                        ? "bg-emerald-950 text-emerald-300 border border-emerald-800"
+                        : "bg-gray-800 text-gray-400 border border-gray-700"
+                    }`}
+                  >
+                    {selectedEstablishment.isOpen ? "🟢 Aberto" : "⚪ Fechado"}
+                  </span>
+                </div>
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <span className="font-semibold text-gray-400">Tipo:</span>{" "}
+                    <span className="text-white capitalize">{selectedEstablishment.type}</span>
+                  </div>
+                  {selectedEstablishment.description && (
+                    <div>
+                      <span className="font-semibold text-gray-400 block mb-1">Descrição:</span>
+                      <p className="text-xs text-gray-300 bg-gray-900 p-2.5 rounded-lg border border-gray-800">
+                        {selectedEstablishment.description}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Seção de Controle de Confiança */}
+                  <div className="pt-3 border-t border-gray-800">
+                    <span className="font-semibold text-gray-400 block mb-2 text-xs">Nível de Confiança:</span>
+                    <div className="flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleAdjustTrust(selectedEstablishment, -1)}
+                        className="flex-1 rounded-lg border border-rose-800/80 bg-rose-950/40 px-2 py-1.5 text-xs font-semibold text-rose-300 transition-colors hover:bg-rose-900/60 cursor-pointer"
+                      >
+                        -10% (Desconfiança)
+                      </button>
+                      <div className="min-w-[120px] rounded-lg border border-gray-800 bg-gray-900 px-2 py-1.5 text-center text-xs font-bold text-white">
+                        {(selectedEstablishment.trustLevel || 0) > 0
+                          ? `+${(selectedEstablishment.trustLevel || 0) * 10}% (Desconto)`
+                          : (selectedEstablishment.trustLevel || 0) < 0
+                          ? `${(selectedEstablishment.trustLevel || 0) * 10}% (Ágio)`
+                          : "0% (Neutro)"}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleAdjustTrust(selectedEstablishment, 1)}
+                        className="flex-1 rounded-lg border border-emerald-800/80 bg-emerald-950/40 px-2 py-1.5 text-xs font-semibold text-emerald-300 transition-colors hover:bg-emerald-900/60 cursor-pointer"
+                      >
+                        +10% (Confiança)
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Seção de Produtos no Estoque */}
+                  <div className="pt-3 border-t border-gray-800">
+                    <h4 className="font-semibold text-xs text-white mb-2">📦 Produtos no Estoque ({selectedEstInventory.length})</h4>
+
+                    {selectedEstInventory.length === 0 ? (
+                      <p className="text-xs text-gray-500 italic">Nenhum produto cadastrado ainda.</p>
+                    ) : (
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {selectedEstInventory.map((item) => (
+                          <div key={item.id} className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-950 p-2 text-xs">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-bold text-white truncate">{item.name}</p>
+                              <div className="flex items-center gap-2 text-[10px] text-gray-400">
+                                <span className="capitalize">{item.contentType === "items" ? "Item" : item.contentType === "spells" ? "Magia" : "Habilidade"}</span>
+                                <span>•</span>
+                                <span className="text-amber-400 font-semibold">🪙 {item.priceGold} Ouro</span>
+                                <span>•</span>
+                                <span>Estoque: {item.stock === -1 ? "∞" : item.stock}</span>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteInventoryItem(item.id)}
+                              className="ml-2 text-red-400 hover:text-red-300 transition-colors text-xs cursor-pointer"
+                              title="Remover produto"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleEstablishment(selectedEstablishment)}
+                      className={`w-full rounded-lg py-2 text-xs font-bold transition-colors ${
+                        selectedEstablishment.isOpen
+                          ? "bg-rose-950 text-rose-300 border border-rose-800 hover:bg-rose-900"
+                          : "bg-emerald-950 text-emerald-300 border border-emerald-800 hover:bg-emerald-900"
+                      }`}
+                    >
+                      {selectedEstablishment.isOpen ? "Fechar Estabelecimento" : "Abrir Estabelecimento"}
+                    </button>
+                  </div>
+                </div>
               </div>
             ) : (
               <p className="text-center text-sm text-gray-500">

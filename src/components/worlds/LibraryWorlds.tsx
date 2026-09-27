@@ -53,6 +53,50 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
   const [encDescription, setEncDescription] = useState("");
   const [isCreatingEnc, setIsCreatingEnc] = useState(false);
 
+  // Form Produto no Estoque do Estabelecimento
+  const [addingProductEstId, setAddingProductEstId] = useState<string | null>(null);
+  const [productName, setProductName] = useState("");
+  const [productType, setProductType] = useState<"items" | "spells" | "skills">("items");
+  const [productDescription, setProductDescription] = useState("");
+  const [productPriceGold, setProductPriceGold] = useState(10);
+  const [productStock, setProductStock] = useState(-1);
+  const [selectedContentId, setSelectedContentId] = useState<string | null>(null);
+  const [globalContentList, setGlobalContentList] = useState<Array<{ id: string; name: string; description?: string | null }>>([]);
+  const [isLoadingContentList, setIsLoadingContentList] = useState(false);
+  const [isCreatingProduct, setIsCreatingProduct] = useState(false);
+
+  // Carregar lista de conteúdo global quando o modal de produto estiver aberto ou productType mude
+  useEffect(() => {
+    if (!addingProductEstId) return;
+
+    let cancelled = false;
+    setIsLoadingContentList(true);
+
+    async function fetchGlobalContent() {
+      try {
+        const res = await fetch(`/api/content/${productType}`, { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          if (!cancelled) {
+            setGlobalContentList(data.data || []);
+          }
+        }
+      } catch {
+        // Ignora erro ao buscar biblioteca global
+      } finally {
+        if (!cancelled) {
+          setIsLoadingContentList(false);
+        }
+      }
+    }
+
+    void fetchGlobalContent();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [addingProductEstId, productType]);
+
   useEffect(() => {
     if (onRegisterActions) {
       onRegisterActions({
@@ -285,6 +329,45 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
       setError("Erro ao criar encontro");
     } finally {
       setIsCreatingEnc(false);
+    }
+  };
+
+  const handleCreateProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedWorld || !addingProductEstId) return;
+    setIsCreatingProduct(true);
+
+    try {
+      const res = await fetch(`/api/worlds/${selectedWorld.id}/establishments/${addingProductEstId}/inventory`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: productName,
+          description: productDescription || null,
+          contentType: productType,
+          contentId: selectedContentId || null,
+          priceGold: productPriceGold,
+          stock: productStock,
+        }),
+        credentials: "include",
+      });
+
+      if (res.ok) {
+        setProductName("");
+        setProductDescription("");
+        setProductPriceGold(10);
+        setProductStock(-1);
+        setSelectedContentId(null);
+        setAddingProductEstId(null);
+        void loadWorldDetails(selectedWorld.id);
+      } else {
+        const data = await res.json();
+        setError(data.error || "Erro ao adicionar produto");
+      }
+    } catch {
+      setError("Erro ao cadastrar produto no estoque");
+    } finally {
+      setIsCreatingProduct(false);
     }
   };
 
@@ -580,16 +663,147 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
                   </div>
                 </Form>
 
-                <div className="space-y-2 max-h-48 overflow-y-auto">
+                <div className="space-y-3 max-h-80 overflow-y-auto">
                   {selectedWorld.establishments?.map((est) => (
-                    <div key={est.id} className="flex items-center justify-between rounded-xl border border-gray-800 bg-gray-900 p-2.5 text-xs">
-                      <div>
-                        <p className="font-bold text-white">{est.name} <span className="text-[10px] text-purple-400 font-normal">({est.type})</span></p>
-                        {est.description && <p className="text-[10px] text-gray-400">{est.description}</p>}
+                    <div key={est.id} className="rounded-xl border border-gray-800 bg-gray-900 p-3 text-xs space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-bold text-white text-sm">
+                            {est.name} <span className="text-xs text-purple-400 font-normal">({est.type})</span>
+                          </p>
+                          {est.description && <p className="text-xs text-gray-400">{est.description}</p>}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (addingProductEstId === est.id) {
+                                setAddingProductEstId(null);
+                              } else {
+                                setAddingProductEstId(est.id);
+                                setProductName("");
+                                setProductDescription("");
+                                setProductPriceGold(10);
+                                setProductStock(-1);
+                                setSelectedContentId(null);
+                              }
+                            }}
+                            className="rounded-lg bg-purple-950/80 border border-purple-800/80 px-2.5 py-1 text-xs font-bold text-purple-300 hover:bg-purple-900 transition-colors"
+                          >
+                            {addingProductEstId === est.id ? "Cancelar" : "+ Produto"}
+                          </button>
+                          <button onClick={() => handleDeleteEstablishment(est.id)} className="text-xs text-red-400 hover:text-red-300 transition-colors">
+                            Excluir
+                          </button>
+                        </div>
                       </div>
-                      <button onClick={() => handleDeleteEstablishment(est.id)} className="text-[10px] text-red-400 hover:text-red-300 transition-colors">
-                        Excluir
-                      </button>
+
+                      {addingProductEstId === est.id && (
+                        <Form onSubmit={handleCreateProduct} error={undefined}>
+                          <div className="space-y-2 rounded-lg border border-purple-900/60 bg-gray-950 p-2.5 mt-2">
+                            <h5 className="font-bold text-xs text-purple-300">Cadastrar Produto no Estoque de {est.name}</h5>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-[10px] font-semibold text-gray-400 mb-0.5">Tipo de Conteúdo</label>
+                                <select
+                                  value={productType}
+                                  onChange={(e) => {
+                                    setProductType(e.target.value as "items" | "spells" | "skills");
+                                    setSelectedContentId(null);
+                                    setProductName("");
+                                    setProductDescription("");
+                                  }}
+                                  className={`${inputClass} text-xs`}
+                                >
+                                  <option value="items">Item</option>
+                                  <option value="spells">Magia</option>
+                                  <option value="skills">Habilidade</option>
+                                </select>
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-semibold text-gray-400 mb-0.5">Biblioteca Global</label>
+                                <select
+                                  value={selectedContentId || ""}
+                                  onChange={(e) => {
+                                    const id = e.target.value;
+                                    if (!id) {
+                                      setSelectedContentId(null);
+                                      return;
+                                    }
+                                    const selected = globalContentList.find((item) => item.id === id);
+                                    if (selected) {
+                                      setSelectedContentId(selected.id);
+                                      setProductName(selected.name);
+                                      setProductDescription(selected.description || "");
+                                    }
+                                  }}
+                                  disabled={isLoadingContentList}
+                                  className={`${inputClass} text-xs`}
+                                >
+                                  <option value="">-- Selecione da biblioteca --</option>
+                                  {globalContentList.map((item) => (
+                                    <option key={item.id} value={item.id}>
+                                      {item.name}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-[10px] font-semibold text-gray-400 mb-0.5">Nome</label>
+                              <input
+                                type="text"
+                                placeholder="Nome do produto"
+                                value={productName}
+                                onChange={(e) => setProductName(e.target.value)}
+                                required
+                                disabled={isCreatingProduct}
+                                className={`${inputClass} text-xs`}
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-[10px] font-semibold text-gray-400 mb-0.5">Preço (Ouro)</label>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  value={productPriceGold}
+                                  onChange={(e) => setProductPriceGold(Number(e.target.value))}
+                                  required
+                                  disabled={isCreatingProduct}
+                                  className={`${inputClass} text-xs`}
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-semibold text-gray-400 mb-0.5">Qtd Estoque (-1 = ilimitado)</label>
+                                <input
+                                  type="number"
+                                  min={-1}
+                                  value={productStock}
+                                  onChange={(e) => setProductStock(Number(e.target.value))}
+                                  required
+                                  disabled={isCreatingProduct}
+                                  className={`${inputClass} text-xs`}
+                                />
+                              </div>
+                            </div>
+                            <input
+                              type="text"
+                              placeholder="Descrição do produto (opcional)"
+                              value={productDescription}
+                              onChange={(e) => setProductDescription(e.target.value)}
+                              disabled={isCreatingProduct}
+                              className={`${inputClass} text-xs`}
+                            />
+                            <Button type="submit" variant="master" isLoading={isCreatingProduct} className="w-full text-xs py-1">
+                              Salvar no Estoque
+                            </Button>
+                          </div>
+                        </Form>
+                      )}
                     </div>
                   ))}
                 </div>

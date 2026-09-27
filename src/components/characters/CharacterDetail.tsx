@@ -39,6 +39,7 @@ import { ShadowPointsModal } from "@/components/characters/ShadowPointsModal";
 import { DuelInviteModal } from "@/components/combat/DuelInviteModal";
 import { DuelIncomingInviteModal } from "@/components/combat/DuelIncomingInviteModal";
 import { DuelArenaModal } from "@/components/combat/DuelArenaModal";
+import { MarketplaceOverlay } from "@/components/characters/MarketplaceOverlay";
 import type { CombatSessionState } from "@/lib/engine";
 import type { DuelSessionState } from "@/lib/engine/duel";
 import { createDuelSession, startDuelSession } from "@/lib/engine/duel";
@@ -1168,6 +1169,10 @@ export function CharacterDetail() {
             onClose={() => setActiveDuelState(null)}
           />
         </>
+      )}
+
+      {character && character.campaignId && (
+        <MarketplaceOverlay campaignId={character.campaignId} characterId={character.id} />
       )}
 
       {/* Pop-up Requisitado pelo Mestre: Rolar Iniciativa (RF-039) */}
