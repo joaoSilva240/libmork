@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import type { Campaign, World } from "@/types";
+import type { Campaign, Establishment, World } from "@/types";
 import { Spinner, WindowPortal } from "@/components/ui";
+import { useSocket } from "@/context/SocketContext";
 import { CampaignInvites } from "@/components/campaigns/CampaignInvites";
 import { MasterRoster } from "@/components/campaigns/MasterRoster";
 import { SessionLog } from "@/components/campaigns/SessionLog";
@@ -14,13 +15,16 @@ import { WorldOverlay } from "@/components/campaigns/WorldOverlay";
 export function CampaignDetail() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const { socket } = useSocket();
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [worlds, setWorlds] = useState<World[]>([]);
+  const [selectedWorldEstablishments, setSelectedWorldEstablishments] = useState<Establishment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const [worldError, setWorldError] = useState<string | null>(null);
+  const [isEstablishmentsExpanded, setIsEstablishmentsExpanded] = useState(false);
 
   const [showContentOverlay, setShowContentOverlay] = useState(false);
   const [selectedWorldId, setSelectedWorldId] = useState<string>("");
@@ -82,6 +86,57 @@ export function CampaignDetail() {
 
     loadData();
   }, [params.id, loadWorlds]);
+
+  useEffect(() => {
+    if (!selectedWorldId) {
+      setSelectedWorldEstablishments([]);
+      return;
+    }
+
+    async function loadEstablishments() {
+      try {
+        const res = await fetch(`/api/worlds/${selectedWorldId}/establishments`, {
+          credentials: "include",
+        });
+        const data = await res.json();
+        if (res.ok && data.data) {
+          setSelectedWorldEstablishments(data.data);
+        } else {
+          setSelectedWorldEstablishments([]);
+        }
+      } catch {
+        setSelectedWorldEstablishments([]);
+      }
+    }
+
+    loadEstablishments();
+  }, [selectedWorldId]);
+
+  const handleToggleEstablishment = async (est: Establishment) => {
+    if (!selectedWorldId) return;
+    const nextState = !est.isOpen;
+    try {
+      const res = await fetch(`/api/worlds/${selectedWorldId}/establishments/${est.id}/toggle`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ isOpen: nextState }),
+      });
+
+      if (res.ok) {
+        setSelectedWorldEstablishments((prev) =>
+          prev.map((item) => (item.id === est.id ? { ...item, isOpen: nextState } : item))
+        );
+        socket?.emit("toggle-establishment", {
+          campaignId: campaign?.id,
+          establishment: { id: est.id, name: est.name },
+          isOpen: nextState,
+        });
+      }
+    } catch {
+      console.error("Erro ao alternar status do estabelecimento");
+    }
+  };
 
   const handleDelete = async () => {
     if (!window.confirm("Tem certeza que deseja excluir esta campanha? Todos os mundos e vínculos serão removidos.")) {
@@ -238,12 +293,25 @@ export function CampaignDetail() {
                     )}
                     <div className="relative z-10">
                       <div className="min-w-0">
-                        <button
-                          onClick={() => setSelectedWorldId(world.id)}
-                          className="text-left text-sm font-semibold text-white hover:text-purple-300 drop-shadow-sm"
-                        >
-                          {world.name}
-                        </button>
+                        <div className="flex items-center justify-between gap-1">
+                          <button
+                            onClick={() => setSelectedWorldId(world.id)}
+                            className="text-left text-sm font-semibold text-white hover:text-purple-300 drop-shadow-sm flex-1 truncate"
+                          >
+                            {world.name}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOverlayWorld(world);
+                            }}
+                            className="rounded-lg bg-purple-900/60 border border-purple-700/80 px-2 py-1 text-[11px] font-bold text-purple-200 hover:bg-purple-800 transition-colors shrink-0"
+                            title="Abrir Detalhes do Mundo (NPCs, Encontros, Estabelecimentos)"
+                          >
+                            ⚙️ Ver Detalhes
+                          </button>
+                        </div>
                         {selectedWorldId === world.id && (
                           <span className="mt-1 inline-block rounded-full bg-purple-600 px-2 py-0.5 text-[10px] font-bold text-white">
                             Selecionado
@@ -262,6 +330,67 @@ export function CampaignDetail() {
               </div>
             )}
 
+            {/* ===== Estabelecimentos do Mundo Selecionado ===== */}
+            {selectedWorldId && (
+              <div className="rounded-lg border border-gray-800 bg-gray-900 p-3 mt-3">
+                <button
+                  type="button"
+                  onClick={() => setIsEstablishmentsExpanded((prev) => !prev)}
+                  className="mb-2 flex w-full items-center justify-between font-semibold text-xs text-white"
+                >
+                  <span className="flex items-center gap-1">
+                    <span>{isEstablishmentsExpanded ? "▼" : "►"}</span>
+                    <span>🏬 Estabelecimentos</span>
+                  </span>
+                  <span className="text-[10px] font-normal text-purple-400">
+                    ({selectedWorldEstablishments.length})
+                  </span>
+                </button>
+
+                <div
+                  className={`grid transition-all duration-200 ${
+                    isEstablishmentsExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                  }`}
+                >
+                  <div className="overflow-hidden">
+                    {isEstablishmentsExpanded && (
+                      <>
+                        {selectedWorldEstablishments.length === 0 ? (
+                          <p className="text-xs text-gray-500 italic">Nenhum estabelecimento neste mundo.</p>
+                        ) : (
+                          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                            {selectedWorldEstablishments.map((est) => (
+                              <div
+                                key={est.id}
+                                className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-950 p-2 text-xs"
+                              >
+                                <div className="min-w-0 flex-1 pr-2">
+                                  <span className="font-semibold text-white block truncate">{est.name}</span>
+                                  <span className="text-[10px] text-gray-400 block truncate">
+                                    {est.type || "Geral"}
+                                  </span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleEstablishment(est)}
+                                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold transition-all cursor-pointer ${
+                                    est.isOpen
+                                      ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 hover:bg-emerald-900"
+                                      : "bg-gray-800 text-gray-400 border border-gray-700 hover:text-white"
+                                  }`}
+                                >
+                                  {est.isOpen ? "🟢 Aberto" : "⚪ Fechado"}
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <CampaignInvites key={`invites-${rosterVersion}`} campaignId={campaign.id} />

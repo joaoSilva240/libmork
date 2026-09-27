@@ -212,10 +212,31 @@ export const establishments = pgTable(
     name: varchar("name", { length: 100 }).notNull(),
     type: varchar("type", { length: 50 }).notNull().default("general"),
     description: text("description"),
+    isOpen: boolean("is_open").notNull().default(false),
+    trustLevel: integer("trust_level").notNull().default(0),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
   (table) => [index("idx_establishment_world").on(table.worldId)],
+);
+
+export const establishmentInventory = pgTable(
+  "establishment_inventory",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    establishmentId: uuid("establishment_id")
+      .notNull()
+      .references(() => establishments.id, { onDelete: "cascade" }),
+    contentType: varchar("content_type", { length: 20 }).notNull().default("items"),
+    contentId: uuid("content_id"),
+    name: varchar("name", { length: 100 }).notNull(),
+    description: text("description"),
+    priceGold: integer("price_gold").notNull().default(0),
+    stock: integer("stock").notNull().default(-1),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [index("idx_est_inv_establishment").on(table.establishmentId)]
 );
 
 /**
@@ -753,6 +774,10 @@ export const worldsRelations = relations(worlds, ({ one, many }) => ({
 
 export const establishmentsRelations = relations(establishments, ({ one }) => ({
   world: one(worlds, { fields: [establishments.worldId], references: [worlds.id] }),
+}));
+
+export const establishmentInventoryRelations = relations(establishmentInventory, ({ one }) => ({
+  establishment: one(establishments, { fields: [establishmentInventory.establishmentId], references: [establishments.id] }),
 }));
 
 export const npcsRelations = relations(npcs, ({ one, many }) => ({

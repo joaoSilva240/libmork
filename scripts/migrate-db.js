@@ -133,6 +133,50 @@ async function runMigrations() {
     `);
     console.log('✓ Indexes for oauth_accounts ensured.');
 
+    console.log('\n--- 6. Applying establishments & establishment_inventory migration ---');
+    await client.query(`
+      ALTER TABLE "establishments" ADD COLUMN IF NOT EXISTS "is_open" boolean DEFAULT false NOT NULL;
+    `);
+    console.log('✓ Column establishments.is_open ensured.');
+
+    await client.query(`
+      ALTER TABLE "establishments" ADD COLUMN IF NOT EXISTS "trust_level" integer DEFAULT 0 NOT NULL;
+    `);
+    console.log('✓ Column establishments.trust_level ensured.');
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "establishment_inventory" (
+        "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+        "establishment_id" uuid NOT NULL,
+        "content_type" varchar(20) DEFAULT 'items' NOT NULL,
+        "content_id" uuid,
+        "name" varchar(100) NOT NULL,
+        "description" text,
+        "price_gold" integer DEFAULT 0 NOT NULL,
+        "stock" integer DEFAULT -1 NOT NULL,
+        "created_at" timestamp DEFAULT now() NOT NULL,
+        "updated_at" timestamp DEFAULT now() NOT NULL
+      );
+    `);
+    console.log('✓ Table establishment_inventory ensured.');
+
+    await client.query(`
+      DO $$ BEGIN
+        ALTER TABLE "establishment_inventory" 
+          ADD CONSTRAINT "establishment_inventory_establishment_id_establishments_id_fk" 
+          FOREIGN KEY ("establishment_id") REFERENCES "public"."establishments"("id") 
+          ON DELETE cascade ON UPDATE no action;
+      EXCEPTION
+        WHEN duplicate_object THEN null;
+      END $$;
+    `);
+    console.log('✓ Foreign key establishment_inventory_establishment_id_establishments_id_fk ensured.');
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS "idx_est_inv_establishment" ON "establishment_inventory" USING btree ("establishment_id");
+    `);
+    console.log('✓ Index idx_est_inv_establishment ensured.');
+
     console.log('\nAll migrations executed successfully!');
   } catch (error) {
     console.error('Migration error:', error);

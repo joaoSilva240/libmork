@@ -32,8 +32,6 @@ export function useOfflineSync(characterId?: string) {
   }, [isSyncing, refreshPendingCount]);
 
   useEffect(() => {
-    refreshPendingCount();
-
     const handleOnline = () => {
       setIsOffline(false);
       handleSync();
@@ -43,6 +41,8 @@ export function useOfflineSync(characterId?: string) {
       setIsOffline(true);
     };
 
+    refreshPendingCount();
+
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
@@ -50,7 +50,7 @@ export function useOfflineSync(characterId?: string) {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, [handleOnline, handleSync, refreshPendingCount]);
+  }, [handleSync, refreshPendingCount]);
 
   return {
     isOffline,

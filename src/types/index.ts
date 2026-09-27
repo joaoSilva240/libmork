@@ -137,6 +137,8 @@ export type Establishment = {
   name: string;
   type: string;
   description: string | null;
+  isOpen?: boolean;
+  trustLevel?: number;
   createdAt: Date;
   updatedAt: Date;
 };
