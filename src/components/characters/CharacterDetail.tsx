@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import type { Character } from "@/types";
 import { ATTRIBUTES } from "@/lib/utils/constants";
@@ -243,6 +244,28 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
       cancelled = true;
     };
   }, [params.id]);
+
+  // Buscar itens do inventário para calcular peso
+  const { data: inventoryItems } = useQuery({
+    queryKey: ["character-items", character?.id],
+    queryFn: async () => {
+      if (!character?.id) return [];
+      const res = await fetch(`/api/characters/${character.id}/content/items`, {
+        credentials: "include",
+      });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data?.data) ? data.data : [];
+    },
+    enabled: !!character?.id,
+  });
+
+  // Calcular peso total carregado
+  const totalWeight = (Array.isArray(inventoryItems) ? inventoryItems : []).reduce((sum: number, item: any) => {
+    const weight = item.content?.weight || item.content?.sourceData?.weight || 0;
+    const quantity = item.junction?.quantity || 1;
+    return sum + (parseFloat(weight) || 0) * quantity;
+  }, 0);
 
   useEffect(() => {
     if (!character?.id) return;
@@ -1068,6 +1091,12 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
               onChange={handleCoinsChange}
               isLoading={isSavingCoins}
             />
+
+            {/* Indicador de Peso Carregado */}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-800/50 bg-gray-900/40 text-xs">
+              <span className="text-gray-500 font-semibold">⚖️ Peso:</span>
+              <span className="text-amber-400 font-bold">{totalWeight.toFixed(1)} kg</span>
+            </div>
 
             {/* Conteúdo da Ficha (Itens, Magias, Habilidades, Condições) */}
               <CharacterContent characterId={character.id} characterClassId={character.classId} characterLevel={character.level} characterAttributeModifiers={stats.modifiers} campaignId={character.campaignId} characterManaCurrent={character.manaPointsCurrent} characterManaMax={character.manaPointsMax} characterHpCurrent={character.hitPointsCurrent} characterHpMax={character.hitPointsMax} combatState={combatState} onCombatStateChange={handleCombatStateChange} onActorStatusChange={handleActorStatusChange} onActionResult={handleActionResult} combatants={combatState?.combatants ?? []} defaultType="items" allowedTypes={["items", "spells", "conditions"]} isTurnLocked={isTurnLocked} onStartRolling={() => setIsRollingDice(true)} onEndRolling={() => setIsRollingDice(false)} onPersistActorStatus={async (actor, hp, mana) => { if (actor.characterId !== character.id && actor.id !== character.id && actor.type !== "npc" && !actor.npcId) return; const response = await fetch(`/api/campaigns/${character.campaignId}/actors/${actor.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hitPointsCurrent: hp, ...(mana == null ? {} : { manaPointsCurrent: mana }), reason: "combate" }) }); if (!response.ok) setError("Estado atualizado em tempo real, mas a persistência falhou."); }} />

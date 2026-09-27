@@ -12,16 +12,18 @@ describe("CurrencyPouch", () => {
     diamante: 1,
   };
 
-  it("renders all coin types with their respective labels and values", () => {
+  it("renders all coin types with their respective icons and values", () => {
     const handleChange = vi.fn();
     render(<CurrencyPouch characterId="char-1" coins={initialCoins} onChange={handleChange} />);
 
-    expect(screen.getByText("Bronze")).toBeInTheDocument();
-    expect(screen.getByText("Prata")).toBeInTheDocument();
-    expect(screen.getByText("Ouro")).toBeInTheDocument();
-    expect(screen.getByText("Platina")).toBeInTheDocument();
-    expect(screen.getByText("Diamante")).toBeInTheDocument();
+    // Check icons are rendered
+    expect(screen.getByText("🟤")).toBeInTheDocument();
+    expect(screen.getByText("⚪")).toBeInTheDocument();
+    expect(screen.getByText("🟡")).toBeInTheDocument();
+    expect(screen.getByText("🔷")).toBeInTheDocument();
+    expect(screen.getByText("💎")).toBeInTheDocument();
 
+    // Check values are rendered
     expect(screen.getByText("50")).toBeInTheDocument();
     expect(screen.getByText("10")).toBeInTheDocument();
     expect(screen.getByText("5")).toBeInTheDocument();
@@ -33,7 +35,7 @@ describe("CurrencyPouch", () => {
     const handleChange = vi.fn();
     render(<CurrencyPouch characterId="char-1" coins={initialCoins} onChange={handleChange} />);
 
-    const editBronzeButton = screen.getByTitle("Editar Bronze");
+    const editBronzeButton = screen.getByTitle("Editar bronze");
     fireEvent.click(editBronzeButton);
 
     const input = screen.getByRole("spinbutton");
@@ -41,8 +43,7 @@ describe("CurrencyPouch", () => {
     expect(input).toHaveValue(50);
 
     fireEvent.change(input, { target: { value: "75" } });
-    const saveButton = screen.getByTitle("Salvar");
-    fireEvent.click(saveButton);
+    fireEvent.blur(input); // Auto-save on blur
 
     expect(handleChange).toHaveBeenCalledTimes(1);
     expect(handleChange).toHaveBeenCalledWith({
@@ -55,7 +56,7 @@ describe("CurrencyPouch", () => {
     const handleChange = vi.fn();
     render(<CurrencyPouch characterId="char-1" coins={initialCoins} onChange={handleChange} />);
 
-    const editPrataButton = screen.getByTitle("Editar Prata");
+    const editPrataButton = screen.getByTitle("Editar prata");
     fireEvent.click(editPrataButton);
 
     const input = screen.getByRole("spinbutton");
@@ -72,7 +73,7 @@ describe("CurrencyPouch", () => {
     const handleChange = vi.fn();
     render(<CurrencyPouch characterId="char-1" coins={initialCoins} onChange={handleChange} />);
 
-    const editOuroButton = screen.getByTitle("Editar Ouro");
+    const editOuroButton = screen.getByTitle("Editar ouro");
     fireEvent.click(editOuroButton);
 
     const input = screen.getByRole("spinbutton");
@@ -84,28 +85,28 @@ describe("CurrencyPouch", () => {
     expect(screen.getByText("5")).toBeInTheDocument();
   });
 
-  it("applies conversion logic from higher to lower denominations when value >= 100", () => {
+  it("no longer applies auto-conversion logic (removed in minimalist redesign)", () => {
     const handleChange = vi.fn();
     render(<CurrencyPouch characterId="char-1" coins={initialCoins} onChange={handleChange} />);
 
-    // Diamante: 100 diamante => 0 diamante and adds 1 to platina (2 + 1 = 3)
-    const editDiamanteButton = screen.getByTitle("Editar Diamante");
+    const editDiamanteButton = screen.getByTitle("Editar diamante");
     fireEvent.click(editDiamanteButton);
 
     const input = screen.getByRole("spinbutton");
     fireEvent.change(input, { target: { value: "105" } });
     fireEvent.keyDown(input, { key: "Enter" });
 
+    // No conversion, just direct update
     expect(handleChange).toHaveBeenCalledWith({
       bronze: 50,
       prata: 10,
       ouro: 5,
-      platina: 3,
-      diamante: 5,
+      platina: 2,
+      diamante: 105,
     });
   });
 
-  it("handles cascaded conversion correctly when upper values cause overflow in lower tiers", () => {
+  it("no longer handles cascaded conversion (removed in minimalist redesign)", () => {
     const handleChange = vi.fn();
     const customCoins: CoinsBalance = {
       bronze: 0,
@@ -116,20 +117,20 @@ describe("CurrencyPouch", () => {
     };
     render(<CurrencyPouch characterId="char-1" coins={customCoins} onChange={handleChange} />);
 
-    // Adding 100 diamante -> converts 1 to platina (99 + 1 = 100) -> converts 1 to ouro (0 + 1 = 1)
-    const editDiamanteButton = screen.getByTitle("Editar Diamante");
+    const editDiamanteButton = screen.getByTitle("Editar diamante");
     fireEvent.click(editDiamanteButton);
 
     const input = screen.getByRole("spinbutton");
     fireEvent.change(input, { target: { value: "100" } });
     fireEvent.keyDown(input, { key: "Enter" });
 
+    // No conversion, direct update
     expect(handleChange).toHaveBeenCalledWith({
       bronze: 0,
       prata: 0,
-      ouro: 1,
-      platina: 0,
-      diamante: 0,
+      ouro: 0,
+      platina: 99,
+      diamante: 100,
     });
   });
 
@@ -137,7 +138,7 @@ describe("CurrencyPouch", () => {
     const handleChange = vi.fn();
     render(<CurrencyPouch characterId="char-1" coins={initialCoins} onChange={handleChange} />);
 
-    const editBronzeButton = screen.getByTitle("Editar Bronze");
+    const editBronzeButton = screen.getByTitle("Editar bronze");
     fireEvent.click(editBronzeButton);
 
     const input = screen.getByRole("spinbutton");
@@ -152,7 +153,7 @@ describe("CurrencyPouch", () => {
     const handleChange = vi.fn();
     render(<CurrencyPouch characterId="char-1" coins={initialCoins} onChange={handleChange} isLoading={true} />);
 
-    const editBronzeButton = screen.getByTitle("Editar Bronze");
+    const editBronzeButton = screen.getByTitle("Editar bronze");
     expect(editBronzeButton).toBeDisabled();
   });
 });
