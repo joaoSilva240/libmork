@@ -17,6 +17,8 @@ import { calculateRest, REST_OPTIONS, type RestType } from "@/lib/engine/rest";
 import { ToastContainer } from "@/components/ui/Toast";
 import { generateUUID } from "@/lib/utils/uuid";
 import { Spinner } from "@/components/ui";
+import { CurrencyPouch } from "@/components/characters/CurrencyPouch";
+import type { CoinsBalance } from "@/lib/validators/character";
 import {
   StatusFilledIcon,
   SkillsFilledIcon,
@@ -93,8 +95,36 @@ export function CharacterDetail() {
   const [activeTab, setActiveTab] = useState<TabType>("status");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showSkillsToast, setShowSkillsToast] = useState(false);
-  const [isResting, setIsResting] = useState(false);
-  const [toasts, setToasts] = useState<Array<{ id: string; message: string; type?: "error" | "success" | "info" | "warning" }>>([]);
+const [isResting, setIsResting] = useState(false);
+const [isSavingCoins, setIsSavingCoins] = useState(false);
+const [toasts, setToasts] = useState<Array<{ id: string; message: string; type?: "error" | "success" | "info" | "warning" }>>([]);
+
+const handleCoinsChange = async (newCoins: CoinsBalance) => {
+  if (!character) return;
+  setIsSavingCoins(true);
+  // Otimista
+  setCharacter((prev) => (prev ? { ...prev, coins: newCoins } : prev));
+  try {
+    const res = await fetch(`/api/characters/${character.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ coins: newCoins }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.data) {
+        setCharacter(data.data);
+      }
+    } else {
+      setError("Erro ao salvar moedas do personagem.");
+    }
+  } catch {
+    setError("Erro de conexão ao atualizar moedas.");
+  } finally {
+    setIsSavingCoins(false);
+  }
+};
 
   const addToast = (message: string, type: "error" | "success" | "info" | "warning" = "info") => {
     setToasts((prev) => [...prev, { id: generateUUID(), message, type }]);
@@ -1031,6 +1061,14 @@ export function CharacterDetail() {
         {/* TAB 3: INVENTÁRIO */}
         {activeTab === "inventory" && (
           <div className="space-y-4 animate-in fade-in duration-200 flex-1 flex flex-col">
+            {/* Widget de Moedas (Issue #35) */}
+            <CurrencyPouch
+              characterId={character.id}
+              coins={character.coins || { bronze: 0, prata: 0, ouro: 0, platina: 0, diamante: 0 }}
+              onChange={handleCoinsChange}
+              isLoading={isSavingCoins}
+            />
+
             {/* Conteúdo da Ficha (Itens, Magias, Habilidades, Condições) */}
               <CharacterContent characterId={character.id} characterClassId={character.classId} characterLevel={character.level} characterAttributeModifiers={stats.modifiers} campaignId={character.campaignId} characterManaCurrent={character.manaPointsCurrent} characterManaMax={character.manaPointsMax} characterHpCurrent={character.hitPointsCurrent} characterHpMax={character.hitPointsMax} combatState={combatState} onCombatStateChange={handleCombatStateChange} onActorStatusChange={handleActorStatusChange} onActionResult={handleActionResult} combatants={combatState?.combatants ?? []} defaultType="items" allowedTypes={["items", "spells", "conditions"]} isTurnLocked={isTurnLocked} onStartRolling={() => setIsRollingDice(true)} onEndRolling={() => setIsRollingDice(false)} onPersistActorStatus={async (actor, hp, mana) => { if (actor.characterId !== character.id && actor.id !== character.id && actor.type !== "npc" && !actor.npcId) return; const response = await fetch(`/api/campaigns/${character.campaignId}/actors/${actor.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hitPointsCurrent: hp, ...(mana == null ? {} : { manaPointsCurrent: mana }), reason: "combate" }) }); if (!response.ok) setError("Estado atualizado em tempo real, mas a persistência falhou."); }} />
           </div>
