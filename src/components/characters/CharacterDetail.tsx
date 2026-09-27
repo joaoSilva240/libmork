@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import type { Character } from "@/types";
 import { ATTRIBUTES } from "@/lib/utils/constants";
@@ -17,6 +18,8 @@ import { calculateRest, REST_OPTIONS, type RestType } from "@/lib/engine/rest";
 import { ToastContainer } from "@/components/ui/Toast";
 import { generateUUID } from "@/lib/utils/uuid";
 import { Spinner } from "@/components/ui";
+import { CurrencyPouch } from "@/components/characters/CurrencyPouch";
+import type { CoinsBalance } from "@/lib/validators/character";
 import {
   StatusFilledIcon,
   SkillsFilledIcon,
@@ -93,8 +96,36 @@ export function CharacterDetail() {
   const [activeTab, setActiveTab] = useState<TabType>("status");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showSkillsToast, setShowSkillsToast] = useState(false);
-  const [isResting, setIsResting] = useState(false);
-  const [toasts, setToasts] = useState<Array<{ id: string; message: string; type?: "error" | "success" | "info" | "warning" }>>([]);
+const [isResting, setIsResting] = useState(false);
+const [isSavingCoins, setIsSavingCoins] = useState(false);
+const [toasts, setToasts] = useState<Array<{ id: string; message: string; type?: "error" | "success" | "info" | "warning" }>>([]);
+
+const handleCoinsChange = async (newCoins: CoinsBalance) => {
+  if (!character) return;
+  setIsSavingCoins(true);
+  // Otimista
+  setCharacter((prev) => (prev ? { ...prev, coins: newCoins } : prev));
+  try {
+    const res = await fetch(`/api/characters/${character.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ coins: newCoins }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.data) {
+        setCharacter(data.data);
+      }
+    } else {
+      setError("Erro ao salvar moedas do personagem.");
+    }
+  } catch {
+    setError("Erro de conexão ao atualizar moedas.");
+  } finally {
+    setIsSavingCoins(false);
+  }
+};
 
   const addToast = (message: string, type: "error" | "success" | "info" | "warning" = "info") => {
     setToasts((prev) => [...prev, { id: generateUUID(), message, type }]);
@@ -213,6 +244,28 @@ export function CharacterDetail() {
       cancelled = true;
     };
   }, [params.id]);
+
+  // Buscar itens do inventário para calcular peso
+  const { data: inventoryItems } = useQuery({
+    queryKey: ["character-items", character?.id],
+    queryFn: async () => {
+      if (!character?.id) return [];
+      const res = await fetch(`/api/characters/${character.id}/content/items`, {
+        credentials: "include",
+      });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data?.data) ? data.data : [];
+    },
+    enabled: !!character?.id,
+  });
+
+  // Calcular peso total carregado
+  const totalWeight = (Array.isArray(inventoryItems) ? inventoryItems : []).reduce((sum: number, item: any) => {
+    const weight = item.content?.weight || item.content?.sourceData?.weight || 0;
+    const quantity = item.junction?.quantity || 1;
+    return sum + (parseFloat(weight) || 0) * quantity;
+  }, 0);
 
   useEffect(() => {
     if (!character?.id) return;
@@ -1031,6 +1084,20 @@ export function CharacterDetail() {
         {/* TAB 3: INVENTÁRIO */}
         {activeTab === "inventory" && (
           <div className="space-y-4 animate-in fade-in duration-200 flex-1 flex flex-col">
+            {/* Widget de Moedas (Issue #35) */}
+            <CurrencyPouch
+              characterId={character.id}
+              coins={character.coins || { bronze: 0, prata: 0, ouro: 0, platina: 0, diamante: 0 }}
+              onChange={handleCoinsChange}
+              isLoading={isSavingCoins}
+            />
+
+            {/* Indicador de Peso Carregado */}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-800/50 bg-gray-900/40 text-xs">
+              <span className="text-gray-500 font-semibold">⚖️ Peso:</span>
+              <span className="text-amber-400 font-bold">{totalWeight.toFixed(1)} kg</span>
+            </div>
+
             {/* Conteúdo da Ficha (Itens, Magias, Habilidades, Condições) */}
               <CharacterContent characterId={character.id} characterClassId={character.classId} characterLevel={character.level} characterAttributeModifiers={stats.modifiers} campaignId={character.campaignId} characterManaCurrent={character.manaPointsCurrent} characterManaMax={character.manaPointsMax} characterHpCurrent={character.hitPointsCurrent} characterHpMax={character.hitPointsMax} combatState={combatState} onCombatStateChange={handleCombatStateChange} onActorStatusChange={handleActorStatusChange} onActionResult={handleActionResult} combatants={combatState?.combatants ?? []} defaultType="items" allowedTypes={["items", "spells", "conditions"]} isTurnLocked={isTurnLocked} onStartRolling={() => setIsRollingDice(true)} onEndRolling={() => setIsRollingDice(false)} onPersistActorStatus={async (actor, hp, mana) => { if (actor.characterId !== character.id && actor.id !== character.id && actor.type !== "npc" && !actor.npcId) return; const response = await fetch(`/api/campaigns/${character.campaignId}/actors/${actor.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hitPointsCurrent: hp, ...(mana == null ? {} : { manaPointsCurrent: mana }), reason: "combate" }) }); if (!response.ok) setError("Estado atualizado em tempo real, mas a persistência falhou."); }} />
           </div>

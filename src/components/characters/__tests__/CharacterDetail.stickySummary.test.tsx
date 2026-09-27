@@ -1,6 +1,13 @@
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import { CharacterDetail } from "../CharacterDetail";
+
+function renderWithQuery(ui: ReactNode) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ id: "char-sticky-test-123" }),
@@ -93,7 +100,7 @@ describe("CharacterDetail - Sticky Character Summary (Issue #11)", () => {
   });
 
   it("renderiza o card de resumo com classes sticky e atributos essenciais de fixação no topo", async () => {
-    render(<CharacterDetail />);
+    renderWithQuery(<CharacterDetail />);
 
     await waitFor(() => {
       expect(screen.getByText("Thorin Oakenshield")).toBeInTheDocument();
@@ -121,7 +128,7 @@ describe("CharacterDetail - Sticky Character Summary (Issue #11)", () => {
   });
 
   it("renderiza os blocos de atributos principais após o card de resumo", async () => {
-    render(<CharacterDetail />);
+    renderWithQuery(<CharacterDetail />);
 
     await waitFor(() => {
       expect(screen.getByText("Thorin Oakenshield")).toBeInTheDocument();
@@ -136,7 +143,7 @@ describe("CharacterDetail - Sticky Character Summary (Issue #11)", () => {
   });
 
   it("permanece visível ao alternar para a aba 'skills' ou 'inventory'", async () => {
-    render(<CharacterDetail />);
+    renderWithQuery(<CharacterDetail />);
 
     await waitFor(() => {
       expect(screen.getByText("Thorin Oakenshield")).toBeInTheDocument();

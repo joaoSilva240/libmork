@@ -135,6 +135,10 @@ export const characters = pgTable(
     deathStatus: varchar("death_status", { length: 20 }).notNull().default("alive"),
     deathSuccesses: integer("death_successes").notNull().default(0),
     deathFailures: integer("death_failures").notNull().default(0),
+    // Wallet de moedas (Issue #35)
+    coins: jsonb("coins")
+      .notNull()
+      .default({ bronze: 0, prata: 0, ouro: 0, platina: 0, diamante: 0 }),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },

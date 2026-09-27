@@ -1,6 +1,13 @@
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import { CharacterDetail } from "../CharacterDetail";
+
+function renderWithQuery(ui: ReactNode) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ id: "char-rest-test-123" }),
@@ -103,7 +110,7 @@ describe("CharacterDetail - RestPopover Integration", () => {
       } as Response);
     });
 
-    render(<CharacterDetail />);
+    renderWithQuery(<CharacterDetail />);
 
     // Aguarda carregar
     await waitFor(() => {
@@ -176,7 +183,7 @@ describe("CharacterDetail - RestPopover Integration", () => {
       } as Response);
     });
 
-    render(<CharacterDetail />);
+    renderWithQuery(<CharacterDetail />);
 
     await waitFor(() => {
       expect(screen.getByText("Thorin")).toBeInTheDocument();
@@ -223,7 +230,7 @@ describe("CharacterDetail - RestPopover Integration", () => {
       } as Response);
     });
 
-    render(<CharacterDetail />);
+    renderWithQuery(<CharacterDetail />);
 
     await waitFor(() => {
       expect(screen.getByText("Thorin")).toBeInTheDocument();

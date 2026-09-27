@@ -30,6 +30,17 @@ export function normalizeAttributes(attributes: Partial<Record<(typeof ATTRIBUTE
   };
 }
 
+/** Schema JSONB para a carteira de moedas do personagem (Issue #35). */
+export const coinsSchema = z.object({
+  bronze: z.number().int().min(0).default(0),
+  prata: z.number().int().min(0).default(0),
+  ouro: z.number().int().min(0).default(0),
+  platina: z.number().int().min(0).default(0),
+  diamante: z.number().int().min(0).default(0),
+}).strict();
+
+export type CoinsBalance = z.infer<typeof coinsSchema>;
+
 /**
  * Schema de criação de personagem (RF-006).
  * Campos mínimos: nome, classe (opcional), atributos
@@ -92,6 +103,7 @@ export const updateCharacterSchema = z.object({
   manaPointsCurrent: z.number().int().min(0).optional(),
   block: z.number().int().min(0).optional(),
   xp: z.number().int().min(0).optional(),
+  coins: coinsSchema.optional(),
 }).partial();
 
 export type UpdateCharacterInput = z.infer<typeof updateCharacterSchema>;

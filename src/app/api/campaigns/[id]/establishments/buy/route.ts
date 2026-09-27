@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { establishmentInventory, characterItems, characterSpells, characterSkills } from "@/lib/db/schema";
+import { establishmentInventory, characterItems, characterSpells, characterSkills, characters } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
+import type { CoinsBalance } from "@/lib/validators/character";
 
 export async function POST(
   req: NextRequest,
@@ -30,6 +31,42 @@ export async function POST(
 
     if (item.stock === 0) {
       return NextResponse.json({ error: "Produto esgotado no estabelecimento" }, { status: 400 });
+    }
+
+    // --- Validação e Dedução de Ouro ANTES de adicionar ao inventário (Issue #35) ---
+    const finalPrice = Number(item.priceGold) || 0;
+    let newCoins: CoinsBalance | null = null;
+
+    if (finalPrice > 0) {
+      const [character] = await db
+        .select({ coins: characters.coins })
+        .from(characters)
+        .where(eq(characters.id, characterId));
+
+      const currentCoins: CoinsBalance = (character?.coins as CoinsBalance) ?? {
+        bronze: 0,
+        prata: 0,
+        ouro: 0,
+        platina: 0,
+        diamante: 0,
+      };
+
+      const currentGold = currentCoins.ouro ?? 0;
+
+      if (currentGold < finalPrice) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Ouro insuficiente para realizar a compra. Necessário: ${finalPrice} Ouro, Saldo atual: ${currentGold} Ouro.`,
+          },
+          { status: 400 }
+        );
+      }
+
+      newCoins = {
+        ...currentCoins,
+        ouro: currentGold - finalPrice,
+      };
     }
 
     // Processar adição de acordo com o contentType
@@ -119,6 +156,14 @@ export async function POST(
       }
     }
 
+    // Aplicar dedução de ouro se houver
+    if (newCoins) {
+      await db
+        .update(characters)
+        .set({ coins: newCoins })
+        .where(eq(characters.id, characterId));
+    }
+
     // Atualiza o estoque do estabelecimento se não for infinito (-1)
     if (item.stock > 0) {
       await db
@@ -130,6 +175,7 @@ export async function POST(
     return NextResponse.json({
       success: true,
       message: `Item "${item.name}" comprado com sucesso!`,
+      ...(newCoins ? { remainingCoins: newCoins } : {}),
     });
   } catch (err) {
     console.error("[Buy Establishment Item Error]:", err);

@@ -177,6 +177,12 @@ async function runMigrations() {
     `);
     console.log('✓ Index idx_est_inv_establishment ensured.');
 
+    console.log('\n--- 7. Applying characters.coins JSONB migration ---');
+    await client.query(`
+      ALTER TABLE "characters" ADD COLUMN IF NOT EXISTS "coins" jsonb DEFAULT '{"bronze":0,"prata":0,"ouro":0,"platina":0,"diamante":0}' NOT NULL;
+    `);
+    console.log('✓ Column characters.coins ensured.');
+
     console.log('\nAll migrations executed successfully!');
   } catch (error) {
     console.error('Migration error:', error);

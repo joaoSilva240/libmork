@@ -91,6 +91,14 @@ export type Character = {
   updatedAt: Date;
   /** Campanha ativa usada pelo realtime; nunca é o id do personagem. */
   campaignId?: string | null;
+  /** Wallet de moedas do personagem (Issue #35). */
+  coins?: {
+    bronze: number;
+    prata: number;
+    ouro: number;
+    platina: number;
+    diamante: number;
+  };
 };
 
 export type Campaign = {

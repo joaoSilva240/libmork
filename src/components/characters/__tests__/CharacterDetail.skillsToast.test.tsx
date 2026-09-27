@@ -1,6 +1,13 @@
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import { CharacterDetail } from "../CharacterDetail";
+
+function renderWithQuery(ui: ReactNode) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ id: "char-toast-test-123" }),
@@ -91,7 +98,7 @@ describe("CharacterDetail - Skills Toast Flutuante Persistente (#UI-003)", () =>
   });
 
   it("exibe o toast flutuante na aba de perícias quando não dispensado previamente", async () => {
-    render(<CharacterDetail />);
+    renderWithQuery(<CharacterDetail />);
 
     // Espera carregar a ficha
     await waitFor(() => {
@@ -115,7 +122,7 @@ describe("CharacterDetail - Skills Toast Flutuante Persistente (#UI-003)", () =>
   });
 
   it("dispensa o toast ao clicar no botão '✕' e grava a preferência no localStorage", async () => {
-    render(<CharacterDetail />);
+    renderWithQuery(<CharacterDetail />);
 
     await waitFor(() => {
       expect(screen.getByText("Gildor")).toBeInTheDocument();
@@ -137,7 +144,7 @@ describe("CharacterDetail - Skills Toast Flutuante Persistente (#UI-003)", () =>
   it("não exibe o toast se já foi previamente dispensado no localStorage", async () => {
     localStorage.setItem(`libmork_dismissed_skills_toast_${mockCharacter.id}`, "true");
 
-    render(<CharacterDetail />);
+    renderWithQuery(<CharacterDetail />);
 
     await waitFor(() => {
       expect(screen.getByText("Gildor")).toBeInTheDocument();
