@@ -65,6 +65,8 @@ const linkSchemas: Record<
   items: z.object({
     contentId: z.string().uuid(),
     quantity: z.number().int().min(1).default(1),
+    hitRoll: z.string().max(200).optional().nullable(),
+    damageRoll: z.string().max(200).optional().nullable(),
   }),
   conditions: z.object({
     contentId: z.string().uuid(),

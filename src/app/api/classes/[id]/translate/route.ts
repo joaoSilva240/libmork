@@ -119,6 +119,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         name: item.name || initialItems[idx]?.name || "Item",
         quantity: Number(item.quantity) || initialItems[idx]?.quantity || 1,
         description: item.description ?? initialItems[idx]?.description ?? "",
+        hitRoll: initialItems[idx]?.hitRoll ?? null,
+        damageRoll: initialItems[idx]?.damageRoll ?? null,
       }));
     }
 

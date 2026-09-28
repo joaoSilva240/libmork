@@ -57,7 +57,9 @@ const patchSchemas: Record<
   }),
   spells: z.object({}),
   items: z.object({
-    quantity: z.number().int().min(1),
+    quantity: z.number().int().min(1).optional(),
+    hitRoll: z.string().max(200).optional().nullable(),
+    damageRoll: z.string().max(200).optional().nullable(),
   }),
   conditions: z.object({
     permanent: z.boolean(),

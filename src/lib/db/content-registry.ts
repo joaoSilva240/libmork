@@ -127,8 +127,16 @@ export function buildJunctionValues(
       return { characterId, skillId: contentId, trained: (data.trained as boolean) ?? false };
     case "spells":
       return { characterId, spellId: contentId };
-    case "items":
-      return { characterId, itemId: contentId, quantity: (data.quantity as number) ?? 1 };
+    case "items": {
+      const base = { characterId, itemId: contentId, quantity: (data.quantity as number) ?? 1 };
+      if (data.hitRoll !== undefined) {
+        (base as Record<string, unknown>).hitRoll = data.hitRoll;
+      }
+      if (data.damageRoll !== undefined) {
+        (base as Record<string, unknown>).damageRoll = data.damageRoll;
+      }
+      return base;
+    }
     case "conditions":
       return { characterId, conditionId: contentId, permanent: (data.permanent as boolean) ?? false };
   }
@@ -144,8 +152,19 @@ export function buildJunctionPatch(
   switch (type) {
     case "skills":
       return { trained: data.trained as boolean };
-    case "items":
-      return { quantity: data.quantity as number };
+    case "items": {
+      const patch: Record<string, unknown> = {};
+      if (data.quantity !== undefined) {
+        patch.quantity = data.quantity as number;
+      }
+      if (data.hitRoll !== undefined) {
+        patch.hitRoll = data.hitRoll;
+      }
+      if (data.damageRoll !== undefined) {
+        patch.damageRoll = data.damageRoll;
+      }
+      return patch;
+    }
     case "conditions":
       return { permanent: data.permanent as boolean };
     case "spells":

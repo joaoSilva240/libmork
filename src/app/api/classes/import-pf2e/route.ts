@@ -20,6 +20,8 @@ async function importSinglePf2eClass(def: Pf2eClassDefinition, translateWithLLM:
       name: item.name,
       quantity: item.quantity,
       description: item.description,
+      hitRoll: null,
+      damageRoll: null,
     }));
     let finalLevels = def.levels;
 
@@ -64,6 +66,8 @@ async function importSinglePf2eClass(def: Pf2eClassDefinition, translateWithLLM:
             name: item.name || def.initialItems[idx]?.name || "Item",
             quantity: Number(item.quantity) || def.initialItems[idx]?.quantity || 1,
             description: item.description || def.initialItems[idx]?.description || "",
+            hitRoll: null,
+            damageRoll: null,
           }));
         }
         if (Array.isArray(translated.benefits)) {

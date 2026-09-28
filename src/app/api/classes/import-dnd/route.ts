@@ -77,6 +77,8 @@ async function fetchAndImportDndClass(index: string, translateWithLLM: boolean) 
       name: eq.equipment.name,
       quantity: eq.quantity || 1,
       description: `Equipamento inicial padrão de ${classData.name}`,
+      hitRoll: null,
+      damageRoll: null,
     }));
 
     const hitDie = classData.hit_die || 8;
@@ -172,6 +174,8 @@ async function fetchAndImportDndClass(index: string, translateWithLLM: boolean) 
             name: item.name || initialItems[idx]?.name || "Item",
             quantity: Number(item.quantity) || initialItems[idx]?.quantity || 1,
             description: item.description || initialItems[idx]?.description || "",
+            hitRoll: initialItems[idx]?.hitRoll ?? null,
+            damageRoll: initialItems[idx]?.damageRoll ?? null,
           }));
         }
         if (Array.isArray(translated.benefits)) {

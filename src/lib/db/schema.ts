@@ -591,6 +591,8 @@ export const characterItems = pgTable(
       .notNull()
       .references(() => items.id, { onDelete: "cascade" }),
     quantity: integer("quantity").notNull().default(1),
+    hitRoll: varchar("hit_roll", { length: 200 }),
+    damageRoll: varchar("damage_roll", { length: 200 }),
   },
   (table) => [
     uniqueIndex("idx_char_item_unique").on(table.characterId, table.itemId),
