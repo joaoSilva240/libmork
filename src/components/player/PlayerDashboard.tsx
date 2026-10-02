@@ -8,11 +8,12 @@ import { LogoutButton } from "@/components/auth/LogoutButton";
 import { Spinner, Button } from "@/components/ui";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { ToastContainer } from "@/components/ui/Toast";
-import { CampaignsFilledIcon, CharactersFilledIcon } from "@/components/ui/Icons";
+import { CampaignsFilledIcon, CharactersFilledIcon, TreasuryIcon } from "@/components/ui/Icons";
+import { WealthManager, type WealthData } from "@/components/player/WealthManager";
 import { generateUUID } from "@/lib/utils/uuid";
 
 export function PlayerDashboard() {
-  const [activeTab, setActiveTab] = useState<"characters" | "campaigns">("characters");
+  const [activeTab, setActiveTab] = useState<"characters" | "campaigns" | "wealth">("characters");
 
   // Estado de Personagens
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -24,6 +25,11 @@ export function PlayerDashboard() {
   const [selectedCampaign, setSelectedCampaign] = useState<PlayerCampaign | null>(null);
   const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(true);
   const [campaignsError, setCampaignsError] = useState<string | null>(null);
+
+  // Estado de Tesouraria / Wealth
+  const [wealthData, setWealthData] = useState<WealthData | null>(null);
+  const [isLoadingWealth, setIsLoadingWealth] = useState(true);
+  const [wealthError, setWealthError] = useState<string | null>(null);
 
   // Estado de Importação de Personagem
   const [importingCampaignId, setImportingCampaignId] = useState<string | null>(null);
@@ -98,9 +104,45 @@ export function PlayerDashboard() {
       }
     }
 
+    async function loadWealth() {
+      try {
+        const response = await fetch("/api/player/wealth", {
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          setWealthError(data.error || "Erro ao carregar tesouraria");
+          return;
+        }
+
+        const data = await response.json();
+        setWealthData(data.data || null);
+      } catch {
+        setWealthError("Erro de conexão ao carregar tesouraria.");
+      } finally {
+        setIsLoadingWealth(false);
+      }
+    }
+
     void loadCharacters();
     void loadCampaigns();
+    void loadWealth();
   }, []);
+
+  const refreshWealth = async () => {
+    try {
+      const response = await fetch("/api/player/wealth", {
+        credentials: "include",
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setWealthData(data.data || null);
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   function handleOpenImportModal(
     campaignId: string,
@@ -416,6 +458,17 @@ export function PlayerDashboard() {
         </div>
       )}
 
+      {/* Conteúdo da Aba 3: Tesouraria (Wealth) */}
+      {activeTab === "wealth" && (
+        <WealthManager
+          initialData={wealthData}
+          isLoading={isLoadingWealth}
+          error={wealthError}
+          onRefresh={refreshWealth}
+          onShowToast={addToast}
+        />
+      )}
+
       <ToastContainer
         toasts={toasts}
         onRemove={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))}
@@ -440,6 +493,15 @@ export function PlayerDashboard() {
             icon: (
               <CampaignsFilledIcon
                 className={`h-6 w-6 ${activeTab === "campaigns" ? "fill-purple-400" : "fill-gray-500"}`}
+              />
+            ),
+          },
+          {
+            id: "wealth",
+            label: "Tesouraria",
+            icon: (
+              <TreasuryIcon
+                className={`h-6 w-6 ${activeTab === "wealth" ? "text-purple-400" : "text-gray-500"}`}
               />
             ),
           },
