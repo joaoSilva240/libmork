@@ -25,6 +25,8 @@ export type InitialItem = {
   name: string;
   quantity: number;
   description?: string;
+  hitRoll?: string | null;
+  damageRoll?: string | null;
 };
 
 /** Schema para RPG_CLASS.proficiencies */

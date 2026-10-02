@@ -21,12 +21,80 @@ import {
   getExpression,
   hydrateCombatantMana,
   normalizeSkillExpression,
+  normalizeFormulaWithAttributes,
   rollExpression,
   spendCombatActions,
   spendSpell,
   getSpellActionCost,
   hasEnoughMana,
 } from "@/lib/engine";
+
+// API da engine para normalizar fórmulas de itens (hitRoll/damageRoll com fallback legado)
+type ItemRollApi = {
+  hitRoll?: string | number;
+  damageRoll?: string | number;
+  rollExpression?: string | number;
+  damage?: string | number;
+  [key: string]: unknown;
+};
+
+/**
+ * Normaliza a fórmula de teste de ataque de um item usando a nova API (hitRoll)
+ * com fallback para rollExpression legado. Integra atributos do personagem.
+ */
+function normalizeItemHitRoll(content: ItemRollApi, modifiers: Record<string, number> = {}): string | null {
+  // Prioridade 1: hitRoll (nova API)
+  if (content.hitRoll !== undefined && content.hitRoll !== null) {
+    const candidate = String(content.hitRoll).trim();
+    if (!candidate) return null;
+    // Se contém @atributo, normaliza via engine
+    if (candidate.includes('@')) {
+      return normalizeFormulaWithAttributes(candidate, modifiers);
+    }
+    // Senão valida como fórmula fixa
+    if (SAFE_FORMULA.test(candidate)) return candidate;
+    if (typeof content.hitRoll === "number" && Number.isFinite(content.hitRoll)) {
+      return String(content.hitRoll);
+    }
+  }
+
+  // Prioridade 2: rollExpression (legado)
+  const legacyExpr = getExpression(content.rollExpression);
+  if (legacyExpr !== null) {
+    const candidate = String(legacyExpr).trim();
+    if (candidate && SAFE_FORMULA.test(candidate)) return candidate;
+    if (typeof legacyExpr === "number" && Number.isFinite(legacyExpr)) {
+      return String(legacyExpr);
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Normaliza a fórmula de dano de um item usando a nova API (damageRoll)
+ * com fallback para damage legado. Integra atributos do personagem.
+ */
+function normalizeItemDamageRoll(content: ItemRollApi, modifiers: Record<string, number> = {}): string | null {
+  // Prioridade 1: damageRoll (nova API)
+  if (content.damageRoll !== undefined && content.damageRoll !== null) {
+    const candidate = String(content.damageRoll).trim();
+    if (!candidate) return null;
+    // Se contém @atributo, normaliza via engine
+    if (candidate.includes('@')) {
+      return normalizeFormulaWithAttributes(candidate, modifiers);
+    }
+    // Senão valida como fórmula fixa
+    if (SAFE_FORMULA.test(candidate)) return candidate;
+    if (typeof content.damageRoll === "number" && Number.isFinite(content.damageRoll)) {
+      return String(content.damageRoll);
+    }
+  }
+
+  // Prioridade 2: damage (legado) via normalizeActionDamage
+  const legacyDamage = normalizeActionDamage(content);
+  return typeof legacyDamage === "number" ? String(legacyDamage) : legacyDamage;
+}
 
 const TYPE_LABELS: Record<ContentType, string> = {
   skills: "Perícias",
@@ -42,10 +110,23 @@ type LinkedRow = {
     id: string;
     trained?: boolean;
     quantity?: number;
+    hitRoll?: string | null;
+    damageRoll?: string | null;
     permanent?: boolean;
   };
   content: Record<string, unknown>;
 };
+
+function buildEffectiveItemContent(row: LinkedRow): ItemRollApi {
+  const effective: ItemRollApi = { ...row.content };
+  if (row.junction.hitRoll !== undefined && row.junction.hitRoll !== null) {
+    effective.hitRoll = row.junction.hitRoll;
+  }
+  if (row.junction.damageRoll !== undefined && row.junction.damageRoll !== null) {
+    effective.damageRoll = row.junction.damageRoll;
+  }
+  return effective;
+}
 
 const SAFE_FORMULA = /^(?:\s*[+-]?\s*(?:\d+[dD]\d+|\d+)\s*)+$/;
 
@@ -490,6 +571,16 @@ export function CharacterContent({
       return;
     }
 
+    if (rowType === "items") {
+      const hitRoll = normalizeItemHitRoll(buildEffectiveItemContent(row), characterAttributeModifiers ?? {});
+      const damageRoll = normalizeItemDamageRoll(buildEffectiveItemContent(row), characterAttributeModifiers ?? {});
+
+      if (!hitRoll && !damageRoll) {
+        showToast("Este item não possui fórmulas de rolagem.");
+        return;
+      }
+    }
+
     const manaCost = rowType === "spells" ? Number(row.content.manaCost) || 0 : 0;
     const currentMana = characterManaCurrent ?? 0;
     if (rowType === "spells" && manaCost > 0 && !hasEnoughMana(currentMana, manaCost)) {
@@ -530,11 +621,17 @@ export function CharacterContent({
         });
       }
     }
-    const rawExpr = getExpression(row.content.rollExpression);
+    const itemContent = rowType === "items" ? buildEffectiveItemContent(row) : (row.content as ItemRollApi);
+    const normalizedHitRoll = rowType === "items"
+      ? normalizeItemHitRoll(itemContent, characterAttributeModifiers ?? {})
+      : null;
+    const rawExpr = rowType === "items" ? normalizedHitRoll : getExpression(row.content.rollExpression);
     const expr = rawExpr !== null ? String(rawExpr) : "1d20";
     const luckModifier = characterAttributeModifiers?.sorte ?? 0;
     const rollResult = rollExpression(expr, 1, { luckModifier });
-    const damageValue = normalizeActionDamage(row.content);
+    const damageValue = rowType === "items"
+      ? normalizeItemDamageRoll(itemContent, characterAttributeModifiers ?? {})
+      : normalizeActionDamage(row.content);
     const damageResult = damageValue !== null ? rollExpression(String(damageValue), 0, { luckModifier }) : null;
 
     const hasValidDamage = Boolean(damageResult && !damageResult.missing && damageResult.valid);
@@ -611,6 +708,14 @@ export function CharacterContent({
         showToast("Equipe o item antes de usá-lo em combate.");
         return;
       }
+
+      // Plano A: Itens sem fórmulas de rolagem não devem permitir ação de combate
+      const hitRoll = normalizeItemHitRoll(buildEffectiveItemContent(row), characterAttributeModifiers ?? {});
+      const damageRoll = normalizeItemDamageRoll(buildEffectiveItemContent(row), characterAttributeModifiers ?? {});
+      if (!hitRoll && !damageRoll) {
+        showToast("Este item não possui fórmulas de combate configuradas.");
+        return;
+      }
     }
 
     if (!campaignId || combatants.length === 0) {
@@ -625,11 +730,25 @@ export function CharacterContent({
     const name = getContentName(row.content, "Ação");
     const desc = getContentDescription(row.content).toLowerCase();
     const isHealing = name.toLowerCase().includes("cura") || name.toLowerCase().includes("poção") || desc.includes("cura") || desc.includes("recupera");
-    const exprValue = getExpression(row.content.rollExpression);
+    
+    // Plano A: Itens usam hitRoll/damageRoll com fallback legado
     const isSpell = rowType === "spells";
-    const expr = exprValue === null ? (isSpell ? "1d20" : undefined) : String(exprValue);
-    const damageValue = normalizeActionDamage(row.content);
-    const damageExpr = damageValue === null ? undefined : String(damageValue);
+    let expr: string | undefined;
+    let damageExpr: string | undefined;
+
+    if (rowType === "items") {
+      const effectiveContent = buildEffectiveItemContent(row);
+      const hitRoll = normalizeItemHitRoll(effectiveContent, characterAttributeModifiers ?? {});
+      const damageRoll = normalizeItemDamageRoll(effectiveContent, characterAttributeModifiers ?? {});
+      expr = hitRoll ?? undefined;
+      damageExpr = damageRoll ?? undefined;
+    } else {
+      // Spells mantêm comportamento legado
+      const exprValue = getExpression(row.content.rollExpression);
+      expr = exprValue === null ? (isSpell ? "1d20" : undefined) : String(exprValue);
+      const damageValue = normalizeActionDamage(row.content);
+      damageExpr = damageValue === null ? undefined : String(damageValue);
+    }
 
     setSelectedActionItem({
       name,
@@ -1259,9 +1378,15 @@ export function CharacterContent({
               ? Math.min(3, row.content.actionCostOverride)
               : null;
 
-          const testExpr = getExpression(row.content.rollExpression) ?? (type === "spells" ? "1d20" : null);
-          const damageValue = normalizeActionDamage(row.content);
+          const effectiveItemContent = type === "items" ? buildEffectiveItemContent(row) : null;
+          const testExpr = type === "items"
+            ? normalizeItemHitRoll(effectiveItemContent!, characterAttributeModifiers ?? {})
+            : getExpression(row.content.rollExpression) ?? (type === "spells" ? "1d20" : null);
+          const damageValue = type === "items"
+            ? normalizeItemDamageRoll(effectiveItemContent!, characterAttributeModifiers ?? {})
+            : normalizeActionDamage(row.content);
           const damageExpr = damageValue !== null ? String(damageValue) : null;
+          const hasItemRollFormula = type !== "items" || Boolean(testExpr || damageExpr);
           const name = getContentName(row.content, type === "spells" ? "Magia" : type === "items" ? "Item" : "Condição");
           const description = getContentDescription(row.content);
           const extraEffect = getContentExtraEffect(row.content);
@@ -1493,15 +1618,11 @@ export function CharacterContent({
                     </button>
                   )}
 
-                  {(type === "spells" || type === "items") && (
+                  {(type === "spells" || (type === "items" && isItemEquipped && hasItemRollFormula)) && (
                     <>
                       <button
                         type="button"
                         onClick={() => {
-                          if (type === "items" && !isItemEquipped) {
-                            showToast("Equipe o item antes de usá-lo.");
-                            return;
-                          }
                           setSelectedDetailItem(null);
                           handleFreeRoll(row, type);
                         }}
@@ -1514,10 +1635,6 @@ export function CharacterContent({
                       <button
                         type="button"
                         onClick={() => {
-                          if (type === "items" && !isItemEquipped) {
-                            showToast("Equipe o item antes de usá-lo em combate.");
-                            return;
-                          }
                           setSelectedDetailItem(null);
                           handleActionClick(row, type);
                         }}

@@ -9,7 +9,19 @@
 export function getCsrfToken(): string | null {
   if (typeof document === "undefined") return null;
   const match = document.cookie.match(/(?:^|;\s*)libmork_csrf=([^;]*)/);
-  return match ? decodeURIComponent(match[1]) : null;
+  return match?.[1] || null;
+}
+
+export async function ensureCsrfToken(): Promise<string> {
+  const existing = getCsrfToken();
+  if (existing) return existing;
+  if (typeof window === "undefined") {
+    throw new Error("CSRF token unavailable outside the browser");
+  }
+  await fetch("/api/health", { method: "GET", credentials: "include" });
+  const token = getCsrfToken();
+  if (!token) throw new Error("CSRF token unavailable; mutation was not sent");
+  return token;
 }
 
 const CSRF_METHODS = ["POST", "PUT", "PATCH", "DELETE"];
@@ -45,12 +57,10 @@ export async function apiFetch(
   const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
 
   if (isCsrfMutation(method, url)) {
-    const token = getCsrfToken();
-    if (token) {
-      const headers = new Headers(init?.headers);
-      if (!headers.has("x-csrf-token")) headers.set("x-csrf-token", token);
-      return fetch(input, { ...init, headers, credentials: "include" });
-    }
+    const token = await ensureCsrfToken();
+    const headers = new Headers(init?.headers);
+    if (!headers.has("x-csrf-token")) headers.set("x-csrf-token", token);
+    return fetch(input, { ...init, headers, credentials: "include" });
   }
   return fetch(input, { ...init, credentials: "include" });
 }

@@ -52,7 +52,14 @@ type ClassData = {
   id: string;
   name: string;
   description: string | null;
-  initialItems: Array<{ item_id: string | null; name: string; quantity: number; description?: string }>;
+  initialItems: Array<{
+    item_id: string | null;
+    name: string;
+    quantity: number;
+    description?: string;
+    hitRoll?: string | null;
+    damageRoll?: string | null;
+  }>;
   proficiencies: { weapons?: string[]; armor?: string[]; languages?: string[]; tools?: string[] };
 };
 

@@ -12,6 +12,8 @@ const initialItemSchema = z.object({
   name: z.string().min(1, "Nome do item é obrigatório"),
   quantity: z.number().int().min(1).default(1),
   description: z.string().max(5000).optional(),
+  hitRoll: z.string().max(200).optional().nullable(),
+  damageRoll: z.string().max(200).optional().nullable(),
 });
 
 /**

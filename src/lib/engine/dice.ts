@@ -20,9 +20,50 @@ export function rollDice(count: number, sides: number): number[] {
 
 export type ExpressionValue = string | number | null | undefined | Record<string, unknown>;
 
-/**
- * Normaliza expressões de perícias substituindo tokens de atributos por seus valores.
- */
+type AttributeKey = "forca" | "destreza" | "vigor" | "inteligencia" | "empatia" | "sorte";
+
+const ATTRIBUTE_ALIASES: Record<string, AttributeKey> = {
+  forca: "forca",
+  força: "forca",
+  destreza: "destreza",
+  vigor: "vigor",
+  inteligencia: "inteligencia",
+  inteligência: "inteligencia",
+  empatia: "empatia",
+  sorte: "sorte",
+};
+
+/** Normaliza uma fórmula do Plano A, substituindo tokens @atributo por modificadores. */
+export function normalizeFormulaWithAttributes(
+  expression: string | number | null | undefined,
+  modifiers: Record<string, number>
+): string | null {
+  if (expression === null || expression === undefined) return "1d20";
+  const str = String(expression).trim();
+  if (!str) return "1d20";
+
+  // Se houver @ seguido de caracteres inválidos (ex: @123 ou @ no final sem nada)
+  // Qualquer @ que não seja seguido de letras é inválido imediatamente
+  if (/@(?![a-zA-ZáéíóúãõâêîôûçÁÉÍÓÚÃÕÂÊÎÔÛÇ])/.test(str)) {
+    return null;
+  }
+
+  let invalid = false;
+  const result = str.replace(/@([a-zA-ZáéíóúãõâêîôûçÁÉÍÓÚÃÕÂÊÎÔÛÇ]+)/g, (token, rawName: string) => {
+    const key = ATTRIBUTE_ALIASES[rawName.toLowerCase()];
+    if (!key) {
+      invalid = true;
+      return token;
+    }
+    return String(modifiers[key] ?? 0);
+  });
+
+  // @ é reservado para atributos: se sobrou @ ou se houve token desconhecido, retorna null
+  if (result.includes("@") || invalid) return null;
+  return result;
+}
+
+/** Compatibilidade com fórmulas antigas de perícias (atributos sem @). */
 export function normalizeSkillExpression(
   expression: string | number | null | undefined,
   modifiers: Record<string, number>
@@ -31,44 +72,25 @@ export function normalizeSkillExpression(
   const str = String(expression).trim();
   if (!str) return "1d20";
 
-  // Mapeamento de atributos aceitos (com e sem acento) para a chave normatizada do mapa
-  const attrMap: Record<string, string> = {
-    forca: "forca",
-    força: "forca",
-    destreza: "destreza",
-    vigor: "vigor",
-    inteligencia: "inteligencia",
-    inteligência: "inteligencia",
-    empatia: "empatia",
-    sorte: "sorte",
-  };
+  // 1. Se a expressão for exatamente o nome de um atributo
+  const bareAttribute = ATTRIBUTE_ALIASES[str.toLowerCase()];
+  if (bareAttribute) return `1d20 + ${modifiers[bareAttribute] ?? 0}`;
 
-  // Se a expressão for composta apenas por um atributo aceito (case-insensitive)
-  const lower = str.toLowerCase();
-  if (attrMap[lower]) {
-    const key = attrMap[lower];
-    const val = modifiers[key] ?? 0;
-    return `1d20 + ${val}`;
-  }
-
-  // Substituir tokens com regex boundary (\b)
-  // Rejeita a expressão se houver qualquer token alfabético desconhecido
-  let hasUnknownAlphaToken = false;
-
-  const result = str.replace(/[a-zA-ZáéíóúãõâêîôûçÁÉÍÓÚÃÕÂÊÎÔÛÇ]+/g, (match) => {
-    const mLower = match.toLowerCase();
-    if (mLower === "d") return match; // Dado 'd' / 'D'
-    if (attrMap[mLower]) {
-      const key = attrMap[mLower];
-      const val = modifiers[key] ?? 0;
-      return String(val);
+  // 2. Substitui atributos conhecidos e 'd'/'D' de dados, rejeitando letras desconhecidas
+  let hasUnknownAlpha = false;
+  const substituted = str.replace(/[a-zA-ZáéíóúãõâêîôûçÁÉÍÓÚÃÕÂÊÎÔÛÇ]+/g, (match) => {
+    const lower = match.toLowerCase();
+    if (lower === "d") return match;
+    const key = ATTRIBUTE_ALIASES[lower];
+    if (key) {
+      return String(modifiers[key] ?? 0);
     }
-    hasUnknownAlphaToken = true;
+    hasUnknownAlpha = true;
     return match;
   });
 
-  if (hasUnknownAlphaToken) return null;
-  return result;
+  if (hasUnknownAlpha) return null;
+  return substituted;
 }
 
 /**
@@ -96,6 +118,7 @@ export function getExpression(value: unknown): string | number | null {
 export function rollExpression(expression: unknown, fallback = 0, options?: {
   luckModifier?: number;
   rng?: LuckRng;
+  modifiers?: Record<string, number>;
 }): {
   formula: string;
   total: number;
@@ -107,7 +130,20 @@ export function rollExpression(expression: unknown, fallback = 0, options?: {
 } {
   const luckModifier = options?.luckModifier ?? 0;
   const rng = options?.rng ?? Math.random;
-  const normalized = getExpression(expression);
+  let normalized = getExpression(expression);
+  if (typeof normalized === "string" && options?.modifiers) {
+    const withAttrs = normalizeFormulaWithAttributes(normalized, options.modifiers);
+    if (withAttrs === null) {
+      return {
+        formula: String(normalized),
+        total: 0,
+        detail: `Fórmula inválida; tokens de atributo desconhecidos: ${String(normalized)}`,
+        missing: false,
+        valid: false,
+      };
+    }
+    normalized = withAttrs;
+  }
   const missing = normalized === null;
   const formula = missing ? String(fallback) : String(normalized);
   if (typeof normalized === "number") {

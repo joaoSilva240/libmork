@@ -183,6 +183,17 @@ async function runMigrations() {
     `);
     console.log('✓ Column characters.coins ensured.');
 
+    console.log('\n--- 8. Applying character_items formula migration ---');
+    await client.query(`
+      ALTER TABLE "character_items"
+        ADD COLUMN IF NOT EXISTS "hit_roll" varchar(200),
+        ADD COLUMN IF NOT EXISTS "damage_roll" varchar(200);
+      ALTER TABLE "items"
+        DROP COLUMN IF EXISTS "hit_roll",
+        DROP COLUMN IF EXISTS "damage_roll";
+    `);
+    console.log('✓ Character item formulas ensured and global item formulas removed.');
+
     console.log('\nAll migrations executed successfully!');
   } catch (error) {
     console.error('Migration error:', error);

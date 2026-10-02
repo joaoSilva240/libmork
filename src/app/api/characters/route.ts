@@ -194,6 +194,8 @@ export async function POST(request: NextRequest) {
             name: string;
             quantity: number;
             description?: string;
+            hitRoll?: string | null;
+            damageRoll?: string | null;
           }>;
 
           for (const initItem of initialItemsList) {
@@ -212,7 +214,7 @@ export async function POST(request: NextRequest) {
               if (foundItem) {
                 targetItemId = foundItem.id;
               } else {
-                // Cria o item na biblioteca se não existir
+                // Cria o item na biblioteca se não existir (somente dados bibliográficos)
                 const [newItem] = await tx
                   .insert(items)
                   .values({
@@ -226,12 +228,15 @@ export async function POST(request: NextRequest) {
             }
 
             if (targetItemId) {
+              // Persiste fórmulas no vínculo character_items
               await tx
                 .insert(characterItems)
                 .values({
                   characterId: created.id,
                   itemId: targetItemId,
                   quantity: initItem.quantity || 1,
+                  hitRoll: initItem.hitRoll || null,
+                  damageRoll: initItem.damageRoll || null,
                 })
                 .onConflictDoNothing();
             }

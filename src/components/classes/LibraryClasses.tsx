@@ -14,7 +14,15 @@ type Benefit = {
   benefits: ClassLevelBenefit;
 };
 
-type DraftItem = { name: string; quantity: string; description: string };
+type DraftItem = {
+  name: string;
+  quantity: string;
+  description: string;
+  hitRoll?: string;
+  damageRoll?: string;
+};
+
+type InitialItemWithRolls = InitialItem & { hitRoll?: string; damageRoll?: string };
 
 const EMPTY_PROFICIENCIES: Proficiencies = {
   weapons: [],
@@ -225,7 +233,7 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
   }, [onRegisterActions]);
 
   // Conversões auxiliares de itens
-  const toInitialItems = (draft: DraftItem[]): InitialItem[] =>
+  const toInitialItems = (draft: DraftItem[]): InitialItemWithRolls[] =>
     draft
       .filter((item) => item.name.trim())
       .map((item) => ({
@@ -233,14 +241,21 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
         name: item.name.trim(),
         quantity: Math.max(Number(item.quantity) || 1, 1),
         description: item.description.trim() || undefined,
+        hitRoll: item.hitRoll?.trim() || undefined,
+        damageRoll: item.damageRoll?.trim() || undefined,
       }));
 
   const fromInitialItems = (items: InitialItem[] | undefined): DraftItem[] =>
-    (items ?? []).map((item) => ({
-      name: item.name,
-      quantity: String(item.quantity),
-      description: item.description ?? "",
-    }));
+    (items ?? []).map((item) => {
+      const itemWithRolls = item as InitialItemWithRolls;
+      return {
+        name: item.name,
+        quantity: String(item.quantity),
+        description: item.description ?? "",
+        hitRoll: itemWithRolls.hitRoll ?? "",
+        damageRoll: itemWithRolls.damageRoll ?? "",
+      };
+    });
 
   // Abertura do Modal de Detalhes
   const openClassDetails = async (rpgClass: RpgClass) => {
@@ -912,7 +927,7 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
         <label className="text-xs font-bold text-gray-300">Itens Iniciais da Classe</label>
         <button
           type="button"
-          onClick={() => onChange([...items, { name: "", quantity: "1", description: "" }])}
+          onClick={() => onChange([...items, { name: "", quantity: "1", description: "", hitRoll: "", damageRoll: "" }])}
           disabled={disabled}
           className="text-xs font-semibold text-purple-400 hover:text-purple-300 transition"
         >
@@ -976,6 +991,28 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
                 disabled={disabled}
                 className="w-full rounded-lg border border-gray-800 bg-gray-900 px-2.5 py-1 text-xs text-gray-300 placeholder-gray-600 focus:border-purple-500 focus:outline-none transition"
               />
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  placeholder="Rolagem de Acerto (ex: 1d20+FOR)"
+                  value={item.hitRoll || ""}
+                  onChange={(e) =>
+                    onChange(items.map((it, i) => (i === index ? { ...it, hitRoll: e.target.value } : it)))
+                  }
+                  disabled={disabled}
+                  className="w-full rounded-lg border border-gray-800 bg-gray-900 px-2.5 py-1 text-xs text-gray-300 placeholder-gray-600 focus:border-purple-500 focus:outline-none transition"
+                />
+                <input
+                  type="text"
+                  placeholder="Rolagem de Dano (ex: 1d8+FOR)"
+                  value={item.damageRoll || ""}
+                  onChange={(e) =>
+                    onChange(items.map((it, i) => (i === index ? { ...it, damageRoll: e.target.value } : it)))
+                  }
+                  disabled={disabled}
+                  className="w-full rounded-lg border border-gray-800 bg-gray-900 px-2.5 py-1 text-xs text-gray-300 placeholder-gray-600 focus:border-purple-500 focus:outline-none transition"
+                />
+              </div>
             </div>
           ))}
         </div>

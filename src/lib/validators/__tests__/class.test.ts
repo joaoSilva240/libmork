@@ -2,12 +2,18 @@ import { describe, it, expect } from "vitest";
 import { createClassSchema, createClassBenefitSchema, updateClassSchema } from "../class";
 
 describe("Class Validator Schemas", () => {
-  it("should validate a simple class creation payload", () => {
+  it("should validate a simple class creation payload with optional hitRoll and damageRoll on initialItems", () => {
     const payload = {
       name: "Guerreiro",
       description: "Mestre das armas",
       initialItems: [
-        { name: "Espada Longa", quantity: 1, description: "Arma marcial" },
+        {
+          name: "Espada Longa",
+          quantity: 1,
+          description: "Arma marcial",
+          hitRoll: "1d20+5",
+          damageRoll: "1d8+3",
+        },
       ],
       proficiencies: {
         weapons: ["Espadas", "Machados"],
@@ -20,6 +26,8 @@ describe("Class Validator Schemas", () => {
     if (result.success) {
       expect(result.data.name).toBe("Guerreiro");
       expect(result.data.initialItems).toHaveLength(1);
+      expect(result.data.initialItems[0].hitRoll).toBe("1d20+5");
+      expect(result.data.initialItems[0].damageRoll).toBe("1d8+3");
     }
   });
 
