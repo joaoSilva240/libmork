@@ -6,7 +6,7 @@
 // Garante cobertura completa do middleware CSRF sem editar 91 call sites.
 // =============================================================================
 
-import { getCsrfToken, isCsrfMutation } from "./csrf";
+import { ensureCsrfToken, isCsrfMutation } from "./csrf";
 
 let installed = false;
 
@@ -29,12 +29,10 @@ export function installFetchCsrfPatch(): void {
           : input.url;
 
     if (isCsrfMutation(method, url)) {
-      const token = getCsrfToken();
-      if (token) {
-        const headers = new Headers(init?.headers);
-        if (!headers.has("x-csrf-token")) headers.set("x-csrf-token", token);
-        return originalFetch(input, { ...init, headers, credentials: "include" });
-      }
+      const token = await ensureCsrfToken();
+      const headers = new Headers(init?.headers);
+      if (!headers.has("x-csrf-token")) headers.set("x-csrf-token", token);
+      return originalFetch(input, { ...init, headers, credentials: "include" });
     }
     return originalFetch(input, init);
   };

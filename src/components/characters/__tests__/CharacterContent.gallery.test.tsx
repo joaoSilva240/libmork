@@ -454,15 +454,9 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByText("Na mochila")).toBeInTheDocument();
 
-    // Try combat roll while unequipped
-    const combatRollBtn = screen.getByRole("button", { name: "⚔️ Em combate" });
-    fireEvent.click(combatRollBtn);
-    expect(screen.getByText("Equipe o item antes de usá-lo em combate.")).toBeInTheDocument();
-
-    // Try free roll while unequipped
-    const freeRollBtn = screen.getByRole("button", { name: "🎲 Sem combate" });
-    fireEvent.click(freeRollBtn);
-    expect(screen.getByText("Equipe o item antes de usá-lo.")).toBeInTheDocument();
+    // Roll buttons should not be present when unequipped
+    expect(screen.queryByRole("button", { name: "⚔️ Em combate" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "🎲 Sem combate" })).not.toBeInTheDocument();
 
     // Equip item outside combat (free)
     const equipBtn = screen.getByRole("button", { name: /🗡️ Equipar/i });
@@ -473,6 +467,10 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
     expect(within(screen.getByRole("dialog")).getByText("Equipado")).toBeInTheDocument();
     expect(within(itemCard as HTMLElement).getByText("Equipado")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /🛡️ Desequipar/i })).toBeInTheDocument();
+
+    // Roll buttons should now be present when equipped
+    expect(screen.getByRole("button", { name: "⚔️ Em combate" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "🎲 Sem combate" })).toBeInTheDocument();
 
     // Close modal and verify card has badge "Equipado"
     fireEvent.click(screen.getByRole("button", { name: "Fechar" }));

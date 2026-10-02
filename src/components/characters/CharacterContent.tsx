@@ -117,6 +117,17 @@ type LinkedRow = {
   content: Record<string, unknown>;
 };
 
+function buildEffectiveItemContent(row: LinkedRow): ItemRollApi {
+  const effective: ItemRollApi = { ...row.content };
+  if (row.junction.hitRoll !== undefined && row.junction.hitRoll !== null) {
+    effective.hitRoll = row.junction.hitRoll;
+  }
+  if (row.junction.damageRoll !== undefined && row.junction.damageRoll !== null) {
+    effective.damageRoll = row.junction.damageRoll;
+  }
+  return effective;
+}
+
 const SAFE_FORMULA = /^(?:\s*[+-]?\s*(?:\d+[dD]\d+|\d+)\s*)+$/;
 
 function explicitFormula(value: unknown): string | number | null {
@@ -561,8 +572,8 @@ export function CharacterContent({
     }
 
     if (rowType === "items") {
-      const hitRoll = normalizeItemHitRoll({ ...row.content, hitRoll: row.junction.hitRoll ?? (row.content.hitRoll as string | number | undefined) }, characterAttributeModifiers ?? {});
-      const damageRoll = normalizeItemDamageRoll({ ...row.content, damageRoll: row.junction.damageRoll ?? (row.content.damageRoll as string | number | undefined) }, characterAttributeModifiers ?? {});
+      const hitRoll = normalizeItemHitRoll(buildEffectiveItemContent(row), characterAttributeModifiers ?? {});
+      const damageRoll = normalizeItemDamageRoll(buildEffectiveItemContent(row), characterAttributeModifiers ?? {});
 
       if (!hitRoll && !damageRoll) {
         showToast("Este item não possui fórmulas de rolagem.");
@@ -610,7 +621,7 @@ export function CharacterContent({
         });
       }
     }
-    const itemContent = row.content as ItemRollApi;
+    const itemContent = rowType === "items" ? buildEffectiveItemContent(row) : (row.content as ItemRollApi);
     const normalizedHitRoll = rowType === "items"
       ? normalizeItemHitRoll(itemContent, characterAttributeModifiers ?? {})
       : null;
@@ -699,8 +710,8 @@ export function CharacterContent({
       }
 
       // Plano A: Itens sem fórmulas de rolagem não devem permitir ação de combate
-      const hitRoll = normalizeItemHitRoll({ ...row.content, hitRoll: row.junction.hitRoll ?? (row.content.hitRoll as string | number | undefined) }, characterAttributeModifiers ?? {});
-      const damageRoll = normalizeItemDamageRoll({ ...row.content, damageRoll: row.junction.damageRoll ?? (row.content.damageRoll as string | number | undefined) }, characterAttributeModifiers ?? {});
+      const hitRoll = normalizeItemHitRoll(buildEffectiveItemContent(row), characterAttributeModifiers ?? {});
+      const damageRoll = normalizeItemDamageRoll(buildEffectiveItemContent(row), characterAttributeModifiers ?? {});
       if (!hitRoll && !damageRoll) {
         showToast("Este item não possui fórmulas de combate configuradas.");
         return;
@@ -726,8 +737,9 @@ export function CharacterContent({
     let damageExpr: string | undefined;
 
     if (rowType === "items") {
-      const hitRoll = normalizeItemHitRoll({ ...row.content, hitRoll: row.junction.hitRoll ?? (row.content.hitRoll as string | number | undefined) });
-      const damageRoll = normalizeItemDamageRoll({ ...row.content, damageRoll: row.junction.damageRoll ?? (row.content.damageRoll as string | number | undefined) });
+      const effectiveContent = buildEffectiveItemContent(row);
+      const hitRoll = normalizeItemHitRoll(effectiveContent, characterAttributeModifiers ?? {});
+      const damageRoll = normalizeItemDamageRoll(effectiveContent, characterAttributeModifiers ?? {});
       expr = hitRoll ?? undefined;
       damageExpr = damageRoll ?? undefined;
     } else {
@@ -1366,12 +1378,12 @@ export function CharacterContent({
               ? Math.min(3, row.content.actionCostOverride)
               : null;
 
-          const itemContent = row.content as ItemRollApi;
+          const effectiveItemContent = type === "items" ? buildEffectiveItemContent(row) : null;
           const testExpr = type === "items"
-            ? normalizeItemHitRoll(itemContent)
+            ? normalizeItemHitRoll(effectiveItemContent!, characterAttributeModifiers ?? {})
             : getExpression(row.content.rollExpression) ?? (type === "spells" ? "1d20" : null);
           const damageValue = type === "items"
-            ? normalizeItemDamageRoll(itemContent)
+            ? normalizeItemDamageRoll(effectiveItemContent!, characterAttributeModifiers ?? {})
             : normalizeActionDamage(row.content);
           const damageExpr = damageValue !== null ? String(damageValue) : null;
           const hasItemRollFormula = type !== "items" || Boolean(testExpr || damageExpr);
@@ -1606,15 +1618,11 @@ export function CharacterContent({
                     </button>
                   )}
 
-                  {(type === "spells" || (type === "items" && hasItemRollFormula)) && (
+                  {(type === "spells" || (type === "items" && isItemEquipped && hasItemRollFormula)) && (
                     <>
                       <button
                         type="button"
                         onClick={() => {
-                          if (type === "items" && !isItemEquipped) {
-                            showToast("Equipe o item antes de usá-lo.");
-                            return;
-                          }
                           setSelectedDetailItem(null);
                           handleFreeRoll(row, type);
                         }}
@@ -1627,10 +1635,6 @@ export function CharacterContent({
                       <button
                         type="button"
                         onClick={() => {
-                          if (type === "items" && !isItemEquipped) {
-                            showToast("Equipe o item antes de usá-lo em combate.");
-                            return;
-                          }
                           setSelectedDetailItem(null);
                           handleActionClick(row, type);
                         }}

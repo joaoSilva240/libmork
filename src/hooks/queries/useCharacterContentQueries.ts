@@ -9,6 +9,8 @@ export type CharacterContentRow = {
     trained?: boolean;
     quantity?: number;
     permanent?: boolean;
+    hitRoll?: string | null;
+    damageRoll?: string | null;
   };
   content: Record<string, unknown>;
 };
