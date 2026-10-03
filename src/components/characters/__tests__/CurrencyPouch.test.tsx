@@ -1,7 +1,7 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
-import { CurrencyPouch } from "../CurrencyPouch";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import type { CoinsBalance } from "@/lib/validators/character";
+import { CurrencyPouch } from "../CurrencyPouch";
 
 describe("CurrencyPouch", () => {
   const initialCoins: CoinsBalance = {
@@ -12,148 +12,122 @@ describe("CurrencyPouch", () => {
     diamante: 1,
   };
 
-  it("renders all coin types with their respective icons and values", () => {
-    const handleChange = vi.fn();
-    render(<CurrencyPouch characterId="char-1" coins={initialCoins} onChange={handleChange} />);
+  function renderPouch(coins = initialCoins, isLoading = false) {
+    const onChange = vi.fn();
+    render(
+      <CurrencyPouch
+        characterId="char-1"
+        coins={coins}
+        onChange={onChange}
+        isLoading={isLoading}
+      />,
+    );
+    return onChange;
+  }
 
-    // Check icons are rendered
-    expect(screen.getByText("🟤")).toBeInTheDocument();
-    expect(screen.getByText("⚪")).toBeInTheDocument();
-    expect(screen.getByText("🟡")).toBeInTheDocument();
-    expect(screen.getByText("🔷")).toBeInTheDocument();
-    expect(screen.getByText("💎")).toBeInTheDocument();
+  it("renders all coin icons and balances", () => {
+    renderPouch();
 
-    // Check values are rendered
-    expect(screen.getByText("50")).toBeInTheDocument();
-    expect(screen.getByText("10")).toBeInTheDocument();
-    expect(screen.getByText("5")).toBeInTheDocument();
-    expect(screen.getByText("2")).toBeInTheDocument();
-    expect(screen.getByText("1")).toBeInTheDocument();
+    for (const icon of ["🟤", "⚪", "🟡", "🔷", "💎"]) {
+      expect(screen.getByText(icon)).toBeInTheDocument();
+    }
+    for (const amount of ["50", "10", "5", "2", "1"]) {
+      expect(screen.getByText(amount)).toBeInTheDocument();
+    }
   });
 
-  it("allows entering edit mode and saving a new coin value", () => {
-    const handleChange = vi.fn();
-    render(<CurrencyPouch characterId="char-1" coins={initialCoins} onChange={handleChange} />);
+  it("opens the conversion dialog when a balance is clicked", () => {
+    renderPouch();
 
-    const editBronzeButton = screen.getByTitle("Editar bronze");
-    fireEvent.click(editBronzeButton);
+    fireEvent.click(screen.getByRole("button", { name: "Ouro: 5" }));
 
-    const input = screen.getByRole("spinbutton");
-    expect(input).toBeInTheDocument();
-    expect(input).toHaveValue(50);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Converter moedas" })).toBeInTheDocument();
+  });
 
-    fireEvent.change(input, { target: { value: "75" } });
-    fireEvent.blur(input); // Auto-save on blur
+  it("pre-selects the clicked coin as the source", () => {
+    renderPouch();
 
-    expect(handleChange).toHaveBeenCalledTimes(1);
-    expect(handleChange).toHaveBeenCalledWith({
-      ...initialCoins,
-      bronze: 75,
+    fireEvent.click(screen.getByRole("button", { name: "Prata: 10" }));
+
+    expect(screen.getByText(/Moeda de origem: ⚪ Prata/)).toBeInTheDocument();
+    expect(screen.getByText(/saldo disponível: 10/)).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Moeda de destino" })).toHaveValue("diamante");
+  });
+
+  it("selects a target, accepts a quantity, shows a preview, and confirms an exact conversion", () => {
+    const onChange = renderPouch();
+    fireEvent.click(screen.getByRole("button", { name: "Ouro: 5" }));
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Moeda de destino" }), {
+      target: { value: "prata" },
     });
-  });
+    fireEvent.change(screen.getByRole("spinbutton", { name: "Quantidade" }), {
+      target: { value: "2" },
+    });
 
-  it("triggers save on Enter key inside the input", () => {
-    const handleChange = vi.fn();
-    render(<CurrencyPouch characterId="char-1" coins={initialCoins} onChange={handleChange} />);
+    expect(screen.getByText(/2 ouro → 20 prata/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar conversão" }));
 
-    const editPrataButton = screen.getByTitle("Editar prata");
-    fireEvent.click(editPrataButton);
-
-    const input = screen.getByRole("spinbutton");
-    fireEvent.change(input, { target: { value: "30" } });
-    fireEvent.keyDown(input, { key: "Enter" });
-
-    expect(handleChange).toHaveBeenCalledWith({
+    expect(onChange).toHaveBeenCalledWith({
       ...initialCoins,
+      ouro: 3,
       prata: 30,
     });
   });
 
-  it("cancels editing on Escape key without calling onChange", () => {
-    const handleChange = vi.fn();
-    render(<CurrencyPouch characterId="char-1" coins={initialCoins} onChange={handleChange} />);
-
-    const editOuroButton = screen.getByTitle("Editar ouro");
-    fireEvent.click(editOuroButton);
-
-    const input = screen.getByRole("spinbutton");
-    fireEvent.change(input, { target: { value: "99" } });
-    fireEvent.keyDown(input, { key: "Escape" });
-
-    expect(handleChange).not.toHaveBeenCalled();
-    expect(screen.queryByRole("spinbutton")).not.toBeInTheDocument();
-    expect(screen.getByText("5")).toBeInTheDocument();
-  });
-
-  it("no longer applies auto-conversion logic (removed in minimalist redesign)", () => {
-    const handleChange = vi.fn();
-    render(<CurrencyPouch characterId="char-1" coins={initialCoins} onChange={handleChange} />);
-
-    const editDiamanteButton = screen.getByTitle("Editar diamante");
-    fireEvent.click(editDiamanteButton);
-
-    const input = screen.getByRole("spinbutton");
-    fireEvent.change(input, { target: { value: "105" } });
-    fireEvent.keyDown(input, { key: "Enter" });
-
-    // No conversion, just direct update
-    expect(handleChange).toHaveBeenCalledWith({
-      bronze: 50,
-      prata: 10,
-      ouro: 5,
-      platina: 2,
-      diamante: 105,
+  it("blocks confirmation and reports insufficient balance", () => {
+    const onChange = renderPouch();
+    fireEvent.click(screen.getByRole("button", { name: "Ouro: 5" }));
+    fireEvent.change(screen.getByRole("spinbutton", { name: "Quantidade" }), {
+      target: { value: "6" },
     });
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Saldo insuficiente");
+    expect(screen.getByRole("button", { name: "Confirmar conversão" })).toBeDisabled();
+    expect(onChange).not.toHaveBeenCalled();
   });
 
-  it("no longer handles cascaded conversion (removed in minimalist redesign)", () => {
-    const handleChange = vi.fn();
-    const customCoins: CoinsBalance = {
-      bronze: 0,
-      prata: 0,
-      ouro: 0,
-      platina: 99,
-      diamante: 0,
-    };
-    render(<CurrencyPouch characterId="char-1" coins={customCoins} onChange={handleChange} />);
-
-    const editDiamanteButton = screen.getByTitle("Editar diamante");
-    fireEvent.click(editDiamanteButton);
-
-    const input = screen.getByRole("spinbutton");
-    fireEvent.change(input, { target: { value: "100" } });
-    fireEvent.keyDown(input, { key: "Enter" });
-
-    // No conversion, direct update
-    expect(handleChange).toHaveBeenCalledWith({
-      bronze: 0,
-      prata: 0,
-      ouro: 0,
-      platina: 99,
-      diamante: 100,
+  it("blocks confirmation when the conversion is not divisible", () => {
+    const onChange = renderPouch();
+    fireEvent.click(screen.getByRole("button", { name: "Bronze: 50" }));
+    fireEvent.change(screen.getByRole("combobox", { name: "Moeda de destino" }), {
+      target: { value: "ouro" },
     });
+    fireEvent.change(screen.getByRole("spinbutton", { name: "Quantidade" }), {
+      target: { value: "1" },
+    });
+
+    expect(screen.getByRole("alert")).toHaveTextContent("não pode ser convertida exatamente");
+    expect(screen.getByRole("button", { name: "Confirmar conversão" })).toBeDisabled();
+    expect(onChange).not.toHaveBeenCalled();
   });
 
-  it("cancels without calling onChange on invalid number input", () => {
-    const handleChange = vi.fn();
-    render(<CurrencyPouch characterId="char-1" coins={initialCoins} onChange={handleChange} />);
+  it("cancels without calling onChange", () => {
+    const onChange = renderPouch();
+    fireEvent.click(screen.getByRole("button", { name: "Ouro: 5" }));
+    fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
 
-    const editBronzeButton = screen.getByTitle("Editar bronze");
-    fireEvent.click(editBronzeButton);
-
-    const input = screen.getByRole("spinbutton");
-    fireEvent.change(input, { target: { value: "" } });
-    fireEvent.keyDown(input, { key: "Enter" });
-
-    expect(handleChange).not.toHaveBeenCalled();
-    expect(screen.queryByRole("spinbutton")).not.toBeInTheDocument();
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("disables edit button and input when isLoading is true", () => {
-    const handleChange = vi.fn();
-    render(<CurrencyPouch characterId="char-1" coins={initialCoins} onChange={handleChange} isLoading={true} />);
+  it("closes the conversion overlay with Escape", () => {
+    renderPouch();
+    fireEvent.click(screen.getByRole("button", { name: "Ouro: 5" }));
+    fireEvent.keyDown(document, { key: "Escape" });
 
-    const editBronzeButton = screen.getByTitle("Editar bronze");
-    expect(editBronzeButton).toBeDisabled();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("disables the balance and confirmation controls while loading", () => {
+    renderPouch(initialCoins, true);
+
+    for (const button of screen.getAllByRole("button")) {
+      expect(button).toBeDisabled();
+    }
+
+    // Loading prevents opening a new conversion, so the confirmation control
+    // is covered by the modal's own isLoading behavior in CurrencyConversionModal.
   });
 });
