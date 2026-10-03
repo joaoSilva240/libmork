@@ -48,6 +48,19 @@ describe("WealthManager Component", () => {
 
     // Modal should NOT be open by default
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    expect(screen.getByLabelText("Cofre Consolidado")).toHaveClass(
+      "min-w-0",
+      "max-w-full",
+      "overflow-hidden",
+    );
+    const vault = screen.getByLabelText("Cofre Consolidado");
+    const title = screen.getByRole("heading", { name: "Cofre do Jogador & Tesouraria" });
+    const summary = screen.getByLabelText("Resumo consolidado de moedas");
+    expect(title.closest("header")).toBeInTheDocument();
+    expect(title.closest("header")).not.toContainElement(summary);
+    expect(vault).toContainElement(summary);
+    expect(screen.getByLabelText("Saldos por Personagem")).toHaveClass("min-w-0", "max-w-full");
   });
 
   it("should have transfer buttons on character cards with only icon and no 'Transferir' text", () => {
@@ -79,6 +92,39 @@ describe("WealthManager Component", () => {
     expect(screen.getAllByText("80").length).toBeGreaterThanOrEqual(1);
   });
 
+  it("should persist a character conversion from its currency summary", async () => {
+    const handleRefresh = vi.fn();
+    const handleToast = vi.fn();
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({}) });
+
+    render(
+      <WealthManager initialData={mockData} onRefresh={handleRefresh} onShowToast={handleToast} />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Ouro: 80" }));
+    fireEvent.change(screen.getByRole("combobox", { name: "Moeda de destino" }), {
+      target: { value: "prata" },
+    });
+    fireEvent.change(screen.getByRole("spinbutton", { name: "Quantidade" }), {
+      target: { value: "1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar conversão" }));
+
+    await waitFor(() => {
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        "/api/characters/char-1",
+        expect.objectContaining({
+          method: "PATCH",
+          body: JSON.stringify({
+            coins: { bronze: 100, prata: 30, ouro: 79, platina: 3, diamante: 1 },
+          }),
+        }),
+      );
+    });
+    expect(handleToast).toHaveBeenCalledWith("Conversão realizada com sucesso!", "success");
+    expect(handleRefresh).toHaveBeenCalled();
+  });
+
   it("should fill max amount when clicking 'Máximo' in modal", () => {
     render(<WealthManager initialData={mockData} />);
 
@@ -98,15 +144,12 @@ describe("WealthManager Component", () => {
 
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ success: true, message: "Transferência realizada com sucesso" }),
+      json: () =>
+        Promise.resolve({ success: true, message: "Transferência realizada com sucesso" }),
     });
 
     render(
-      <WealthManager
-        initialData={mockData}
-        onRefresh={handleRefresh}
-        onShowToast={handleToast}
-      />
+      <WealthManager initialData={mockData} onRefresh={handleRefresh} onShowToast={handleToast} />,
     );
 
     // Open transfer modal for Arthur
@@ -133,7 +176,7 @@ describe("WealthManager Component", () => {
             coinType: "ouro",
             amount: 25,
           }),
-        })
+        }),
       );
     });
 
@@ -191,17 +234,20 @@ describe("WealthManager Component", () => {
 
     // Detail modal opens
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "Arthur Pendragon", level: 3 })
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Arthur Pendragon", level: 3 })).toBeInTheDocument();
     expect(screen.getByText(/Nível 5 · Riqueza & Patrimônio Pessoal/i)).toBeInTheDocument();
 
-    // Has coins badges
-    expect(screen.getByText("Diamante")).toBeInTheDocument();
-    expect(screen.getByText("Platina")).toBeInTheDocument();
-    expect(screen.getByText("Ouro")).toBeInTheDocument();
-    expect(screen.getByText("Prata")).toBeInTheDocument();
-    expect(screen.getByText("Bronze")).toBeInTheDocument();
+    // Has accessible coin badges without rendering their names visibly
+    const detailDialog = screen.getByRole("dialog");
+    for (const [name, amount] of [
+      ["Diamante", 1],
+      ["Platina", 3],
+      ["Ouro", 80],
+      ["Prata", 20],
+      ["Bronze", 100],
+    ] as const) {
+      expect(detailDialog.querySelector(`[aria-label="${name}: ${amount}"]`)).toBeInTheDocument();
+    }
 
     // Check tabs
     const inventoryTabBtn = screen.getByRole("button", { name: /Itens & Inventário/i });
@@ -223,9 +269,7 @@ describe("WealthManager Component", () => {
     fireEvent.click(statementTabBtn);
 
     // Since no transfers yet, should show empty message
-    expect(
-      screen.getByText("Nenhuma movimentação registrada nesta sessão.")
-    ).toBeInTheDocument();
+    expect(screen.getByText("Nenhuma movimentação registrada nesta sessão.")).toBeInTheDocument();
 
     // Close detail modal
     const closeButtons = screen.getAllByRole("button", { name: "Fechar" });
@@ -271,10 +315,16 @@ describe("WealthManager Component", () => {
     const statementTabBtn = screen.getByRole("button", { name: /Extrato da Sessão/i });
     fireEvent.click(statementTabBtn);
 
+    await waitFor(() => {
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        "/api/characters/char-1/content/items",
+        expect.objectContaining({ credentials: "include" }),
+      );
+    });
+
     // Should display the negative transfer log for Arthur
     expect(screen.getByText(/Envio para/i)).toBeInTheDocument();
     expect(screen.getAllByText("Merlin Ambrosius").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("-10")).toBeInTheDocument();
   });
 });
-

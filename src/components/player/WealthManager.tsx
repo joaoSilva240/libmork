@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import type { CoinsBalance } from "@/lib/validators/character";
-import { Spinner, Button } from "@/components/ui";
+import { Spinner, Button, Modal } from "@/components/ui";
 import { generateUUID } from "@/lib/utils/uuid";
 import { formatPrice } from "@/lib/content/pf2e-item-formatter";
+import { COIN_CONFIG, COIN_KEYS, CurrencySummary } from "./CurrencySummary";
+import { totalInBronze } from "@/lib/currency";
 
 export interface WealthCharacter {
   id: string;
@@ -27,54 +29,6 @@ export interface WealthManagerProps {
   onRefresh?: () => Promise<void> | void;
   onShowToast?: (message: string, type?: "error" | "success" | "info" | "warning") => void;
 }
-
-const COIN_CONFIG: Record<
-  keyof CoinsBalance,
-  { name: string; icon: string; color: string; bg: string; border: string; valueInGold: number }
-> = {
-  diamante: {
-    name: "Diamante",
-    icon: "💎",
-    color: "text-[#B9F2FF]",
-    bg: "bg-cyan-950/40",
-    border: "border-cyan-800/50",
-    valueInGold: 1000,
-  },
-  platina: {
-    name: "Platina",
-    icon: "🔷",
-    color: "text-[#E5E4E2]",
-    bg: "bg-slate-900/60",
-    border: "border-slate-700/50",
-    valueInGold: 10,
-  },
-  ouro: {
-    name: "Ouro",
-    icon: "🟡",
-    color: "text-[#FFD700]",
-    bg: "bg-amber-950/40",
-    border: "border-amber-700/50",
-    valueInGold: 1,
-  },
-  prata: {
-    name: "Prata",
-    icon: "⚪",
-    color: "text-[#C0C0C0]",
-    bg: "bg-zinc-900/60",
-    border: "border-zinc-700/50",
-    valueInGold: 0.1,
-  },
-  bronze: {
-    name: "Bronze",
-    icon: "🟤",
-    color: "text-[#CD7F32]",
-    bg: "bg-orange-950/40",
-    border: "border-orange-800/50",
-    valueInGold: 0.01,
-  },
-};
-
-const COIN_KEYS: (keyof CoinsBalance)[] = ["diamante", "platina", "ouro", "prata", "bronze"];
 
 interface TransferLog {
   id: string;
@@ -118,7 +72,12 @@ function parseItemPriceInGold(content?: InventoryItemData["content"]): number | 
     if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
       try {
         const parsed = JSON.parse(trimmed);
-        return parseItemPriceInGold({ ...content, price: parsed, sourceData: undefined, priceGold: undefined });
+        return parseItemPriceInGold({
+          ...content,
+          price: parsed,
+          sourceData: undefined,
+          priceGold: undefined,
+        });
       } catch {
         const num = parseFloat(trimmed);
         return isNaN(num) ? null : num;
@@ -178,9 +137,13 @@ export function WealthManager({
   const [detailChar, setDetailChar] = useState<WealthCharacter | null>(null);
   const [detailTab, setDetailTab] = useState<"inventory" | "statement">("inventory");
   const [inventoryMap, setInventoryMap] = useState<Record<string, InventoryItemData[]>>({});
-  const [loadingInventory, setLoadingInventory] = useState<boolean>(false);
+  const [localCharacters, setLocalCharacters] = useState<WealthCharacter[] | null>(null);
+  const [savingCharacterId, setSavingCharacterId] = useState<string | null>(null);
 
-  const characters = initialData?.characters ?? [];
+  const characters =
+    savingCharacterId !== null
+      ? (localCharacters ?? initialData?.characters ?? [])
+      : (initialData?.characters ?? localCharacters ?? []);
   const totals = initialData?.totals ?? {
     bronze: 0,
     prata: 0,
@@ -189,16 +152,13 @@ export function WealthManager({
     diamante: 0,
   };
 
-  const totalInGold =
-    totals.diamante * 1000 +
-    totals.platina * 10 +
-    totals.ouro * 1 +
-    totals.prata * 0.1 +
-    totals.bronze * 0.01;
-
   const sourceChar = characters.find((c) => c.id === sourceId);
   const targetChar = characters.find((c) => c.id === targetId);
   const availableInSource = sourceChar ? (sourceChar.coins[selectedCoin] ?? 0) : 0;
+  const detailCharId = detailChar?.id;
+  const loadingInventory = Boolean(
+    detailChar && !Object.prototype.hasOwnProperty.call(inventoryMap, detailChar.id),
+  );
 
   const handleOpenTransfer = (charId: string) => {
     setSourceId(charId);
@@ -221,18 +181,71 @@ export function WealthManager({
     setDetailTab("inventory");
   };
 
+  const persistCharacterCoins = async (char: WealthCharacter, coins: CoinsBalance) => {
+    if (savingCharacterId === char.id) return;
+    const previous = char;
+    const updated = { ...char, coins };
+    setSavingCharacterId(char.id);
+    if (detailChar?.id === char.id) setDetailChar(updated);
+    setLocalCharacters((previous) => {
+      const current = previous ?? characters;
+      return current.map((char) => (char.id === updated.id ? updated : char));
+    });
+    try {
+      const response = await fetch(`/api/characters/${char.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ coins }),
+      });
+      if (!response.ok) {
+        setLocalCharacters((current) =>
+          (current ?? characters).map((item) => (item.id === char.id ? previous : item)),
+        );
+        if (detailChar?.id === char.id) setDetailChar(previous);
+        onShowToast?.("Erro ao salvar moedas do personagem.", "error");
+        return;
+      }
+      const payload = await response.json().catch(() => null);
+      const returnedCharacter = payload?.data?.character ?? payload?.character ?? payload?.data;
+      if (returnedCharacter?.id === char.id && returnedCharacter.coins) {
+        setLocalCharacters((current) =>
+          (current ?? characters).map((item) => (item.id === char.id ? returnedCharacter : item)),
+        );
+        if (detailChar?.id === char.id) setDetailChar(returnedCharacter);
+      }
+      onShowToast?.("Conversão realizada com sucesso!", "success");
+      await onRefresh?.();
+    } catch {
+      setLocalCharacters((current) =>
+        (current ?? characters).map((item) => (item.id === char.id ? previous : item)),
+      );
+      if (detailChar?.id === char.id) setDetailChar(previous);
+      onShowToast?.("Erro de conexão ao atualizar moedas.", "error");
+    } finally {
+      setSavingCharacterId(null);
+    }
+  };
+
+  const handleDetailCoinsChange = async (coins: CoinsBalance) => {
+    if (!detailChar) return;
+    await persistCharacterCoins(detailChar, coins);
+  };
+
+  const handleCharacterCoinsChange = async (char: WealthCharacter, coins: CoinsBalance) => {
+    await persistCharacterCoins(char, coins);
+  };
+
   const handleCloseDetail = () => {
     setDetailChar(null);
   };
 
   useEffect(() => {
-    if (!detailChar) return;
-    const charId = detailChar.id;
+    if (!detailCharId) return;
+    const charId = detailCharId;
     if (inventoryMap[charId]) return;
 
     let isMounted = true;
-    setLoadingInventory(true);
-
     fetch(`/api/characters/${charId}/content/items`, { credentials: "include" })
       .then((res) => {
         if (!res.ok) return { data: { linked: [] } };
@@ -253,15 +266,11 @@ export function WealthManager({
           ...prev,
           [charId]: [],
         }));
-      })
-      .finally(() => {
-        if (isMounted) setLoadingInventory(false);
       });
-
     return () => {
       isMounted = false;
     };
-  }, [detailChar?.id]);
+  }, [detailCharId, inventoryMap]);
 
   const handleMaxAmount = () => {
     setAmount(String(availableInSource));
@@ -289,7 +298,7 @@ export function WealthManager({
     if (numAmount > availableInSource) {
       onShowToast?.(
         `Saldo insuficiente. O personagem possui apenas ${availableInSource} de ${COIN_CONFIG[selectedCoin].name.toLowerCase()}`,
-        "error"
+        "error",
       );
       return;
     }
@@ -369,69 +378,43 @@ export function WealthManager({
   }
 
   return (
-    <div className="space-y-6">
-      {/* 1. Cofre do Jogador & Tesouraria - Design Minimalista de 1 Linha */}
+    <div className="min-w-0 max-w-full space-y-6">
+      {/* 1. Cofre do Jogador & Tesouraria */}
       <section
         aria-label="Cofre Consolidado"
-        className="rounded-2xl border border-purple-800/40 bg-gradient-to-r from-gray-950 via-purple-950/20 to-gray-950 p-4 shadow-xl"
+        className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-purple-800/40 bg-gradient-to-r from-gray-950 via-purple-950/20 to-gray-950 p-4 shadow-xl"
       >
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          {/* Lado Esquerdo: Título & Saldo Principal Destacado */}
-          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-            <div className="flex items-center gap-2.5">
-              <span className="text-2xl" role="img" aria-label="Tesouro">🏛️</span>
-              <div>
+        <div className="w-full min-w-0 max-w-full">
+          <header className="w-full min-w-0 max-w-full">
+            <div className="flex min-w-0 max-w-full items-center gap-2.5">
+              <span className="shrink-0 text-2xl" role="img" aria-label="Tesouro">
+                🏛️
+              </span>
+              <div className="min-w-0">
                 <h2 className="text-sm font-semibold tracking-wide text-gray-300">
                   Cofre do Jogador & Tesouraria
                 </h2>
-                <span className="text-[11px] text-gray-500 hidden sm:inline">
+                <span className="hidden text-[11px] text-gray-500 sm:inline">
                   Patrimônio consolidado
                 </span>
               </div>
             </div>
+          </header>
 
-            <div className="h-7 w-px bg-gray-800 hidden sm:block" />
-
-            {/* Saldo Consolidado em Ouro em Destaque Maior */}
-            <div className="flex items-center gap-2 bg-amber-950/30 border border-amber-500/30 rounded-xl px-3.5 py-1.5 shadow-[0_0_15px_rgba(245,158,11,0.15)]">
-              <span className="text-lg">🪙</span>
-              <span className="text-xs font-semibold text-amber-300/90 uppercase tracking-wider hidden xs:inline">
-                Total:
-              </span>
-              <span className="text-xl sm:text-2xl font-black tracking-tight text-amber-300">
-                {totalInGold.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 2 })} PO
-              </span>
-            </div>
-          </div>
-
-          {/* Lado Direito: Badges Compactos Elegantes das Demais Moedas Inline */}
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-            {COIN_KEYS.map((key) => {
-              const conf = COIN_CONFIG[key];
-              const coinAmount = totals[key] ?? 0;
-              return (
-                <div
-                  key={key}
-                  title={`${conf.name}: ${coinAmount.toLocaleString("pt-BR")}`}
-                  className={`inline-flex items-center gap-1.5 rounded-lg border ${conf.border} ${conf.bg} px-2.5 py-1 text-xs`}
-                >
-                  <span className="text-xs">{conf.icon}</span>
-                  <span className="text-[10px] uppercase font-bold text-gray-400 hidden md:inline">
-                    {conf.name}:
-                  </span>
-                  <span className={`font-bold ${conf.color}`}>
-                    {coinAmount.toLocaleString("pt-BR")}
-                  </span>
-                </div>
-              );
-            })}
+          <div className="w-full min-w-0 max-w-full pt-4">
+            <CurrencySummary
+              balance={totals}
+              variant="consolidated"
+              ariaLabel="Resumo consolidado de moedas"
+              className="w-full min-w-0 max-w-full"
+            />
           </div>
         </div>
       </section>
 
       {/* 2. Grid de Personagens e seus Saldos Detalhados */}
-      <section aria-label="Saldos por Personagem" className="space-y-4">
-        <div className="flex items-center justify-between">
+      <section aria-label="Saldos por Personagem" className="min-w-0 max-w-full space-y-4">
+        <div className="flex min-w-0 max-w-full items-center justify-between">
           <h3 className="text-lg font-bold text-white">Saldos por Personagem</h3>
           {characters.length >= 2 && (
             <button
@@ -449,20 +432,15 @@ export function WealthManager({
             Nenhum personagem cadastrado.
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid min-w-0 max-w-full gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {characters.map((char) => {
-              const charTotalInGold =
-                (char.coins.diamante ?? 0) * 1000 +
-                (char.coins.platina ?? 0) * 10 +
-                (char.coins.ouro ?? 0) * 1 +
-                (char.coins.prata ?? 0) * 0.1 +
-                (char.coins.bronze ?? 0) * 0.01;
+              const charTotalInGold = totalInBronze(char.coins) / 100;
 
               return (
                 <div
                   key={char.id}
                   onClick={() => handleOpenDetail(char)}
-                  className="rounded-xl border border-gray-800 bg-gray-900/80 p-4 shadow-md flex flex-col justify-between hover:border-purple-600/50 hover:bg-gray-900 cursor-pointer transition-all"
+                  className="flex min-w-0 max-w-full cursor-pointer flex-col justify-between overflow-hidden rounded-xl border border-gray-800 bg-gray-900/80 p-4 shadow-md transition-all hover:border-purple-600/50 hover:bg-gray-900"
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
@@ -473,7 +451,7 @@ export function WealthManager({
                   }}
                   aria-label={`Ver detalhes de riqueza de ${char.name}`}
                 >
-                  <div className="flex items-center gap-3 border-b border-gray-800 pb-3">
+                  <div className="flex min-w-0 max-w-full items-center gap-3 border-b border-gray-800 pb-3">
                     {char.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -491,7 +469,8 @@ export function WealthManager({
                       <p className="text-[11px] text-gray-400">
                         Nível {char.level} ·{" "}
                         <span className="text-amber-400 font-semibold">
-                          ~{charTotalInGold.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} PO
+                          ~{charTotalInGold.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}{" "}
+                          PO
                         </span>
                       </p>
                     </div>
@@ -513,20 +492,14 @@ export function WealthManager({
                     )}
                   </div>
 
-                  <div className="grid grid-cols-5 gap-1.5 pt-3">
-                    {COIN_KEYS.map((k) => (
-                      <div
-                        key={k}
-                        className="flex flex-col items-center bg-gray-950/70 border border-gray-800/80 rounded-lg py-1.5"
-                        title={COIN_CONFIG[k].name}
-                      >
-                        <span className="text-xs">{COIN_CONFIG[k].icon}</span>
-                        <span className={`text-[11px] font-bold mt-1 ${COIN_CONFIG[k].color}`}>
-                          {(char.coins[k] ?? 0).toLocaleString("pt-BR")}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                  <CurrencySummary
+                    balance={char.coins}
+                    variant="character"
+                    ariaLabel={`Saldos de moedas de ${char.name}`}
+                    className="pt-3"
+                    onBalanceChange={(coins) => void handleCharacterCoinsChange(char, coins)}
+                    isLoading={savingCharacterId === char.id}
+                  />
                 </div>
               );
             })}
@@ -571,19 +544,15 @@ export function WealthManager({
 
       {/* 4. Modal / Overlay Flutuante de Transferência */}
       {isTransferModalOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="transfer-modal-title"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200"
-          onClick={handleCloseTransfer}
+        <Modal
+          open={isTransferModalOpen}
+          onClose={handleCloseTransfer}
+          labelledBy="transfer-modal-title"
+          className="max-w-lg rounded-2xl border border-purple-800/60 bg-gray-950 p-6 text-gray-100 shadow-2xl"
         >
-          <div
-            className="w-full max-w-lg rounded-2xl border border-purple-800/60 bg-gray-950 p-6 text-gray-100 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <Modal.Header className="border-b border-gray-800 pb-3">
             {/* Cabeçalho do Modal */}
-            <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-xl">⚖️</span>
                 <div>
@@ -604,12 +573,17 @@ export function WealthManager({
                 ✕
               </button>
             </div>
+          </Modal.Header>
 
-            <form onSubmit={handleTransfer} className="space-y-4 pt-1">
+          <form onSubmit={handleTransfer} className="contents">
+            <Modal.Body className="space-y-4 pt-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Origem */}
                 <div>
-                  <label htmlFor="source-character-select" className="block text-xs font-semibold text-gray-300 mb-1.5">
+                  <label
+                    htmlFor="source-character-select"
+                    className="block text-xs font-semibold text-gray-300 mb-1.5"
+                  >
                     Personagem de Origem (Quem envia)
                   </label>
                   <select
@@ -644,7 +618,10 @@ export function WealthManager({
 
                 {/* Destino */}
                 <div>
-                  <label htmlFor="target-character-select" className="block text-xs font-semibold text-gray-300 mb-1.5">
+                  <label
+                    htmlFor="target-character-select"
+                    className="block text-xs font-semibold text-gray-300 mb-1.5"
+                  >
                     Personagem de Destino (Quem recebe)
                   </label>
                   <select
@@ -674,7 +651,10 @@ export function WealthManager({
               {/* Moeda e Quantidade */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
                 <div>
-                  <label htmlFor="coin-type-select" className="block text-xs font-semibold text-gray-300 mb-1.5">
+                  <label
+                    htmlFor="coin-type-select"
+                    className="block text-xs font-semibold text-gray-300 mb-1.5"
+                  >
                     Tipo de Moeda
                   </label>
                   <select
@@ -692,7 +672,10 @@ export function WealthManager({
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label htmlFor="transfer-amount-input" className="block text-xs font-semibold text-gray-300 mb-1.5">
+                  <label
+                    htmlFor="transfer-amount-input"
+                    className="block text-xs font-semibold text-gray-300 mb-1.5"
+                  >
                     Quantidade a Transferir
                   </label>
                   <div className="flex gap-2">
@@ -719,45 +702,41 @@ export function WealthManager({
               </div>
 
               {/* Botões de Ação do Modal */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-800">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={handleCloseTransfer}
-                  disabled={isSubmitting}
-                  className="px-4 py-2 text-xs text-gray-400 hover:text-white"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  disabled={isSubmitting || !sourceId || !targetId || !amount}
-                  className="px-5 py-2 text-xs font-bold"
-                >
-                  {isSubmitting ? "Transferindo..." : "Confirmar Transferência"}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
+            </Modal.Body>
+            <Modal.Footer className="flex items-center justify-end gap-3 pt-4 border-t border-gray-800">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleCloseTransfer}
+                disabled={isSubmitting}
+                className="px-4 py-2 text-xs text-gray-400 hover:text-white"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={isSubmitting || !sourceId || !targetId || !amount}
+                className="px-5 py-2 text-xs font-bold"
+              >
+                {isSubmitting ? "Transferindo..." : "Confirmar Transferência"}
+              </Button>
+            </Modal.Footer>
+          </form>
+        </Modal>
       )}
 
       {/* 5. Modal de Detalhes de Riqueza do Personagem */}
       {detailChar && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="character-detail-modal-title"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200"
-          onClick={handleCloseDetail}
+        <Modal
+          open={Boolean(detailChar)}
+          onClose={handleCloseDetail}
+          labelledBy="character-detail-modal-title"
+          className="max-w-2xl rounded-2xl border border-purple-800/60 bg-gray-950 p-6 text-gray-100 shadow-2xl"
         >
-          <div
-            className="w-full max-w-2xl rounded-2xl border border-purple-800/60 bg-gray-950 p-6 text-gray-100 shadow-2xl space-y-5 max-h-[90vh] flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <Modal.Header className="border-b border-gray-800 pb-4">
             {/* Header com Avatar, Nome, Nível e Botão Fechar */}
-            <div className="flex items-start justify-between border-b border-gray-800 pb-4">
+            <div className="flex items-start justify-between">
               <div className="flex items-center gap-3.5">
                 {detailChar.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -789,68 +768,56 @@ export function WealthManager({
                 ✕
               </button>
             </div>
+          </Modal.Header>
 
-            {/* Badges de Saldo das 5 Moedas */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-              {COIN_KEYS.map((k) => {
-                const conf = COIN_CONFIG[k];
-                const amountCoin = detailChar.coins[k] ?? 0;
-                return (
-                  <div
-                    key={k}
-                    className={`flex flex-col items-center justify-center rounded-xl border ${conf.border} ${conf.bg} p-2.5 shadow-inner`}
-                    title={`${conf.name}: ${amountCoin.toLocaleString("pt-BR")}`}
-                  >
-                    <span className="text-base">{conf.icon}</span>
-                    <span className="text-[10px] uppercase font-bold text-gray-400 mt-0.5">
-                      {conf.name}
-                    </span>
-                    <span className={`text-sm font-black mt-0.5 ${conf.color}`}>
-                      {amountCoin.toLocaleString("pt-BR")}
-                    </span>
+          <CurrencySummary
+            balance={detailChar.coins}
+            variant="character"
+            ariaLabel={`Saldos de moedas de ${detailChar.name}`}
+            className="shrink-0"
+            onBalanceChange={handleDetailCoinsChange}
+            isLoading={savingCharacterId === detailChar.id}
+          />
+
+          {/* Navegação por Abas: Inventário vs Extrato */}
+          <div className="shrink-0 flex items-center gap-2 border-b border-gray-800 pb-2">
+            <button
+              type="button"
+              onClick={() => setDetailTab("inventory")}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                detailTab === "inventory"
+                  ? "bg-purple-900/60 text-purple-200 border border-purple-700/60"
+                  : "text-gray-400 hover:text-gray-200 hover:bg-gray-900"
+              }`}
+            >
+              <span>🎒</span>
+              <span>Itens & Inventário</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setDetailTab("statement")}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                detailTab === "statement"
+                  ? "bg-purple-900/60 text-purple-200 border border-purple-700/60"
+                  : "text-gray-400 hover:text-gray-200 hover:bg-gray-900"
+              }`}
+            >
+              <span>📜</span>
+              <span>Extrato da Sessão</span>
+            </button>
+          </div>
+
+          {/* Conteúdo da Aba */}
+          <Modal.Body className="pr-1">
+            {detailTab === "inventory" ? (
+              <div>
+                {loadingInventory ? (
+                  <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-400">
+                    <Spinner size="md" />
+                    <span className="text-xs">Carregando itens do inventário...</span>
                   </div>
-                );
-              })}
-            </div>
-
-            {/* Navegação por Abas: Inventário vs Extrato */}
-            <div className="flex items-center gap-2 border-b border-gray-800 pb-2">
-              <button
-                type="button"
-                onClick={() => setDetailTab("inventory")}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                  detailTab === "inventory"
-                    ? "bg-purple-900/60 text-purple-200 border border-purple-700/60"
-                    : "text-gray-400 hover:text-gray-200 hover:bg-gray-900"
-                }`}
-              >
-                <span>🎒</span>
-                <span>Itens & Inventário</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setDetailTab("statement")}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                  detailTab === "statement"
-                    ? "bg-purple-900/60 text-purple-200 border border-purple-700/60"
-                    : "text-gray-400 hover:text-gray-200 hover:bg-gray-900"
-                }`}
-              >
-                <span>📜</span>
-                <span>Extrato da Sessão</span>
-              </button>
-            </div>
-
-            {/* Conteúdo da Aba */}
-            <div className="flex-1 overflow-y-auto min-h-[220px] max-h-[360px] pr-1">
-              {detailTab === "inventory" ? (
-                <div>
-                  {loadingInventory ? (
-                    <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-400">
-                      <Spinner size="md" />
-                      <span className="text-xs">Carregando itens do inventário...</span>
-                    </div>
-                  ) : (() => {
+                ) : (
+                  (() => {
                     const charItems = inventoryMap[detailChar.id] ?? [];
                     if (charItems.length === 0) {
                       return (
@@ -898,7 +865,10 @@ export function WealthManager({
 
                             return (
                               <div
-                                key={item.content?.id ?? item.junction?.id ?? idx}
+                                key={
+                                  item.content?.id ??
+                                  (item.junction?.id ? String(item.junction.id) : idx)
+                                }
                                 className="flex items-center justify-between px-3.5 py-2.5 text-xs hover:bg-gray-900/80 transition-colors"
                               >
                                 <div className="flex items-center gap-2.5 min-w-0">
@@ -922,104 +892,97 @@ export function WealthManager({
                         </div>
                       </div>
                     );
-                  })()}
-                </div>
-              ) : (
-                /* Aba de Extrato / Movimentações */
-                <div>
-                  {(() => {
-                    const charLogs = sessionLogs.filter(
-                      (log) =>
-                        log.sourceName === detailChar.name ||
-                        log.targetName === detailChar.name
-                    );
+                  })()
+                )}
+              </div>
+            ) : (
+              /* Aba de Extrato / Movimentações */
+              <div>
+                {(() => {
+                  const charLogs = sessionLogs.filter(
+                    (log) =>
+                      log.sourceName === detailChar.name || log.targetName === detailChar.name,
+                  );
 
-                    if (charLogs.length === 0) {
-                      return (
-                        <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-8 text-center text-sm text-gray-400">
-                          Nenhuma movimentação registrada nesta sessão.
-                        </div>
-                      );
-                    }
-
+                  if (charLogs.length === 0) {
                     return (
-                      <div className="space-y-2">
-                        {charLogs.map((log) => {
-                          const isSource = log.sourceName === detailChar.name;
-                          const conf = COIN_CONFIG[log.coinType];
-
-                          return (
-                            <div
-                              key={log.id}
-                              className="flex items-center justify-between rounded-xl border border-gray-800 bg-gray-900/60 px-3.5 py-2.5 text-xs"
-                            >
-                              <div className="flex items-center gap-3">
-                                <span className="font-mono text-gray-500 text-[11px]">
-                                  {log.timestamp}
-                                </span>
-                                <div>
-                                  <div className="flex items-center gap-1.5 font-medium text-white">
-                                    <span>{isSource ? "Envio para" : "Recebido de"}</span>
-                                    <span className="font-bold text-purple-300">
-                                      {isSource ? log.targetName : log.sourceName}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-1 font-bold">
-                                <span
-                                  className={
-                                    isSource
-                                      ? "text-rose-400"
-                                      : "text-emerald-400"
-                                  }
-                                >
-                                  {isSource ? "-" : "+"}
-                                  {log.amount.toLocaleString("pt-BR")}
-                                </span>
-                                <span title={conf.name}>{conf.icon}</span>
-                              </div>
-                            </div>
-                          );
-                        })}
+                      <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-8 text-center text-sm text-gray-400">
+                        Nenhuma movimentação registrada nesta sessão.
                       </div>
                     );
-                  })()}
-                </div>
-              )}
-            </div>
+                  }
 
-            {/* Rodapé do Modal com Botão de Transferir e Fechar */}
-            <div className="flex items-center justify-between pt-4 border-t border-gray-800">
-              {characters.length >= 2 ? (
-                <Button
-                  type="button"
-                  variant="primary"
-                  onClick={() => {
-                    const charToTransfer = detailChar.id;
-                    handleCloseDetail();
-                    handleOpenTransfer(charToTransfer);
-                  }}
-                  className="px-4 py-2 text-xs font-bold flex items-center gap-1.5"
-                >
-                  <span>⇄</span>
-                  <span>Transferir</span>
-                </Button>
-              ) : (
-                <div />
-              )}
+                  return (
+                    <div className="space-y-2">
+                      {charLogs.map((log) => {
+                        const isSource = log.sourceName === detailChar.name;
+                        const conf = COIN_CONFIG[log.coinType];
+
+                        return (
+                          <div
+                            key={log.id}
+                            className="flex items-center justify-between rounded-xl border border-gray-800 bg-gray-900/60 px-3.5 py-2.5 text-xs"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="font-mono text-gray-500 text-[11px]">
+                                {log.timestamp}
+                              </span>
+                              <div>
+                                <div className="flex items-center gap-1.5 font-medium text-white">
+                                  <span>{isSource ? "Envio para" : "Recebido de"}</span>
+                                  <span className="font-bold text-purple-300">
+                                    {isSource ? log.targetName : log.sourceName}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1 font-bold">
+                              <span className={isSource ? "text-rose-400" : "text-emerald-400"}>
+                                {isSource ? "-" : "+"}
+                                {log.amount.toLocaleString("pt-BR")}
+                              </span>
+                              <span title={conf.name}>{conf.icon}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </Modal.Body>
+
+          {/* Rodapé do Modal com Botão de Transferir e Fechar */}
+          <Modal.Footer className="flex items-center justify-between pt-4 border-t border-gray-800">
+            {characters.length >= 2 ? (
               <Button
                 type="button"
-                variant="ghost"
-                onClick={handleCloseDetail}
-                className="px-4 py-2 text-xs text-gray-400 hover:text-white"
+                variant="primary"
+                onClick={() => {
+                  const charToTransfer = detailChar.id;
+                  handleCloseDetail();
+                  handleOpenTransfer(charToTransfer);
+                }}
+                className="px-4 py-2 text-xs font-bold flex items-center gap-1.5"
               >
-                Fechar
+                <span>⇄</span>
+                <span>Transferir</span>
               </Button>
-            </div>
-          </div>
-        </div>
+            ) : (
+              <div />
+            )}
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleCloseDetail}
+              className="px-4 py-2 text-xs text-gray-400 hover:text-white"
+            >
+              Fechar
+            </Button>
+          </Modal.Footer>
+        </Modal>
       )}
     </div>
   );
