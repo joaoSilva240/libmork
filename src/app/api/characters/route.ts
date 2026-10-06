@@ -120,6 +120,7 @@ export async function POST(request: NextRequest) {
           ownerId: session.user.id,
           name,
           classId: classId || null,
+          raceId: raceId || null,
           imageUrl: imageUrl || null,
           attributes: finalAttributes,
           hitPointsMax: derived.hitPointsMax + raceHpBonus,

@@ -116,11 +116,24 @@ describe("Character Validator Schemas", () => {
   it("should validate update character payload", () => {
     const updatePayload = {
       name: "Valeros o Bravo",
+      raceId: "550e8400-e29b-41d4-a716-446655440000",
       hitPointsCurrent: 12,
       xp: 150,
     };
 
     const result = updateCharacterSchema.safeParse(updatePayload);
     expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.raceId).toBe("550e8400-e29b-41d4-a716-446655440000");
+    }
+
+    const nullRacePayload = {
+      raceId: null,
+    };
+    const nullResult = updateCharacterSchema.safeParse(nullRacePayload);
+    expect(nullResult.success).toBe(true);
+    if (nullResult.success) {
+      expect(nullResult.data.raceId).toBeNull();
+    }
   });
 });

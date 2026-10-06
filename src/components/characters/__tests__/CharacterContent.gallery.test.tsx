@@ -1129,6 +1129,215 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
     });
   });
 
+  describe("Race Heritage and Traits Section", () => {
+    const mockRace = {
+      id: "race-elf-1",
+      name: "Elfo Nobre",
+      description: "Uma raça graciosa com profunda conexão mágica.",
+      speed: 30,
+      size: "Médio",
+      hitPointsBonus: 6,
+      attributeBonuses: { destreza: 2, inteligencia: 1 },
+      languages: ["Comum", "Élfico"],
+      traits: [
+        { name: "Visão na Penumbra", description: "Enxerga na penumbra como se fosse luz plena." },
+        { name: "Ancestralidade Élfica", description: "Vantagem contra efeitos de encantamento." },
+      ],
+      heritages: [
+        { name: "Elfo da Floresta", description: "Velocidade e camuflagem naturais nas matas." },
+      ],
+    };
+
+    it("renders the 🧬 Herança de Raça section when characterRaceId is provided with traits and heritages", async () => {
+      globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+        if (url.includes("/content/spells") || url.includes("/content/items") || url.includes("/content/conditions")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ data: { linked: [], available: [] } }),
+          });
+        }
+        if (url.includes("/api/races/race-elf-1")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ success: true, data: mockRace }),
+          });
+        }
+        return Promise.resolve({
+          ok: false,
+          json: () => Promise.resolve({ error: "Not found" }),
+        });
+      });
+
+      renderWithQuery(
+        <CharacterContent
+          characterId="char-123"
+          characterRaceId="race-elf-1"
+          defaultType="items"
+          allowedTypes={["items", "spells", "conditions"]}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("🧬 Herança de Raça")).toBeInTheDocument();
+        expect(screen.getByText(/Elfo Nobre \(3\)/i)).toBeInTheDocument();
+      });
+
+      // Verify trait cards
+      const trait1 = screen.getByText("Visão na Penumbra");
+      expect(trait1).toBeInTheDocument();
+      const trait1Card = trait1.closest(".snap-start");
+      expect(trait1Card).toHaveClass("border-emerald-900/40");
+      expect(within(trait1Card as HTMLElement).getByText("Traço")).toBeInTheDocument();
+      expect(within(trait1Card as HTMLElement).getByText("Traço Racial")).toBeInTheDocument();
+
+      const trait2 = screen.getByText("Ancestralidade Élfica");
+      expect(trait2).toBeInTheDocument();
+
+      // Verify heritage card
+      const heritage1 = screen.getByText("Elfo da Floresta");
+      expect(heritage1).toBeInTheDocument();
+      const heritageCard = heritage1.closest(".snap-start");
+      expect(heritageCard).toHaveClass("border-teal-900/40");
+      expect(within(heritageCard as HTMLElement).getByText("Herança")).toBeInTheDocument();
+      expect(within(heritageCard as HTMLElement).getByText("Linhagem")).toBeInTheDocument();
+    });
+
+    it("opens and closes expanded detail modal when clicking a racial feature card", async () => {
+      globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+        if (url.includes("/content/spells") || url.includes("/content/items") || url.includes("/content/conditions")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ data: { linked: [], available: [] } }),
+          });
+        }
+        if (url.includes("/api/races/race-elf-1")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ success: true, data: mockRace }),
+          });
+        }
+        return Promise.resolve({
+          ok: false,
+          json: () => Promise.resolve({ error: "Not found" }),
+        });
+      });
+
+      renderWithQuery(
+        <CharacterContent
+          characterId="char-123"
+          characterRaceId="race-elf-1"
+          defaultType="items"
+          allowedTypes={["items", "spells", "conditions"]}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("Visão na Penumbra")).toBeInTheDocument();
+      });
+
+      // Click card to open modal
+      const card = screen.getByText("Visão na Penumbra").closest(".snap-start")!;
+      fireEvent.click(card);
+
+      // Verify modal content: title, badges, attributes, speed, HP, description
+      expect(screen.getByRole("dialog", { name: "Visão na Penumbra" })).toBeInTheDocument();
+      expect(screen.getByText("Elfo Nobre · Traço Racial")).toBeInTheDocument();
+      expect(screen.getByText("Traço Racial Ativo")).toBeInTheDocument();
+      expect(screen.getByText("Vinculado à raça Elfo Nobre.")).toBeInTheDocument();
+      expect(screen.getByText("30m")).toBeInTheDocument();
+      expect(screen.getByText("Médio")).toBeInTheDocument();
+      expect(screen.getByText("+6 HP")).toBeInTheDocument();
+      expect(screen.getByText("DESTREZA: +2")).toBeInTheDocument();
+      expect(screen.getByText("INTELIGENCIA: +1")).toBeInTheDocument();
+      expect(screen.getByText("Comum, Élfico")).toBeInTheDocument();
+      expect(screen.getByText("Enxerga na penumbra como se fosse luz plena.")).toBeInTheDocument();
+
+      // Close modal via footer button
+      fireEvent.click(screen.getByText("Fechar"));
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+      // Reopen and test close button '✕'
+      fireEvent.click(card);
+      expect(screen.getByRole("dialog", { name: "Visão na Penumbra" })).toBeInTheDocument();
+      fireEvent.click(screen.getByText("✕"));
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("renders empty state when characterRaceId is provided but race has no traits or heritages", async () => {
+      const mockEmptyRace = {
+        id: "race-empty-1",
+        name: "Sem Traços",
+        speed: 30,
+        size: "Médio",
+        hitPointsBonus: 0,
+        attributeBonuses: {},
+        languages: [],
+        traits: [],
+        heritages: [],
+      };
+
+      globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+        if (url.includes("/content/spells") || url.includes("/content/items") || url.includes("/content/conditions")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ data: { linked: [], available: [] } }),
+          });
+        }
+        if (url.includes("/api/races/race-empty-1")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ success: true, data: mockEmptyRace }),
+          });
+        }
+        return Promise.resolve({
+          ok: false,
+          json: () => Promise.resolve({ error: "Not found" }),
+        });
+      });
+
+      renderWithQuery(
+        <CharacterContent
+          characterId="char-123"
+          characterRaceId="race-empty-1"
+          defaultType="items"
+          allowedTypes={["items", "spells", "conditions"]}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("Nenhuma característica cadastrada para esta raça")).toBeInTheDocument();
+      });
+    });
+
+    it("renders message when characterRaceId is not provided", async () => {
+      globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+        if (url.includes("/content/spells") || url.includes("/content/items") || url.includes("/content/conditions")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ data: { linked: [], available: [] } }),
+          });
+        }
+        return Promise.resolve({
+          ok: false,
+          json: () => Promise.resolve({ error: "Not found" }),
+        });
+      });
+
+      renderWithQuery(
+        <CharacterContent
+          characterId="char-123"
+          characterRaceId={null}
+          defaultType="items"
+          allowedTypes={["items", "spells", "conditions"]}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("Nenhuma raça vinculada ao personagem")).toBeInTheDocument();
+      });
+    });
+  });
+
   describe("AI Translation with API Fallback (#UI-011)", () => {
     it("prioritizes AI translation (name, description, extraEffect) over original API fields in cards and detail modal", async () => {
       const mockSpells = [

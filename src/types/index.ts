@@ -76,6 +76,7 @@ export type Character = {
   id: string;
   ownerId: string;
   classId: string | null;
+  raceId?: string | null;
   name: string;
   imageUrl: string | null;
   hitPointsMax: number;

@@ -69,3 +69,33 @@ export function useClassBenefitsQuery(
     enabled: Boolean(characterClassId) && (options?.enabled ?? true),
   });
 }
+
+export type RaceResponse = {
+  success: boolean;
+  data: {
+    id: string;
+    name: string;
+    description?: string | null;
+    speed: number;
+    size: string;
+    hitPointsBonus: number;
+    attributeBonuses: Record<string, number>;
+    languages: string[];
+    traits: Array<{ name: string; description?: string }>;
+    heritages: Array<{ name: string; description?: string }>;
+    imageUrl?: string | null;
+    sourceSystem?: string | null;
+  };
+};
+
+export function useRaceDetailsQuery(
+  raceId?: string | null,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: queryKeys.races.detail(raceId ?? ""),
+    queryFn: () => apiFetch<RaceResponse>(`/api/races/${raceId}`),
+    enabled: Boolean(raceId) && (options?.enabled ?? true),
+  });
+}
+

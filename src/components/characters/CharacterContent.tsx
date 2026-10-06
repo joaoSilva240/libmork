@@ -7,6 +7,7 @@ import {
   useCharacterContentQuery,
   useCharacterGalleryContentQuery,
   useClassBenefitsQuery,
+  useRaceDetailsQuery,
 } from "@/hooks/queries/useCharacterContentQueries";
 import type { ContentType } from "@/lib/validators/content";
 import { useSocket, DICE_ROLL_LOADING_DELAY } from "@/context/SocketContext";
@@ -246,6 +247,7 @@ type CharacterContentProps = {
   onStartRolling?: () => void;
   onEndRolling?: () => void;
   characterClassId?: string | null;
+  characterRaceId?: string | null;
   characterLevel?: number;
 };
 
@@ -256,6 +258,13 @@ type ClassBenefitItem = {
   description: string;
   hpBonus: number;
   manaBonus: number;
+};
+
+export type RaceFeatureItem = {
+  id: string;
+  name: string;
+  description: string;
+  category: "trait" | "heritage";
 };
 
 export function parseClassBenefits(data: unknown): ClassBenefitItem[] {
@@ -364,12 +373,14 @@ export function CharacterContent({
   onStartRolling,
   onEndRolling,
   characterClassId,
+  characterRaceId,
   characterLevel,
 }: CharacterContentProps) {
   const queryClient = useQueryClient();
   const isGalleryMode = Boolean(allowedTypes?.includes("items") && allowedTypes?.includes("spells"));
   const [activeType, setActiveType] = useState<ContentType>(defaultType);
   const [selectedClassBenefit, setSelectedClassBenefit] = useState<ClassBenefitItem | null>(null);
+  const [selectedRaceFeature, setSelectedRaceFeature] = useState<RaceFeatureItem | null>(null);
   const [prevCharacterId, setPrevCharacterId] = useState(characterId);
 
   // TanStack Query hooks
@@ -380,6 +391,9 @@ export function CharacterContent({
     enabled: isGalleryMode,
   });
   const classBenefitsQuery = useClassBenefitsQuery(characterClassId, {
+    enabled: isGalleryMode,
+  });
+  const raceDetailsQuery = useRaceDetailsQuery(characterRaceId, {
     enabled: isGalleryMode,
   });
 
@@ -400,11 +414,34 @@ export function CharacterContent({
     ? parseClassBenefits(classBenefitsQuery.data.data)
     : [];
 
+  const raceData = isGalleryMode && raceDetailsQuery.data?.data ? raceDetailsQuery.data.data : null;
+  const raceFeatures: RaceFeatureItem[] = isGalleryMode && raceData
+    ? [
+        ...(Array.isArray(raceData.traits)
+          ? raceData.traits.map((t, idx) => ({
+              id: `trait-${idx}`,
+              name: t.name,
+              description: t.description || "",
+              category: "trait" as const,
+            }))
+          : []),
+        ...(Array.isArray(raceData.heritages)
+          ? raceData.heritages.map((h, idx) => ({
+              id: `heritage-${idx}`,
+              name: h.name,
+              description: h.description || "",
+              category: "heritage" as const,
+            }))
+          : []),
+      ]
+    : [];
+
   const isLoading = isGalleryMode
     ? galleryQueries.spells.isLoading ||
       galleryQueries.items.isLoading ||
       galleryQueries.conditions.isLoading ||
-      (Boolean(characterClassId) && classBenefitsQuery.isLoading)
+      (Boolean(characterClassId) && classBenefitsQuery.isLoading) ||
+      (Boolean(characterRaceId) && raceDetailsQuery.isLoading)
     : contentQuery.isLoading;
   const [equippedItemIds, setEquippedItemIds] = useState<string[]>(() => {
     if (typeof window === "undefined") return [];
@@ -1223,6 +1260,71 @@ export function CharacterContent({
                 </div>
               )}
             </div>
+
+            {/* Seção 5: Herança de Raça */}
+            <div>
+              <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center justify-between">
+                <span>🧬 Herança de Raça</span>
+                {raceData && (
+                  <span className="text-[10px] text-gray-400 font-normal">
+                    {raceData.name} ({raceFeatures.length})
+                  </span>
+                )}
+              </h4>
+              {raceFeatures.length === 0 ? (
+                <p className="py-2 text-xs text-gray-500 italic">
+                  {characterRaceId ? "Nenhuma característica cadastrada para esta raça" : "Nenhuma raça vinculada ao personagem"}
+                </p>
+              ) : (
+                <div className="flex gap-2 overflow-x-auto pb-2 pt-1 scroll-smooth scrollbar-hide snap-x">
+                  {raceFeatures.map((rf) => {
+                    const isHeritage = rf.category === "heritage";
+                    return (
+                      <div
+                        key={rf.id}
+                        onClick={() => (!isBusy ? setSelectedRaceFeature(rf) : undefined)}
+                        className={`w-[28%] min-w-[92px] max-w-[110px] aspect-square shrink-0 rounded-xl p-2 snap-start relative overflow-hidden flex flex-col justify-end items-center text-center group cursor-pointer transition-all active:scale-[0.98] ${
+                          isHeritage
+                            ? "border border-teal-900/40 bg-gray-950 hover:border-teal-600 hover:bg-teal-950/20"
+                            : "border border-emerald-900/40 bg-gray-950 hover:border-emerald-600 hover:bg-emerald-950/20"
+                        }`}
+                      >
+                        {/* Background Icon */}
+                        <div className="absolute inset-0 z-0 flex items-center justify-center opacity-40 pointer-events-none overflow-hidden">
+                          <span className="text-3xl select-none leading-none">
+                            {isHeritage ? "🌳" : "🧬"}
+                          </span>
+                        </div>
+
+                        {/* Shadow degradê */}
+                        <div className="absolute inset-0 z-10 bg-gradient-to-t from-gray-950 via-gray-950/80 to-transparent pointer-events-none" />
+
+                        {/* Badge de Categoria */}
+                        <div className={`absolute top-1.5 right-1.5 z-20 flex items-center rounded-full px-1.5 py-0.2 border text-[8px] font-bold ${
+                          isHeritage
+                            ? "bg-teal-950/80 border-teal-700/60 text-teal-300"
+                            : "bg-emerald-950/80 border-emerald-700/60 text-emerald-300"
+                        }`}>
+                          {isHeritage ? "Herança" : "Traço"}
+                        </div>
+
+                        {/* Detalhes do Card */}
+                        <div className="relative z-20 flex flex-col items-center justify-end w-full min-w-0">
+                          <p className="text-[11px] font-bold text-white truncate w-full" title={rf.name}>
+                            {rf.name}
+                          </p>
+                          <span className={`mt-0.5 text-[9px] font-medium truncate w-full leading-tight ${
+                            isHeritage ? "text-teal-300" : "text-emerald-300"
+                          }`}>
+                            {isHeritage ? "Linhagem" : "Traço Racial"}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div className={`flex-1 flex flex-col ${activeType === "skills" ? "" : "overflow-y-auto max-h-[60vh]"}`}>
@@ -1751,6 +1853,137 @@ export function CharacterContent({
                   <button
                     type="button"
                     onClick={() => setSelectedClassBenefit(null)}
+                    className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-1.5 text-xs font-bold text-gray-200 hover:bg-gray-700 hover:text-white transition-colors cursor-pointer"
+                  >
+                    Fechar
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {selectedRaceFeature && raceData && (() => {
+          const isHeritage = selectedRaceFeature.category === "heritage";
+          return (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+              onClick={() => setSelectedRaceFeature(null)}
+              role="dialog"
+              aria-modal="true"
+              aria-label={selectedRaceFeature.name}
+            >
+              <div
+                className="relative w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl border border-gray-800 bg-gray-950 shadow-2xl overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Cabeçalho */}
+                <div className="flex items-center justify-between border-b border-gray-800 p-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-gray-900 border flex items-center justify-center ${
+                      isHeritage ? "border-teal-500/40" : "border-emerald-500/40"
+                    }`}>
+                      <span className="text-2xl select-none leading-none">
+                        {isHeritage ? "🌳" : "🧬"}
+                      </span>
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-bold text-white truncate" title={selectedRaceFeature.name}>
+                        {selectedRaceFeature.name}
+                      </h3>
+                      <span className={`text-[11px] font-medium ${isHeritage ? "text-teal-300" : "text-emerald-300"}`}>
+                        {raceData.name} · {isHeritage ? "Herança / Linhagem" : "Traço Racial"}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRaceFeature(null)}
+                    aria-label="Fechar"
+                    className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Corpo com Scroll */}
+                <div className="overflow-y-auto p-4 space-y-4 max-h-[60vh]">
+                  {/* Status / Origem */}
+                  <div className="rounded-lg bg-emerald-950/40 border border-emerald-800/60 p-3 flex items-center gap-3">
+                    <span className="text-emerald-400 text-lg select-none">🧬</span>
+                    <div>
+                      <p className="text-xs font-bold text-emerald-300">
+                        {isHeritage ? "Herança Ativa" : "Traço Racial Ativo"}
+                      </p>
+                      <p className="text-[11px] text-emerald-400/80">
+                        Vinculado à raça {raceData.name}.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Metadados / Atributos da Raça */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
+                      <span className="text-[10px] uppercase tracking-wider text-gray-400 block">Velocidade</span>
+                      <span className="text-xs font-bold text-emerald-300">{raceData.speed}m</span>
+                    </div>
+                    {Boolean(raceData.size) && (
+                      <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
+                        <span className="text-[10px] uppercase tracking-wider text-gray-400 block">Tamanho</span>
+                        <span className="text-xs font-bold text-gray-200">{raceData.size}</span>
+                      </div>
+                    )}
+                    {raceData.hitPointsBonus > 0 && (
+                      <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
+                        <span className="text-[10px] uppercase tracking-wider text-gray-400 block">Bônus de HP</span>
+                        <span className="text-xs font-bold text-emerald-400">+{raceData.hitPointsBonus} HP</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Bônus de Atributos */}
+                  {raceData.attributeBonuses && Object.keys(raceData.attributeBonuses).length > 0 && (
+                    <div className="space-y-1">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">Bônus de Atributos</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {Object.entries(raceData.attributeBonuses).map(([attr, bonus]) => (
+                          <span
+                            key={attr}
+                            className="rounded-md bg-gray-900 px-2 py-0.5 text-[11px] font-bold text-emerald-400 border border-gray-800"
+                          >
+                            {attr.toUpperCase()}: {bonus > 0 ? `+${bonus}` : bonus}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Idiomas */}
+                  {Array.isArray(raceData.languages) && raceData.languages.length > 0 && (
+                    <div className="space-y-1">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">Idiomas</span>
+                      <p className="text-xs text-gray-300">
+                        {raceData.languages.join(", ")}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Descrição Completa */}
+                  {Boolean(selectedRaceFeature.description) && (
+                    <div className="space-y-1">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">Descrição do Traço</span>
+                      <div className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap rounded-lg bg-gray-900/40 p-3 border border-gray-800/60">
+                        {selectedRaceFeature.description}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Rodapé */}
+                <div className="border-t border-gray-800 p-4 flex justify-end bg-gray-900/50">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRaceFeature(null)}
                     className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-1.5 text-xs font-bold text-gray-200 hover:bg-gray-700 hover:text-white transition-colors cursor-pointer"
                   >
                     Fechar

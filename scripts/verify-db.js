@@ -72,6 +72,22 @@ async function verifyDatabase() {
       throw new Error('Coluna campaign_invites.user_id NÃO encontrada!');
     }
 
+    // 6. Verificação da coluna characters.race_id
+    console.log('\n6. Verificando characters.race_id:');
+    const raceIdMeta = await client.query(`
+      SELECT column_name, data_type, is_nullable
+      FROM information_schema.columns
+      WHERE table_name = 'characters' AND column_name = 'race_id';
+    `);
+    if (raceIdMeta.rows.length > 0) {
+      console.log(`✓ Coluna characters.race_id presente: tipo=${raceIdMeta.rows[0].data_type}, nullable=${raceIdMeta.rows[0].is_nullable}`);
+    } else {
+      throw new Error('Coluna characters.race_id NÃO encontrada!');
+    }
+
+    const charSelect = await client.query(`SELECT id, name, race_id FROM characters LIMIT 3;`);
+    console.log(`✓ Select em characters com race_id funcionou! Registros: ${charSelect.rowCount}`);
+
     console.log('\n=== TODAS AS VERIFICAÇÕES PASSARAM COM SUCESSO! ===');
   } catch (error) {
     console.error('✗ Erro na verificação do banco:', error);
