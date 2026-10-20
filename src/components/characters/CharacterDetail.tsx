@@ -833,7 +833,6 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
   const movementLabel = raceData ? `${movementSize.speed}m` : "—";
   const sizeLabel = raceData && movementSize.size ? movementSize.size : "—";
   const hpPercent = Math.min(100, Math.max(0, (character.hitPointsCurrent / Math.max(character.hitPointsMax, 1)) * 100));
-  const manaPercent = Math.min(100, Math.max(0, (character.manaPointsCurrent / Math.max(character.manaPointsMax, 1)) * 100));
 
   return (
     <div className="relative mx-auto min-h-screen max-w-md bg-gray-950 text-gray-100 pb-[calc(6rem+env(safe-area-inset-bottom))] shadow-2xl font-sans">
@@ -990,11 +989,35 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
                   {character.manaPointsCurrent} / {character.manaPointsMax}
                 </span>
               </div>
-              <div className="h-1 w-full overflow-hidden rounded-full bg-gray-900">
-                <div
-                  className="h-full bg-blue-500 transition-all duration-300"
-                  style={{ width: `${manaPercent}%` }}
-                />
+              <div
+                className="flex h-1.5 w-full items-center gap-0.5 overflow-hidden"
+                role="progressbar"
+                aria-valuenow={character.manaPointsCurrent}
+                aria-valuemin={0}
+                aria-valuemax={character.manaPointsMax}
+                aria-label="Pontos de Mana"
+                data-testid="mana-bar-segmented"
+              >
+                {Math.max(0, Math.floor(character.manaPointsMax || 0)) > 0 ? (
+                  Array.from({ length: Math.max(0, Math.floor(character.manaPointsMax || 0)) }, (_, index) => {
+                    const isFilled = index < Math.max(0, Math.min(character.manaPointsMax, character.manaPointsCurrent || 0));
+                    return (
+                      <div
+                        key={index}
+                        data-testid="mana-segment"
+                        data-filled={isFilled ? "true" : "false"}
+                        className={`h-full flex-1 rounded-sm transition-all duration-200 ${
+                          isFilled
+                            ? "bg-blue-500 shadow-[0_0_3px_rgba(59,130,246,0.6)]"
+                            : "bg-gray-900 border border-gray-800/80"
+                        }`}
+                        title={`Mana ${index + 1}/${character.manaPointsMax}: ${isFilled ? "Ativo" : "Gasto"}`}
+                      />
+                    );
+                  })
+                ) : (
+                  <div className="h-full w-full rounded-sm bg-gray-900 border border-gray-800/80" />
+                )}
               </div>
             </div>
 

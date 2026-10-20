@@ -166,4 +166,26 @@ describe("CharacterDetail - Sticky Character Summary (Issue #11)", () => {
     expect(screen.getByTestId("character-status-summary")).toBeInTheDocument();
     expect(summaryCard).toHaveTextContent("Thorin Oakenshield");
   });
+
+  it("renderiza a barra de mana segmentada com segmentos preenchidos e vazios conforme mana atual e máxima", async () => {
+    renderWithQuery(<CharacterDetail />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Thorin Oakenshield")).toBeInTheDocument();
+    });
+
+    const manaBar = screen.getByTestId("mana-bar-segmented");
+    expect(manaBar).toBeInTheDocument();
+
+    const segments = screen.getAllByTestId("mana-segment");
+    expect(segments).toHaveLength(12);
+
+    segments.slice(0, 6).forEach((segment) => {
+      expect(segment).toHaveAttribute("data-filled", "true");
+    });
+
+    segments.slice(6).forEach((segment) => {
+      expect(segment).toHaveAttribute("data-filled", "false");
+    });
+  });
 });

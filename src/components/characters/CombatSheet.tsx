@@ -65,7 +65,6 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
 
   const { character, skills, spells } = data;
   const hpPercent = Math.min(100, Math.max(0, (character.hitPointsCurrent / Math.max(character.hitPointsMax, 1)) * 100));
-  const manaPercent = Math.min(100, Math.max(0, (character.manaPointsCurrent / Math.max(character.manaPointsMax, 1)) * 100));
   const currentCampaignId = character.campaignId ?? "";
 
   // Helper function to roll dice with 3-second delay
@@ -138,8 +137,35 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
             <span>MANA (MP)</span>
             <span>{character.manaPointsCurrent} / {character.manaPointsMax}</span>
           </div>
-          <div className="h-3 w-full overflow-hidden rounded-full bg-gray-900">
-            <div className="h-full bg-blue-600 transition-all" style={{ width: `${manaPercent}%` }} />
+          <div
+            className="flex h-3 w-full items-center gap-0.5 overflow-hidden"
+            role="progressbar"
+            aria-valuenow={character.manaPointsCurrent}
+            aria-valuemin={0}
+            aria-valuemax={character.manaPointsMax}
+            aria-label="Pontos de Mana"
+            data-testid="mana-bar-segmented"
+          >
+            {Math.max(0, Math.floor(character.manaPointsMax || 0)) > 0 ? (
+              Array.from({ length: Math.max(0, Math.floor(character.manaPointsMax || 0)) }, (_, index) => {
+                const isFilled = index < Math.max(0, Math.min(character.manaPointsMax, character.manaPointsCurrent || 0));
+                return (
+                  <div
+                    key={index}
+                    data-testid="mana-segment"
+                    data-filled={isFilled ? "true" : "false"}
+                    className={`h-full flex-1 rounded-sm transition-all duration-200 ${
+                      isFilled
+                        ? "bg-blue-600"
+                        : "bg-gray-900 border border-gray-800/80"
+                    }`}
+                    title={`Mana ${index + 1}/${character.manaPointsMax}: ${isFilled ? "Ativo" : "Gasto"}`}
+                  />
+                );
+              })
+            ) : (
+              <div className="h-full w-full rounded-sm bg-gray-900 border border-gray-800/80" />
+            )}
           </div>
         </div>
       </div>
