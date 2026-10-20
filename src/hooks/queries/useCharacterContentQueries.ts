@@ -82,7 +82,14 @@ export type RaceResponse = {
     attributeBonuses: Record<string, number>;
     languages: string[];
     traits: Array<{ name: string; description?: string }>;
-    heritages: Array<{ name: string; description?: string }>;
+    heritages: Array<{
+      name: string;
+      description?: string;
+      speed?: number;
+      size?: string;
+      hitPointsBonus?: number;
+      attributeBonuses?: Partial<Record<"forca" | "destreza" | "vigor" | "inteligencia" | "empatia", number>>;
+    }>;
     imageUrl?: string | null;
     sourceSystem?: string | null;
   };

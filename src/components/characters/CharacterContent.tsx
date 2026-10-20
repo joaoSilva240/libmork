@@ -268,6 +268,10 @@ export type RaceFeatureItem = {
   name: string;
   description: string;
   category: "trait" | "heritage";
+  speed?: number;
+  size?: string;
+  hitPointsBonus?: number;
+  attributeBonuses?: Record<string, number>;
 };
 
 export function parseClassBenefits(data: unknown): ClassBenefitItem[] {
@@ -440,9 +444,13 @@ export function CharacterContent({
         ...(Array.isArray(raceData.heritages)
           ? raceData.heritages.map((h, idx) => ({
               id: `heritage-${idx}`,
-              name: h.name,
-              description: h.description || "",
-              category: "heritage" as const,
+               name: h.name,
+               description: h.description || "",
+               category: "heritage" as const,
+               speed: h.speed,
+               size: h.size,
+               hitPointsBonus: h.hitPointsBonus ?? 0,
+               attributeBonuses: h.attributeBonuses ?? {},
             }))
           : []),
       ]
@@ -1941,6 +1949,10 @@ export function CharacterContent({
           const isHeritage = selectedRaceFeature.category === "heritage";
           const isHeritageActive = isHeritage && activeHeritages.includes(selectedRaceFeature.name);
           const isHeritageLocked = isHeritage && !isHeritageActive && activeHeritages.length >= 2;
+          const heritageAttributeBonuses = selectedRaceFeature.attributeBonuses ?? {};
+          const hasHeritageBonuses = (selectedRaceFeature.hitPointsBonus ?? 0) > 0
+            || Object.values(heritageAttributeBonuses).some((bonus) => bonus !== 0);
+          const hasHeritageMovementSize = selectedRaceFeature.speed !== undefined || Boolean(selectedRaceFeature.size);
           return (
             <div
               className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
@@ -2072,7 +2084,35 @@ export function CharacterContent({
                     </div>
                   )}
 
-                  {/* Metadados / Atributos da Raça */}
+                  {isHeritage && hasHeritageBonuses && (
+                    <div className="space-y-1">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">Bônus desta Herança</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {(selectedRaceFeature.hitPointsBonus ?? 0) > 0 && (
+                          <span className="rounded-md bg-gray-900 px-2 py-0.5 text-[11px] font-bold text-teal-400 border border-gray-800">
+                            +{selectedRaceFeature.hitPointsBonus} HP
+                          </span>
+                        )}
+                        {Object.entries(heritageAttributeBonuses).filter(([, bonus]) => bonus !== 0).map(([attr, bonus]) => (
+                          <span key={attr} className="rounded-md bg-gray-900 px-2 py-0.5 text-[11px] font-bold text-teal-400 border border-gray-800">
+                            {attr.toUpperCase()}: {bonus > 0 ? `+${bonus}` : bonus}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {isHeritage && hasHeritageMovementSize && (
+                    <div className="space-y-1">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">Dados desta Herança</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {selectedRaceFeature.speed !== undefined && <span className="rounded-md bg-gray-900 px-2 py-0.5 text-[11px] font-bold text-indigo-300 border border-gray-800">Desloc. {selectedRaceFeature.speed}m</span>}
+                        {selectedRaceFeature.size && <span className="rounded-md bg-gray-900 px-2 py-0.5 text-[11px] font-bold text-indigo-300 border border-gray-800">Tamanho {selectedRaceFeature.size}</span>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Metadados da raça */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
                       <span className="text-[10px] uppercase tracking-wider text-gray-400 block">Velocidade</span>
@@ -2084,7 +2124,7 @@ export function CharacterContent({
                         <span className="text-xs font-bold text-gray-200">{raceData.size}</span>
                       </div>
                     )}
-                    {raceData.hitPointsBonus > 0 && (
+                    {!isHeritage && raceData.hitPointsBonus > 0 && (
                       <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
                         <span className="text-[10px] uppercase tracking-wider text-gray-400 block">Bônus de HP</span>
                         <span className="text-xs font-bold text-emerald-400">+{raceData.hitPointsBonus} HP</span>
@@ -2093,7 +2133,7 @@ export function CharacterContent({
                   </div>
 
                   {/* Bônus de Atributos */}
-                  {raceData.attributeBonuses && Object.keys(raceData.attributeBonuses).length > 0 && (
+                  {!isHeritage && raceData.attributeBonuses && Object.keys(raceData.attributeBonuses).length > 0 && (
                     <div className="space-y-1">
                       <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">Bônus de Atributos</span>
                       <div className="flex flex-wrap gap-1.5">

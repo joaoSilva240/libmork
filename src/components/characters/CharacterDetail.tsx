@@ -4,10 +4,11 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import type { Character } from "@/types";
+import type { Character, RpgRace } from "@/types";
 import { ATTRIBUTES } from "@/lib/utils/constants";
 import type { Attribute } from "@/lib/utils/constants";
-import { getDerivedStats } from "@/lib/engine/attributes";
+import { getActiveHeritageMovementSize, getDerivedStats } from "@/lib/engine/attributes";
+import { useRaceDetailsQuery } from "@/hooks/queries/useCharacterContentQueries";
 import { rollD20WithModifier } from "@/lib/engine/dice";
 import { ShareLink } from "@/components/characters/ShareLink";
 import { ImageUpload } from "@/components/characters/ImageUpload";
@@ -259,6 +260,8 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
     },
     enabled: !!character?.id,
   });
+
+  const raceDetailsQuery = useRaceDetailsQuery(character?.raceId, { enabled: Boolean(character?.raceId) });
 
   // Calcular peso total carregado
   const totalWeight = (Array.isArray(inventoryItems) ? inventoryItems : []).reduce((sum: number, item: any) => {
@@ -823,6 +826,12 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
   }
 
   const stats = getDerivedStats(character.attributes, character.level);
+  const raceData = raceDetailsQuery.data?.data as RpgRace | undefined;
+  const movementSize = raceData
+    ? getActiveHeritageMovementSize(raceData, character.activeHeritages ?? [])
+    : { speed: 0, size: "" };
+  const movementLabel = raceData ? `${movementSize.speed}m` : "—";
+  const sizeLabel = raceData && movementSize.size ? movementSize.size : "—";
   const hpPercent = Math.min(100, Math.max(0, (character.hitPointsCurrent / Math.max(character.hitPointsMax, 1)) * 100));
   const manaPercent = Math.min(100, Math.max(0, (character.manaPointsCurrent / Math.max(character.manaPointsMax, 1)) * 100));
 
@@ -917,30 +926,38 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
               </div>
             )}
 
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="inline-block rounded-md bg-purple-950/80 px-2 py-0.5 text-[10px] font-bold text-purple-300 border border-purple-800/60">
-                    Nível {character.level}
-                  </span>
+              <div className="min-w-0 flex-1">
+               <div className="flex items-center gap-1.5 overflow-hidden">
+                 <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none]">
+                   <span className="inline-block rounded-md bg-purple-950/80 px-2 py-0.5 text-[10px] font-bold text-purple-300 border border-purple-800/60">
+                     Nível {character.level}
+                   </span>
                   <span
                     className="inline-flex items-center gap-1 rounded-md bg-gray-900/90 px-2 py-0.5 text-[10px] font-bold text-gray-200 border border-gray-800"
                     title="Bloqueio: mitigação tática com Vigor"
                   >
                     <span className="text-gray-400 font-semibold">Bloqueio</span>
-                    <span className="text-white font-black">{stats.block}</span>
-                  </span>
-                </div>
-                <RestPopover
+                     <span className="text-white font-black">{stats.block}</span>
+                   </span>
+                   <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-gray-800 bg-gray-900/90 px-1.5 py-0.5 text-[10px] font-bold text-gray-200" title={`Deslocamento: ${movementLabel}`} aria-label={`Deslocamento ${movementLabel}`}>
+                     <span className="text-gray-400 font-semibold">Desloc.</span><span className="text-white font-black">{movementLabel}</span>
+                   </span>
+                   <span className="inline-flex max-w-[6.5rem] shrink-0 items-center gap-1 rounded-md border border-gray-800 bg-gray-900/90 px-1.5 py-0.5 text-[10px] font-bold text-gray-200" title={`Tamanho: ${sizeLabel}`} aria-label={`Tamanho ${sizeLabel}`}>
+                     <span className="text-gray-400 font-semibold">Tamanho</span><span className="truncate text-white font-black">{sizeLabel}</span>
+                   </span>
+                 </div>
+                 <div className="shrink-0">
+                 <RestPopover
                   currentHp={character.hitPointsCurrent}
                   maxHp={character.hitPointsMax}
                   currentMana={character.manaPointsCurrent}
                   maxMana={character.manaPointsMax}
                   vigor={character.attributes?.vigor ?? 10}
                   onSelectRest={handleRest}
-                  disabled={isResting}
-                />
-              </div>
+                   disabled={isResting}
+                 />
+                 </div>
+               </div>
 
               <h2 className="mt-1 truncate text-lg font-bold text-white tracking-tight">{character.name}</h2>
               <p className="text-[11px] text-gray-400">{character.xp} XP total</p>

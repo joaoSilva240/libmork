@@ -7,9 +7,15 @@ import { db } from "@/lib/db";
 import { characters, characterCampaigns, rpgRaces } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { updateCharacterSchema } from "@/lib/validators/character";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { logger } from "@/lib/logger";
-import { getDerivedStats, AttributeMap } from "@/lib/engine/attributes";
+import {
+  getDerivedStats,
+  AttributeMap,
+  getActiveHeritageBonuses,
+  getHeritageHitPointsMax,
+  transitionRaceHeritageAttributes,
+} from "@/lib/engine/attributes";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -123,36 +129,77 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       updatedAt: new Date(),
     };
 
-    // Recalcular hitPointsMax e ajustar hitPointsCurrent quando activeHeritages for fornecido
-    if (validation.data.activeHeritages !== undefined) {
-      const activeHeritages = validation.data.activeHeritages;
+    // Recalcula bônus cumulativos sempre que as heranças ou a raça mudam.
+    if (validation.data.activeHeritages !== undefined || validation.data.raceId !== undefined) {
+      const activeHeritages = validation.data.activeHeritages ?? existingCharacter.activeHeritages ?? [];
       const effectiveRaceId = validation.data.raceId !== undefined ? validation.data.raceId : existingCharacter.raceId;
+      const previousHeritages = existingCharacter.activeHeritages ?? [];
 
-      let raceHpBonus = 0;
-      if (effectiveRaceId) {
-        const [race] = await db
-          .select({ hitPointsBonus: rpgRaces.hitPointsBonus })
-          .from(rpgRaces)
-          .where(eq(rpgRaces.id, effectiveRaceId))
-          .limit(1);
-
-        if (race) {
-          raceHpBonus = race.hitPointsBonus;
-        }
+      if (activeHeritages.length > 0 && !effectiveRaceId) {
+        return NextResponse.json(
+          { success: false, error: "Heranças ativas exigem uma raça selecionada" },
+          { status: 400 },
+        );
       }
 
-      const effectiveAttributes = (validation.data.attributes ?? existingCharacter.attributes) as AttributeMap;
-      const effectiveLevel = existingCharacter.level ?? 1;
-      const baseHpMax = getDerivedStats(effectiveAttributes, effectiveLevel).hitPointsMax;
-      const newHitPointsMax = baseHpMax + (activeHeritages.length > 0 ? raceHpBonus : 0);
+      const raceIds = [existingCharacter.raceId, effectiveRaceId].filter((raceId): raceId is string => Boolean(raceId));
+      const races = raceIds.length > 0
+        ? await db
+          .select({ id: rpgRaces.id, heritages: rpgRaces.heritages })
+          .from(rpgRaces)
+          .where(inArray(rpgRaces.id, raceIds))
+        : [];
+      const racesById = new Map(races.map((race) => [race.id, race]));
 
+      let previousBonuses = { hitPointsBonus: 0, attributeBonuses: {} };
+      let nextBonuses = { hitPointsBonus: 0, attributeBonuses: {} };
+      try {
+        if (previousHeritages.length > 0) {
+          const previousRace = existingCharacter.raceId ? racesById.get(existingCharacter.raceId) : undefined;
+          if (!previousRace) throw new Error("Raça atual do personagem não encontrada");
+          previousBonuses = getActiveHeritageBonuses(previousRace.heritages, previousHeritages);
+        }
+        if (activeHeritages.length > 0) {
+          const nextRace = effectiveRaceId ? racesById.get(effectiveRaceId) : undefined;
+          if (!nextRace) throw new Error("Raça selecionada não encontrada");
+          nextBonuses = getActiveHeritageBonuses(nextRace.heritages, activeHeritages);
+        }
+      } catch (error) {
+        return NextResponse.json(
+          { success: false, error: error instanceof Error ? error.message : "Heranças inválidas" },
+          { status: 400 },
+        );
+      }
+
+      const effectiveAttributes = transitionRaceHeritageAttributes(
+        (validation.data.attributes ?? existingCharacter.attributes) as AttributeMap,
+        previousBonuses.attributeBonuses,
+        nextBonuses.attributeBonuses,
+      );
+      const effectiveLevel = existingCharacter.level ?? 1;
+      const derived = getDerivedStats(effectiveAttributes, effectiveLevel);
+      const newHitPointsMax = getHeritageHitPointsMax(
+        effectiveAttributes,
+        effectiveLevel,
+        nextBonuses.hitPointsBonus,
+      );
+
+      updateData.attributes = effectiveAttributes;
       updateData.hitPointsMax = newHitPointsMax;
+      updateData.manaPointsMax = derived.manaPointsMax;
+      updateData.block = derived.block;
 
       const currentHp = validation.data.hitPointsCurrent !== undefined
         ? validation.data.hitPointsCurrent
         : existingCharacter.hitPointsCurrent;
 
       updateData.hitPointsCurrent = Math.min(currentHp, newHitPointsMax);
+
+      const currentMana = validation.data.manaPointsCurrent !== undefined
+        ? validation.data.manaPointsCurrent
+        : existingCharacter.manaPointsCurrent;
+
+      updateData.manaPointsCurrent = Math.min(currentMana, derived.manaPointsMax);
     }
 
     // Atualizar apenas os campos fornecidos

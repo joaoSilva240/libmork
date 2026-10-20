@@ -12,6 +12,16 @@ export const raceTraitSchema = z.object({
 export const raceHeritageSchema = z.object({
   name: z.string().min(1, "Nome da herança/linhagem é obrigatório"),
   description: z.string().max(5000).optional(),
+  speed: z.number().int().min(0, "Deslocamento não pode ser negativo").max(200).optional(),
+  size: z.string().max(50).optional(),
+  hitPointsBonus: z.number().int().min(0, "Bônus de HP não pode ser negativo").optional().default(0),
+  attributeBonuses: z.object({
+    forca: z.number().int().optional(),
+    destreza: z.number().int().optional(),
+    vigor: z.number().int().optional(),
+    inteligencia: z.number().int().optional(),
+    empatia: z.number().int().optional(),
+  }).strict().optional().default({}),
 });
 
 export const raceAttributeBonusesSchema = z.object({
@@ -20,7 +30,7 @@ export const raceAttributeBonusesSchema = z.object({
   vigor: z.number().int().optional(),
   inteligencia: z.number().int().optional(),
   empatia: z.number().int().optional(),
-});
+}).strict();
 
 /**
  * Schema de criação de raça / ancestralidade.

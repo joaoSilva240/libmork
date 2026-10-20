@@ -77,7 +77,7 @@ export const rpgRaces = pgTable("rpg_races", {
   attributeBonuses: jsonb("attribute_bonuses").notNull().default({}), // { forca?: number, destreza?: number, ... }
   languages: jsonb("languages").notNull().default([]), // string[]
   traits: jsonb("traits").notNull().default([]), // Array<{ name: string; description?: string }>
-  heritages: jsonb("heritages").notNull().default([]), // Array<{ name: string; description?: string }>
+  heritages: jsonb("heritages").notNull().default([]), // Array<{ name: string; description?: string; hitPointsBonus?: number; attributeBonuses?: Record<string, number> }>
   imageUrl: varchar("image_url", { length: 500 }),
   sourceSystem: varchar("source_system", { length: 50 }).default("custom"), // "dnd5e" | "pf2e" | "custom"
   createdAt: timestamp("created_at").notNull().defaultNow(),

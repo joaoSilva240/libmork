@@ -1144,7 +1144,12 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         { name: "Ancestralidade Élfica", description: "Vantagem contra efeitos de encantamento." },
       ],
       heritages: [
-        { name: "Elfo da Floresta", description: "Velocidade e camuflagem naturais nas matas." },
+        {
+          name: "Elfo da Floresta",
+          description: "Velocidade e camuflagem naturais nas matas.",
+          hitPointsBonus: 2,
+          attributeBonuses: { vigor: 1 },
+        },
       ],
     };
 
@@ -1262,6 +1267,33 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
       expect(screen.getByRole("dialog", { name: "Visão na Penumbra" })).toBeInTheDocument();
       fireEvent.click(screen.getByText("✕"));
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("shows only the selected heritage's own bonuses in its modal", async () => {
+      globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+        if (url.includes("/api/races/race-elf-1")) {
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ success: true, data: mockRace }) });
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: { linked: [], available: [] } }) });
+      });
+
+      renderWithQuery(
+        <CharacterContent
+          characterId="char-123"
+          characterRaceId="race-elf-1"
+          characterActiveHeritages={["Elfo da Floresta"]}
+          defaultType="items"
+          allowedTypes={["items", "spells", "conditions"]}
+        />
+      );
+
+      const heritage = await screen.findByText("Elfo da Floresta");
+      fireEvent.click(heritage);
+
+      expect(await screen.findByText("Bônus desta Herança")).toBeInTheDocument();
+      expect(screen.getByText("+2 HP")).toBeInTheDocument();
+      expect(screen.getByText("VIGOR: +1")).toBeInTheDocument();
+      expect(screen.queryByText("+6 HP")).not.toBeInTheDocument();
     });
 
     it("renders empty state when characterRaceId is provided but race has no traits or heritages", async () => {

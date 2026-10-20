@@ -3,7 +3,7 @@
 // =============================================================================
 
 import { describe, it, expect } from 'vitest';
-import { getModifier, getBlockValue, getMaxHitPoints, getMaxManaPoints, getTrainedSkillSlots, getDerivedStats, validateCreationAttributes } from '../attributes';
+import { getActiveHeritageBonuses, getActiveHeritageMovementSize, getModifier, getBlockValue, getHeritageHitPointsMax, getMaxHitPoints, getMaxManaPoints, getTrainedSkillSlots, getDerivedStats, transitionRaceHeritageAttributes, validateCreationAttributes } from '../attributes';
 import type { AttributeMap } from '../attributes';
 
 describe('attributes — getModifier', () => {
@@ -93,6 +93,81 @@ describe('attributes — getDerivedStats', () => {
     expect(stats.modifiers.inteligencia).toBe(0);
     expect(stats.modifiers.empatia).toBe(-1);
     expect(stats.modifiers.sorte).toBe(1);
+  });
+});
+
+describe('attributes — transitionRaceHeritageAttributes', () => {
+  const attributes: AttributeMap = {
+    forca: 10,
+    destreza: 11,
+    vigor: 12,
+    inteligencia: 13,
+    empatia: 14,
+    sorte: 15,
+  };
+  const heritages = [
+    { name: 'A', hitPointsBonus: 2, attributeBonuses: { vigor: 1 } },
+    { name: 'B', hitPointsBonus: 3, attributeBonuses: { destreza: 2 } },
+  ];
+
+  it('soma somente os bônus das heranças selecionadas', () => {
+    const bonusesA = getActiveHeritageBonuses(heritages, ['A']);
+    const withBonuses = transitionRaceHeritageAttributes(attributes, {}, bonusesA.attributeBonuses);
+
+    expect(withBonuses).toEqual({
+      forca: 10,
+      destreza: 11,
+      vigor: 13,
+      inteligencia: 13,
+      empatia: 14,
+      sorte: 15,
+    });
+    expect(getHeritageHitPointsMax(withBonuses, 1, bonusesA.hitPointsBonus)).toBe(18);
+  });
+
+  it('acumula, remove parcialmente e é idempotente', () => {
+    const bonusesA = getActiveHeritageBonuses(heritages, ['A']);
+    const bonusesAB = getActiveHeritageBonuses(heritages, ['A', 'B']);
+    const bonusesB = getActiveHeritageBonuses(heritages, ['B']);
+    const withA = transitionRaceHeritageAttributes(attributes, {}, bonusesA.attributeBonuses);
+    const withAB = transitionRaceHeritageAttributes(withA, bonusesA.attributeBonuses, bonusesAB.attributeBonuses);
+    const withB = transitionRaceHeritageAttributes(withAB, bonusesAB.attributeBonuses, bonusesB.attributeBonuses);
+    const withoutHeritages = transitionRaceHeritageAttributes(withB, bonusesB.attributeBonuses, {});
+
+    expect(bonusesAB).toEqual({ hitPointsBonus: 5, attributeBonuses: { vigor: 1, destreza: 2 } });
+    expect(withB).toEqual({ ...attributes, destreza: 13 });
+    expect(withoutHeritages).toEqual(attributes);
+    expect(transitionRaceHeritageAttributes(withAB, bonusesAB.attributeBonuses, bonusesAB.attributeBonuses)).toEqual(withAB);
+  });
+
+  it('rejeita heranças desconhecidas e duplicadas', () => {
+    expect(() => getActiveHeritageBonuses(heritages, ['Desconhecida'])).toThrow('não pertence');
+    expect(() => getActiveHeritageBonuses(heritages, ['A', 'A'])).toThrow('duplicatas');
+  });
+});
+
+describe('attributes — getActiveHeritageMovementSize', () => {
+  const race = {
+    speed: 30,
+    size: 'Médio',
+    heritages: [
+      { name: 'Ágil', speed: 35, size: 'Pequeno' },
+      { name: 'Robusta', speed: 25, size: 'Grande' },
+    ],
+  };
+
+  it('seleciona a maior velocidade e o maior tamanho das heranças ativas', () => {
+    expect(getActiveHeritageMovementSize(race, ['Ágil', 'Robusta'])).toEqual({ speed: 35, size: 'Grande' });
+  });
+
+  it('mantém os dados-base para heranças legadas sem deslocamento ou tamanho', () => {
+    expect(getActiveHeritageMovementSize({ speed: 30, size: 'Médio', heritages: [{ name: 'Legada' }] }, ['Legada']))
+      .toEqual({ speed: 30, size: 'Médio' });
+  });
+
+  it('rejeita nomes inexistentes e duplicados', () => {
+    expect(() => getActiveHeritageMovementSize(race, ['Inexistente'])).toThrow('não pertence');
+    expect(() => getActiveHeritageMovementSize(race, ['Ágil', 'Ágil'])).toThrow('duplicatas');
   });
 });
 

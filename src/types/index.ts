@@ -183,7 +183,14 @@ export type RpgRace = {
   attributeBonuses: Record<string, number>;
   languages: string[];
   traits: Array<{ name: string; description?: string }>;
-  heritages: Array<{ name: string; description?: string }>;
+  heritages: Array<{
+    name: string;
+    description?: string;
+    speed?: number;
+    size?: string;
+    hitPointsBonus?: number;
+    attributeBonuses?: Partial<Record<Exclude<Attribute, "sorte">, number>>;
+  }>;
   imageUrl: string | null;
   sourceSystem: string | null;
   createdAt: Date;
