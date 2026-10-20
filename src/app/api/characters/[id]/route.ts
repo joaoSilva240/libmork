@@ -4,11 +4,12 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { characters, characterCampaigns } from "@/lib/db/schema";
+import { characters, characterCampaigns, rpgRaces } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { updateCharacterSchema } from "@/lib/validators/character";
 import { eq, and } from "drizzle-orm";
 import { logger } from "@/lib/logger";
+import { getDerivedStats, AttributeMap } from "@/lib/engine/attributes";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -116,13 +117,48 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       );
     }
 
+    // Montar campos para atualização
+    const updateData: Record<string, unknown> = {
+      ...validation.data,
+      updatedAt: new Date(),
+    };
+
+    // Recalcular hitPointsMax e ajustar hitPointsCurrent quando activeHeritages for fornecido
+    if (validation.data.activeHeritages !== undefined) {
+      const activeHeritages = validation.data.activeHeritages;
+      const effectiveRaceId = validation.data.raceId !== undefined ? validation.data.raceId : existingCharacter.raceId;
+
+      let raceHpBonus = 0;
+      if (effectiveRaceId) {
+        const [race] = await db
+          .select({ hitPointsBonus: rpgRaces.hitPointsBonus })
+          .from(rpgRaces)
+          .where(eq(rpgRaces.id, effectiveRaceId))
+          .limit(1);
+
+        if (race) {
+          raceHpBonus = race.hitPointsBonus;
+        }
+      }
+
+      const effectiveAttributes = (validation.data.attributes ?? existingCharacter.attributes) as AttributeMap;
+      const effectiveLevel = existingCharacter.level ?? 1;
+      const baseHpMax = getDerivedStats(effectiveAttributes, effectiveLevel).hitPointsMax;
+      const newHitPointsMax = baseHpMax + (activeHeritages.length > 0 ? raceHpBonus : 0);
+
+      updateData.hitPointsMax = newHitPointsMax;
+
+      const currentHp = validation.data.hitPointsCurrent !== undefined
+        ? validation.data.hitPointsCurrent
+        : existingCharacter.hitPointsCurrent;
+
+      updateData.hitPointsCurrent = Math.min(currentHp, newHitPointsMax);
+    }
+
     // Atualizar apenas os campos fornecidos
     const [updatedCharacter] = await db
       .update(characters)
-      .set({
-        ...validation.data,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(eq(characters.id, id))
       .returning();
 

@@ -1180,6 +1180,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
       await waitFor(() => {
         expect(screen.getByText("🧬 Herança de Raça")).toBeInTheDocument();
         expect(screen.getByText(/Elfo Nobre \(3\)/i)).toBeInTheDocument();
+        expect(screen.getByText(/\(0\/2 heranças ativas\)/i)).toBeInTheDocument();
       });
 
       // Verify trait cards
@@ -1336,7 +1337,456 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         expect(screen.getByText("Nenhuma raça vinculada ao personagem")).toBeInTheDocument();
       });
     });
+
+    it("handles heritage activation, limit of 2, locked state and toggling", async () => {
+      const onCharacterUpdateMock = vi.fn();
+      let activeHeritagesState = ["Elfo da Floresta"];
+
+      globalThis.fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+        if (url.includes("/content/spells") || url.includes("/content/items") || url.includes("/content/conditions")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ data: { linked: [], available: [] } }),
+          });
+        }
+        if (url.includes("/api/races/race-elf-1")) {
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({
+                success: true,
+                data: {
+                  ...mockRace,
+                  heritages: [
+                    { id: "h1", name: "Elfo da Floresta", description: "Herança da floresta" },
+                    { id: "h2", name: "Elfo da Neve", description: "Herança da neve" },
+                    { id: "h3", name: "Elfo do Deserto", description: "Herança do deserto" },
+                  ],
+                },
+              }),
+          });
+        }
+        if (url.includes("/api/characters/char-123") && init?.method === "PATCH") {
+          const body = JSON.parse(init.body as string);
+          activeHeritagesState = body.activeHeritages;
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({
+                success: true,
+                data: { id: "char-123", activeHeritages: body.activeHeritages, hitPointsMax: 18 },
+              }),
+          });
+        }
+        return Promise.resolve({
+          ok: false,
+          json: () => Promise.resolve({ error: "Not found" }),
+        });
+      });
+
+      const { rerender } = renderWithQuery(
+        <CharacterContent
+          characterId="char-123"
+          characterRaceId="race-elf-1"
+          characterActiveHeritages={["Elfo da Floresta"]}
+          onCharacterUpdate={onCharacterUpdateMock}
+          defaultType="items"
+          allowedTypes={["items", "spells", "conditions"]}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText(/\(1\/2 heranças ativas\)/i)).toBeInTheDocument();
+      });
+
+      // Elfo da Floresta is active
+      const activeCard = screen.getByText("Elfo da Floresta").closest(".snap-start")!;
+      expect(within(activeCard as HTMLElement).getByText("✓ Ativa")).toBeInTheDocument();
+      expect(activeCard).toHaveClass("border-teal-500");
+
+      // Open detail modal for active heritage
+      fireEvent.click(activeCard);
+      expect(screen.getByRole("dialog", { name: "Elfo da Floresta" })).toBeInTheDocument();
+      const deactivateBtn = screen.getByRole("button", { name: "✕ Desativar Herança" });
+      expect(deactivateBtn).toBeInTheDocument();
+
+      // Deactivate it
+      fireEvent.click(deactivateBtn);
+      await waitFor(() => {
+        expect(onCharacterUpdateMock).toHaveBeenCalledWith(
+          expect.objectContaining({ activeHeritages: [] })
+        );
+      });
+
+      // Close modal
+      fireEvent.click(screen.getByText("Fechar"));
+
+      // Now rerender with 2 active heritages to test locked state
+      rerender(
+        <CharacterContent
+          characterId="char-123"
+          characterRaceId="race-elf-1"
+          characterActiveHeritages={["Elfo da Floresta", "Elfo da Neve"]}
+          onCharacterUpdate={onCharacterUpdateMock}
+          defaultType="items"
+          allowedTypes={["items", "spells", "conditions"]}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText(/\(2\/2 heranças ativas\)/i)).toBeInTheDocument();
+      });
+
+      // Elfo do Deserto should be locked
+      const desertCard = screen.getByText("Elfo do Deserto").closest(".snap-start")!;
+      expect(within(desertCard as HTMLElement).getByText("🔒 Travada (2/2)")).toBeInTheDocument();
+      expect(desertCard).toHaveClass("grayscale-[40%]");
+
+      // Click locked card to open modal
+      fireEvent.click(desertCard);
+      expect(
+        screen.getByText(/Limite de 2 heranças ativas atingido\. Desative outra herança para ativar esta\./i)
+      ).toBeInTheDocument();
+      const lockedBtn = screen.getByRole("button", { name: /🔒 Travada/i });
+      expect(lockedBtn).toBeDisabled();
+    });
   });
+
+    describe("Racial Heritages - Activation, Deactivation, and Limit of 2 (#HERITAGE-TESTS)", () => {
+      const mockHeritagesRace = {
+        id: "race-elf-heritages",
+        name: "Elfo Nobre",
+        description: "Uma raça graciosa com profunda conexão mágica.",
+        speed: 30,
+        size: "Médio",
+        hitPointsBonus: 6,
+        attributeBonuses: { destreza: 2 },
+        languages: ["Comum", "Élfico"],
+        traits: [
+          { name: "Visão na Penumbra", description: "Enxerga na penumbra." },
+        ],
+        heritages: [
+          { id: "h1", name: "Elfo da Floresta", description: "Herança da floresta" },
+          { id: "h2", name: "Elfo da Neve", description: "Herança da neve" },
+          { id: "h3", name: "Elfo do Deserto", description: "Herança do deserto" },
+        ],
+      };
+
+      it("a) displays correct badges for active ('✓ Ativa'), available ('Herança'), and locked ('🔒 Travada (2/2)') heritages", async () => {
+        globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+          if (url.includes("/content/spells") || url.includes("/content/items") || url.includes("/content/conditions")) {
+            return Promise.resolve({
+              ok: true,
+              json: () => Promise.resolve({ data: { linked: [], available: [] } }),
+            });
+          }
+          if (url.includes("/api/races/race-elf-heritages")) {
+            return Promise.resolve({
+              ok: true,
+              json: () => Promise.resolve({ success: true, data: mockHeritagesRace }),
+            });
+          }
+          return Promise.resolve({
+            ok: false,
+            json: () => Promise.resolve({ error: "Not found" }),
+          });
+        });
+
+        // 1 active heritage: Elfo da Floresta (active), Elfo da Neve (available 'Herança'), Elfo do Deserto (available 'Herança')
+        const { rerender } = renderWithQuery(
+          <CharacterContent
+            characterId="char-123"
+            characterRaceId="race-elf-heritages"
+            characterActiveHeritages={["Elfo da Floresta"]}
+            defaultType="items"
+            allowedTypes={["items", "spells", "conditions"]}
+          />
+        );
+
+        await waitFor(() => {
+          expect(screen.getByText(/\(1\/2 heranças ativas\)/i)).toBeInTheDocument();
+        });
+
+        const cardFloresta = screen.getByText("Elfo da Floresta").closest(".snap-start")!;
+        expect(within(cardFloresta as HTMLElement).getByText("✓ Ativa")).toBeInTheDocument();
+        expect(cardFloresta).toHaveClass("border-teal-500");
+
+        const cardNeve = screen.getByText("Elfo da Neve").closest(".snap-start")!;
+        expect(within(cardNeve as HTMLElement).getByText("Herança")).toBeInTheDocument();
+        expect(cardNeve).toHaveClass("border-teal-900/40");
+
+        // Rerender with 2 active heritages: Elfo do Deserto should now display '🔒 Travada (2/2)'
+        rerender(
+          <CharacterContent
+            characterId="char-123"
+            characterRaceId="race-elf-heritages"
+            characterActiveHeritages={["Elfo da Floresta", "Elfo da Neve"]}
+            defaultType="items"
+            allowedTypes={["items", "spells", "conditions"]}
+          />
+        );
+
+        await waitFor(() => {
+          expect(screen.getByText(/\(2\/2 heranças ativas\)/i)).toBeInTheDocument();
+        });
+
+        const cardDeserto = screen.getByText("Elfo do Deserto").closest(".snap-start")!;
+        expect(within(cardDeserto as HTMLElement).getByText("🔒 Travada (2/2)")).toBeInTheDocument();
+        expect(cardDeserto).toHaveClass("grayscale-[40%]");
+      });
+
+      it("b) opens detail modal with appropriate activate/deactivate button according to heritage state", async () => {
+        globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+          if (url.includes("/content/spells") || url.includes("/content/items") || url.includes("/content/conditions")) {
+            return Promise.resolve({
+              ok: true,
+              json: () => Promise.resolve({ data: { linked: [], available: [] } }),
+            });
+          }
+          if (url.includes("/api/races/race-elf-heritages")) {
+            return Promise.resolve({
+              ok: true,
+              json: () => Promise.resolve({ success: true, data: mockHeritagesRace }),
+            });
+          }
+          return Promise.resolve({
+            ok: false,
+            json: () => Promise.resolve({ error: "Not found" }),
+          });
+        });
+
+        renderWithQuery(
+          <CharacterContent
+            characterId="char-123"
+            characterRaceId="race-elf-heritages"
+            characterActiveHeritages={["Elfo da Floresta"]}
+            defaultType="items"
+            allowedTypes={["items", "spells", "conditions"]}
+          />
+        );
+
+        await waitFor(() => {
+          expect(screen.getByText("Elfo da Floresta")).toBeInTheDocument();
+        });
+
+        // 1. Check active heritage modal: shows "✕ Desativar Herança" and "Herança Ativa"
+        const cardActive = screen.getByText("Elfo da Floresta").closest(".snap-start")!;
+        fireEvent.click(cardActive);
+
+        const activeDialog = screen.getByRole("dialog", { name: "Elfo da Floresta" });
+        expect(activeDialog).toBeInTheDocument();
+        expect(within(activeDialog).getByText("Herança Ativa")).toBeInTheDocument();
+        expect(within(activeDialog).getByRole("button", { name: "✕ Desativar Herança" })).toBeInTheDocument();
+
+        fireEvent.click(within(activeDialog).getByLabelText("Fechar"));
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+        // 2. Check available inactive heritage modal: shows "✨ Ativar Herança (Slot livre: 1/2)" and "Herança Inativa"
+        const cardAvailable = screen.getByText("Elfo da Neve").closest(".snap-start")!;
+        fireEvent.click(cardAvailable);
+
+        const availableDialog = screen.getByRole("dialog", { name: "Elfo da Neve" });
+        expect(availableDialog).toBeInTheDocument();
+        expect(within(availableDialog).getByText("Herança Inativa")).toBeInTheDocument();
+        expect(
+          within(availableDialog).getByRole("button", { name: /✨ Ativar Herança \(Slot livre: 1\/2\)/i })
+        ).toBeInTheDocument();
+
+        fireEvent.click(within(availableDialog).getByLabelText("Fechar"));
+      });
+
+      it("c) deactivates an active heritage by sending PATCH to /api/characters/:id", async () => {
+        const onCharacterUpdateMock = vi.fn();
+
+        globalThis.fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+          if (url.includes("/content/spells") || url.includes("/content/items") || url.includes("/content/conditions")) {
+            return Promise.resolve({
+              ok: true,
+              json: () => Promise.resolve({ data: { linked: [], available: [] } }),
+            });
+          }
+          if (url.includes("/api/races/race-elf-heritages")) {
+            return Promise.resolve({
+              ok: true,
+              json: () => Promise.resolve({ success: true, data: mockHeritagesRace }),
+            });
+          }
+          if (url.includes("/api/characters/char-123") && init?.method === "PATCH") {
+            const body = JSON.parse(init.body as string);
+            return Promise.resolve({
+              ok: true,
+              json: () =>
+                Promise.resolve({
+                  success: true,
+                  data: { id: "char-123", activeHeritages: body.activeHeritages, hitPointsMax: 18 },
+                }),
+            });
+          }
+          return Promise.resolve({
+            ok: false,
+            json: () => Promise.resolve({ error: "Not found" }),
+          });
+        });
+
+        renderWithQuery(
+          <CharacterContent
+            characterId="char-123"
+            characterRaceId="race-elf-heritages"
+            characterActiveHeritages={["Elfo da Floresta"]}
+            onCharacterUpdate={onCharacterUpdateMock}
+            defaultType="items"
+            allowedTypes={["items", "spells", "conditions"]}
+          />
+        );
+
+        await waitFor(() => {
+          expect(screen.getByText("Elfo da Floresta")).toBeInTheDocument();
+        });
+
+        // Open modal
+        fireEvent.click(screen.getByText("Elfo da Floresta").closest(".snap-start")!);
+        const deactivateBtn = screen.getByRole("button", { name: "✕ Desativar Herança" });
+        fireEvent.click(deactivateBtn);
+
+        await waitFor(() => {
+          expect(globalThis.fetch).toHaveBeenCalledWith(
+            "/api/characters/char-123",
+            expect.objectContaining({
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ activeHeritages: [] }),
+            })
+          );
+          expect(onCharacterUpdateMock).toHaveBeenCalledWith(
+            expect.objectContaining({ activeHeritages: [] })
+          );
+        });
+
+        expect(screen.getByText('Herança "Elfo da Floresta" desativada.')).toBeInTheDocument();
+      });
+
+      it("d) blocks activation when 2 heritages are already active (button disabled and warning displayed)", async () => {
+        globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+          if (url.includes("/content/spells") || url.includes("/content/items") || url.includes("/content/conditions")) {
+            return Promise.resolve({
+              ok: true,
+              json: () => Promise.resolve({ data: { linked: [], available: [] } }),
+            });
+          }
+          if (url.includes("/api/races/race-elf-heritages")) {
+            return Promise.resolve({
+              ok: true,
+              json: () => Promise.resolve({ success: true, data: mockHeritagesRace }),
+            });
+          }
+          return Promise.resolve({
+            ok: false,
+            json: () => Promise.resolve({ error: "Not found" }),
+          });
+        });
+
+        renderWithQuery(
+          <CharacterContent
+            characterId="char-123"
+            characterRaceId="race-elf-heritages"
+            characterActiveHeritages={["Elfo da Floresta", "Elfo da Neve"]}
+            defaultType="items"
+            allowedTypes={["items", "spells", "conditions"]}
+          />
+        );
+
+        await waitFor(() => {
+          expect(screen.getByText(/\(2\/2 heranças ativas\)/i)).toBeInTheDocument();
+        });
+
+        // Click locked heritage "Elfo do Deserto"
+        const cardDeserto = screen.getByText("Elfo do Deserto").closest(".snap-start")!;
+        fireEvent.click(cardDeserto);
+
+        const dialog = screen.getByRole("dialog", { name: "Elfo do Deserto" });
+        expect(dialog).toBeInTheDocument();
+
+        // Warning message must be displayed
+        expect(
+          within(dialog).getByText(/Limite de 2 heranças ativas atingido\. Desative outra herança para ativar esta\./i)
+        ).toBeInTheDocument();
+
+        // Activation button must be disabled
+        const lockedButton = within(dialog).getByRole("button", { name: "🔒 Travada (2/2 em uso)" });
+        expect(lockedButton).toBeInTheDocument();
+        expect(lockedButton).toBeDisabled();
+      });
+
+      it("activates an available heritage when under the limit by sending PATCH to /api/characters/:id", async () => {
+        const onCharacterUpdateMock = vi.fn();
+
+        globalThis.fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+          if (url.includes("/content/spells") || url.includes("/content/items") || url.includes("/content/conditions")) {
+            return Promise.resolve({
+              ok: true,
+              json: () => Promise.resolve({ data: { linked: [], available: [] } }),
+            });
+          }
+          if (url.includes("/api/races/race-elf-heritages")) {
+            return Promise.resolve({
+              ok: true,
+              json: () => Promise.resolve({ success: true, data: mockHeritagesRace }),
+            });
+          }
+          if (url.includes("/api/characters/char-123") && init?.method === "PATCH") {
+            const body = JSON.parse(init.body as string);
+            return Promise.resolve({
+              ok: true,
+              json: () =>
+                Promise.resolve({
+                  success: true,
+                  data: { id: "char-123", activeHeritages: body.activeHeritages, hitPointsMax: 20 },
+                }),
+            });
+          }
+          return Promise.resolve({
+            ok: false,
+            json: () => Promise.resolve({ error: "Not found" }),
+          });
+        });
+
+        renderWithQuery(
+          <CharacterContent
+            characterId="char-123"
+            characterRaceId="race-elf-heritages"
+            characterActiveHeritages={[]}
+            onCharacterUpdate={onCharacterUpdateMock}
+            defaultType="items"
+            allowedTypes={["items", "spells", "conditions"]}
+          />
+        );
+
+        await waitFor(() => {
+          expect(screen.getByText(/\(0\/2 heranças ativas\)/i)).toBeInTheDocument();
+        });
+
+        // Click Elfo da Floresta to open modal
+        fireEvent.click(screen.getByText("Elfo da Floresta").closest(".snap-start")!);
+        const activateBtn = screen.getByRole("button", { name: /✨ Ativar Herança \(Slot livre: 2\/2\)/i });
+        fireEvent.click(activateBtn);
+
+        await waitFor(() => {
+          expect(globalThis.fetch).toHaveBeenCalledWith(
+            "/api/characters/char-123",
+            expect.objectContaining({
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ activeHeritages: ["Elfo da Floresta"] }),
+            })
+          );
+          expect(onCharacterUpdateMock).toHaveBeenCalledWith(
+            expect.objectContaining({ activeHeritages: ["Elfo da Floresta"] })
+          );
+        });
+
+        expect(screen.getByText('Herança "Elfo da Floresta" ativada com sucesso!')).toBeInTheDocument();
+      });
+    });
 
   describe("AI Translation with API Fallback (#UI-011)", () => {
     it("prioritizes AI translation (name, description, extraEffect) over original API fields in cards and detail modal", async () => {

@@ -114,6 +114,7 @@ export const characters = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     classId: uuid("class_id").references(() => rpgClasses.id, { onDelete: "set null" }),
     raceId: uuid("race_id").references(() => rpgRaces.id, { onDelete: "set null" }),
+    activeHeritages: jsonb("active_heritages").$type<string[]>().notNull().default([]),
     name: varchar("name", { length: 100 }).notNull(),
     imageUrl: varchar("image_url", { length: 500 }),
     hitPointsMax: integer("hit_points_max").notNull().default(15),

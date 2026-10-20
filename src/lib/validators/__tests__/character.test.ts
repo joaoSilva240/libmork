@@ -136,4 +136,21 @@ describe("Character Validator Schemas", () => {
       expect(nullResult.data.raceId).toBeNull();
     }
   });
+
+  it("should validate activeHeritages up to 2 items in updateCharacterSchema", () => {
+    const validPayload = {
+      activeHeritages: ["Herança Ancestral", "Herança Dracônica"],
+    };
+    const validResult = updateCharacterSchema.safeParse(validPayload);
+    expect(validResult.success).toBe(true);
+    if (validResult.success) {
+      expect(validResult.data.activeHeritages).toEqual(["Herança Ancestral", "Herança Dracônica"]);
+    }
+
+    const invalidPayload = {
+      activeHeritages: ["Herança 1", "Herança 2", "Herança 3"],
+    };
+    const invalidResult = updateCharacterSchema.safeParse(invalidPayload);
+    expect(invalidResult.success).toBe(false);
+  });
 });

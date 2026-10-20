@@ -77,6 +77,7 @@ export type Character = {
   ownerId: string;
   classId: string | null;
   raceId?: string | null;
+  activeHeritages?: string[];
   name: string;
   imageUrl: string | null;
   hitPointsMax: number;
