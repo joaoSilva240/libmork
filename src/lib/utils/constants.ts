@@ -62,8 +62,8 @@ export type DeathStatus = (typeof DEATH_STATUSES)[number];
 export const APPROVAL_STATUSES = ["draft", "pending", "approved", "rejected"] as const;
 export type ApprovalStatus = (typeof APPROVAL_STATUSES)[number];
 
-/** Motores de regras disponíveis (D-02) */
-export const RULES_ENGINES = ["d20_mod", "dual_d20_sum"] as const;
+/** Motores de regras disponíveis (D-02, MISSING — Edição ZERO) */
+export const RULES_ENGINES = ["d20_mod", "dual_d20_sum", "missing_zero"] as const;
 export type RulesEngine = (typeof RULES_ENGINES)[number];
 
 /** Tipos de NPC (D-38) */

@@ -719,6 +719,84 @@ export const duelParticipants = pgTable(
 );
 
 // =============================================================================
+// MISSING — Edição ZERO (Horror Analógico e Investigação Minimalista)
+// =============================================================================
+
+/**
+ * MISSING_CAMPAIGN_STATES — Estado agregado da campanha de MISSING.
+ */
+export const missingCampaignStates = pgTable(
+  "missing_campaign_states",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    campaignId: uuid("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" })
+      .unique(),
+    activeScene: jsonb("active_scene")
+      .notNull()
+      .default({ title: "Cena Inicial", isActive: true, threats: [] }),
+    cluesBank: jsonb("clues_bank").notNull().default([]),
+    investigationWeb: jsonb("investigation_web").notNull().default({ connections: [] }),
+    epiphanyHistory: jsonb("epiphany_history").notNull().default([]),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [index("idx_missing_campaign_states_campaign").on(table.campaignId)],
+);
+
+/**
+ * MISSING_HABITANTS — Ficha / Registro de Habitante de MISSING.
+ */
+export const missingHabitants = pgTable(
+  "missing_habitants",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    campaignId: uuid("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" }),
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 100 }).notNull(),
+    status: varchar("status", { length: 20 }).notNull().default("active"),
+    lines: jsonb("lines").notNull().default([]),
+    equipments: jsonb("equipments").notNull().default([]),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_missing_habitants_campaign").on(table.campaignId),
+    index("idx_missing_habitants_owner").on(table.ownerId),
+  ],
+);
+
+/**
+ * MISSING_ACTION_LEDGER — Livro-razão de eventos e ações de MISSING.
+ */
+export const missingActionLedger = pgTable(
+  "missing_action_ledger",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    campaignId: uuid("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" }),
+    habitantId: uuid("habitant_id").references(() => missingHabitants.id, { onDelete: "set null" }),
+    actorRole: varchar("actor_role", { length: 20 }).notNull(),
+    actorId: uuid("actor_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    eventType: varchar("event_type", { length: 50 }).notNull(),
+    payload: jsonb("payload").notNull().default({}),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_missing_ledger_campaign").on(table.campaignId, table.createdAt),
+    index("idx_missing_ledger_habitant").on(table.habitantId),
+  ],
+);
+
+// =============================================================================
 // RELATIONS — Drizzle relational queries
 // =============================================================================
 
@@ -727,6 +805,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   campaigns: many(campaigns),
   sessions: many(sessions),
   campaignInvites: many(campaignInvites),
+  missingHabitants: many(missingHabitants),
+  missingActionLedger: many(missingActionLedger),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -771,6 +851,9 @@ export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
   npcCampaigns: many(npcCampaigns),
   logs: many(campaignLogs),
   libraryDocuments: many(libraryDocuments),
+  missingCampaignState: one(missingCampaignStates),
+  missingHabitants: many(missingHabitants),
+  missingActionLedger: many(missingActionLedger),
 }));
 
 export const worldsRelations = relations(worlds, ({ one, many }) => ({
@@ -963,5 +1046,40 @@ export const oauthAccountsRelations = relations(oauthAccounts, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+export const missingCampaignStatesRelations = relations(missingCampaignStates, ({ one }) => ({
+  campaign: one(campaigns, {
+    fields: [missingCampaignStates.campaignId],
+    references: [campaigns.id],
+  }),
+}));
+
+export const missingHabitantsRelations = relations(missingHabitants, ({ one, many }) => ({
+  campaign: one(campaigns, {
+    fields: [missingHabitants.campaignId],
+    references: [campaigns.id],
+  }),
+  owner: one(users, {
+    fields: [missingHabitants.ownerId],
+    references: [users.id],
+  }),
+  actionLedger: many(missingActionLedger),
+}));
+
+export const missingActionLedgerRelations = relations(missingActionLedger, ({ one }) => ({
+  campaign: one(campaigns, {
+    fields: [missingActionLedger.campaignId],
+    references: [campaigns.id],
+  }),
+  habitant: one(missingHabitants, {
+    fields: [missingActionLedger.habitantId],
+    references: [missingHabitants.id],
+  }),
+  actor: one(users, {
+    fields: [missingActionLedger.actorId],
+    references: [users.id],
+  }),
+}));
+
 
 
