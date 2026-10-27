@@ -51,6 +51,7 @@ export const createCharacterSchema = z.object({
   description: z.string().max(2000).optional().nullable(),
   classId: z.string().uuid().optional().nullable(),
   raceId: z.string().uuid().optional().nullable(),
+  activeHeritages: z.array(z.string()).max(2).optional().default([]),
   campaignId: z.string().uuid().optional().nullable(),
   imageUrl: z.union([z.string().url(), z.literal("")]).optional().nullable(),
   attributes: attributesSchema.optional(),
@@ -97,6 +98,8 @@ export type HeartAwakeningInput = z.infer<typeof heartAwakeningSchema>;
 export const updateCharacterSchema = z.object({
   name: z.string().min(2).max(100).optional(),
   classId: z.string().uuid().optional().nullable(),
+  raceId: z.string().uuid().optional().nullable(),
+  activeHeritages: z.array(z.string()).max(2, "Máximo de 2 heranças ativas").optional(),
   imageUrl: z.string().url().optional().nullable(),
   attributes: attributesSchema.optional(),
   hitPointsCurrent: z.number().int().min(0).optional(),

@@ -194,6 +194,18 @@ async function runMigrations() {
     `);
     console.log('✓ Character item formulas ensured and global item formulas removed.');
 
+    console.log('\n--- 9. Applying characters.race_id migration ---');
+    await client.query(`
+      ALTER TABLE "characters" ADD COLUMN IF NOT EXISTS "race_id" uuid REFERENCES "rpg_races"("id") ON DELETE set null;
+    `);
+    console.log('✓ Column characters.race_id ensured.');
+
+    console.log('\n--- 10. Applying characters.active_heritages migration ---');
+    await client.query(`
+      ALTER TABLE "characters" ADD COLUMN IF NOT EXISTS "active_heritages" jsonb DEFAULT '[]'::jsonb NOT NULL;
+    `);
+    console.log('✓ Column characters.active_heritages ensured.');
+
     console.log('\nAll migrations executed successfully!');
   } catch (error) {
     console.error('Migration error:', error);

@@ -7,6 +7,7 @@ import {
   useCharacterContentQuery,
   useCharacterGalleryContentQuery,
   useClassBenefitsQuery,
+  useRaceDetailsQuery,
 } from "@/hooks/queries/useCharacterContentQueries";
 import type { ContentType } from "@/lib/validators/content";
 import { useSocket, DICE_ROLL_LOADING_DELAY } from "@/context/SocketContext";
@@ -14,6 +15,7 @@ import { TargetSelectionModal } from "@/components/combat/TargetSelectionModal";
 import { Spinner } from "@/components/ui";
 import { SpellFilledIcon, InventoryFilledIcon } from "@/components/ui/Icons";
 import { ToastContainer } from "@/components/ui/Toast";
+import type { Character } from "@/types";
 import type { CombatSessionState, Combatant } from "@/lib/engine";
 import {
   applyHealing,
@@ -246,7 +248,10 @@ type CharacterContentProps = {
   onStartRolling?: () => void;
   onEndRolling?: () => void;
   characterClassId?: string | null;
+  characterRaceId?: string | null;
   characterLevel?: number;
+  characterActiveHeritages?: string[];
+  onCharacterUpdate?: (updated: Partial<Character>) => void;
 };
 
 type ClassBenefitItem = {
@@ -256,6 +261,17 @@ type ClassBenefitItem = {
   description: string;
   hpBonus: number;
   manaBonus: number;
+};
+
+export type RaceFeatureItem = {
+  id: string;
+  name: string;
+  description: string;
+  category: "trait" | "heritage";
+  speed?: number;
+  size?: string;
+  hitPointsBonus?: number;
+  attributeBonuses?: Record<string, number>;
 };
 
 export function parseClassBenefits(data: unknown): ClassBenefitItem[] {
@@ -364,13 +380,24 @@ export function CharacterContent({
   onStartRolling,
   onEndRolling,
   characterClassId,
+  characterRaceId,
   characterLevel,
+  characterActiveHeritages,
+  onCharacterUpdate,
 }: CharacterContentProps) {
   const queryClient = useQueryClient();
   const isGalleryMode = Boolean(allowedTypes?.includes("items") && allowedTypes?.includes("spells"));
   const [activeType, setActiveType] = useState<ContentType>(defaultType);
   const [selectedClassBenefit, setSelectedClassBenefit] = useState<ClassBenefitItem | null>(null);
+  const [selectedRaceFeature, setSelectedRaceFeature] = useState<RaceFeatureItem | null>(null);
   const [prevCharacterId, setPrevCharacterId] = useState(characterId);
+  const [activeHeritages, setActiveHeritages] = useState<string[]>(characterActiveHeritages ?? []);
+
+  useEffect(() => {
+    if (characterActiveHeritages !== undefined) {
+      setActiveHeritages(characterActiveHeritages);
+    }
+  }, [characterActiveHeritages]);
 
   // TanStack Query hooks
   const contentQuery = useCharacterContentQuery(characterId, activeType, {
@@ -380,6 +407,9 @@ export function CharacterContent({
     enabled: isGalleryMode,
   });
   const classBenefitsQuery = useClassBenefitsQuery(characterClassId, {
+    enabled: isGalleryMode,
+  });
+  const raceDetailsQuery = useRaceDetailsQuery(characterRaceId, {
     enabled: isGalleryMode,
   });
 
@@ -400,11 +430,38 @@ export function CharacterContent({
     ? parseClassBenefits(classBenefitsQuery.data.data)
     : [];
 
+  const raceData = isGalleryMode && raceDetailsQuery.data?.data ? raceDetailsQuery.data.data : null;
+  const raceFeatures: RaceFeatureItem[] = isGalleryMode && raceData
+    ? [
+        ...(Array.isArray(raceData.traits)
+          ? raceData.traits.map((t, idx) => ({
+              id: `trait-${idx}`,
+              name: t.name,
+              description: t.description || "",
+              category: "trait" as const,
+            }))
+          : []),
+        ...(Array.isArray(raceData.heritages)
+          ? raceData.heritages.map((h, idx) => ({
+              id: `heritage-${idx}`,
+               name: h.name,
+               description: h.description || "",
+               category: "heritage" as const,
+               speed: h.speed,
+               size: h.size,
+               hitPointsBonus: h.hitPointsBonus ?? 0,
+               attributeBonuses: h.attributeBonuses ?? {},
+            }))
+          : []),
+      ]
+    : [];
+
   const isLoading = isGalleryMode
     ? galleryQueries.spells.isLoading ||
       galleryQueries.items.isLoading ||
       galleryQueries.conditions.isLoading ||
-      (Boolean(characterClassId) && classBenefitsQuery.isLoading)
+      (Boolean(characterClassId) && classBenefitsQuery.isLoading) ||
+      (Boolean(characterRaceId) && raceDetailsQuery.isLoading)
     : contentQuery.isLoading;
   const [equippedItemIds, setEquippedItemIds] = useState<string[]>(() => {
     if (typeof window === "undefined") return [];
@@ -559,8 +616,52 @@ export function CharacterContent({
       try {
         localStorage.setItem(`libmork_equipped_items_${characterId}`, JSON.stringify(nextEquipped));
       } catch {
-        // ignore
+        // Ignora erro de cota de armazenamento
       }
+    }
+  };
+
+  const handleToggleHeritage = async (heritageName: string) => {
+    if (isBusy) return;
+
+    let next: string[];
+    if (activeHeritages.includes(heritageName)) {
+      next = activeHeritages.filter((h) => h !== heritageName);
+    } else {
+      if (activeHeritages.length >= 2) {
+        showToast("Limite de 2 heranças ativas atingido. Desative uma herança primeiro.", "warning");
+        return;
+      }
+      next = [...activeHeritages, heritageName];
+    }
+
+    setIsBusy(true);
+    try {
+      const response = await fetch(`/api/characters/${characterId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ activeHeritages: next }),
+      });
+
+      const res = await response.json();
+      if (!response.ok || !res.success) {
+        throw new Error(res.error || "Erro ao atualizar heranças");
+      }
+
+      setActiveHeritages(next);
+      onCharacterUpdate?.(res.data);
+      const isNowActive = next.includes(heritageName);
+      showToast(
+        isNowActive
+          ? `Herança "${heritageName}" ativada com sucesso!`
+          : `Herança "${heritageName}" desativada.`,
+        "success"
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Erro ao atualizar heranças";
+      showToast(msg, "error");
+    } finally {
+      setIsBusy(false);
     }
   };
 
@@ -1223,6 +1324,89 @@ export function CharacterContent({
                 </div>
               )}
             </div>
+
+            {/* Seção 5: Herança de Raça */}
+            <div>
+              <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center justify-between">
+                <span>🧬 Herança de Raça</span>
+                <span className="text-[10px] text-gray-400 font-normal">
+                  ({activeHeritages.length}/2 heranças ativas)
+                  {raceData && ` · ${raceData.name} (${raceFeatures.length})`}
+                </span>
+              </h4>
+              {raceFeatures.length === 0 ? (
+                <p className="py-2 text-xs text-gray-500 italic">
+                  {characterRaceId ? "Nenhuma característica cadastrada para esta raça" : "Nenhuma raça vinculada ao personagem"}
+                </p>
+              ) : (
+                <div className="flex gap-2 overflow-x-auto pb-2 pt-1 scroll-smooth scrollbar-hide snap-x">
+                  {raceFeatures.map((rf) => {
+                    const isHeritage = rf.category === "heritage";
+                    const isActive = isHeritage && activeHeritages.includes(rf.name);
+                    const isLocked = isHeritage && !isActive && activeHeritages.length >= 2;
+
+                    let cardStyle = "border border-emerald-900/40 bg-gray-950 hover:border-emerald-600 hover:bg-emerald-950/20";
+                    let badgeStyle = "bg-emerald-950/80 border-emerald-700/60 text-emerald-300";
+                    let badgeLabel = "Traço";
+                    let subtitleStyle = "text-emerald-300";
+                    let subtitleLabel = "Traço Racial";
+
+                    if (isHeritage) {
+                      subtitleLabel = "Linhagem";
+                      if (isActive) {
+                        cardStyle = "border border-teal-500 bg-teal-950/40 shadow-[0_0_12px_rgba(20,184,166,0.3)] hover:border-teal-400";
+                        badgeStyle = "bg-teal-900/90 border-teal-400 text-teal-200";
+                        badgeLabel = "✓ Ativa";
+                        subtitleStyle = "text-teal-200 font-semibold";
+                      } else if (isLocked) {
+                        cardStyle = "border border-gray-800 bg-gray-950 opacity-60 grayscale-[40%] hover:border-gray-700";
+                        badgeStyle = "bg-gray-900 border-gray-700 text-gray-400";
+                        badgeLabel = "🔒 Travada (2/2)";
+                        subtitleStyle = "text-gray-500";
+                      } else {
+                        cardStyle = "border border-teal-900/40 bg-gray-950 hover:border-teal-600 hover:bg-teal-950/20";
+                        badgeStyle = "bg-teal-950/80 border-teal-700/60 text-teal-300";
+                        badgeLabel = "Herança";
+                        subtitleStyle = "text-teal-300";
+                      }
+                    }
+
+                    return (
+                      <div
+                        key={rf.id}
+                        onClick={() => (!isBusy ? setSelectedRaceFeature(rf) : undefined)}
+                        className={`w-[28%] min-w-[92px] max-w-[110px] aspect-square shrink-0 rounded-xl p-2 snap-start relative overflow-hidden flex flex-col justify-end items-center text-center group cursor-pointer transition-all active:scale-[0.98] ${cardStyle}`}
+                      >
+                        {/* Background Icon */}
+                        <div className="absolute inset-0 z-0 flex items-center justify-center opacity-40 pointer-events-none overflow-hidden">
+                          <span className="text-3xl select-none leading-none">
+                            {isHeritage ? "🌳" : "🧬"}
+                          </span>
+                        </div>
+
+                        {/* Shadow degradê */}
+                        <div className="absolute inset-0 z-10 bg-gradient-to-t from-gray-950 via-gray-950/80 to-transparent pointer-events-none" />
+
+                        {/* Badge de Categoria */}
+                        <div className={`absolute top-1.5 right-1.5 z-20 flex items-center rounded-full px-1.5 py-0.2 border text-[8px] font-bold ${badgeStyle}`}>
+                          {badgeLabel}
+                        </div>
+
+                        {/* Detalhes do Card */}
+                        <div className="relative z-20 flex flex-col items-center justify-end w-full min-w-0">
+                          <p className="text-[11px] font-bold text-white truncate w-full" title={rf.name}>
+                            {rf.name}
+                          </p>
+                          <span className={`mt-0.5 text-[9px] font-medium truncate w-full leading-tight ${subtitleStyle}`}>
+                            {subtitleLabel}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div className={`flex-1 flex flex-col ${activeType === "skills" ? "" : "overflow-y-auto max-h-[60vh]"}`}>
@@ -1751,6 +1935,246 @@ export function CharacterContent({
                   <button
                     type="button"
                     onClick={() => setSelectedClassBenefit(null)}
+                    className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-1.5 text-xs font-bold text-gray-200 hover:bg-gray-700 hover:text-white transition-colors cursor-pointer"
+                  >
+                    Fechar
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {selectedRaceFeature && raceData && (() => {
+          const isHeritage = selectedRaceFeature.category === "heritage";
+          const isHeritageActive = isHeritage && activeHeritages.includes(selectedRaceFeature.name);
+          const isHeritageLocked = isHeritage && !isHeritageActive && activeHeritages.length >= 2;
+          const heritageAttributeBonuses = selectedRaceFeature.attributeBonuses ?? {};
+          const hasHeritageBonuses = (selectedRaceFeature.hitPointsBonus ?? 0) > 0
+            || Object.values(heritageAttributeBonuses).some((bonus) => bonus !== 0);
+          const hasHeritageMovementSize = selectedRaceFeature.speed !== undefined || Boolean(selectedRaceFeature.size);
+          return (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+              onClick={() => setSelectedRaceFeature(null)}
+              role="dialog"
+              aria-modal="true"
+              aria-label={selectedRaceFeature.name}
+            >
+              <div
+                className="relative w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl border border-gray-800 bg-gray-950 shadow-2xl overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Cabeçalho */}
+                <div className="flex items-center justify-between border-b border-gray-800 p-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-gray-900 border flex items-center justify-center ${
+                      isHeritage ? "border-teal-500/40" : "border-emerald-500/40"
+                    }`}>
+                      <span className="text-2xl select-none leading-none">
+                        {isHeritage ? "🌳" : "🧬"}
+                      </span>
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-bold text-white truncate" title={selectedRaceFeature.name}>
+                        {selectedRaceFeature.name}
+                      </h3>
+                      <span className={`text-[11px] font-medium ${isHeritage ? "text-teal-300" : "text-emerald-300"}`}>
+                        {raceData.name} · {isHeritage ? "Herança / Linhagem" : "Traço Racial"}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRaceFeature(null)}
+                    aria-label="Fechar"
+                    className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Corpo com Scroll */}
+                <div className="overflow-y-auto p-4 space-y-4 max-h-[60vh]">
+                  {/* Status / Origem */}
+                  <div className={`rounded-lg border p-3 flex items-center gap-3 ${
+                    isHeritage
+                      ? isHeritageActive
+                        ? "bg-teal-950/40 border-teal-800/60"
+                        : "bg-gray-900/60 border-gray-800"
+                      : "bg-emerald-950/40 border-emerald-800/60"
+                  }`}>
+                    <span className="text-lg select-none">
+                      {isHeritage ? (isHeritageActive ? "✓" : "🔒") : "🧬"}
+                    </span>
+                    <div>
+                      <p className={`text-xs font-bold ${
+                        isHeritage
+                          ? isHeritageActive
+                            ? "text-teal-300"
+                            : "text-gray-300"
+                          : "text-emerald-300"
+                      }`}>
+                        {isHeritage
+                          ? isHeritageActive
+                            ? "Herança Ativa"
+                            : "Herança Inativa"
+                          : "Traço Racial Ativo"}
+                      </p>
+                      <p className="text-[11px] text-gray-400">
+                        Vinculado à raça {raceData.name}.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Bloco de Ativação / Desativação de Herança */}
+                  {isHeritage && (
+                    <div className="rounded-xl border border-teal-900/50 bg-teal-950/20 p-3.5 space-y-2">
+                      <div className="flex items-center justify-between text-xs font-bold text-teal-300">
+                        <span>Estado da Herança</span>
+                        <span className="text-[11px] text-gray-400 font-normal">
+                          {activeHeritages.length}/2 ativas
+                        </span>
+                      </div>
+
+                      {isHeritageActive ? (
+                        <div className="space-y-2">
+                          <p className="text-xs text-teal-200/80">
+                            Esta herança está ativa na ficha do seu personagem.
+                          </p>
+                          <button
+                            type="button"
+                            disabled={isBusy}
+                            onClick={() => handleToggleHeritage(selectedRaceFeature.name)}
+                            className="w-full rounded-lg border border-amber-700/60 bg-amber-950/40 hover:bg-amber-900/50 text-amber-200 px-3 py-2 text-xs font-bold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isBusy ? "Salvando..." : "✕ Desativar Herança"}
+                          </button>
+                        </div>
+                      ) : isHeritageLocked ? (
+                        <div className="space-y-2">
+                          <p className="text-xs text-amber-300/90 bg-amber-950/30 border border-amber-900/40 rounded-lg p-2.5">
+                            Limite de 2 heranças ativas atingido. Desative outra herança para ativar esta.
+                          </p>
+                          <button
+                            type="button"
+                            disabled={true}
+                            className="w-full rounded-lg border border-gray-800 bg-gray-900/50 text-gray-500 px-3 py-2 text-xs font-bold cursor-not-allowed"
+                          >
+                            🔒 Travada (2/2 em uso)
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <p className="text-xs text-gray-300">
+                            Ative esta herança para conceder suas características e bônus à ficha.
+                          </p>
+                          <button
+                            type="button"
+                            disabled={isBusy}
+                            onClick={() => handleToggleHeritage(selectedRaceFeature.name)}
+                            className="w-full rounded-lg border border-teal-500/80 bg-teal-600 hover:bg-teal-500 text-white shadow-[0_0_12px_rgba(20,184,166,0.25)] px-3 py-2 text-xs font-bold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isBusy
+                              ? "Salvando..."
+                              : `✨ Ativar Herança (Slot livre: ${2 - activeHeritages.length}/2)`}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {isHeritage && hasHeritageBonuses && (
+                    <div className="space-y-1">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">Bônus desta Herança</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {(selectedRaceFeature.hitPointsBonus ?? 0) > 0 && (
+                          <span className="rounded-md bg-gray-900 px-2 py-0.5 text-[11px] font-bold text-teal-400 border border-gray-800">
+                            +{selectedRaceFeature.hitPointsBonus} HP
+                          </span>
+                        )}
+                        {Object.entries(heritageAttributeBonuses).filter(([, bonus]) => bonus !== 0).map(([attr, bonus]) => (
+                          <span key={attr} className="rounded-md bg-gray-900 px-2 py-0.5 text-[11px] font-bold text-teal-400 border border-gray-800">
+                            {attr.toUpperCase()}: {bonus > 0 ? `+${bonus}` : bonus}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {isHeritage && hasHeritageMovementSize && (
+                    <div className="space-y-1">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">Dados desta Herança</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {selectedRaceFeature.speed !== undefined && <span className="rounded-md bg-gray-900 px-2 py-0.5 text-[11px] font-bold text-indigo-300 border border-gray-800">Desloc. {selectedRaceFeature.speed}m</span>}
+                        {selectedRaceFeature.size && <span className="rounded-md bg-gray-900 px-2 py-0.5 text-[11px] font-bold text-indigo-300 border border-gray-800">Tamanho {selectedRaceFeature.size}</span>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Metadados da raça */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
+                      <span className="text-[10px] uppercase tracking-wider text-gray-400 block">Velocidade</span>
+                      <span className="text-xs font-bold text-emerald-300">{raceData.speed}m</span>
+                    </div>
+                    {Boolean(raceData.size) && (
+                      <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
+                        <span className="text-[10px] uppercase tracking-wider text-gray-400 block">Tamanho</span>
+                        <span className="text-xs font-bold text-gray-200">{raceData.size}</span>
+                      </div>
+                    )}
+                    {!isHeritage && raceData.hitPointsBonus > 0 && (
+                      <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
+                        <span className="text-[10px] uppercase tracking-wider text-gray-400 block">Bônus de HP</span>
+                        <span className="text-xs font-bold text-emerald-400">+{raceData.hitPointsBonus} HP</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Bônus de Atributos */}
+                  {!isHeritage && raceData.attributeBonuses && Object.keys(raceData.attributeBonuses).length > 0 && (
+                    <div className="space-y-1">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">Bônus de Atributos</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {Object.entries(raceData.attributeBonuses).map(([attr, bonus]) => (
+                          <span
+                            key={attr}
+                            className="rounded-md bg-gray-900 px-2 py-0.5 text-[11px] font-bold text-emerald-400 border border-gray-800"
+                          >
+                            {attr.toUpperCase()}: {bonus > 0 ? `+${bonus}` : bonus}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Idiomas */}
+                  {Array.isArray(raceData.languages) && raceData.languages.length > 0 && (
+                    <div className="space-y-1">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">Idiomas</span>
+                      <p className="text-xs text-gray-300">
+                        {raceData.languages.join(", ")}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Descrição Completa */}
+                  {Boolean(selectedRaceFeature.description) && (
+                    <div className="space-y-1">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">Descrição do Traço</span>
+                      <div className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap rounded-lg bg-gray-900/40 p-3 border border-gray-800/60">
+                        {selectedRaceFeature.description}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Rodapé */}
+                <div className="border-t border-gray-800 p-4 flex justify-end bg-gray-900/50">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRaceFeature(null)}
                     className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-1.5 text-xs font-bold text-gray-200 hover:bg-gray-700 hover:text-white transition-colors cursor-pointer"
                   >
                     Fechar

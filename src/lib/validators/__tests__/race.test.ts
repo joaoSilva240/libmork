@@ -39,7 +39,7 @@ describe("Race Validator Schemas", () => {
         { name: "Ancestralidade Feérica", description: "Vantagem contra ser encantado." },
       ],
       heritages: [
-        { name: "Elfo da Floresta", description: "Velocidade base aumentada para 35 pés." },
+        { name: "Elfo da Floresta", description: "Velocidade base aumentada para 35 pés.", speed: 35, size: "Grande", hitPointsBonus: 2, attributeBonuses: { vigor: 1 } },
         { name: "Alto Elfo", description: "Conhece um truque de magia arcana." },
       ],
       imageUrl: "https://example.com/elf.png",
@@ -57,6 +57,10 @@ describe("Race Validator Schemas", () => {
       expect(result.data.languages).toHaveLength(3);
       expect(result.data.traits).toHaveLength(2);
       expect(result.data.heritages).toHaveLength(2);
+      expect(result.data.heritages[0].hitPointsBonus).toBe(2);
+      expect(result.data.heritages[0].attributeBonuses.vigor).toBe(1);
+      expect(result.data.heritages[0].speed).toBe(35);
+      expect(result.data.heritages[0].size).toBe("Grande");
       expect(result.data.sourceSystem).toBe("pf2e");
     }
   });
@@ -74,6 +78,22 @@ describe("Race Validator Schemas", () => {
 
     const invalidHeritage = { description: "Sem nome" };
     expect(raceHeritageSchema.safeParse(invalidHeritage).success).toBe(false);
+  });
+
+  it("accepts legacy heritages and rejects invalid heritage bonuses", () => {
+    const legacy = raceHeritageSchema.safeParse({ name: "Legada", description: "Sem bônus" });
+    expect(legacy.success).toBe(true);
+    if (legacy.success) {
+      expect(legacy.data.hitPointsBonus).toBe(0);
+      expect(legacy.data.attributeBonuses).toEqual({});
+    }
+
+    expect(raceHeritageSchema.safeParse({ name: "Inválida", hitPointsBonus: -1 }).success).toBe(false);
+    expect(raceHeritageSchema.safeParse({ name: "Inválida", hitPointsBonus: 1.5 }).success).toBe(false);
+    expect(raceHeritageSchema.safeParse({ name: "Inválida", attributeBonuses: { sorte: 1 } }).success).toBe(false);
+    expect(raceHeritageSchema.safeParse({ name: "Inválida", speed: -1 }).success).toBe(false);
+    expect(raceHeritageSchema.safeParse({ name: "Inválida", speed: 30.5 }).success).toBe(false);
+    expect(raceHeritageSchema.safeParse({ name: "Inválida", speed: 201 }).success).toBe(false);
   });
 
   it("should validate partial updates with updateRaceSchema", () => {

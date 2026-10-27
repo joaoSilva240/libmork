@@ -77,7 +77,7 @@ export const rpgRaces = pgTable("rpg_races", {
   attributeBonuses: jsonb("attribute_bonuses").notNull().default({}), // { forca?: number, destreza?: number, ... }
   languages: jsonb("languages").notNull().default([]), // string[]
   traits: jsonb("traits").notNull().default([]), // Array<{ name: string; description?: string }>
-  heritages: jsonb("heritages").notNull().default([]), // Array<{ name: string; description?: string }>
+  heritages: jsonb("heritages").notNull().default([]), // Array<{ name: string; description?: string; hitPointsBonus?: number; attributeBonuses?: Record<string, number> }>
   imageUrl: varchar("image_url", { length: 500 }),
   sourceSystem: varchar("source_system", { length: 50 }).default("custom"), // "dnd5e" | "pf2e" | "custom"
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -113,6 +113,8 @@ export const characters = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     classId: uuid("class_id").references(() => rpgClasses.id, { onDelete: "set null" }),
+    raceId: uuid("race_id").references(() => rpgRaces.id, { onDelete: "set null" }),
+    activeHeritages: jsonb("active_heritages").$type<string[]>().notNull().default([]),
     name: varchar("name", { length: 100 }).notNull(),
     imageUrl: varchar("image_url", { length: 500 }),
     hitPointsMax: integer("hit_points_max").notNull().default(15),
@@ -745,6 +747,7 @@ export const classLevelBenefitsRelations = relations(classLevelBenefits, ({ one 
 export const charactersRelations = relations(characters, ({ one, many }) => ({
   owner: one(users, { fields: [characters.ownerId], references: [users.id] }),
   rpgClass: one(rpgClasses, { fields: [characters.classId], references: [rpgClasses.id] }),
+  rpgRace: one(rpgRaces, { fields: [characters.raceId], references: [rpgRaces.id] }),
   characterCampaigns: many(characterCampaigns),
   characterSkills: many(characterSkills),
   characterSpells: many(characterSpells),

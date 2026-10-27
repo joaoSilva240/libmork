@@ -16,7 +16,14 @@ type LibraryRacesProps = {
 };
 
 type TraitItem = { name: string; description: string };
-type HeritageItem = { name: string; description: string };
+type HeritageItem = {
+  name: string;
+  description: string;
+  speed?: number;
+  size?: string;
+  hitPointsBonus?: number;
+  attributeBonuses?: Partial<Record<Exclude<Attribute, "sorte">, number>>;
+};
 
 const COMMON_LANGUAGES = [
   "Comum",
@@ -87,6 +94,10 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
   const [createHeritages, setCreateHeritages] = useState<HeritageItem[]>([]);
   const [createHeritageName, setCreateHeritageName] = useState("");
   const [createHeritageDesc, setCreateHeritageDesc] = useState("");
+  const [createHeritageSpeed, setCreateHeritageSpeed] = useState("");
+  const [createHeritageSize, setCreateHeritageSize] = useState("");
+  const [createHeritageHitPointsBonus, setCreateHeritageHitPointsBonus] = useState("0");
+  const [createHeritageAttributes, setCreateHeritageAttributes] = useState<Partial<Record<Exclude<Attribute, "sorte">, number>>>({});
   const [isCreating, setIsCreating] = useState(false);
 
   // Form Edição
@@ -107,6 +118,10 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
   const [editHeritages, setEditHeritages] = useState<HeritageItem[]>([]);
   const [editHeritageName, setEditHeritageName] = useState("");
   const [editHeritageDesc, setEditHeritageDesc] = useState("");
+  const [editHeritageSpeed, setEditHeritageSpeed] = useState("");
+  const [editHeritageSize, setEditHeritageSize] = useState("");
+  const [editHeritageHitPointsBonus, setEditHeritageHitPointsBonus] = useState("0");
+  const [editHeritageAttributes, setEditHeritageAttributes] = useState<Partial<Record<Exclude<Attribute, "sorte">, number>>>({});
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Ações Assíncronas
@@ -166,6 +181,10 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
     setCreateHeritages([]);
     setCreateHeritageName("");
     setCreateHeritageDesc("");
+    setCreateHeritageSpeed("");
+    setCreateHeritageSize("");
+    setCreateHeritageHitPointsBonus("0");
+    setCreateHeritageAttributes({});
   }, []);
 
   const fetchRaces = useCallback(async () => {
@@ -273,11 +292,22 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
     setEditTraitDesc("");
     setEditHeritages(
       Array.isArray(race.heritages)
-        ? race.heritages.map((h) => ({ name: h.name, description: h.description || "" }))
+        ? race.heritages.map((h) => ({
+            name: h.name,
+            description: h.description || "",
+            speed: h.speed,
+            size: h.size,
+            hitPointsBonus: h.hitPointsBonus ?? 0,
+            attributeBonuses: h.attributeBonuses ?? {},
+          }))
         : []
     );
     setEditHeritageName("");
     setEditHeritageDesc("");
+    setEditHeritageSpeed("");
+    setEditHeritageSize("");
+    setEditHeritageHitPointsBonus("0");
+    setEditHeritageAttributes({});
   };
 
   // Criação de Nova Raça
@@ -1138,6 +1168,29 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
                         className="md:col-span-2 rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none"
                       />
                     </div>
+                    <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="HP"
+                        value={createHeritageHitPointsBonus}
+                        onChange={(e) => setCreateHeritageHitPointsBonus(e.target.value)}
+                        className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none"
+                      />
+                      {ATTRIBUTES.filter((attr) => attr !== "sorte").map((attr) => (
+                        <input
+                          key={attr}
+                          type="number"
+                          placeholder={ATTRIBUTE_LABELS[attr].split(" ")[0]}
+                          value={createHeritageAttributes[attr] ?? 0}
+                          onChange={(e) => setCreateHeritageAttributes((previous) => ({
+                            ...previous,
+                            [attr]: parseInt(e.target.value, 10) || 0,
+                          }))}
+                          className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none"
+                        />
+                      ))}
+                    </div>
                     <div className="flex justify-end">
                       <button
                         type="button"
@@ -1210,17 +1263,35 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
                         className="md:col-span-2 rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none"
                       />
                     </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input type="number" min="0" max="200" placeholder="Deslocamento (opcional)" value={createHeritageSpeed} onChange={(e) => setCreateHeritageSpeed(e.target.value)} className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none" />
+                      <input type="text" maxLength={50} placeholder="Tamanho (opcional)" value={createHeritageSize} onChange={(e) => setCreateHeritageSize(e.target.value)} className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none" />
+                    </div>
                     <div className="flex justify-end">
                       <button
                         type="button"
                         onClick={() => {
                           if (createHeritageName.trim()) {
+                            const attributeBonuses = Object.fromEntries(
+                              Object.entries(createHeritageAttributes).filter(([, value]) => value !== 0),
+                            ) as Partial<Record<Exclude<Attribute, "sorte">, number>>;
                             setCreateHeritages([
                               ...createHeritages,
-                              { name: createHeritageName.trim(), description: createHeritageDesc.trim() },
+                              {
+                                name: createHeritageName.trim(),
+                                description: createHeritageDesc.trim(),
+                                ...(createHeritageSpeed.trim() === "" ? {} : { speed: Number(createHeritageSpeed) }),
+                                ...(createHeritageSize.trim() === "" ? {} : { size: createHeritageSize.trim() }),
+                                hitPointsBonus: parseInt(createHeritageHitPointsBonus, 10) || 0,
+                                attributeBonuses,
+                              },
                             ]);
                             setCreateHeritageName("");
                             setCreateHeritageDesc("");
+                            setCreateHeritageSpeed("");
+                            setCreateHeritageSize("");
+                            setCreateHeritageHitPointsBonus("0");
+                            setCreateHeritageAttributes({});
                           }
                         }}
                         className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-indigo-500 transition"
@@ -1243,6 +1314,14 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
                           <div>
                             <span className="text-xs font-bold text-indigo-200">🌳 {h.name}</span>
                             <p className="text-xs text-gray-400 mt-0.5">{h.description || "Sem descrição."}</p>
+                            {(h.speed !== undefined || h.size) && <p className="text-[11px] text-indigo-300 mt-1">{h.speed !== undefined ? `Desloc. ${h.speed}m` : ""}{h.speed !== undefined && h.size ? " · " : ""}{h.size ? `Tamanho ${h.size}` : ""}</p>}
+                            {(h.hitPointsBonus || Object.keys(h.attributeBonuses ?? {}).length > 0) && (
+                              <p className="text-[11px] text-teal-300 mt-1">
+                                {h.hitPointsBonus ? `+${h.hitPointsBonus} HP` : ""}
+                                {h.hitPointsBonus && Object.keys(h.attributeBonuses ?? {}).length > 0 ? " · " : ""}
+                                {Object.entries(h.attributeBonuses ?? {}).map(([attribute, bonus]) => `+${bonus} ${ATTRIBUTE_LABELS[attribute as Attribute].split(" ")[0]}`).join(", ")}
+                              </p>
+                            )}
                           </div>
                           <button
                             type="button"
@@ -1656,17 +1735,58 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
                         className="md:col-span-2 rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none"
                       />
                     </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input type="number" min="0" max="200" placeholder="Deslocamento (opcional)" value={editHeritageSpeed} onChange={(e) => setEditHeritageSpeed(e.target.value)} className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none" />
+                      <input type="text" maxLength={50} placeholder="Tamanho (opcional)" value={editHeritageSize} onChange={(e) => setEditHeritageSize(e.target.value)} className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none" />
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="HP"
+                        value={editHeritageHitPointsBonus}
+                        onChange={(e) => setEditHeritageHitPointsBonus(e.target.value)}
+                        className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none"
+                      />
+                      {ATTRIBUTES.filter((attr) => attr !== "sorte").map((attr) => (
+                        <input
+                          key={attr}
+                          type="number"
+                          placeholder={ATTRIBUTE_LABELS[attr].split(" ")[0]}
+                          value={editHeritageAttributes[attr] ?? 0}
+                          onChange={(e) => setEditHeritageAttributes((previous) => ({
+                            ...previous,
+                            [attr]: parseInt(e.target.value, 10) || 0,
+                          }))}
+                          className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none"
+                        />
+                      ))}
+                    </div>
                     <div className="flex justify-end">
                       <button
                         type="button"
                         onClick={() => {
                           if (editHeritageName.trim()) {
+                            const attributeBonuses = Object.fromEntries(
+                              Object.entries(editHeritageAttributes).filter(([, value]) => value !== 0),
+                            ) as Partial<Record<Exclude<Attribute, "sorte">, number>>;
                             setEditHeritages([
                               ...editHeritages,
-                              { name: editHeritageName.trim(), description: editHeritageDesc.trim() },
+                              {
+                                name: editHeritageName.trim(),
+                                description: editHeritageDesc.trim(),
+                                ...(editHeritageSpeed.trim() === "" ? {} : { speed: Number(editHeritageSpeed) }),
+                                ...(editHeritageSize.trim() === "" ? {} : { size: editHeritageSize.trim() }),
+                                hitPointsBonus: parseInt(editHeritageHitPointsBonus, 10) || 0,
+                                attributeBonuses,
+                              },
                             ]);
                             setEditHeritageName("");
                             setEditHeritageDesc("");
+                            setEditHeritageSpeed("");
+                            setEditHeritageSize("");
+                            setEditHeritageHitPointsBonus("0");
+                            setEditHeritageAttributes({});
                           }
                         }}
                         className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-indigo-500 transition"
@@ -1688,6 +1808,14 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
                           <div>
                             <span className="text-xs font-bold text-indigo-200">🌳 {h.name}</span>
                             <p className="text-xs text-gray-400 mt-0.5">{h.description || "Sem descrição."}</p>
+                            {(h.speed !== undefined || h.size) && <p className="text-[11px] text-indigo-300 mt-1">{h.speed !== undefined ? `Desloc. ${h.speed}m` : ""}{h.speed !== undefined && h.size ? " · " : ""}{h.size ? `Tamanho ${h.size}` : ""}</p>}
+                            {(h.hitPointsBonus || Object.keys(h.attributeBonuses ?? {}).length > 0) && (
+                              <p className="text-[11px] text-teal-300 mt-1">
+                                {h.hitPointsBonus ? `+${h.hitPointsBonus} HP` : ""}
+                                {h.hitPointsBonus && Object.keys(h.attributeBonuses ?? {}).length > 0 ? " · " : ""}
+                                {Object.entries(h.attributeBonuses ?? {}).map(([attribute, bonus]) => `+${bonus} ${ATTRIBUTE_LABELS[attribute as Attribute].split(" ")[0]}`).join(", ")}
+                              </p>
+                            )}
                           </div>
                           <button
                             type="button"

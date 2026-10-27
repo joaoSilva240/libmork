@@ -44,7 +44,12 @@ type RaceData = {
   attributeBonuses: Record<string, number>;
   languages: string[];
   traits: Array<{ name: string; description?: string }>;
-  heritages: Array<{ name: string; description?: string }>;
+  heritages: Array<{
+    name: string;
+    description?: string;
+    hitPointsBonus?: number;
+    attributeBonuses?: Partial<Record<Exclude<Attribute, "sorte">, number>>;
+  }>;
   imageUrl: string | null;
 };
 

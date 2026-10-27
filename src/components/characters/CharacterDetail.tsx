@@ -4,10 +4,11 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import type { Character } from "@/types";
+import type { Character, RpgRace } from "@/types";
 import { ATTRIBUTES } from "@/lib/utils/constants";
 import type { Attribute } from "@/lib/utils/constants";
-import { getDerivedStats } from "@/lib/engine/attributes";
+import { getActiveHeritageMovementSize, getDerivedStats } from "@/lib/engine/attributes";
+import { useRaceDetailsQuery } from "@/hooks/queries/useCharacterContentQueries";
 import { rollD20WithModifier } from "@/lib/engine/dice";
 import { ShareLink } from "@/components/characters/ShareLink";
 import { ImageUpload } from "@/components/characters/ImageUpload";
@@ -259,6 +260,8 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
     },
     enabled: !!character?.id,
   });
+
+  const raceDetailsQuery = useRaceDetailsQuery(character?.raceId, { enabled: Boolean(character?.raceId) });
 
   // Calcular peso total carregado
   const totalWeight = (Array.isArray(inventoryItems) ? inventoryItems : []).reduce((sum: number, item: any) => {
@@ -823,8 +826,13 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
   }
 
   const stats = getDerivedStats(character.attributes, character.level);
+  const raceData = raceDetailsQuery.data?.data as RpgRace | undefined;
+  const movementSize = raceData
+    ? getActiveHeritageMovementSize(raceData, character.activeHeritages ?? [])
+    : { speed: 0, size: "" };
+  const movementLabel = raceData ? `${movementSize.speed}m` : "—";
+  const sizeLabel = raceData && movementSize.size ? movementSize.size : "—";
   const hpPercent = Math.min(100, Math.max(0, (character.hitPointsCurrent / Math.max(character.hitPointsMax, 1)) * 100));
-  const manaPercent = Math.min(100, Math.max(0, (character.manaPointsCurrent / Math.max(character.manaPointsMax, 1)) * 100));
 
   return (
     <div className="relative mx-auto min-h-screen max-w-md bg-gray-950 text-gray-100 pb-[calc(6rem+env(safe-area-inset-bottom))] shadow-2xl font-sans">
@@ -917,30 +925,38 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
               </div>
             )}
 
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="inline-block rounded-md bg-purple-950/80 px-2 py-0.5 text-[10px] font-bold text-purple-300 border border-purple-800/60">
-                    Nível {character.level}
-                  </span>
+              <div className="min-w-0 flex-1">
+               <div className="flex items-center gap-1.5 overflow-hidden">
+                 <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none]">
+                   <span className="inline-block rounded-md bg-purple-950/80 px-2 py-0.5 text-[10px] font-bold text-purple-300 border border-purple-800/60">
+                     Nível {character.level}
+                   </span>
                   <span
                     className="inline-flex items-center gap-1 rounded-md bg-gray-900/90 px-2 py-0.5 text-[10px] font-bold text-gray-200 border border-gray-800"
                     title="Bloqueio: mitigação tática com Vigor"
                   >
                     <span className="text-gray-400 font-semibold">Bloqueio</span>
-                    <span className="text-white font-black">{stats.block}</span>
-                  </span>
-                </div>
-                <RestPopover
+                     <span className="text-white font-black">{stats.block}</span>
+                   </span>
+                   <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-gray-800 bg-gray-900/90 px-1.5 py-0.5 text-[10px] font-bold text-gray-200" title={`Deslocamento: ${movementLabel}`} aria-label={`Deslocamento ${movementLabel}`}>
+                     <span className="text-gray-400 font-semibold">Desloc.</span><span className="text-white font-black">{movementLabel}</span>
+                   </span>
+                   <span className="inline-flex max-w-[6.5rem] shrink-0 items-center gap-1 rounded-md border border-gray-800 bg-gray-900/90 px-1.5 py-0.5 text-[10px] font-bold text-gray-200" title={`Tamanho: ${sizeLabel}`} aria-label={`Tamanho ${sizeLabel}`}>
+                     <span className="text-gray-400 font-semibold">Tamanho</span><span className="truncate text-white font-black">{sizeLabel}</span>
+                   </span>
+                 </div>
+                 <div className="shrink-0">
+                 <RestPopover
                   currentHp={character.hitPointsCurrent}
                   maxHp={character.hitPointsMax}
                   currentMana={character.manaPointsCurrent}
                   maxMana={character.manaPointsMax}
                   vigor={character.attributes?.vigor ?? 10}
                   onSelectRest={handleRest}
-                  disabled={isResting}
-                />
-              </div>
+                   disabled={isResting}
+                 />
+                 </div>
+               </div>
 
               <h2 className="mt-1 truncate text-lg font-bold text-white tracking-tight">{character.name}</h2>
               <p className="text-[11px] text-gray-400">{character.xp} XP total</p>
@@ -973,11 +989,35 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
                   {character.manaPointsCurrent} / {character.manaPointsMax}
                 </span>
               </div>
-              <div className="h-1 w-full overflow-hidden rounded-full bg-gray-900">
-                <div
-                  className="h-full bg-blue-500 transition-all duration-300"
-                  style={{ width: `${manaPercent}%` }}
-                />
+              <div
+                className="flex h-1.5 w-full items-center gap-0.5 overflow-hidden"
+                role="progressbar"
+                aria-valuenow={character.manaPointsCurrent}
+                aria-valuemin={0}
+                aria-valuemax={character.manaPointsMax}
+                aria-label="Pontos de Mana"
+                data-testid="mana-bar-segmented"
+              >
+                {Math.max(0, Math.floor(character.manaPointsMax || 0)) > 0 ? (
+                  Array.from({ length: Math.max(0, Math.floor(character.manaPointsMax || 0)) }, (_, index) => {
+                    const isFilled = index < Math.max(0, Math.min(character.manaPointsMax, character.manaPointsCurrent || 0));
+                    return (
+                      <div
+                        key={index}
+                        data-testid="mana-segment"
+                        data-filled={isFilled ? "true" : "false"}
+                        className={`h-full flex-1 rounded-sm transition-all duration-200 ${
+                          isFilled
+                            ? "bg-blue-500 shadow-[0_0_3px_rgba(59,130,246,0.6)]"
+                            : "bg-gray-900 border border-gray-800/80"
+                        }`}
+                        title={`Mana ${index + 1}/${character.manaPointsMax}: ${isFilled ? "Ativo" : "Gasto"}`}
+                      />
+                    );
+                  })
+                ) : (
+                  <div className="h-full w-full rounded-sm bg-gray-900 border border-gray-800/80" />
+                )}
               </div>
             </div>
 
@@ -1077,7 +1117,43 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
             )}
 
             {/* Gerenciador completo de Perícias */}
-              <CharacterContent characterId={character.id} characterClassId={character.classId} characterLevel={character.level} characterAttributeModifiers={stats.modifiers} campaignId={character.campaignId} characterManaCurrent={character.manaPointsCurrent} characterManaMax={character.manaPointsMax} characterHpCurrent={character.hitPointsCurrent} characterHpMax={character.hitPointsMax} combatState={combatState} onCombatStateChange={handleCombatStateChange} onActorStatusChange={handleActorStatusChange} onActionResult={handleActionResult} combatants={combatState?.combatants ?? []} defaultType="skills" allowedTypes={["skills"]} isTurnLocked={isTurnLocked} onStartRolling={() => setIsRollingDice(true)} onEndRolling={() => setIsRollingDice(false)} onPersistActorStatus={async (actor, hp, mana) => { if (actor.characterId !== character.id && actor.id !== character.id && actor.type !== "npc" && !actor.npcId) return; const response = await fetch(`/api/campaigns/${character.campaignId}/actors/${actor.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hitPointsCurrent: hp, ...(mana == null ? {} : { manaPointsCurrent: mana }), reason: "combate" }) }); if (!response.ok) setError("Estado atualizado em tempo real, mas a persistência falhou."); }} />
+            <CharacterContent
+              characterId={character.id}
+              characterClassId={character.classId}
+              characterRaceId={character.raceId}
+              characterLevel={character.level}
+              characterActiveHeritages={character.activeHeritages ?? []}
+              onCharacterUpdate={(updated) => setCharacter((prev) => (prev ? { ...prev, ...updated } : prev))}
+              characterAttributeModifiers={stats.modifiers}
+              campaignId={character.campaignId}
+              characterManaCurrent={character.manaPointsCurrent}
+              characterManaMax={character.manaPointsMax}
+              characterHpCurrent={character.hitPointsCurrent}
+              characterHpMax={character.hitPointsMax}
+              combatState={combatState}
+              onCombatStateChange={handleCombatStateChange}
+              onActorStatusChange={handleActorStatusChange}
+              onActionResult={handleActionResult}
+              combatants={combatState?.combatants ?? []}
+              defaultType="skills"
+              allowedTypes={["skills"]}
+              isTurnLocked={isTurnLocked}
+              onStartRolling={() => setIsRollingDice(true)}
+              onEndRolling={() => setIsRollingDice(false)}
+              onPersistActorStatus={async (actor, hp, mana) => {
+                if (actor.characterId !== character.id && actor.id !== character.id && actor.type !== "npc" && !actor.npcId) return;
+                const response = await fetch(`/api/campaigns/${character.campaignId}/actors/${actor.id}`, {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    hitPointsCurrent: hp,
+                    ...(mana == null ? {} : { manaPointsCurrent: mana }),
+                    reason: "combate",
+                  }),
+                });
+                if (!response.ok) setError("Estado atualizado em tempo real, mas a persistência falhou.");
+              }}
+            />
           </div>
         )}
 
@@ -1099,7 +1175,43 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
             </div>
 
             {/* Conteúdo da Ficha (Itens, Magias, Habilidades, Condições) */}
-              <CharacterContent characterId={character.id} characterClassId={character.classId} characterLevel={character.level} characterAttributeModifiers={stats.modifiers} campaignId={character.campaignId} characterManaCurrent={character.manaPointsCurrent} characterManaMax={character.manaPointsMax} characterHpCurrent={character.hitPointsCurrent} characterHpMax={character.hitPointsMax} combatState={combatState} onCombatStateChange={handleCombatStateChange} onActorStatusChange={handleActorStatusChange} onActionResult={handleActionResult} combatants={combatState?.combatants ?? []} defaultType="items" allowedTypes={["items", "spells", "conditions"]} isTurnLocked={isTurnLocked} onStartRolling={() => setIsRollingDice(true)} onEndRolling={() => setIsRollingDice(false)} onPersistActorStatus={async (actor, hp, mana) => { if (actor.characterId !== character.id && actor.id !== character.id && actor.type !== "npc" && !actor.npcId) return; const response = await fetch(`/api/campaigns/${character.campaignId}/actors/${actor.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hitPointsCurrent: hp, ...(mana == null ? {} : { manaPointsCurrent: mana }), reason: "combate" }) }); if (!response.ok) setError("Estado atualizado em tempo real, mas a persistência falhou."); }} />
+            <CharacterContent
+              characterId={character.id}
+              characterClassId={character.classId}
+              characterRaceId={character.raceId}
+              characterLevel={character.level}
+              characterActiveHeritages={character.activeHeritages ?? []}
+              onCharacterUpdate={(updated) => setCharacter((prev) => (prev ? { ...prev, ...updated } : prev))}
+              characterAttributeModifiers={stats.modifiers}
+              campaignId={character.campaignId}
+              characterManaCurrent={character.manaPointsCurrent}
+              characterManaMax={character.manaPointsMax}
+              characterHpCurrent={character.hitPointsCurrent}
+              characterHpMax={character.hitPointsMax}
+              combatState={combatState}
+              onCombatStateChange={handleCombatStateChange}
+              onActorStatusChange={handleActorStatusChange}
+              onActionResult={handleActionResult}
+              combatants={combatState?.combatants ?? []}
+              defaultType="items"
+              allowedTypes={["items", "spells", "conditions"]}
+              isTurnLocked={isTurnLocked}
+              onStartRolling={() => setIsRollingDice(true)}
+              onEndRolling={() => setIsRollingDice(false)}
+              onPersistActorStatus={async (actor, hp, mana) => {
+                if (actor.characterId !== character.id && actor.id !== character.id && actor.type !== "npc" && !actor.npcId) return;
+                const response = await fetch(`/api/campaigns/${character.campaignId}/actors/${actor.id}`, {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    hitPointsCurrent: hp,
+                    ...(mana == null ? {} : { manaPointsCurrent: mana }),
+                    reason: "combate",
+                  }),
+                });
+                if (!response.ok) setError("Estado atualizado em tempo real, mas a persistência falhou.");
+              }}
+            />
           </div>
         )}
 

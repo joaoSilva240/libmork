@@ -16,7 +16,12 @@ import {
 } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { createCharacterSchema } from "@/lib/validators/character";
-import { getDerivedStats } from "@/lib/engine/attributes";
+import {
+  getDerivedStats,
+  getHeritageHitPointsMax,
+  getActiveHeritageBonuses,
+  transitionRaceHeritageAttributes,
+} from "@/lib/engine/attributes";
 import { eq, sql } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 
@@ -89,19 +94,42 @@ export async function POST(request: NextRequest) {
       attributes,
       campaignId,
       raceId,
+      activeHeritages,
       items: itemsInput,
       spells: spellsInput,
       skills: skillsInput,
     } = validation.data;
 
-    // Buscar bônus de raça se fornecido
-    let raceHpBonus = 0;
-    if (raceId) {
+    let heritageBonuses = { hitPointsBonus: 0, attributeBonuses: {} };
+    if (activeHeritages.length > 0) {
+      if (!raceId) {
+        return NextResponse.json(
+          { success: false, error: "Heranças ativas exigem uma raça selecionada" },
+          { status: 400 },
+        );
+      }
+
       const [race] = await db
-        .select({ hitPointsBonus: rpgRaces.hitPointsBonus })
+        .select({
+          heritages: rpgRaces.heritages,
+        })
         .from(rpgRaces)
         .where(eq(rpgRaces.id, raceId));
-      if (race) raceHpBonus = race.hitPointsBonus;
+      if (!race) {
+        return NextResponse.json(
+          { success: false, error: "Raça selecionada não encontrada" },
+          { status: 400 },
+        );
+      }
+
+      try {
+        heritageBonuses = getActiveHeritageBonuses(race.heritages, activeHeritages);
+      } catch (error) {
+        return NextResponse.json(
+          { success: false, error: error instanceof Error ? error.message : "Heranças inválidas" },
+          { status: 400 },
+        );
+      }
     }
 
     const finalAttributes = attributes || {
@@ -111,7 +139,17 @@ export async function POST(request: NextRequest) {
       inteligencia: 8,
       empatia: 8,
     };
-    const derived = getDerivedStats(finalAttributes, 1);
+    const effectiveAttributes = transitionRaceHeritageAttributes(
+      finalAttributes,
+      {},
+      heritageBonuses.attributeBonuses,
+    );
+    const derived = getDerivedStats(effectiveAttributes, 1);
+    const hitPointsMax = getHeritageHitPointsMax(
+      effectiveAttributes,
+      1,
+      heritageBonuses.hitPointsBonus,
+    );
 
     const newCharacter = await db.transaction(async (tx) => {
       const [created] = await tx
@@ -120,10 +158,12 @@ export async function POST(request: NextRequest) {
           ownerId: session.user.id,
           name,
           classId: classId || null,
+          raceId: raceId || null,
+          activeHeritages,
           imageUrl: imageUrl || null,
-          attributes: finalAttributes,
-          hitPointsMax: derived.hitPointsMax + raceHpBonus,
-          hitPointsCurrent: derived.hitPointsMax + raceHpBonus,
+          attributes: effectiveAttributes,
+          hitPointsMax,
+          hitPointsCurrent: hitPointsMax,
           manaPointsMax: derived.manaPointsMax,
           manaPointsCurrent: derived.manaPointsMax,
           block: derived.block,
