@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import {
   campaigns,
   campaignInvites,
+  campaignLogs,
   missingCampaignStates,
   missingHabitants,
   missingActionLedger,
@@ -623,6 +624,7 @@ export async function eraseHabitantLine(
         erasedAt: new Date().toISOString(),
         habitantStatus: newStatus,
         disappeared: isMissing,
+        habitantName: habitant.name,
       },
     });
   }
@@ -1081,8 +1083,35 @@ export async function executeTestRoll(
         outcome: originalResult.outcome,
         erasuresCount,
         details: originalResult.details,
+        habitantName: habitant.name,
+        quotedLine: validated.quotedLine || null,
+        supportGains: validated.supportGains || 0,
       },
     });
+
+    try {
+      await db.insert(campaignLogs).values({
+        campaignId,
+        actorType: "character",
+        actorId: habitant.id,
+        actorName: habitant.name,
+        action: "roll",
+        description: `Teste ${validated.type === "common" ? "Comum (1d6)" : validated.type === "probable" ? "Provável (2d6)" : "Improvável (2d6)"} — ${originalResult.outcome === "gain" ? "GANHO (Sucesso)" : "PERDA (Falha)"}`,
+        payload: {
+          rulesEngine: "missing_zero",
+          type: validated.type,
+          outcome: originalResult.outcome,
+          dice: originalResult.dice,
+          effectiveTotal: originalResult.effectiveTotal,
+          habitantName: habitant.name,
+          quotedLine: validated.quotedLine || null,
+          supportGains: validated.supportGains || 0,
+        },
+        createdById: userId,
+      });
+    } catch {
+      // Falha secundária em campaignLogs ignorada
+    }
 
     return {
       rollType: "standard",
@@ -1162,6 +1191,7 @@ export async function executeTestRoll(
         equipmentName: targetEquipment.name,
         slot: targetEquipment.slot,
         reason: forcedResult.details,
+        habitantName: habitant.name,
       },
     });
   }
@@ -1185,8 +1215,37 @@ export async function executeTestRoll(
       effectiveTotal: forcedResult.effectiveTotal,
       erasuresCount,
       details: forcedResult.details,
+      habitantName: habitant.name,
+      quotedLine: validated.quotedLine || null,
+      supportGains: validated.supportGains || 0,
     },
   });
+
+  try {
+    await db.insert(campaignLogs).values({
+      campaignId,
+      actorType: "character",
+      actorId: habitant.id,
+      actorName: habitant.name,
+      action: "roll",
+      description: `Teste Forçado com ${targetEquipment.name} — ${forcedResult.outcome === "gain" ? "GANHO (Sucesso)" : "PERDA (Falha)"}${forcedResult.equipmentLost ? " [EQUIPAMENTO DESTRUÍDO]" : ""}`,
+      payload: {
+        rulesEngine: "missing_zero",
+        type: validated.type,
+        forced: true,
+        outcome: forcedResult.outcome,
+        equipmentName: targetEquipment.name,
+        equipmentLost: forcedResult.equipmentLost,
+        effectiveTotal: forcedResult.effectiveTotal,
+        habitantName: habitant.name,
+        quotedLine: validated.quotedLine || null,
+        supportGains: validated.supportGains || 0,
+      },
+      createdById: userId,
+    });
+  } catch {
+    // Falha secundária em campaignLogs ignorada
+  }
 
   return {
     rollType: "forced",

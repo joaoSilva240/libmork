@@ -29,17 +29,22 @@ describe("MissingHabitantCreateForm Component", () => {
     expect(screen.getByText("Slot 03")).toBeInTheDocument();
   });
 
-  it("rola 2d6 na tabela oficial e preenche o equipamento do slot", () => {
+  it("rola 2d6 na tabela oficial e preenche os 3 slots simultaneamente através de 1 único botão", () => {
     render(<MissingHabitantCreateForm />);
 
-    const rollButtons = screen.getAllByRole("button", { name: /Rolar 2d6/i });
-    expect(rollButtons).toHaveLength(3);
+    const rollBtn = screen.getByTestId("btn-rolar-todos-equipamentos");
+    expect(rollBtn).toBeInTheDocument();
 
-    // Clica para rolar no Slot 1
-    fireEvent.click(rollButtons[0]);
+    // Clica para rolar os 3 slots simultaneamente
+    fireEvent.click(rollBtn);
 
     const item1Input = screen.getByPlaceholderText("Item 1...") as HTMLInputElement;
+    const item2Input = screen.getByPlaceholderText("Item 2...") as HTMLInputElement;
+    const item3Input = screen.getByPlaceholderText("Item 3...") as HTMLInputElement;
+
     expect(item1Input.value.length).toBeGreaterThan(0);
+    expect(item2Input.value.length).toBeGreaterThan(0);
+    expect(item3Input.value.length).toBeGreaterThan(0);
   });
 
   it("permite adicionar linhas de memória até o limite de 10", () => {

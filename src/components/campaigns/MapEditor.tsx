@@ -11,9 +11,10 @@ type MapEditorProps = {
   worldId: string;
   mapUrl?: string | null;
   onSave?: (pins: MapPin[]) => Promise<void>;
+  isMissing?: boolean;
 };
 
-export function MapEditor({ worldId, mapUrl, onSave }: MapEditorProps) {
+export function MapEditor({ worldId, mapUrl, onSave, isMissing = false }: MapEditorProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const [pins, setPins] = useState<MapPin[]>([]);
@@ -204,19 +205,35 @@ export function MapEditor({ worldId, mapUrl, onSave }: MapEditorProps) {
     }
   }, [pins, loading, mapMode]);
 
+  // Helper para gerar o HTML do popup do pin
+  const getPopupContent = (id: string, title: string, description: string) => {
+    if (isMissing) {
+      return `
+        <div style="min-width: 210px; font-family: ui-monospace, monospace; background: #e8ddcb; color: #1c1917; padding: 10px; border-left: 4px solid #b45309; border-radius: 2px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+          <div style="font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #78350f; border-bottom: 1px dashed #a8a29e; padding-bottom: 4px; margin-bottom: 6px;">
+            [ EVIDÊNCIA / LOCALIZAÇÃO ]
+          </div>
+          <h4 style="margin: 0 0 4px 0; color: #1c1917; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">${escapeHtml(title)}</h4>
+          <p style="margin: 0 0 10px 0; color: #44403c; font-size: 11px; line-height: 1.4; white-space: pre-wrap;">${escapeHtml(description)}</p>
+          <button data-pin-id="${id}" style="background: #292524; color: #f5f5f4; border: 1px solid #78716c; padding: 4px 8px; border-radius: 2px; cursor: pointer; font-size: 10px; font-family: monospace; font-weight: bold; width: 100%; text-transform: uppercase; letter-spacing: 0.05em;">Descartar Registro</button>
+        </div>
+      `;
+    }
+    return `
+      <div style="min-width: 200px;">
+        <h4 style="margin: 0 0 8px 0; color: #e0e0e0; font-size: 14px;">${escapeHtml(title)}</h4>
+        <p style="margin: 0 0 12px 0; color: #b0b0b0; font-size: 12px;">${escapeHtml(description)}</p>
+        <button data-pin-id="${id}" style="background: #7c3aed; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; width: 100%;">Excluir</button>
+      </div>
+    `;
+  };
+
   // Renderizar um pin no mapa
   const renderPin = (pin: MapPin) => {
     if (!mapInstanceRef.current || !window.L) return;
 
     const marker = window.L.marker([pin.lat, pin.lng]).addTo(mapInstanceRef.current);
-
-    const popupContent = `
-      <div style="min-width: 200px;">
-        <h4 style="margin: 0 0 8px 0; color: #e0e0e0; font-size: 14px;">${escapeHtml(pin.title)}</h4>
-        <p style="margin: 0 0 12px 0; color: #b0b0b0; font-size: 12px;">${escapeHtml(pin.description)}</p>
-        <button data-pin-id="${pin.id}" style="background: #7c3aed; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; width: 100%;">Excluir</button>
-      </div>
-    `;
+    const popupContent = getPopupContent(pin.id, pin.title, pin.description);
 
     marker.bindPopup(popupContent);
 
@@ -254,13 +271,7 @@ export function MapEditor({ worldId, mapUrl, onSave }: MapEditorProps) {
     // Mostrar popup automaticamente
     if (mapInstanceRef.current && window.L) {
       const marker = window.L.marker([lat, lng]).addTo(mapInstanceRef.current);
-      const popupContent = `
-        <div style="min-width: 200px;">
-          <h4 style="margin: 0 0 8px 0; color: #e0e0e0; font-size: 14px;">${escapeHtml(title)}</h4>
-          <p style="margin: 0 0 12px 0; color: #b0b0b0; font-size: 12px;">${escapeHtml(description)}</p>
-          <button data-pin-id="${newPin.id}" style="background: #7c3aed; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; width: 100%;">Excluir</button>
-        </div>
-      `;
+      const popupContent = getPopupContent(newPin.id, title, description);
       marker.bindPopup(popupContent);
       marker.openPopup();
     }
@@ -332,25 +343,59 @@ export function MapEditor({ worldId, mapUrl, onSave }: MapEditorProps) {
   }
 
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-lg bg-gray-950">
+    <div
+      className={`relative h-full w-full overflow-hidden rounded-lg ${
+        isMissing
+          ? "border-2 border-zinc-700 bg-[#0d0e11]"
+          : "bg-gray-950"
+      }`}
+    >
       {/* Container do Mapa */}
-      <div ref={mapContainerRef} className="h-full w-full" />
+      <div
+        ref={mapContainerRef}
+        className={`h-full w-full ${
+          isMissing ? "contrast-[1.08] saturate-[0.75] sepia-[0.18]" : ""
+        }`}
+      />
 
       {/* Toolbar superior */}
-      <div className="absolute top-2 left-1/2 z-10 -translate-x-1/2 flex items-center gap-2">
-        <div className="flex items-center gap-2 rounded-lg bg-gray-900/90 backdrop-blur border border-purple-700/50 px-4 py-2 shadow-lg">
-          <span className="text-xs font-semibold text-purple-300">
-            {mapMode === "custom" ? "Mapa customizado" : "Mapa global"}
+      <div className="absolute top-2 left-1/2 z-[500] -translate-x-1/2 flex flex-col items-center gap-1.5 pointer-events-auto">
+        {isMissing && (
+          <div className="rounded border border-zinc-700 bg-zinc-950/90 px-3 py-0.5 text-center shadow-lg backdrop-blur">
+            <span className="font-mono text-[10px] font-black uppercase tracking-wider text-amber-400">
+              [ MAPA DE CAMPO // TOPOGRAFIA DE INVESTIGAÇÃO — CONFIDENCIAL ]
+            </span>
+          </div>
+        )}
+        <div
+          className={`flex items-center gap-2 rounded-lg backdrop-blur px-4 py-2 shadow-lg ${
+            isMissing
+              ? "border border-zinc-700 bg-zinc-900/90 font-mono text-zinc-300"
+              : "border border-purple-700/50 bg-gray-900/90 text-purple-300"
+          }`}
+        >
+          <span className={`text-xs font-semibold ${isMissing ? "text-zinc-300" : "text-purple-300"}`}>
+            {mapMode === "custom"
+              ? isMissing
+                ? "Cartografia de arquivo"
+                : "Mapa customizado"
+              : isMissing
+              ? "Topografia global"
+              : "Mapa global"}
           </span>
-          <div className="h-4 w-px bg-gray-700" />
-          <span className="text-xs font-semibold text-cyan-400">
-            {pins.length} pin{pins.length !== 1 ? "s" : ""}
+          <div className="h-4 w-px bg-zinc-700" />
+          <span className={`text-xs font-semibold ${isMissing ? "text-amber-400" : "text-cyan-400"}`}>
+            {pins.length} {isMissing ? (pins.length !== 1 ? "pontos de evidência" : "ponto de evidência") : `pin${pins.length !== 1 ? "s" : ""}`}
           </span>
-          <div className="h-4 w-px bg-gray-700" />
+          <div className="h-4 w-px bg-zinc-700" />
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="flex items-center gap-1.5 rounded-md bg-purple-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+              isMissing
+                ? "bg-zinc-800 border border-zinc-600 text-zinc-200 hover:bg-zinc-700 font-mono"
+                : "bg-purple-600 text-white hover:bg-purple-500"
+            }`}
           >
             {isSaving ? (
               <>
@@ -373,7 +418,7 @@ export function MapEditor({ worldId, mapUrl, onSave }: MapEditorProps) {
                   <polyline points="17 21 17 13 7 13 7 21" />
                   <polyline points="7 3 7 8 15 8" />
                 </svg>
-                <span>Salvar Mapa</span>
+                <span>{isMissing ? "Salvar Posições" : "Salvar Mapa"}</span>
               </>
             )}
           </button>
@@ -381,10 +426,18 @@ export function MapEditor({ worldId, mapUrl, onSave }: MapEditorProps) {
       </div>
 
       {/* Instrução flutuante */}
-      <div className="absolute bottom-4 left-4 z-10">
-        <div className="rounded-lg bg-gray-900/90 backdrop-blur border border-gray-700 p-3 shadow-lg">
-          <p className="text-xs text-gray-400">
-            Clique e arraste para navegar no mapa. Clique direito para adicionar um local. Use os pins para marcar pontos de interesse.
+      <div className="absolute bottom-4 left-4 z-[500] pointer-events-none">
+        <div
+          className={`rounded-lg backdrop-blur p-3 shadow-lg max-w-sm ${
+            isMissing
+              ? "border border-zinc-700 bg-zinc-950/90 text-zinc-400 font-mono"
+              : "border border-gray-700 bg-gray-900/90 text-gray-400"
+          }`}
+        >
+          <p className="text-xs">
+            {isMissing
+              ? "Topografia de campo: arraste para escanear a área. Botão direito para demarcar ponto de interesse ou evidência."
+              : "Clique e arraste para navegar no mapa. Clique direito para adicionar um local. Use os pins para marcar pontos de interesse."}
           </p>
         </div>
       </div>

@@ -144,6 +144,7 @@ export const testRollSchema = z.object({
   equipmentId: z.string().optional(),
   forcedDie: z.number().int().min(1).max(6).optional(),
   dice: z.array(z.number().int().min(1).max(6)).optional(),
+  quotedLine: z.string().optional(),
 });
 
 export type TestRollInput = z.infer<typeof testRollSchema>;

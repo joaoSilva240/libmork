@@ -63,26 +63,27 @@ export function MissingHabitantCreateForm({
     });
   };
 
-  const handleRoll2d6Equipment = (slotIndex: number) => {
-    const d1 = Math.floor(Math.random() * 6) + 1;
-    const d2 = Math.floor(Math.random() * 6) + 1;
-    const total = d1 + d2;
-    const itemDef = EQUIPMENT_TABLE_2D6[total];
+  const handleRollAllEquipments = () => {
+    const updatedEquipments = [...equipments];
+    const updatedLastRolls: Record<number, { total: number; d1: number; d2: number }> = {};
 
-    if (itemDef) {
-      setEquipments((prev) => {
-        const updated = [...prev];
-        updated[slotIndex] = {
+    for (let slotIndex = 0; slotIndex < 3; slotIndex++) {
+      const d1 = Math.floor(Math.random() * 6) + 1;
+      const d2 = Math.floor(Math.random() * 6) + 1;
+      const total = d1 + d2;
+      const itemDef = EQUIPMENT_TABLE_2D6[total];
+
+      if (itemDef) {
+        updatedEquipments[slotIndex] = {
           name: itemDef.name,
           notes: itemDef.description,
         };
-        return updated;
-      });
-      setLastRolls((prev) => ({
-        ...prev,
-        [slotIndex]: { total, d1, d2 },
-      }));
+        updatedLastRolls[slotIndex] = { total, d1, d2 };
+      }
     }
+
+    setEquipments(updatedEquipments);
+    setLastRolls(updatedLastRolls);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -280,13 +281,26 @@ export function MissingHabitantCreateForm({
 
         {/* 3. Equipamentos: 3 Slots com Rolagem 2d6 */}
         <div className="space-y-3">
-          <div>
-            <label className="block text-xs uppercase tracking-wider text-zinc-400 font-bold">
-              3. Equipamentos Iniciais (3 Slots) <span className="text-rose-500">*</span>
-            </label>
-            <p className="text-[11px] text-zinc-500">
-              Defina manualmente ou clique para rolar 2d6 na Tabela Oficial de Equipamentos de MISSING.
-            </p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-zinc-400 font-bold">
+                3. Equipamentos Iniciais (3 Slots) <span className="text-rose-500">*</span>
+              </label>
+              <p className="text-[11px] text-zinc-500">
+                Defina manualmente ou clique para rolar 2d6 na Tabela Oficial de Equipamentos de MISSING.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleRollAllEquipments}
+              disabled={isLoading}
+              data-testid="btn-rolar-todos-equipamentos"
+              className="flex items-center gap-1.5 rounded bg-zinc-800 hover:bg-rose-950/80 hover:border-rose-700/80 border border-zinc-700 px-3 py-1.5 text-xs font-bold text-zinc-200 hover:text-white transition-colors cursor-pointer shadow-sm"
+              title="Rolar 2d6 para os 3 Slots simultaneamente"
+            >
+              <Dices className="h-4 w-4 text-rose-400" />
+              Rolar 2d6
+            </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -301,16 +315,6 @@ export function MissingHabitantCreateForm({
                     <span className="text-xs font-bold uppercase tracking-wider text-zinc-300">
                       Slot 0{idx + 1}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => handleRoll2d6Equipment(idx)}
-                      disabled={isLoading}
-                      className="flex items-center gap-1 rounded bg-zinc-800 hover:bg-rose-900/50 hover:border-rose-700/80 border border-zinc-700 px-2 py-1 text-[11px] font-bold text-zinc-200 transition-colors"
-                      title="Rolar 2d6 na Tabela Oficial"
-                    >
-                      <Dices className="h-3 w-3 text-rose-400" />
-                      Rolar 2d6
-                    </button>
                   </div>
 
                   {rollInfo && (

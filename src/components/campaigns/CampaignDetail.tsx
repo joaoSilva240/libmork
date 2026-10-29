@@ -9,6 +9,7 @@ import { useSocket } from "@/context/SocketContext";
 import { CampaignInvites } from "@/components/campaigns/CampaignInvites";
 import { MasterRoster } from "@/components/campaigns/MasterRoster";
 import { SessionLog } from "@/components/campaigns/SessionLog";
+import { MissingSessionLog } from "@/components/systems/missing/MissingSessionLog";
 import { ContentOverlay } from "@/components/campaigns/ContentOverlay";
 import { WorldOverlay } from "@/components/campaigns/WorldOverlay";
 
@@ -184,11 +185,17 @@ export function CampaignDetail() {
     return null;
   }
 
+  const isMissing = campaign.rulesEngine === "missing_zero";
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header Hero com Imagem de Capa e Gradiente */}
       <div
-        className="relative overflow-hidden mb-2 rounded-xl border border-gray-800/80 bg-gray-900 px-4 py-2.5 shrink-0 shadow-lg"
+        className={`relative overflow-hidden mb-2 rounded-xl border px-4 py-2.5 shrink-0 shadow-lg ${
+          isMissing
+            ? "border-zinc-800 bg-[#0d0e12] font-mono shadow-rose-950/20"
+            : "border-gray-800/80 bg-gray-900"
+        }`}
         style={
           campaign.coverImageUrl
             ? {
@@ -207,11 +214,15 @@ export function CampaignDetail() {
           <div className="flex items-center gap-3 min-w-0">
             <Link
               href="/master"
-              className="text-xs font-semibold text-purple-400 hover:text-purple-300 transition-colors drop-shadow"
+              className={`text-xs font-semibold transition-colors drop-shadow ${
+                isMissing
+                  ? "text-rose-400 hover:text-rose-300"
+                  : "text-purple-400 hover:text-purple-300"
+              }`}
             >
               ← Voltar
             </Link>
-            <div className="h-4 w-[1px] bg-gray-700/80 shrink-0" />
+            <div className={`h-4 w-[1px] shrink-0 ${isMissing ? "bg-zinc-700" : "bg-gray-700/80"}`} />
             <h1 className="text-base font-bold text-white truncate drop-shadow-md">
               {campaign.name}
             </h1>
@@ -220,13 +231,17 @@ export function CampaignDetail() {
                 🗺️ Mapa Mundi
               </span>
             )}
-            <span className="hidden sm:inline-flex rounded bg-purple-950/80 border border-purple-800/50 px-2 py-0.5 text-[10px] text-purple-300 font-medium">
-              {campaign.rulesEngine === "missing_zero"
-                ? "MISSING — Edição ZERO"
-                : campaign.rulesEngine === "dual_d20_sum"
-                ? "2d20 somado"
-                : "d20 + mod"}
-            </span>
+            {isMissing ? (
+              <span className="shrink-0 rounded bg-rose-950/90 border border-rose-800 px-2 py-0.5 text-[10px] text-rose-300 font-bold uppercase tracking-wider font-mono">
+                <span>MISSING — Edição ZERO</span> // ARQUIVO CONFIDENCIAL
+              </span>
+            ) : (
+              <span className="hidden sm:inline-flex rounded bg-purple-950/80 border border-purple-800/50 px-2 py-0.5 text-[10px] text-purple-300 font-medium">
+                {campaign.rulesEngine === "dual_d20_sum"
+                  ? "2d20 somado"
+                  : "d20 + mod"}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -256,17 +271,25 @@ export function CampaignDetail() {
       <div className={`flex-1 grid gap-2.5 overflow-hidden min-h-0 ${isMesaPopped ? "lg:grid-cols-[1fr_1fr]" : "lg:grid-cols-[220px_minmax(0,1fr)_240px] xl:grid-cols-[240px_minmax(0,1fr)_260px]"}`}>
         {/* ===== Coluna esquerda — Gestão ===== */}
         <div className="space-y-3 overflow-y-auto min-h-0">
-          <div className="rounded-lg border border-gray-800 bg-gray-900 p-3">
-            <button
-              onClick={() => setShowContentOverlay(true)}
-              className="w-full rounded-lg bg-purple-600 px-3 py-2 text-sm font-semibold text-white hover:bg-purple-700"
-            >
-              Gerenciar Conteúdo
-            </button>
-          </div>
+          {!isMissing && (
+            <div className="rounded-lg border border-gray-800 bg-gray-900 p-3">
+              <button
+                onClick={() => setShowContentOverlay(true)}
+                className="w-full rounded-lg bg-purple-600 px-3 py-2 text-sm font-semibold text-white hover:bg-purple-700"
+              >
+                Gerenciar Conteúdo
+              </button>
+            </div>
+          )}
 
-          <div className="rounded-lg border border-gray-800 bg-gray-900 p-3">
-            <h3 className="mb-2 font-semibold text-white">Mundos</h3>
+          <div
+            className={`rounded-lg border p-3 ${
+              isMissing ? "border-zinc-800 bg-[#0e0f12] font-mono" : "border-gray-800 bg-gray-900"
+            }`}
+          >
+            <h3 className="mb-2 font-semibold text-white">
+              {isMissing ? "Cenas / Locais de Investigação" : "Mundos"}
+            </h3>
 
             {worldError && (
               <div className="mb-2 rounded-lg border border-red-800 bg-red-900/30 p-2 text-xs text-red-300">
@@ -275,7 +298,9 @@ export function CampaignDetail() {
             )}
 
             {worlds.length === 0 ? (
-              <p className="mb-2 text-sm text-gray-400">Nenhum mundo criado ainda.</p>
+              <p className="mb-2 text-sm text-gray-400">
+                {isMissing ? "Nenhum local de investigação criado ainda." : "Nenhum mundo criado ainda."}
+              </p>
             ) : (
               <div className="mb-3 space-y-2">
                 {worlds.map((world) => (
@@ -283,8 +308,12 @@ export function CampaignDetail() {
                     key={world.id}
                     className={`relative overflow-hidden rounded-lg border p-2 bg-cover bg-center transition-colors ${
                       selectedWorldId === world.id
-                        ? "border-purple-500 bg-purple-950/60 ring-1 ring-purple-400/60"
-                        : "border-gray-800 bg-gray-950"
+                        ? isMissing
+                          ? "border-rose-600 bg-rose-950/40 ring-1 ring-rose-500/50"
+                          : "border-purple-500 bg-purple-950/60 ring-1 ring-purple-400/60"
+                        : isMissing
+                          ? "border-zinc-800 bg-zinc-950"
+                          : "border-gray-800 bg-gray-950"
                     }`}
                     style={
                       world.coverUrl
@@ -310,14 +339,22 @@ export function CampaignDetail() {
                               e.stopPropagation();
                               setOverlayWorld(world);
                             }}
-                            className="rounded-lg bg-purple-900/60 border border-purple-700/80 px-2 py-1 text-[11px] font-bold text-purple-200 hover:bg-purple-800 transition-colors shrink-0"
-                            title="Abrir Detalhes do Mundo (NPCs, Encontros, Estabelecimentos)"
+                            className={`rounded-lg border px-2 py-1 text-[11px] font-bold transition-colors shrink-0 ${
+                              isMissing
+                                ? "bg-zinc-800 border-zinc-700 text-zinc-200 hover:bg-zinc-700"
+                                : "bg-purple-900/60 border-purple-700/80 text-purple-200 hover:bg-purple-800"
+                            }`}
+                            title="Abrir Detalhes do Local (NPCs, Encontros)"
                           >
-                            ⚙️ Ver Detalhes
+                            {isMissing ? "⚙️ Ver Cena" : "⚙️ Ver Detalhes"}
                           </button>
                         </div>
                         {selectedWorldId === world.id && (
-                          <span className="mt-1 inline-block rounded-full bg-purple-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                          <span
+                            className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold text-white ${
+                              isMissing ? "bg-rose-700" : "bg-purple-600"
+                            }`}
+                          >
                             Selecionado
                           </span>
                         )}
@@ -325,7 +362,9 @@ export function CampaignDetail() {
                           <p className="mt-0.5 text-xs text-gray-300 drop-shadow-sm">{world.description}</p>
                         )}
                         {world.mapUrl && (
-                          <p className="mt-1 text-[10px] text-purple-400">🗺️ Possui mapa</p>
+                          <p className={`mt-1 text-[10px] ${isMissing ? "text-rose-400" : "text-purple-400"}`}>
+                            🗺️ Possui mapa
+                          </p>
                         )}
                       </div>
                     </div>
@@ -334,8 +373,8 @@ export function CampaignDetail() {
               </div>
             )}
 
-            {/* ===== Estabelecimentos do Mundo Selecionado ===== */}
-            {selectedWorldId && (
+            {/* ===== Estabelecimentos do Mundo Selecionado (apenas regras padrão d20) ===== */}
+            {!isMissing && selectedWorldId && (
               <div className="rounded-lg border border-gray-800 bg-gray-900 p-3 mt-3">
                 <button
                   type="button"
@@ -401,19 +440,28 @@ export function CampaignDetail() {
         </div>
 
         {!isMesaPopped && (
-          <div className="flex flex-col h-full min-h-0 overflow-hidden rounded-xl border border-gray-800 bg-gray-900 p-2.5">
+          <div
+            className={`flex flex-col h-full min-h-0 overflow-hidden rounded-xl border p-2.5 ${
+              isMissing ? "border-zinc-800 bg-[#0d0e12]" : "border-gray-800 bg-gray-900"
+            }`}
+          >
             <MasterRoster
               key={`roster-${rosterVersion}`}
               campaignId={campaign.id}
               selectedWorldId={selectedWorldId}
               onWorldSelected={setSelectedWorldId}
               onTogglePopOut={() => setIsMesaPopped(true)}
+              rulesEngine={campaign.rulesEngine}
             />
           </div>
         )}
 
         {/* ===== Coluna direita — Log da sessão ===== */}
-        <SessionLog campaignId={campaign.id} />
+        {isMissing ? (
+          <MissingSessionLog campaignId={campaign.id} />
+        ) : (
+          <SessionLog campaignId={campaign.id} />
+        )}
       </div>
 
       {showContentOverlay && (
@@ -456,6 +504,7 @@ export function CampaignDetail() {
             onWorldSelected={setSelectedWorldId}
             isPoppedOut={true}
             onTogglePopOut={() => setIsMesaPopped(false)}
+            rulesEngine={campaign.rulesEngine}
           />
         </div>
       </WindowPortal>

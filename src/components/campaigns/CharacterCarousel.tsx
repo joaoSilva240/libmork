@@ -9,6 +9,7 @@ type CharacterCarouselProps = {
   combatState?: CombatSessionState | null;
   onSelect: (actor: RosterActor) => void;
   onRemove?: (actorId: string, kind: string) => void;
+  isMissing?: boolean;
 };
 
 export function CharacterCarousel({
@@ -16,6 +17,7 @@ export function CharacterCarousel({
   combatState,
   onSelect,
   onRemove,
+  isMissing = false,
 }: CharacterCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const activeCardRef = useRef<HTMLDivElement>(null);
@@ -59,8 +61,14 @@ export function CharacterCarousel({
 
   if (actors.length === 0) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-gray-800 text-center p-4">
-        <p className="text-xs font-semibold text-purple-400">⚡ Mesa Vazia</p>
+      <div
+        className={`flex h-full flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed p-4 text-center ${
+          isMissing ? "border-zinc-800 bg-[#0d0e11]/60" : "border-gray-800"
+        }`}
+      >
+        <p className={`text-xs font-semibold ${isMissing ? "font-mono text-zinc-400" : "text-purple-400"}`}>
+          {isMissing ? "📋 Nenhum Habitante Registrado" : "⚡ Mesa Vazia"}
+        </p>
       </div>
     );
   }
@@ -102,7 +110,9 @@ export function CharacterCarousel({
               key={`${actor.kind}-${actor.id}`}
               ref={isActiveTurn ? activeCardRef : null}
               className={`group relative shrink-0 aspect-[3/4] transition-all duration-300 rounded-xl overflow-hidden border ${
-                isActiveTurn
+                isMissing
+                  ? "w-32 border-zinc-800 bg-[#121316] hover:border-amber-600/70 hover:scale-105"
+                  : isActiveTurn
                   ? "w-36 scale-110 border-purple-500 bg-purple-950/60 ring-2 ring-purple-500 z-10 shadow-2xl shadow-purple-950/80"
                   : isCombatActive
                   ? "w-28 scale-90 opacity-70 border-gray-800 bg-gray-900/60 hover:opacity-100 hover:scale-95"
@@ -129,27 +139,39 @@ export function CharacterCarousel({
                 <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-black/50" />
 
                 {/* Selo TURNO ATIVO */}
-                {isActiveTurn && (
+                {!isMissing && isActiveTurn && (
                   <div className="absolute top-1 inset-x-1 z-10 rounded bg-purple-600 py-0.5 text-center text-[9px] font-black uppercase tracking-wider text-white shadow-md animate-pulse">
                     ⚡ TURNO ATIVO
                   </div>
                 )}
 
-                {/* Nível e Iniciativa */}
-                <div className={`absolute right-1.5 flex flex-col items-end gap-1 ${isActiveTurn ? "top-6" : "top-1.5"}`}>
-                  <span className="rounded-full bg-black/80 px-1.5 py-0.5 text-[10px] font-bold text-white shadow">
-                    Nv {actor.level}
+                {/* Status / Nível e Iniciativa */}
+                {isMissing ? (
+                  <span
+                    className={`absolute right-1.5 top-1.5 rounded px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-wider uppercase shadow ${
+                      actor.status === "missing"
+                        ? "bg-red-950/90 text-red-400 border border-red-700/60"
+                        : "bg-emerald-950/90 text-emerald-400 border border-emerald-700/60"
+                    }`}
+                  >
+                    {actor.status === "missing" ? "DESAPARECIDO" : "ATIVO"}
                   </span>
-                  {combatant && (
-                    <span className="rounded-md bg-purple-900/90 px-1.5 py-0.5 text-[9px] font-extrabold text-purple-200 shadow border border-purple-700/60">
-                      Ini: {combatant.initiative}
+                ) : (
+                  <div className={`absolute right-1.5 flex flex-col items-end gap-1 ${isActiveTurn ? "top-6" : "top-1.5"}`}>
+                    <span className="rounded-full bg-black/80 px-1.5 py-0.5 text-[10px] font-bold text-white shadow">
+                      Nv {actor.level}
                     </span>
-                  )}
-                </div>
+                    {combatant && (
+                      <span className="rounded-md bg-purple-900/90 px-1.5 py-0.5 text-[9px] font-extrabold text-purple-200 shadow border border-purple-700/60">
+                        Ini: {combatant.initiative}
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 {actor.kind === "npc" && (
                   <span
-                    className={`absolute left-1.5 ${isActiveTurn ? "top-6" : "top-1.5"} rounded px-1 py-0.5 text-[9px] font-semibold ${
+                    className={`absolute left-1.5 ${!isMissing && isActiveTurn ? "top-6" : "top-1.5"} rounded px-1 py-0.5 text-[9px] font-semibold ${
                       actor.npcType === "enemy"
                         ? "bg-red-900/80 text-red-200"
                         : "bg-gray-800/80 text-gray-300"
@@ -165,7 +187,7 @@ export function CharacterCarousel({
                   </p>
 
                   {/* Ações Restantes (se combate ativo) */}
-                  {combatant && (
+                  {!isMissing && combatant && (
                     <div className="my-1 flex items-center justify-between">
                       <span className="text-[9px] text-purple-300 font-semibold">Ações:</span>
                       <div className="flex gap-1">
@@ -181,23 +203,31 @@ export function CharacterCarousel({
                     </div>
                   )}
 
-                  <div className="space-y-0.5">
-                    <div className="h-1.5 overflow-hidden rounded-full bg-black/60">
-                      <div
-                        className="h-full rounded-full bg-red-500"
-                        style={{ width: `${hpPercent}%` }}
-                      />
-                    </div>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-black/60">
-                      <div
-                        className="h-full rounded-full bg-blue-500"
-                        style={{ width: `${manaPercent}%` }}
-                      />
-                    </div>
-                  </div>
-                  <p className="mt-0.5 text-[9px] text-gray-300">
-                    HP {actor.hitPoints}/{actor.hitPointsMax} · MP {actor.manaPoints}/{actor.manaPointsMax}
-                  </p>
+                  {!isMissing ? (
+                    <>
+                      <div className="space-y-0.5">
+                        <div className="h-1.5 overflow-hidden rounded-full bg-black/60">
+                          <div
+                            className="h-full rounded-full bg-red-500"
+                            style={{ width: `${hpPercent}%` }}
+                          />
+                        </div>
+                        <div className="h-1.5 overflow-hidden rounded-full bg-black/60">
+                          <div
+                            className="h-full rounded-full bg-blue-500"
+                            style={{ width: `${manaPercent}%` }}
+                          />
+                        </div>
+                      </div>
+                      <p className="mt-0.5 text-[9px] text-gray-300">
+                        HP {actor.hitPoints}/{actor.hitPointsMax} · MP {actor.manaPoints}/{actor.manaPointsMax}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="mt-0.5 text-[9px] font-mono text-zinc-400 truncate tracking-wide">
+                      REGISTRO CIVIL
+                    </p>
+                  )}
                 </div>
               </button>
 
@@ -207,8 +237,12 @@ export function CharacterCarousel({
                     e.stopPropagation();
                     onRemove(actor.id, actor.kind);
                   }}
-                  className="absolute right-1 top-7 z-20 hidden rounded bg-red-900/80 px-1.5 py-0.5 text-[10px] font-bold text-white hover:bg-red-700 group-hover:block shadow"
-                  title="Remover da mesa"
+                  className={`absolute right-1 top-7 z-20 hidden rounded px-1.5 py-0.5 text-[10px] font-bold shadow group-hover:block ${
+                    isMissing
+                      ? "bg-zinc-800 border border-zinc-700 text-zinc-300 hover:bg-red-900/80 hover:text-white"
+                      : "bg-red-900/80 text-white hover:bg-red-700"
+                  }`}
+                  title={isMissing ? "Remover do dossiê" : "Remover da mesa"}
                 >
                   ✕
                 </button>

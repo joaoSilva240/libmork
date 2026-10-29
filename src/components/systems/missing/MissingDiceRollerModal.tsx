@@ -77,6 +77,9 @@ export function MissingDiceRollerModal({
             supportGains,
             forced: isForced,
           };
+          if (quotedLine) {
+            bodyPayload.quotedLine = quotedLine;
+          }
           if (isForced && selectedEquipmentId) {
             bodyPayload.equipmentId = selectedEquipmentId;
           }

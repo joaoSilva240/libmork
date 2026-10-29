@@ -92,6 +92,7 @@ export function MissingSessionLedger({
                 {isGain ? "GANHO (Sucesso)" : "PERDA (Falha)"}
               </span>
               <span className="text-zinc-300 font-bold">
+                {payload.habitantName && <span>{payload.habitantName} — </span>}
                 {ev.eventType === "TEST_FORCED" ? "Teste Forçado" : "Teste Simples"} (
                 {payload.type === "common"
                   ? "Comum 1d6"
@@ -101,6 +102,21 @@ export function MissingSessionLedger({
                 )
               </span>
             </div>
+            {payload.quotedLine && (
+              <p className="text-[11px] text-amber-200 italic">
+                Memória invocada: &ldquo;{payload.quotedLine}&rdquo;
+              </p>
+            )}
+            {Boolean(payload.supportGains || payload.supportBonus) && (
+              <p className="text-[11px] text-sky-300 font-semibold">
+                Apoio recebido: +{payload.supportGains || payload.supportBonus}
+              </p>
+            )}
+            {payload.equipmentName && (
+              <p className="text-[11px] text-amber-400">
+                Equipamento arriscado: &ldquo;{payload.equipmentName}&rdquo;
+              </p>
+            )}
             {payload.details && (
               <p className="text-[11px] text-zinc-400 italic">{payload.details}</p>
             )}
