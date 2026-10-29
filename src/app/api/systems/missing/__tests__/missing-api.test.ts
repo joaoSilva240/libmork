@@ -143,6 +143,21 @@ vi.mock("@/lib/db", () => {
           }),
         };
       },
+      delete: (table: any) => {
+        const tableName = getTableName(table);
+        return {
+          where: (cond: any) => {
+            const list = getStoreTable(tableName);
+            const remaining = list.filter((item) => !matchCondition(item, cond));
+            if (tableName === "campaigns") store.campaigns = remaining;
+            else if (tableName === "campaign_invites") store.campaignInvites = remaining;
+            else if (tableName === "missing_campaign_states") store.missingCampaignStates = remaining;
+            else if (tableName === "missing_habitants") store.missingHabitants = remaining;
+            else if (tableName === "missing_action_ledger") store.missingActionLedger = remaining;
+            return Promise.resolve(remaining);
+          },
+        };
+      },
     },
   };
 });
@@ -150,6 +165,16 @@ vi.mock("@/lib/db", () => {
 // Import route handlers
 import { GET as getState } from "../campaigns/[id]/state/route";
 import { GET as getHabitants, POST as postHabitants } from "../campaigns/[id]/habitants/route";
+import {
+  GET as getUserHabitantsRoute,
+  POST as postUserHabitantsRoute,
+} from "../habitants/route";
+import {
+  GET as getPersonalHabitantById,
+  PATCH as patchPersonalHabitant,
+  DELETE as deletePersonalHabitant,
+} from "../habitants/[id]/route";
+import { POST as erasePersonalHabitantLine } from "../habitants/[id]/erase/route";
 import {
   GET as getHabitantById,
   PATCH as patchHabitant,
@@ -1088,6 +1113,246 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
 
       expect(resEpi.status).toBe(400);
       expect(jsonEpi.error).toContain("Uma das pistas presentes na teia é falsa! A epifania foi frustrada.");
+    });
+  });
+
+  // ===========================================================================
+  // 7. Rota Pessoal de Habitantes (/api/systems/missing/habitants)
+  // ===========================================================================
+  describe("Rota Pessoal de Habitantes (/api/systems/missing/habitants)", () => {
+    it("deve criar um habitante pessoal sem campaignId com sucesso (status 201)", async () => {
+      mockRequireAuth.mockResolvedValue({ user: writerUser1 });
+
+      const req = new NextRequest("http://localhost/api/systems/missing/habitants", {
+        method: "POST",
+        body: JSON.stringify({
+          name: "Detetive Desconhecido",
+          lines: [
+            "Memória 1: Acordou sem documentos na estação de trem",
+            "Memória 2: Tem uma cicatriz no antebraço direito",
+            "Memória 3: Lembra do som distante de sirenes",
+            "Memória 4: Carrega uma chave enferrujada no bolso",
+            "Memória 5: Desconfia de rostos familiares",
+          ],
+          equipments: [
+            { name: "Lanterna Antiga", notes: "Luz trêmula" },
+            { name: "Caderno Pautado", notes: "Sem anotações" },
+            { name: "Pé de Cabra" },
+          ],
+        }),
+      });
+
+      const res = await postUserHabitantsRoute(req);
+      const json = await res.json();
+
+      expect(res.status).toBe(201);
+      expect(json.success).toBe(true);
+      expect(json.data.name).toBe("Detetive Desconhecido");
+      expect(json.data.ownerId).toBe(writerUser1.id);
+      expect(json.data.campaignId).toBeNull();
+      expect(json.data.lines.length).toBe(5);
+      expect(json.data.equipments.length).toBe(3);
+    });
+
+    it("deve retornar apenas os habitantes pertencentes ao usuário autenticado via GET", async () => {
+      // Habitante para writerUser1
+      mockRequireAuth.mockResolvedValue({ user: writerUser1 });
+      const req1 = new NextRequest("http://localhost/api/systems/missing/habitants", {
+        method: "POST",
+        body: JSON.stringify({
+          name: "Habitante do Usuário 1",
+          lines: ["L1", "L2", "L3", "L4", "L5"],
+          equipments: [{ name: "E1" }, { name: "E2" }, { name: "E3" }],
+        }),
+      });
+      await postUserHabitantsRoute(req1);
+
+      // Habitante para writerUser2
+      mockRequireAuth.mockResolvedValue({ user: writerUser2 });
+      const req2 = new NextRequest("http://localhost/api/systems/missing/habitants", {
+        method: "POST",
+        body: JSON.stringify({
+          name: "Habitante do Usuário 2",
+          lines: ["L1", "L2", "L3", "L4", "L5"],
+          equipments: [{ name: "E1" }, { name: "E2" }, { name: "E3" }],
+        }),
+      });
+      await postUserHabitantsRoute(req2);
+
+      // Consulta como writerUser1
+      mockRequireAuth.mockResolvedValue({ user: writerUser1 });
+      const getReq = new NextRequest("http://localhost/api/systems/missing/habitants");
+      const getRes = await getUserHabitantsRoute();
+      const getJson = await getRes.json();
+
+      expect(getRes.status).toBe(200);
+      expect(getJson.success).toBe(true);
+      expect(getJson.data.every((h: any) => h.ownerId === writerUser1.id)).toBe(true);
+      expect(getJson.data.some((h: any) => h.name === "Habitante do Usuário 1")).toBe(true);
+      expect(getJson.data.some((h: any) => h.name === "Habitante do Usuário 2")).toBe(false);
+    });
+
+    it("deve rejeitar habitante com menos de 5 linhas com status 400", async () => {
+      mockRequireAuth.mockResolvedValue({ user: writerUser1 });
+
+      const req = new NextRequest("http://localhost/api/systems/missing/habitants", {
+        method: "POST",
+        body: JSON.stringify({
+          name: "Habitante Inválido",
+          lines: ["Linha 1", "Linha 2"], // menos de 5
+          equipments: [{ name: "E1" }, { name: "E2" }, { name: "E3" }],
+        }),
+      });
+
+      const res = await postUserHabitantsRoute(req);
+      const json = await res.json();
+
+      expect(res.status).toBe(400);
+      expect(json.success).toBe(false);
+    });
+  });
+
+  // ===========================================================================
+  // 8. Rotas Individuais de Habitante Pessoal (/api/systems/missing/habitants/[id])
+  // ===========================================================================
+  describe("Rotas Individuais de Habitante (/api/systems/missing/habitants/[id])", () => {
+    let personalHabitantId: string;
+    let personalLine1Id: string;
+
+    beforeEach(async () => {
+      mockRequireAuth.mockResolvedValue({ user: writerUser1 });
+
+      const req = new NextRequest("http://localhost/api/systems/missing/habitants", {
+        method: "POST",
+        body: JSON.stringify({
+          name: "Detetive Pessoal",
+          lines: [
+            "Memória 1: Lembrança da infância",
+            "Memória 2: A casa na colina",
+            "Memória 3: O relógio parado às 3:15",
+            "Memória 4: Um nome sussurrado",
+            "Memória 5: A chave do porão",
+          ],
+          equipments: [
+            { name: "Lanterna Velha", notes: "Pilha fraca" },
+            { name: "Gravador de Fita", notes: "Fita vazia" },
+            { name: "Isqueiro de Metal" },
+          ],
+        }),
+      });
+
+      const res = await postUserHabitantsRoute(req);
+      const json = await res.json();
+      personalHabitantId = json.data.id;
+      personalLine1Id = json.data.lines[0].id;
+    });
+
+    it("GET: retorna habitante pelo id para o proprietário com sucesso (status 200)", async () => {
+      mockRequireAuth.mockResolvedValue({ user: writerUser1 });
+
+      const req = new NextRequest(`http://localhost/api/systems/missing/habitants/${personalHabitantId}`);
+      const res = await getPersonalHabitantById(req, {
+        params: Promise.resolve({ id: personalHabitantId }),
+      });
+      const json = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(json.success).toBe(true);
+      expect(json.data.id).toBe(personalHabitantId);
+      expect(json.data.name).toBe("Detetive Pessoal");
+      expect(json.data.ownerId).toBe(writerUser1.id);
+    });
+
+    it("GET: retorna 404 se outro usuário tentar acessar habitante que não é seu", async () => {
+      mockRequireAuth.mockResolvedValue({ user: writerUser2 });
+
+      const req = new NextRequest(`http://localhost/api/systems/missing/habitants/${personalHabitantId}`);
+      const res = await getPersonalHabitantById(req, {
+        params: Promise.resolve({ id: personalHabitantId }),
+      });
+      const json = await res.json();
+
+      expect(res.status).toBe(404);
+      expect(json.success).toBe(false);
+      expect(json.error).toContain("não encontrado");
+    });
+
+    it("PATCH: permite adicionar linha de memória e atualizar equipamento", async () => {
+      mockRequireAuth.mockResolvedValue({ user: writerUser1 });
+
+      // Adiciona linha
+      const patchReq = new NextRequest(`http://localhost/api/systems/missing/habitants/${personalHabitantId}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          addLine: "Memória 6: Encontrou um mapa rasgado",
+          equipment: {
+            slot: 1,
+            name: "Super Lanterna LED",
+            notes: "Foco brilhante",
+            status: "active",
+          },
+        }),
+      });
+
+      const patchRes = await patchPersonalHabitant(patchReq, {
+        params: Promise.resolve({ id: personalHabitantId }),
+      });
+      const patchJson = await patchRes.json();
+
+      expect(patchRes.status).toBe(200);
+      expect(patchJson.success).toBe(true);
+      expect(patchJson.data.lines.length).toBe(6);
+      expect(patchJson.data.lines[5].text).toBe("Memória 6: Encontrou um mapa rasgado");
+      expect(patchJson.data.equipments[0].name).toBe("Super Lanterna LED");
+    });
+
+    it("POST /erase: rasura linha do habitante pelo proprietário com campaignId nulo", async () => {
+      mockRequireAuth.mockResolvedValue({ user: writerUser1 });
+
+      const req = new NextRequest(
+        `http://localhost/api/systems/missing/habitants/${personalHabitantId}/erase`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            lineId: personalLine1Id,
+            reason: "Esquecimento traumático",
+          }),
+        },
+      );
+
+      const res = await erasePersonalHabitantLine(req, {
+        params: Promise.resolve({ id: personalHabitantId }),
+      });
+      const json = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(json.success).toBe(true);
+      const erased = json.data.lines.find((l: any) => l.id === personalLine1Id);
+      expect(erased.isErased).toBe(true);
+      expect(erased.erasedReason).toBe("Esquecimento traumático");
+    });
+
+    it("DELETE: exclui habitante com sucesso pelo proprietário", async () => {
+      mockRequireAuth.mockResolvedValue({ user: writerUser1 });
+
+      const req = new NextRequest(`http://localhost/api/systems/missing/habitants/${personalHabitantId}`, {
+        method: "DELETE",
+      });
+
+      const res = await deletePersonalHabitant(req, {
+        params: Promise.resolve({ id: personalHabitantId }),
+      });
+      const json = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(json.success).toBe(true);
+
+      // Tenta buscar novamente -> 404
+      const getReq = new NextRequest(`http://localhost/api/systems/missing/habitants/${personalHabitantId}`);
+      const getRes = await getPersonalHabitantById(getReq, {
+        params: Promise.resolve({ id: personalHabitantId }),
+      });
+      expect(getRes.status).toBe(404);
     });
   });
 });

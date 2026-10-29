@@ -3,6 +3,7 @@
 // =============================================================================
 
 import type { AttributeMap } from "@/lib/engine/attributes";
+import type { MissingHabitant } from "@/lib/systems/missing/types";
 import type {
   Attribute,
   ApprovalStatus,
@@ -394,6 +395,7 @@ export type PlayerCampaign = {
     imageUrl: string | null;
     isMine: boolean;
   }>;
+  habitants?: MissingHabitant[];
 };
 
 // =============================================================================

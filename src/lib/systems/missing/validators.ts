@@ -22,6 +22,7 @@ export type HabitantEquipmentInput = z.infer<typeof habitantEquipmentInputSchema
  * - Equipamentos: exatamente 3 equipamentos com nome e observações opcionais.
  */
 export const createHabitantSchema = z.object({
+  campaignId: z.string().uuid("ID da campanha inválido").optional().nullable(),
   name: z
     .string()
     .trim()
@@ -52,10 +53,11 @@ export type EraseLineInput = z.infer<typeof eraseLineSchema>;
  * Schema para ameaça individual em cena.
  */
 export const threatSchema = z.object({
+  id: z.string().optional(),
   name: z.string().trim().min(1, "Nome da ameaça é obrigatório").max(100),
   description: z.string().trim().max(500).optional(),
   dangerLevel: z.union([z.literal(1), z.literal(2), z.literal(3)], {
-    errorMap: () => ({ message: "Nível de perigo deve ser 1, 2 ou 3" }),
+    message: "Nível de perigo deve ser 1, 2 ou 3",
   }),
 });
 
@@ -91,9 +93,7 @@ export const createConnectionSchema = z.object({
   sourceClueId: z.string().min(1, "ID da pista de origem é obrigatório"),
   targetClueId: z.string().min(1, "ID da pista de destino é obrigatório"),
   type: z.enum(["cause", "origin", "perspective"], {
-    errorMap: () => ({
-      message: "Tipo de conexão inválido. Use cause, origin ou perspective.",
-    }),
+    message: "Tipo de conexão inválido. Use cause, origin ou perspective.",
   }),
   explanation: z.string().trim().max(500).optional(),
 });
@@ -105,7 +105,7 @@ export type CreateConnectionInput = z.infer<typeof createConnectionSchema>;
  */
 export const declareEpiphanySchema = z.object({
   chosenEffect: z.enum(["tear_false_clue", "answer_question", "deliver_new_clue"], {
-    errorMap: () => ({ message: "Efeito de epifania inválido." }),
+    message: "Efeito de epifania inválido.",
   }),
   notes: z.string().trim().max(500).optional(),
 });
@@ -137,7 +137,7 @@ export type UpdateSceneInput = z.infer<typeof updateSceneSchema>;
 export const testRollSchema = z.object({
   habitantId: z.string().min(1, "ID do habitante é obrigatório"),
   type: z.enum(["common", "probable", "improbable"], {
-    errorMap: () => ({ message: "Tipo de teste inválido (common, probable ou improbable)" }),
+    message: "Tipo de teste inválido (common, probable ou improbable)",
   }),
   supportGains: z.number().int().min(0).optional().default(0),
   forced: z.boolean().optional().default(false),
@@ -163,7 +163,7 @@ export const updateHabitantSchema = z.object({
         isErased: z.boolean(),
         erasedAt: z.string().optional(),
         erasedReason: z.string().optional(),
-      })
+      }),
     )
     .min(5)
     .max(30)
@@ -177,9 +177,19 @@ export const updateHabitantSchema = z.object({
         notes: z.string().trim().max(500).optional(),
         status: z.enum(["active", "lost"]),
         lostReason: z.string().trim().max(500).optional(),
-      })
+      }),
     )
     .length(3)
+    .optional(),
+  addLine: z.string().trim().min(1).max(500).optional(),
+  equipment: z
+    .object({
+      slot: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+      name: z.string().trim().min(1).max(100),
+      notes: z.string().trim().max(500).optional(),
+      status: z.enum(["active", "lost"]).default("active"),
+      lostReason: z.string().trim().max(500).optional(),
+    })
     .optional(),
 });
 

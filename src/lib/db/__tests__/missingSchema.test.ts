@@ -125,7 +125,7 @@ describe("MISSING — Edição ZERO: Schema de Tabelas Drizzle", () => {
       expect(missingHabitants.id.primary).toBe(true);
 
       expect(missingHabitants.campaignId).toBeDefined();
-      expect(missingHabitants.campaignId.notNull).toBe(true);
+      expect(missingHabitants.campaignId.notNull).toBe(false);
 
       expect(missingHabitants.ownerId).toBeDefined();
       expect(missingHabitants.ownerId.notNull).toBe(true);

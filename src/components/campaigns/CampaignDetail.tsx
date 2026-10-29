@@ -221,7 +221,11 @@ export function CampaignDetail() {
               </span>
             )}
             <span className="hidden sm:inline-flex rounded bg-purple-950/80 border border-purple-800/50 px-2 py-0.5 text-[10px] text-purple-300 font-medium">
-              {campaign.rulesEngine === "dual_d20_sum" ? "2d20 somado" : "d20 + mod"}
+              {campaign.rulesEngine === "missing_zero"
+                ? "MISSING — Edição ZERO"
+                : campaign.rulesEngine === "dual_d20_sum"
+                ? "2d20 somado"
+                : "d20 + mod"}
             </span>
           </div>
 

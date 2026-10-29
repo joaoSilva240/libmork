@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS "missing_campaign_states" (
 
 CREATE TABLE IF NOT EXISTS "missing_habitants" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"campaign_id" uuid NOT NULL REFERENCES "campaigns"("id") ON DELETE CASCADE,
+	"campaign_id" uuid REFERENCES "campaigns"("id") ON DELETE CASCADE,
 	"owner_id" uuid NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
 	"name" varchar(100) NOT NULL,
 	"status" varchar(20) DEFAULT 'active' NOT NULL,

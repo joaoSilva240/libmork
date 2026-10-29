@@ -753,7 +753,6 @@ export const missingHabitants = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     campaignId: uuid("campaign_id")
-      .notNull()
       .references(() => campaigns.id, { onDelete: "cascade" }),
     ownerId: uuid("owner_id")
       .notNull()

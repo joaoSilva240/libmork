@@ -13,7 +13,7 @@ import {
   characterCampaigns,
   characters,
 } from "@/lib/db/schema";
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, desc } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { ZodError } from "zod";
 import { NextResponse } from "next/server";
@@ -272,18 +272,24 @@ export async function getSanitizedCampaignState(
 // =============================================================================
 
 export async function createHabitant(
-  campaignId: string,
+  campaignId: string | null | undefined,
   userId: string,
   data: CreateHabitantInput,
 ): Promise<MissingHabitant> {
   const validated = createHabitantSchema.parse(data);
+  const rawCampaignId =
+    (typeof campaignId === "string" ? campaignId.trim() : campaignId) ||
+    (typeof validated.campaignId === "string" ? validated.campaignId.trim() : validated.campaignId);
+  const targetCampaignId: string | null = rawCampaignId ? rawCampaignId : null;
 
-  const { campaign, role } = await getCampaignAndRole(campaignId, userId);
-  if (!campaign) {
-    throw new Error("Campanha não encontrada");
-  }
-  if (!role) {
-    throw new Error("Acesso não autorizado à campanha");
+  if (targetCampaignId) {
+    const { campaign, role } = await getCampaignAndRole(targetCampaignId, userId);
+    if (!campaign) {
+      throw new Error("Campanha não encontrada");
+    }
+    if (!role) {
+      throw new Error("Acesso não autorizado à campanha");
+    }
   }
 
   const lines: HabitantLine[] = validated.lines.map((text, index) => ({
@@ -320,7 +326,7 @@ export async function createHabitant(
   const [inserted] = await db
     .insert(missingHabitants)
     .values({
-      campaignId,
+      campaignId: targetCampaignId || null,
       ownerId: userId,
       name: validated.name,
       status: "active",
@@ -331,7 +337,7 @@ export async function createHabitant(
 
   return {
     id: inserted.id,
-    campaignId: inserted.campaignId,
+    campaignId: inserted.campaignId ?? null,
     ownerId: inserted.ownerId,
     name: inserted.name,
     status: inserted.status as "active" | "missing",
@@ -340,6 +346,30 @@ export async function createHabitant(
     createdAt: inserted.createdAt.toISOString(),
     updatedAt: inserted.updatedAt.toISOString(),
   };
+}
+
+// =============================================================================
+// 3.1. Listar Habitantes do Usuário Autenticado
+// =============================================================================
+
+export async function getUserHabitants(userId: string): Promise<MissingHabitant[]> {
+  const records = await db
+    .select()
+    .from(missingHabitants)
+    .where(eq(missingHabitants.ownerId, userId))
+    .orderBy(desc(missingHabitants.createdAt));
+
+  return records.map((h) => ({
+    id: h.id,
+    campaignId: h.campaignId,
+    ownerId: h.ownerId,
+    name: h.name,
+    status: h.status as "active" | "missing",
+    lines: h.lines as HabitantLine[],
+    equipments: h.equipments as [MissingEquipment, MissingEquipment, MissingEquipment],
+    createdAt: h.createdAt.toISOString(),
+    updatedAt: h.updatedAt.toISOString(),
+  }));
 }
 
 // =============================================================================
@@ -399,7 +429,7 @@ export async function getHabitantById(habitantId: string): Promise<MissingHabita
 // =============================================================================
 
 export async function updateHabitant(
-  campaignId: string,
+  campaignId: string | null,
   habitantId: string,
   userId: string,
   data: UpdateHabitantInput,
@@ -407,20 +437,26 @@ export async function updateHabitant(
   const validated = updateHabitantSchema.parse(data);
 
   const habitant = await getHabitantById(habitantId);
-  if (!habitant || habitant.campaignId !== campaignId) {
+  if (!habitant || (campaignId && habitant.campaignId !== campaignId)) {
     throw new Error("Habitante não encontrado");
   }
 
-  const { campaign, role } = await getCampaignAndRole(campaignId, userId);
-  if (!campaign || !role) {
-    throw new Error("Acesso não autorizado");
+  if (campaignId) {
+    const { campaign, role } = await getCampaignAndRole(campaignId, userId);
+    if (!campaign || !role) {
+      throw new Error("Acesso não autorizado");
+    }
+
+    if (habitant.ownerId !== userId && role !== "voice") {
+      throw new Error("Acesso não autorizado para editar este habitante");
+    }
+  } else {
+    if (habitant.ownerId !== userId) {
+      throw new Error("Acesso não autorizado para editar este habitante");
+    }
   }
 
-  if (habitant.ownerId !== userId && role !== "voice") {
-    throw new Error("Acesso não autorizado para editar este habitante");
-  }
-
-  let updatedLines = habitant.lines;
+  let updatedLines = [...habitant.lines];
 
   if (validated.lines) {
     const existingLinesMap = new Map(habitant.lines.map((l) => [l.id, l]));
@@ -445,10 +481,37 @@ export async function updateHabitant(
     });
   }
 
+  if (validated.addLine) {
+    if (updatedLines.length >= 30) {
+      throw new Error("O Registro de Habitante não pode exceder o limite da folha A4 (máximo 30 linhas)");
+    }
+    updatedLines.push({
+      id: randomUUID(),
+      index: updatedLines.length + 1,
+      text: validated.addLine,
+      isErased: false,
+    });
+  }
+
+  let updatedEquipments = validated.equipments || [...habitant.equipments];
+  if (validated.equipment) {
+    const eq = validated.equipment;
+    updatedEquipments = updatedEquipments.map((e) =>
+      e.slot === eq.slot
+        ? {
+            ...e,
+            name: eq.name,
+            notes: eq.notes !== undefined ? eq.notes : e.notes,
+            status: eq.status,
+            lostReason: eq.lostReason !== undefined ? eq.lostReason : e.lostReason,
+          }
+        : e,
+    ) as [MissingEquipment, MissingEquipment, MissingEquipment];
+  }
+
   const isMissing = checkHabitantDisappearance(updatedLines);
   const status = isMissing ? "missing" : (validated.status || habitant.status);
 
-  const updatedEquipments = validated.equipments || habitant.equipments;
   const updatedName = validated.name || habitant.name;
 
   const [updated] = await db
@@ -481,24 +544,32 @@ export async function updateHabitant(
 // =============================================================================
 
 export async function eraseHabitantLine(
-  campaignId: string,
+  campaignId: string | null,
   habitantId: string,
   userId: string,
   lineId: string,
   reason?: string,
 ): Promise<MissingHabitant> {
   const habitant = await getHabitantById(habitantId);
-  if (!habitant || habitant.campaignId !== campaignId) {
+  if (!habitant || (campaignId && habitant.campaignId !== campaignId)) {
     throw new Error("Habitante não encontrado");
   }
 
-  const { campaign, role } = await getCampaignAndRole(campaignId, userId);
-  if (!campaign || !role) {
-    throw new Error("Acesso não autorizado");
-  }
+  let role: Role = "writer";
+  if (campaignId) {
+    const { campaign, role: userRole } = await getCampaignAndRole(campaignId, userId);
+    if (!campaign || !userRole) {
+      throw new Error("Acesso não autorizado");
+    }
+    role = userRole;
 
-  if (habitant.ownerId !== userId && role !== "voice") {
-    throw new Error("Acesso não autorizado para rasurar este habitante");
+    if (habitant.ownerId !== userId && role !== "voice") {
+      throw new Error("Acesso não autorizado para rasurar este habitante");
+    }
+  } else {
+    if (habitant.ownerId !== userId) {
+      throw new Error("Acesso não autorizado para rasurar este habitante");
+    }
   }
 
   const lineIndex = habitant.lines.findIndex((l) => l.id === lineId);
@@ -536,23 +607,25 @@ export async function eraseHabitantLine(
     .where(eq(missingHabitants.id, habitantId))
     .returning();
 
-  // Registro auditável no livro-razão
-  await recordLedgerEvent({
-    campaignId,
-    habitantId,
-    actorRole: role,
-    actorId: userId,
-    eventType: "LINE_ERASED",
-    payload: {
-      lineId,
-      lineIndex: targetLine.index,
-      lineText: targetLine.text,
-      reason: reason || "Rasura em registro",
-      erasedAt: new Date().toISOString(),
-      habitantStatus: newStatus,
-      disappeared: isMissing,
-    },
-  });
+  // Registro auditável no livro-razão se campaignId existir
+  if (campaignId) {
+    await recordLedgerEvent({
+      campaignId,
+      habitantId,
+      actorRole: role,
+      actorId: userId,
+      eventType: "LINE_ERASED",
+      payload: {
+        lineId,
+        lineIndex: targetLine.index,
+        lineText: targetLine.text,
+        reason: reason || "Rasura em registro",
+        erasedAt: new Date().toISOString(),
+        habitantStatus: newStatus,
+        disappeared: isMissing,
+      },
+    });
+  }
 
   return {
     id: updated.id,
@@ -565,6 +638,26 @@ export async function eraseHabitantLine(
     createdAt: updated.createdAt.toISOString(),
     updatedAt: updated.updatedAt.toISOString(),
   };
+}
+
+// =============================================================================
+// 7.1. Excluir Habitante
+// =============================================================================
+
+export async function deleteHabitant(
+  habitantId: string,
+  userId: string,
+): Promise<void> {
+  const habitant = await getHabitantById(habitantId);
+  if (!habitant) {
+    throw new Error("Habitante não encontrado");
+  }
+
+  if (habitant.ownerId !== userId) {
+    throw new Error("Acesso não autorizado para excluir este habitante");
+  }
+
+  await db.delete(missingHabitants).where(eq(missingHabitants.id, habitantId));
 }
 
 // =============================================================================

@@ -35,7 +35,7 @@ export interface MissingEquipment {
 /** Entidade principal do Habitante em MISSING */
 export interface MissingHabitant {
   id: string;
-  campaignId: string;
+  campaignId: string | null;
   ownerId: string;
   name: string;
   status: HabitantStatus;

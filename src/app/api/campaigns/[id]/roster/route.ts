@@ -1,8 +1,8 @@
 // =============================================================================
 // Libmork — API Route: Roster do Escudo do Mestre (RF-048)
 // =============================================================================
-// Retorna os personagens dos jogadores (aprovados) e os NPCs da campanha
-// (dos mundos + incluídos da biblioteca) com cards prontos para a galeria.
+// Retorna os personagens dos jogadores (aprovados) ou habitantes (MISSING) e os
+// NPCs da campanha (dos mundos + incluídos da biblioteca) com cards prontos.
 // =============================================================================
 
 import { NextRequest, NextResponse } from "next/server";
@@ -14,6 +14,7 @@ import {
   characters,
   characterConditions,
   conditions,
+  missingHabitants,
 } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { getCampaignAsMaster } from "@/lib/auth/campaign-access";
@@ -47,6 +48,42 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       );
     }
 
+    // Suporte a campanhas de MISSING — Edição ZERO
+    if (campaign.rulesEngine === "missing_zero") {
+      const habitantsList = await db
+        .select()
+        .from(missingHabitants)
+        .where(eq(missingHabitants.campaignId, id));
+
+      const players = habitantsList.map((h) => ({
+        id: h.id,
+        name: h.name,
+        imageUrl: null,
+        ownerId: h.ownerId,
+        level: 1,
+        hitPointsCurrent: h.status === "active" ? 1 : 0,
+        hitPointsMax: 1,
+        manaPointsCurrent: 0,
+        manaPointsMax: 0,
+        conditions: [],
+        status: h.status,
+      }));
+
+      const included = await db
+        .select({ npc: npcs })
+        .from(npcCampaigns)
+        .innerJoin(npcs, eq(npcCampaigns.npcId, npcs.id))
+        .where(eq(npcCampaigns.campaignId, id));
+
+      const campaignNpcs = included.map((row) => row.npc);
+
+      return NextResponse.json({
+        success: true,
+        data: { players, npcs: campaignNpcs },
+      });
+    }
+
+    // Fluxo existente d20
     const links = await db
       .select()
       .from(characterCampaigns)

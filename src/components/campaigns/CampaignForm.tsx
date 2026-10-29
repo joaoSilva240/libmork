@@ -104,8 +104,8 @@ export function CampaignForm() {
           name,
           description: description || null,
           rulesEngine,
-          pvpEnabled,
-          difficultyModifierShadowPoints,
+          pvpEnabled: rulesEngine === "missing_zero" ? false : pvpEnabled,
+          difficultyModifierShadowPoints: rulesEngine === "missing_zero" ? 0 : difficultyModifierShadowPoints,
           coverImageUrl: coverImageUrl || null,
           worldMapUrl: worldMapUrl || null,
           initialNpcIds: selectedNpcIds,
@@ -200,7 +200,7 @@ export function CampaignForm() {
                 <label className="block text-xs font-medium text-gray-300 mb-2">
                   Motor de Resolução de Testes
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {/* Card d20_mod */}
                   <div
                     onClick={() => !isLoading && setRulesEngine("d20_mod")}
@@ -235,7 +235,7 @@ export function CampaignForm() {
                         : "border-gray-800 bg-gray-950/70 hover:border-gray-700 hover:bg-gray-950"
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center justify-between mb-1 min-h-[24px]">
                       <span className="font-bold text-xs text-white">2d20 Somado (Dual)</span>
                       {rulesEngine === "dual_d20_sum" && (
                         <span className="h-2 w-2 rounded-full bg-purple-400" />
@@ -245,52 +245,76 @@ export function CampaignForm() {
                       Curva de sino com soma direta de 2 dados d20 para resultados concentrados e épicos.
                     </p>
                   </div>
+
+                  {/* Card missing_zero */}
+                  <div
+                    onClick={() => !isLoading && setRulesEngine("missing_zero")}
+                    className={`cursor-pointer rounded-xl border p-3.5 transition-all select-none ${
+                      rulesEngine === "missing_zero"
+                        ? "border-purple-500 bg-purple-950/50 shadow-md ring-1 ring-purple-500/60"
+                        : "border-gray-800 bg-gray-950/70 hover:border-gray-700 hover:bg-gray-950"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1 min-h-[24px]">
+                      <span className="font-bold text-xs text-white">MISSING — Edição ZERO</span>
+                      {rulesEngine === "missing_zero" && (
+                        <span className="h-2 w-2 rounded-full bg-purple-400" />
+                      )}
+                    </div>
+                    <p className="text-[11px] text-gray-400">
+                      Horror analógico com dados d6, registro pautado e ameaças de cena.
+                    </p>
+                  </div>
                 </div>
               </div>
 
               {/* PvP Toggle */}
-              <div className="flex items-center justify-between p-3 rounded-xl border border-gray-800 bg-gray-950/60">
-                <div>
-                  <div className="text-xs font-bold text-white">Combate entre Jogadores (PvP)</div>
-                  <div className="text-[11px] text-gray-400">
-                    Permite desafios de duelo direto e ataques de alvo entre fichas de jogadores.
+              {rulesEngine !== "missing_zero" && (
+                <div className="flex items-center justify-between p-3 rounded-xl border border-gray-800 bg-gray-950/60">
+                  <div>
+                    <div className="text-xs font-bold text-white">Combate entre Jogadores (PvP)</div>
+                    <div className="text-[11px] text-gray-400">
+                      Permite desafios de duelo direto e ataques de alvo entre fichas de jogadores.
+                    </div>
                   </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={pvpEnabled}
+                      onChange={(e) => setPvpEnabled(e.target.checked)}
+                      disabled={isLoading}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                  </label>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={pvpEnabled}
-                    onChange={(e) => setPvpEnabled(e.target.checked)}
-                    disabled={isLoading}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                </label>
-              </div>
+              )}
 
               {/* Modificador de Sombra */}
-              <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1">
-                  Modificador de Dificuldade por Pontos de Sombra
-                </label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="range"
-                    min={0}
-                    max={10}
-                    value={difficultyModifierShadowPoints}
-                    onChange={(e) => setDifficultyModifierShadowPoints(Number(e.target.value))}
-                    disabled={isLoading}
-                    className="flex-1 accent-purple-600 bg-gray-950 h-2 rounded-lg cursor-pointer"
-                  />
-                  <span className="w-10 text-center font-mono font-bold text-xs bg-purple-950/80 border border-purple-800/60 rounded px-2 py-1 text-purple-300">
-                    +{difficultyModifierShadowPoints}
-                  </span>
+              {rulesEngine !== "missing_zero" && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-300 mb-1">
+                    Modificador de Dificuldade por Pontos de Sombra
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="range"
+                      min={0}
+                      max={10}
+                      value={difficultyModifierShadowPoints}
+                      onChange={(e) => setDifficultyModifierShadowPoints(Number(e.target.value))}
+                      disabled={isLoading}
+                      className="flex-1 accent-purple-600 bg-gray-950 h-2 rounded-lg cursor-pointer"
+                    />
+                    <span className="w-10 text-center font-mono font-bold text-xs bg-purple-950/80 border border-purple-800/60 rounded px-2 py-1 text-purple-300">
+                      +{difficultyModifierShadowPoints}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Aumenta os limiares de testes em proporção à corrupção pela Sombra da campanha.
+                  </p>
                 </div>
-                <p className="text-[10px] text-gray-500 mt-1">
-                  Aumenta os limiares de testes em proporção à corrupção pela Sombra da campanha.
-                </p>
-              </div>
+              )}
             </div>
 
             {/* Bloco 3: Conteúdo Inicial (NPCs e Mundos) */}
