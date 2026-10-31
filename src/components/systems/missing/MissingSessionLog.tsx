@@ -4,7 +4,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   FileText,
   RefreshCw,
-  Dices,
   AlertTriangle,
   PenTool,
   Sparkles,
@@ -14,6 +13,8 @@ import {
 } from "lucide-react";
 import type { LedgerEvent } from "@/lib/systems/missing/types";
 import { useSocket } from "@/context/SocketContext";
+import { ResizeHandle } from "@/components/ui";
+import { useResizableLayout } from "@/hooks/useResizableLayout";
 
 export interface MissingSessionLogProps {
   campaignId: string;
@@ -31,6 +32,13 @@ export function MissingSessionLog({ campaignId, className = "" }: MissingSession
 
   const { isConnected, subscribeCampaignLogCreated, subscribeCampaignLogUpdated } = useSocket();
   const wasConnectedRef = useRef(isConnected);
+
+  const missingSessionLogPanel = useResizableLayout({
+    storageKey: campaignId ? `libmork:missing-session-log:${campaignId}` : undefined,
+    initialHeight: 400,
+    minHeight: 200,
+    maxHeight: 800,
+  });
 
   const fetchLedger = useCallback(async (isManual = false) => {
     if (isManual) setIsRefreshing(true);
@@ -388,7 +396,8 @@ export function MissingSessionLog({ campaignId, className = "" }: MissingSession
 
   return (
     <div
-      className={`flex h-full max-h-full min-h-0 flex-col overflow-hidden rounded-lg border border-zinc-800 bg-[#0c0d10] font-mono text-zinc-200 shadow-xl ${className}`}
+      className={`relative flex flex-col overflow-hidden rounded-lg border border-zinc-800 bg-[#0c0d10] font-mono text-zinc-200 shadow-xl ${className}`}
+      style={{ height: `${missingSessionLogPanel.height}px` }}
       data-testid="missing-session-log"
     >
       {/* Cabeçalho de Dossiê */}
@@ -516,6 +525,13 @@ export function MissingSessionLog({ campaignId, className = "" }: MissingSession
           ))
         )}
       </div>
+
+      <ResizeHandle
+        direction="vertical"
+        onResize={(_, dy) => missingSessionLogPanel.handleResize(0, dy)}
+        title="Redimensionar boletim de ocorrências"
+        data-testid="resize-missing-session-log"
+      />
     </div>
   );
 }

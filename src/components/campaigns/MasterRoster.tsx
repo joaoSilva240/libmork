@@ -97,6 +97,13 @@ export function MasterRoster({
     maxHeight: 520,
   });
 
+  const canvasPanel = useResizableLayout({
+    storageKey: campaignId ? `libmork:campaign-canvas:${campaignId}` : undefined,
+    initialHeight: 400,
+    minHeight: 240,
+    maxHeight: 720,
+  });
+
   const saveDeskActors = (newActors: RosterActor[]) => {
     setDeskActors(newActors);
     try {
@@ -741,7 +748,10 @@ export function MasterRoster({
       )}
 
       {/* Contêiner Central: Canva Infinito ou Mapa do Mundo */}
-      <div className="flex-1 min-h-0 overflow-hidden rounded-lg border border-gray-800 bg-gray-950 mb-1.5">
+      <div
+        className="relative overflow-hidden rounded-lg border border-gray-800 bg-gray-950 mb-1.5"
+        style={{ height: `${canvasPanel.height}px` }}
+      >
         {activeCenterView === "canvas" ? (
           selectedWorldId ? (
             <InfiniteCanvas campaignId={`${campaignId}-${selectedWorldId}`} />
@@ -764,6 +774,12 @@ export function MasterRoster({
             </div>
           )
         )}
+        <ResizeHandle
+          direction="vertical"
+          onResize={(_, dy) => canvasPanel.handleResize(0, dy)}
+          title="Redimensionar área da mesa"
+          data-testid="resize-canvas-panel"
+        />
       </div>
 
       {/* Barra de Ações sobre o Carrossel (Combate/Encontros ou Registro Civil) */}

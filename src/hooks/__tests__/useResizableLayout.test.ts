@@ -215,7 +215,7 @@ describe("useResizableLayout", () => {
     localStorage.setItem("dynamic-panel-width", "520");
     localStorage.setItem("dynamic-panel-height", "380");
 
-    let key: string | undefined = undefined;
+    const initialProps: { storageKey: string | undefined } = { storageKey: undefined };
     const { result, rerender } = renderHook(
       ({ storageKey }: { storageKey: string | undefined }) =>
         useResizableLayout({
@@ -227,7 +227,7 @@ describe("useResizableLayout", () => {
           minHeight: 150,
           maxHeight: 600,
         }),
-      { initialProps: { storageKey: key } }
+      { initialProps }
     );
 
     expect(result.current.width).toBe(400);

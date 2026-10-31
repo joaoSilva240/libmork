@@ -36,18 +36,11 @@ export function CampaignDetail() {
   const [isMesaPopped, setIsMesaPopped] = useState(false);
   const [popupBlockedWarning, setPopupBlockedWarning] = useState(false);
 
-  const leftPanel = useResizableLayout({
-    storageKey: campaign ? `libmork:campaign-left-panel:${campaign.id}` : undefined,
-    initialWidth: 240,
-    minWidth: 180,
-    maxWidth: 420,
-  });
-
-  const rightPanel = useResizableLayout({
-    storageKey: campaign ? `libmork:campaign-right-panel:${campaign.id}` : undefined,
-    initialWidth: 260,
-    minWidth: 200,
-    maxWidth: 460,
+  const worldsPanel = useResizableLayout({
+    storageKey: campaign ? `libmork:campaign-worlds-panel:${campaign.id}` : undefined,
+    initialHeight: 320,
+    minHeight: 180,
+    maxHeight: 600,
   });
 
   const loadWorlds = useCallback(async () => {
@@ -284,10 +277,7 @@ export function CampaignDetail() {
       )}
 
       <div
-        className={`flex-1 grid grid-cols-1 gap-2.5 overflow-hidden min-h-0 ${isMesaPopped ? "lg:grid-cols-[1fr_1fr]" : "lg:grid-cols-[var(--campaign-grid-columns)]"}`}
-        style={{
-          "--campaign-grid-columns": `${leftPanel.width}px minmax(0, 1fr) ${rightPanel.width}px`,
-        } as React.CSSProperties}
+        className={`flex-1 grid grid-cols-1 gap-2.5 overflow-hidden min-h-0 ${isMesaPopped ? "lg:grid-cols-[1fr_1fr]" : "lg:grid-cols-[220px_minmax(0,1fr)_240px]"}`}
       >
         {/* ===== Coluna esquerda — Gestão ===== */}
         <div className="relative space-y-3 overflow-y-auto min-h-0">
@@ -303,9 +293,10 @@ export function CampaignDetail() {
           )}
 
           <div
-            className={`rounded-lg border p-3 ${
+            className={`relative rounded-lg border p-3 overflow-y-auto ${
               isMissing ? "border-zinc-800 bg-[#0e0f12] font-mono" : "border-gray-800 bg-gray-900"
             }`}
+            style={{ height: `${worldsPanel.height}px` }}
           >
             <h3 className="mb-2 font-semibold text-white">
               {isMissing ? "Cenas / Locais de Investigação" : "Mundos"}
@@ -454,16 +445,16 @@ export function CampaignDetail() {
                 </div>
               </div>
             )}
+
+            <ResizeHandle
+              direction="vertical"
+              onResize={(_, dy) => worldsPanel.handleResize(0, dy)}
+              title="Redimensionar painel de mundos"
+              data-testid="resize-worlds-panel"
+            />
           </div>
 
           <CampaignInvites key={`invites-${rosterVersion}`} campaignId={campaign.id} />
-
-          <ResizeHandle
-            direction="horizontal"
-            onResize={(dx) => leftPanel.handleResize(dx, 0)}
-            title="Redimensionar painel de gestão"
-            data-testid="resize-left-panel"
-          />
         </div>
 
         {!isMesaPopped && (
@@ -486,17 +477,11 @@ export function CampaignDetail() {
         {/* ===== Coluna direita — Log da sessão ===== */}
         <div className="relative flex flex-col h-full max-h-full min-h-0 overflow-hidden">
           {isMissing ? (
-            <MissingSessionLog campaignId={campaign.id} className="h-full max-h-full min-h-0" />
+            <MissingSessionLog campaignId={campaign.id} />
           ) : (
             <SessionLog campaignId={campaign.id} />
           )}
 
-          <ResizeHandle
-            direction="horizontal"
-            onResize={(dx) => rightPanel.handleResize(-dx, 0)}
-            title="Redimensionar painel de logs"
-            data-testid="resize-right-panel"
-          />
         </div>
       </div>
 

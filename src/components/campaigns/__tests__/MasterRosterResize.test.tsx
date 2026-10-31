@@ -130,4 +130,16 @@ describe("MasterRoster Carousel Resize Integration", () => {
       expect(screen.queryByTestId("resize-carousel-panel")).not.toBeInTheDocument();
     });
   });
+
+  it("renders ResizeHandle directly on the central Mesa/Canvas container", async () => {
+    render(<MasterRoster campaignId="c1" selectedWorldId="w1" />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("resize-canvas-panel")).toBeInTheDocument();
+    });
+
+    const handle = screen.getByTestId("resize-canvas-panel");
+    expect(handle).toHaveAttribute("title", "Redimensionar área da mesa");
+    expect(handle).toHaveClass("cursor-ns-resize");
+  });
 });
