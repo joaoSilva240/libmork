@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   FileText,
   RefreshCw,
@@ -119,6 +119,17 @@ export function MissingSessionLog({ campaignId, className = "" }: MissingSession
     }
     return true;
   });
+
+  const sortedEvents = useMemo(() => {
+    return [...filteredEvents].sort((a, b) => {
+      const timeA = new Date(a.timestamp).getTime();
+      const timeB = new Date(b.timestamp).getTime();
+      if (!isNaN(timeA) && !isNaN(timeB) && timeA !== timeB) {
+        return timeB - timeA;
+      }
+      return b.id.localeCompare(a.id);
+    });
+  }, [filteredEvents]);
 
   const formatTime = (isoString: string) => {
     try {
@@ -377,7 +388,7 @@ export function MissingSessionLog({ campaignId, className = "" }: MissingSession
 
   return (
     <div
-      className={`flex h-full flex-col rounded-lg border border-zinc-800 bg-[#0c0d10] font-mono text-zinc-200 shadow-xl ${className}`}
+      className={`flex h-full max-h-full min-h-0 flex-col overflow-hidden rounded-lg border border-zinc-800 bg-[#0c0d10] font-mono text-zinc-200 shadow-xl ${className}`}
       data-testid="missing-session-log"
     >
       {/* Cabeçalho de Dossiê */}
@@ -468,7 +479,10 @@ export function MissingSessionLog({ campaignId, className = "" }: MissingSession
       </div>
 
       {/* Lista de Registros */}
-      <div className="flex-1 space-y-2 overflow-y-auto p-2">
+      <div
+        className="flex-1 min-h-0 space-y-2 overflow-y-auto p-2"
+        data-testid="missing-session-log-list"
+      >
         {error && (
           <div className="rounded border border-rose-900/60 bg-rose-950/30 p-2 text-[11px] text-rose-400">
             {error}
@@ -480,13 +494,13 @@ export function MissingSessionLog({ campaignId, className = "" }: MissingSession
             <RefreshCw className="h-4 w-4 animate-spin text-rose-400 mr-2" />
             <span>Consultando arquivos...</span>
           </div>
-        ) : filteredEvents.length === 0 ? (
+        ) : sortedEvents.length === 0 ? (
           <div className="flex h-32 flex-col items-center justify-center text-center p-3 text-xs text-zinc-500 border border-dashed border-zinc-800/80 rounded">
             <FileText className="h-5 w-5 mb-1 text-zinc-600" />
             <p>Nenhuma ocorrência registrada neste arquivo.</p>
           </div>
         ) : (
-          filteredEvents.map((ev) => (
+          sortedEvents.map((ev) => (
             <div
               key={ev.id}
               className="rounded border border-zinc-800/80 bg-zinc-950/90 p-2 shadow-xs transition-colors hover:border-zinc-700"

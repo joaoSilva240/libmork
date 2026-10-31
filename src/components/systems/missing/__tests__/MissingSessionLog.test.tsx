@@ -168,4 +168,24 @@ describe("MissingSessionLog Component", () => {
       expect(global.fetch).toHaveBeenCalledTimes(2);
     });
   });
+
+  it("renderiza eventos em ordem cronológica decrescente (mais recente primeiro)", async () => {
+    render(<MissingSessionLog campaignId="camp-123" />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("missing-session-log-list")).toBeInTheDocument();
+    });
+
+    const list = screen.getByTestId("missing-session-log-list");
+    const testIds = Array.from(list.querySelectorAll("[data-testid]"))
+      .map((el) => el.getAttribute("data-testid"))
+      .filter((id) => id?.startsWith("log-"));
+
+    expect(testIds).toEqual([
+      "log-lost-ev-eq-lost", // 12:15:00
+      "log-erase-ev-line-erased", // 12:10:00
+      "log-test-ev-test-forced", // 12:05:00
+      "log-test-ev-test-1", // 12:00:00
+    ]);
+  });
 });

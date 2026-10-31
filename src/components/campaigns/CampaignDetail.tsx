@@ -457,11 +457,13 @@ export function CampaignDetail() {
         )}
 
         {/* ===== Coluna direita — Log da sessão ===== */}
-        {isMissing ? (
-          <MissingSessionLog campaignId={campaign.id} />
-        ) : (
-          <SessionLog campaignId={campaign.id} />
-        )}
+        <div className="flex flex-col h-full max-h-full min-h-0 overflow-hidden">
+          {isMissing ? (
+            <MissingSessionLog campaignId={campaign.id} className="h-full max-h-full min-h-0" />
+          ) : (
+            <SessionLog campaignId={campaign.id} />
+          )}
+        </div>
       </div>
 
       {showContentOverlay && (

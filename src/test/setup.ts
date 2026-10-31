@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 
-if (typeof window !== 'undefined' && !window.localStorage.clear) {
+if (typeof window !== 'undefined' && (!window.localStorage || !window.localStorage.clear)) {
   const store: Record<string, string> = {};
   Object.defineProperty(window, 'localStorage', {
     value: {
