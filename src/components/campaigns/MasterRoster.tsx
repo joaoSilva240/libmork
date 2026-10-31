@@ -12,6 +12,8 @@ import { useSocket, type RollDataPayload } from "@/context/SocketContext";
 import type { CombatSessionState } from "@/lib/engine";
 import { advanceCombatTurn, spendCombatActions } from "@/lib/engine";
 import { Spinner } from "@/components/ui";
+import { ResizeHandle } from "@/components/ui";
+import { useResizableLayout } from "@/hooks/useResizableLayout";
 import { WorldSelectorModal } from "@/components/campaigns/WorldSelectorModal";
 import { ExternalLink, Minimize2 } from "lucide-react";
 import { MissingHabitantSheet } from "@/components/systems/missing/MissingHabitantSheet";
@@ -86,6 +88,13 @@ export function MasterRoster({
     } catch {
       return false;
     }
+  });
+
+  const carouselPanel = useResizableLayout({
+    storageKey: campaignId ? `libmork:campaign-carousel:${campaignId}` : undefined,
+    initialHeight: 224,
+    minHeight: 160,
+    maxHeight: 520,
   });
 
   const saveDeskActors = (newActors: RosterActor[]) => {
@@ -890,7 +899,8 @@ export function MasterRoster({
             setIsDragOver(false);
             handleDropActor(e);
           }}
-          className={`transition-all duration-300 h-56 min-h-[220px] rounded-b-lg border p-2 overflow-visible ${
+          style={{ height: `${carouselPanel.height}px` }}
+          className={`relative transition-[height] duration-150 rounded-b-lg border p-2 overflow-visible ${
             isMissing
               ? "border-zinc-800 bg-[#0d0e11]/80"
               : isDragOver
@@ -904,6 +914,12 @@ export function MasterRoster({
             onSelect={handleSelectActor}
             onRemove={handleRemoveDeskActor}
             isMissing={isMissing}
+          />
+          <ResizeHandle
+            direction="vertical"
+            onResize={(_, dy) => carouselPanel.handleResize(0, dy)}
+            title="Redimensionar carrossel de personagens"
+            data-testid="resize-carousel-panel"
           />
         </div>
       )}

@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Campaign, Establishment, World } from "@/types";
-import { Spinner, WindowPortal } from "@/components/ui";
+import { ResizeHandle, Spinner, WindowPortal } from "@/components/ui";
+import { useResizableLayout } from "@/hooks/useResizableLayout";
 import { useSocket } from "@/context/SocketContext";
 import { CampaignInvites } from "@/components/campaigns/CampaignInvites";
 import { MasterRoster } from "@/components/campaigns/MasterRoster";
@@ -34,6 +35,20 @@ export function CampaignDetail() {
   const [rosterVersion, setRosterVersion] = useState(0);
   const [isMesaPopped, setIsMesaPopped] = useState(false);
   const [popupBlockedWarning, setPopupBlockedWarning] = useState(false);
+
+  const leftPanel = useResizableLayout({
+    storageKey: campaign ? `libmork:campaign-left-panel:${campaign.id}` : undefined,
+    initialWidth: 240,
+    minWidth: 180,
+    maxWidth: 420,
+  });
+
+  const rightPanel = useResizableLayout({
+    storageKey: campaign ? `libmork:campaign-right-panel:${campaign.id}` : undefined,
+    initialWidth: 260,
+    minWidth: 200,
+    maxWidth: 460,
+  });
 
   const loadWorlds = useCallback(async () => {
     const requestId = ++worldsRequestId.current;
@@ -268,9 +283,14 @@ export function CampaignDetail() {
         </div>
       )}
 
-      <div className={`flex-1 grid gap-2.5 overflow-hidden min-h-0 ${isMesaPopped ? "lg:grid-cols-[1fr_1fr]" : "lg:grid-cols-[220px_minmax(0,1fr)_240px] xl:grid-cols-[240px_minmax(0,1fr)_260px]"}`}>
+      <div
+        className={`flex-1 grid grid-cols-1 gap-2.5 overflow-hidden min-h-0 ${isMesaPopped ? "lg:grid-cols-[1fr_1fr]" : "lg:grid-cols-[var(--campaign-grid-columns)]"}`}
+        style={{
+          "--campaign-grid-columns": `${leftPanel.width}px minmax(0, 1fr) ${rightPanel.width}px`,
+        } as React.CSSProperties}
+      >
         {/* ===== Coluna esquerda — Gestão ===== */}
-        <div className="space-y-3 overflow-y-auto min-h-0">
+        <div className="relative space-y-3 overflow-y-auto min-h-0">
           {!isMissing && (
             <div className="rounded-lg border border-gray-800 bg-gray-900 p-3">
               <button
@@ -437,6 +457,13 @@ export function CampaignDetail() {
           </div>
 
           <CampaignInvites key={`invites-${rosterVersion}`} campaignId={campaign.id} />
+
+          <ResizeHandle
+            direction="horizontal"
+            onResize={(dx) => leftPanel.handleResize(dx, 0)}
+            title="Redimensionar painel de gestão"
+            data-testid="resize-left-panel"
+          />
         </div>
 
         {!isMesaPopped && (
@@ -457,12 +484,19 @@ export function CampaignDetail() {
         )}
 
         {/* ===== Coluna direita — Log da sessão ===== */}
-        <div className="flex flex-col h-full max-h-full min-h-0 overflow-hidden">
+        <div className="relative flex flex-col h-full max-h-full min-h-0 overflow-hidden">
           {isMissing ? (
             <MissingSessionLog campaignId={campaign.id} className="h-full max-h-full min-h-0" />
           ) : (
             <SessionLog campaignId={campaign.id} />
           )}
+
+          <ResizeHandle
+            direction="horizontal"
+            onResize={(dx) => rightPanel.handleResize(-dx, 0)}
+            title="Redimensionar painel de logs"
+            data-testid="resize-right-panel"
+          />
         </div>
       </div>
 

@@ -4,5 +4,7 @@ export { Form } from "./Form";
 export { Spinner } from "./Spinner";
 export { WindowPortal } from "./WindowPortal";
 export { Modal } from "./Modal";
+export { ResizeHandle } from "./ResizeHandle";
+export type { ResizeHandleProps } from "./ResizeHandle";
 export { OfflineSyncIndicator } from "./OfflineSyncIndicator";
 export * from "./OptimizedImage";
