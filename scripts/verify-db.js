@@ -101,6 +101,22 @@ async function verifyDatabase() {
     const charSelect = await client.query(`SELECT id, name, race_id, active_heritages FROM characters LIMIT 3;`);
     console.log(`✓ Select em characters com race_id e active_heritages funcionou! Registros: ${charSelect.rowCount}`);
 
+    // 8. Verificação da coluna missing_habitants.campaign_id (nullable)
+    console.log('\n8. Verificando missing_habitants.campaign_id:');
+    const missingCampaignIdMeta = await client.query(`
+      SELECT column_name, data_type, is_nullable
+      FROM information_schema.columns
+      WHERE table_name = 'missing_habitants' AND column_name = 'campaign_id';
+    `);
+    if (missingCampaignIdMeta.rows.length > 0) {
+      console.log(`✓ Coluna missing_habitants.campaign_id presente: tipo=${missingCampaignIdMeta.rows[0].data_type}, nullable=${missingCampaignIdMeta.rows[0].is_nullable}`);
+      if (missingCampaignIdMeta.rows[0].is_nullable !== 'YES') {
+        throw new Error('Coluna missing_habitants.campaign_id NÃO é nullable!');
+      }
+    } else {
+      throw new Error('Coluna missing_habitants.campaign_id NÃO encontrada!');
+    }
+
     console.log('\n=== TODAS AS VERIFICAÇÕES PASSARAM COM SUCESSO! ===');
   } catch (error) {
     console.error('✗ Erro na verificação do banco:', error);

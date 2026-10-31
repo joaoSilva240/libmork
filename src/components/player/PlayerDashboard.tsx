@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Character, PlayerCampaign } from "@/types";
+import type { MissingHabitant, EquipmentStatus } from "@/lib/systems/missing/types";
 import { CharacterCard } from "@/components/characters/CharacterCard";
+import { MissingHabitantCard } from "@/components/systems/missing/MissingHabitantCard";
+import { MissingHabitantSheet } from "@/components/systems/missing/MissingHabitantSheet";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { Spinner, Button } from "@/components/ui";
 import { BottomNav } from "@/components/ui/BottomNav";
@@ -17,6 +20,8 @@ export function PlayerDashboard() {
 
   // Estado de Personagens
   const [characters, setCharacters] = useState<Character[]>([]);
+  const [missingHabitants, setMissingHabitants] = useState<MissingHabitant[]>([]);
+  const [selectedHabitant, setSelectedHabitant] = useState<MissingHabitant | null>(null);
   const [isLoadingCharacters, setIsLoadingCharacters] = useState(true);
   const [charactersError, setCharactersError] = useState<string | null>(null);
 
@@ -31,9 +36,10 @@ export function PlayerDashboard() {
   const [isLoadingWealth, setIsLoadingWealth] = useState(true);
   const [wealthError, setWealthError] = useState<string | null>(null);
 
-  // Estado de Importação de Personagem
+  // Estado de Importação de Personagem / Habitante
   const [importingCampaignId, setImportingCampaignId] = useState<string | null>(null);
   const [importableCharacters, setImportableCharacters] = useState<Character[]>([]);
+  const [importableHabitants, setImportableHabitants] = useState<MissingHabitant[]>([]);
   const [isLoadingImport, setIsLoadingImport] = useState(false);
   const [importSearch, setImportSearch] = useState("");
 
@@ -43,89 +49,111 @@ export function PlayerDashboard() {
     setToasts((prev) => [...prev, { id: generateUUID(), message, type }]);
   };
 
-  useEffect(() => {
-    async function loadCharacters() {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+  const loadCharacters = async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      try {
-        const response = await fetch("/api/characters", {
-          credentials: "include",
-          signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
+    try {
+      const response = await fetch("/api/characters", {
+        credentials: "include",
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
 
-        if (!response.ok) {
-          const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
 
-          if (response.status === 401) {
-            await fetch("/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => {});
-            window.location.href = "/login";
-            return;
-          }
-
-          setCharactersError(data.error || "Erro ao carregar personagens");
-          setIsLoadingCharacters(false);
+        if (response.status === 401) {
+          await fetch("/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => {});
+          window.location.href = "/login";
           return;
         }
 
-        const data = await response.json();
-        setCharacters(data.data || []);
-      } catch (err: unknown) {
-        clearTimeout(timeoutId);
-        if (err instanceof Error && err.name === "AbortError") {
-          setCharactersError("Tempo esgotado. Verifique sua conexão.");
-        } else {
-          setCharactersError("Erro de conexão. Tente novamente.");
-        }
-      } finally {
+        setCharactersError(data.error || "Erro ao carregar personagens");
         setIsLoadingCharacters(false);
+        return;
       }
-    }
 
-    async function loadCampaigns() {
-      try {
-        const response = await fetch("/api/player/campaigns", {
-          credentials: "include",
-        });
-
-        if (!response.ok) {
-          const data = await response.json().catch(() => ({}));
-          setCampaignsError(data.error || "Erro ao carregar campanhas");
-          return;
-        }
-
-        const data = await response.json();
-        setCampaigns(data.data || []);
-      } catch {
-        setCampaignsError("Erro de conexão ao carregar campanhas.");
-      } finally {
-        setIsLoadingCampaigns(false);
+      const data = await response.json();
+      setCharacters(data.data || []);
+    } catch (err: unknown) {
+      clearTimeout(timeoutId);
+      if (err instanceof Error && err.name === "AbortError") {
+        setCharactersError("Tempo esgotado. Verifique sua conexão.");
+      } else {
+        setCharactersError("Erro de conexão. Tente novamente.");
       }
+    } finally {
+      setIsLoadingCharacters(false);
     }
+  };
 
-    async function loadWealth() {
-      try {
-        const response = await fetch("/api/player/wealth", {
-          credentials: "include",
-        });
+  const loadCampaigns = async () => {
+    try {
+      const response = await fetch("/api/player/campaigns", {
+        credentials: "include",
+      });
 
-        if (!response.ok) {
-          const data = await response.json().catch(() => ({}));
-          setWealthError(data.error || "Erro ao carregar tesouraria");
-          return;
-        }
-
-        const data = await response.json();
-        setWealthData(data.data || null);
-      } catch {
-        setWealthError("Erro de conexão ao carregar tesouraria.");
-      } finally {
-        setIsLoadingWealth(false);
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setCampaignsError(data.error || "Erro ao carregar campanhas");
+        return;
       }
-    }
 
+      const data = await response.json();
+      const updatedCampaigns: PlayerCampaign[] = data.data || [];
+      setCampaigns(updatedCampaigns);
+      setSelectedCampaign((prevSelected) => {
+        if (!prevSelected) return null;
+        return updatedCampaigns.find((c) => c.id === prevSelected.id) || null;
+      });
+    } catch {
+      setCampaignsError("Erro de conexão ao carregar campanhas.");
+    } finally {
+      setIsLoadingCampaigns(false);
+    }
+  };
+
+  const loadMissingHabitants = async () => {
+    try {
+      const response = await fetch("/api/systems/missing/habitants", {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        setMissingHabitants([]);
+        return;
+      }
+      const data = await response.json().catch(() => ({}));
+      setMissingHabitants(data.data || []);
+    } catch {
+      setMissingHabitants([]);
+    }
+  };
+
+  const loadWealth = async () => {
+    try {
+      const response = await fetch("/api/player/wealth", {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setWealthError(data.error || "Erro ao carregar tesouraria");
+        return;
+      }
+
+      const data = await response.json();
+      setWealthData(data.data || null);
+    } catch {
+      setWealthError("Erro de conexão ao carregar tesouraria.");
+    } finally {
+      setIsLoadingWealth(false);
+    }
+  };
+
+  useEffect(() => {
     void loadCharacters();
+    void loadMissingHabitants();
     void loadCampaigns();
     void loadWealth();
   }, []);
@@ -148,6 +176,27 @@ export function PlayerDashboard() {
     campaignId: string,
     campaignCharacters: PlayerCampaign["characters"]
   ) {
+    const targetCampaign =
+      (selectedCampaign?.id === campaignId ? selectedCampaign : null) ||
+      campaigns.find((c) => c.id === campaignId);
+
+    const isMissing = targetCampaign?.rulesEngine === "missing_zero";
+
+    if (isMissing) {
+      const available = missingHabitants.filter((h) => h.campaignId !== campaignId);
+
+      if (available.length === 0) {
+        addToast("Você não tem habitantes para importar", "info");
+        return;
+      }
+
+      setImportableHabitants(available);
+      setImportableCharacters([]);
+      setImportingCampaignId(campaignId);
+      setImportSearch("");
+      return;
+    }
+
     const linkedIds = new Set(campaignCharacters.map((c) => c.id));
     const available = characters.filter((c) => !linkedIds.has(c.id));
 
@@ -157,6 +206,7 @@ export function PlayerDashboard() {
     }
 
     setImportableCharacters(available);
+    setImportableHabitants([]);
     setImportingCampaignId(campaignId);
     setImportSearch("");
   }
@@ -166,6 +216,11 @@ export function PlayerDashboard() {
 
     setIsLoadingImport(true);
     try {
+      const targetCampaign =
+        (selectedCampaign?.id === importingCampaignId ? selectedCampaign : null) ||
+        campaigns.find((c) => c.id === importingCampaignId);
+      const isMissing = targetCampaign?.rulesEngine === "missing_zero";
+
       const response = await fetch(
         `/api/campaigns/${importingCampaignId}/import-character`,
         {
@@ -177,36 +232,38 @@ export function PlayerDashboard() {
       );
 
       if (response.status === 201) {
-        addToast("Personagem vinculado com sucesso!", "success");
+        addToast(
+          isMissing
+            ? "Habitante vinculado com sucesso!"
+            : "Personagem vinculado com sucesso!",
+          "success"
+        );
 
-        // Re-fetch campanhas para atualizar a lista
-        const campaignsResponse = await fetch("/api/player/campaigns", {
-          credentials: "include",
-        });
-        if (campaignsResponse.ok) {
-          const data = await campaignsResponse.json();
-          const updatedCampaigns: PlayerCampaign[] = data.data || [];
-          setCampaigns(updatedCampaigns);
-          if (selectedCampaign) {
-            const updatedSelected = updatedCampaigns.find((c) => c.id === selectedCampaign.id);
-            if (updatedSelected) {
-              setSelectedCampaign(updatedSelected);
-            }
-          }
-        }
+        // Recarregar campanhas e recarregar habitantes
+        await Promise.all([loadCampaigns(), loadMissingHabitants()]);
 
         setImportingCampaignId(null);
         setImportableCharacters([]);
+        setImportableHabitants([]);
         return;
       }
 
       if (response.status === 409) {
-        addToast("Este personagem já está nesta campanha", "warning");
+        addToast(
+          isMissing
+            ? "Este habitante já está nesta campanha"
+            : "Este personagem já está nesta campanha",
+          "warning"
+        );
         return;
       }
 
       const data = await response.json().catch(() => ({}));
-      addToast(data.error || "Erro ao importar personagem", "error");
+      addToast(
+        data.error ||
+          (isMissing ? "Erro ao importar habitante" : "Erro ao importar personagem"),
+        "error"
+      );
     } catch {
       addToast("Erro de conexão. Tente novamente.", "error");
     } finally {
@@ -214,8 +271,110 @@ export function PlayerDashboard() {
     }
   }
 
+  const handleEraseHabitantLine = async (lineId: string, reason?: string) => {
+    if (!selectedHabitant) return;
+    try {
+      const res = await fetch(`/api/systems/missing/habitants/${selectedHabitant.id}/erase`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ lineId, reason }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const updated: MissingHabitant = json.data;
+        setSelectedHabitant(updated);
+        setMissingHabitants((prev) => prev.map((h) => (h.id === updated.id ? updated : h)));
+        setSelectedCampaign((prev) => {
+          if (!prev || !prev.habitants) return prev;
+          return {
+            ...prev,
+            habitants: prev.habitants.map((h) => (h.id === updated.id ? updated : h)),
+          };
+        });
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        addToast(errData.error || "Erro ao rasurar linha", "error");
+      }
+    } catch {
+      addToast("Erro de conexão ao rasurar linha", "error");
+    }
+  };
+
+  const handleAddHabitantLine = async (text: string) => {
+    if (!selectedHabitant) return;
+    try {
+      const res = await fetch(`/api/systems/missing/habitants/${selectedHabitant.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ addLine: text }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const updated: MissingHabitant = json.data;
+        setSelectedHabitant(updated);
+        setMissingHabitants((prev) => prev.map((h) => (h.id === updated.id ? updated : h)));
+        setSelectedCampaign((prev) => {
+          if (!prev || !prev.habitants) return prev;
+          return {
+            ...prev,
+            habitants: prev.habitants.map((h) => (h.id === updated.id ? updated : h)),
+          };
+        });
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        addToast(errData.error || "Erro ao adicionar linha", "error");
+      }
+    } catch {
+      addToast("Erro de conexão ao adicionar linha", "error");
+    }
+  };
+
+  const handleUpdateHabitantEquipment = async (
+    slot: 1 | 2 | 3,
+    equipment: { name: string; notes?: string; status: EquipmentStatus },
+  ) => {
+    if (!selectedHabitant) return;
+    try {
+      const res = await fetch(`/api/systems/missing/habitants/${selectedHabitant.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          equipment: {
+            slot,
+            ...equipment,
+          },
+        }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const updated: MissingHabitant = json.data;
+        setSelectedHabitant(updated);
+        setMissingHabitants((prev) => prev.map((h) => (h.id === updated.id ? updated : h)));
+        setSelectedCampaign((prev) => {
+          if (!prev || !prev.habitants) return prev;
+          return {
+            ...prev,
+            habitants: prev.habitants.map((h) => (h.id === updated.id ? updated : h)),
+          };
+        });
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        addToast(errData.error || "Erro ao atualizar equipamento", "error");
+      }
+    } catch {
+      addToast("Erro de conexão ao atualizar equipamento", "error");
+    }
+  };
+
   const filteredImportableCharacters = importableCharacters.filter((c) =>
     c.name.toLowerCase().includes(importSearch.toLowerCase())
+  );
+
+  const filteredImportableHabitants = importableHabitants.filter((h) =>
+    h.name.toLowerCase().includes(importSearch.toLowerCase())
   );
 
   useEffect(() => {
@@ -223,6 +382,9 @@ export function PlayerDashboard() {
       if (event.key === "Escape") {
         setSelectedCampaign(null);
         setImportingCampaignId(null);
+        setImportableCharacters([]);
+        setImportableHabitants([]);
+        setSelectedHabitant(null);
       }
     };
     window.addEventListener("keydown", handleEscape);
@@ -250,7 +412,7 @@ export function PlayerDashboard() {
             <div className="rounded-lg border border-accent-vibrant/40 bg-accent-dark/30 p-4 text-secondary-pure">
               {charactersError}
             </div>
-          ) : characters.length === 0 ? (
+          ) : characters.length === 0 && missingHabitants.length === 0 ? (
             <div className="rounded-xl border border-gray-800 bg-gray-900/60 py-16 text-center">
               <p className="mb-4 text-secondary-muted">Você ainda não tem personagens.</p>
               <Link href="/player/characters/new">
@@ -272,6 +434,13 @@ export function PlayerDashboard() {
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {characters.map((character) => (
                   <CharacterCard key={character.id} character={character} />
+                ))}
+                {missingHabitants.map((habitant) => (
+                  <MissingHabitantCard
+                    key={habitant.id}
+                    habitant={habitant}
+                    onOpen={(h) => setSelectedHabitant(h)}
+                  />
                 ))}
               </div>
             </div>
@@ -365,6 +534,8 @@ export function PlayerDashboard() {
                               alt="D&D"
                               className="h-4 w-auto object-contain inline-block"
                             />
+                          ) : campaign.rulesEngine === "missing_zero" ? (
+                            <span className="text-red-300 font-semibold font-mono">MISSING — Edição ZERO</span>
                           ) : (
                             "2d20 somado"
                           )}
@@ -510,9 +681,34 @@ export function PlayerDashboard() {
 
       {/* Overlay de Detalhes da Campanha */}
       {selectedCampaign !== null && importingCampaignId === null && (() => {
-        const hasAliveCharacter = selectedCampaign.characters.some(
-          (char) => char.hitPointsCurrent > 0
-        );
+        const isMissing = selectedCampaign.rulesEngine === "missing_zero";
+        const campaignHabitants: MissingHabitant[] = isMissing
+          ? (selectedCampaign.habitants && selectedCampaign.habitants.length > 0
+              ? selectedCampaign.habitants
+              : missingHabitants.filter((h) => h.campaignId === selectedCampaign.id).length > 0
+                ? missingHabitants.filter((h) => h.campaignId === selectedCampaign.id)
+                : selectedCampaign.characters.map((c) => ({
+                    id: c.id,
+                    campaignId: selectedCampaign.id,
+                    ownerId: "",
+                    name: c.name,
+                    status: (c.hitPointsCurrent > 0 ? "active" : "missing") as "active" | "missing",
+                    lines: [],
+                    equipments: [
+                      { id: "1", slot: 1 as const, name: "", notes: "", status: "active" as const },
+                      { id: "2", slot: 2 as const, name: "", notes: "", status: "active" as const },
+                      { id: "3", slot: 3 as const, name: "", notes: "", status: "active" as const },
+                    ],
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                  })))
+          : [];
+
+        const hasAliveCharacter = isMissing
+          ? (campaignHabitants.length > 0
+              ? campaignHabitants.some((h) => h.status === "active")
+              : selectedCampaign.characters.some((c) => c.hitPointsCurrent > 0))
+          : selectedCampaign.characters.some((char) => char.hitPointsCurrent > 0);
 
         return (
           <div
@@ -555,18 +751,24 @@ export function PlayerDashboard() {
                 <div className="pr-10">
                   <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
                     {/* Regras */}
-                    <span className="inline-flex items-center gap-1 rounded bg-dominant-dark/90 border border-dominant-border px-2 py-0.5 text-white text-[11px] font-medium drop-shadow-sm">
-                      {selectedCampaign.rulesEngine === "d20_mod" ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
+                    {selectedCampaign.rulesEngine === "d20_mod" ? (
+                      <span className="inline-flex items-center gap-1 rounded bg-dominant-dark/90 border border-dominant-border px-2 py-0.5 text-white text-[11px] font-medium drop-shadow-sm">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src="/DD-Logo.png"
                           alt="D&D"
                           className="h-3.5 w-auto object-contain inline-block"
                         />
-                      ) : (
-                        "2d20 somado"
-                      )}
-                    </span>
+                      </span>
+                    ) : selectedCampaign.rulesEngine === "missing_zero" ? (
+                      <span className="inline-flex items-center gap-1 rounded bg-red-950/90 border border-red-900/60 px-2.5 py-0.5 text-red-300 text-[11px] font-semibold tracking-wider font-mono drop-shadow-sm">
+                        MISSING — Edição ZERO
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded bg-dominant-dark/90 border border-dominant-border px-2 py-0.5 text-white text-[11px] font-medium drop-shadow-sm">
+                        2d20 somado
+                      </span>
+                    )}
 
                     {/* PvP */}
                     {selectedCampaign.pvpEnabled && (
@@ -604,13 +806,77 @@ export function PlayerDashboard() {
                   </p>
                 </div>
 
-                {/* Meus Personagens nesta campanha */}
+                {/* Meus Personagens / Habitantes nesta campanha */}
                 <div>
                   <h3 className="text-sm font-semibold text-purple-300 mb-2.5">
-                    Meus Personagens nesta campanha
+                    {isMissing ? "Meus Habitantes nesta campanha" : "Meus Personagens nesta campanha"}
                   </h3>
                   <div className="space-y-2.5">
-                    {selectedCampaign.characters.length === 0 ? (
+                    {isMissing ? (
+                      campaignHabitants.length === 0 ? (
+                        <p className="text-sm text-gray-500">Nenhum habitante nesta campanha.</p>
+                      ) : (
+                        campaignHabitants.map((habitant) => {
+                          const isDisappeared =
+                            habitant.status === "missing" ||
+                            (habitant.lines.length > 0 && habitant.lines.every((l) => l.isErased));
+                          const totalLines = habitant.lines.length;
+                          const activeLines = habitant.lines.filter((l) => !l.isErased).length;
+                          const initials =
+                            habitant.name
+                              .split(" ")
+                              .map((w) => w[0])
+                              .filter(Boolean)
+                              .slice(0, 2)
+                              .join("")
+                              .toUpperCase() || "H";
+
+                          return (
+                            <div
+                              key={habitant.id}
+                              className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-[#121316] p-3.5 font-mono shadow-sm transition-colors hover:border-zinc-700"
+                            >
+                              <div className="flex items-center gap-3.5 min-w-0">
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-zinc-800 border border-zinc-700 text-zinc-200 font-bold text-sm select-none">
+                                  {initials}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <p className="font-semibold text-zinc-100 text-sm sm:text-base truncate">
+                                      {habitant.name}
+                                    </p>
+                                    {isDisappeared ? (
+                                      <span className="rounded bg-red-950 text-red-500 border border-red-800 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                                        Desaparecido
+                                      </span>
+                                    ) : (
+                                      <span className="rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800/60 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                                        Ativo
+                                      </span>
+                                    )}
+                                    <span className="rounded bg-red-950/70 border border-red-800/50 px-2 py-0.5 text-[10px] font-medium text-red-300">
+                                      MISSING — Edição ZERO
+                                    </span>
+                                  </div>
+                                  <div className="mt-1 text-xs text-zinc-400">
+                                    <span>{activeLines} / {totalLines} linhas de memórias legíveis</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-end sm:shrink-0 pt-2 sm:pt-0 border-t border-zinc-900 sm:border-t-0">
+                                <Button
+                                  variant="secondary"
+                                  className="px-3.5 py-1.5 text-xs font-semibold"
+                                  onClick={() => setSelectedHabitant(habitant)}
+                                >
+                                  Abrir Ficha
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )
+                    ) : selectedCampaign.characters.length === 0 ? (
                       <p className="text-sm text-gray-500">Nenhum personagem nesta campanha.</p>
                     ) : (
                       selectedCampaign.characters.map((char) => (
@@ -670,11 +936,15 @@ export function PlayerDashboard() {
                 {!hasAliveCharacter && (
                   <div className="space-y-2 border-t border-gray-800 pt-4">
                     <Link
-                      href={`/player/characters/new?campaignId=${selectedCampaign.id}`}
+                      href={
+                        isMissing
+                          ? `/player/characters/new?campaignId=${selectedCampaign.id}&system=missing_zero`
+                          : `/player/characters/new?campaignId=${selectedCampaign.id}`
+                      }
                       className="block"
                     >
                       <Button variant="primary" className="w-full justify-center">
-                        + Criar Personagem nesta Campanha
+                        {isMissing ? "+ Criar Habitante nesta Campanha" : "+ Criar Personagem nesta Campanha"}
                       </Button>
                     </Link>
                     <button
@@ -687,7 +957,7 @@ export function PlayerDashboard() {
                       }
                       className="w-full rounded-xl border border-purple-800/60 bg-purple-950/40 py-2 text-sm font-semibold text-purple-300 hover:bg-purple-900/60 transition-colors"
                     >
-                      ↩ Importar Personagem Existente
+                      {isMissing ? "↩ Importar Habitante Existente" : "↩ Importar Personagem Existente"}
                     </button>
                   </div>
                 )}
@@ -697,95 +967,190 @@ export function PlayerDashboard() {
         );
       })()}
 
-      {/* Modal de Importação de Personagem */}
-      {importingCampaignId !== null && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
-          onClick={() => {
-            setImportingCampaignId(null);
-            setImportableCharacters([]);
-            setImportSearch("");
-          }}
-          role="presentation"
-        >
+      {/* Modal de Importação de Personagem / Habitante */}
+      {importingCampaignId !== null && (() => {
+        const importingCampaign =
+          (selectedCampaign?.id === importingCampaignId ? selectedCampaign : null) ||
+          campaigns.find((c) => c.id === importingCampaignId);
+        const isImportingMissing = importingCampaign?.rulesEngine === "missing_zero";
+
+        return (
           <div
-            className="w-full max-w-md rounded-xl border border-gray-800 bg-gray-900 p-5 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+            onClick={() => {
+              setImportingCampaignId(null);
+              setImportableCharacters([]);
+              setImportableHabitants([]);
+              setImportSearch("");
+            }}
+            role="presentation"
           >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-white">Importar Personagem</h2>
-              <button
-                type="button"
-                onClick={() => {
-                  setImportingCampaignId(null);
-                  setImportableCharacters([]);
-                  setImportSearch("");
-                }}
-                className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
-              >
-                ✕
-              </button>
-            </div>
+            <div
+              className="w-full max-w-md rounded-xl border border-gray-800 bg-gray-900 p-5 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-white">
+                  {isImportingMissing ? "Importar Habitante" : "Importar Personagem"}
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImportingCampaignId(null);
+                    setImportableCharacters([]);
+                    setImportableHabitants([]);
+                    setImportSearch("");
+                  }}
+                  className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
 
-            <input
-              type="text"
-              placeholder="Buscar por nome..."
-              value={importSearch}
-              onChange={(e) => setImportSearch(e.target.value)}
-              className="mb-4 w-full rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-600"
-            />
+              <input
+                type="text"
+                placeholder="Buscar por nome..."
+                value={importSearch}
+                onChange={(e) => setImportSearch(e.target.value)}
+                className="mb-4 w-full rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-600"
+              />
 
-            <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
-              {filteredImportableCharacters.length === 0 ? (
-                <p className="py-4 text-center text-sm text-gray-500">
-                  Nenhum personagem encontrado
-                </p>
-              ) : (
-                filteredImportableCharacters.map((char) => (
-                  <div
-                    key={char.id}
-                    className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-950 p-2.5"
-                  >
-                    <div className="flex items-center gap-2.5 overflow-hidden">
-                      {char.imageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={char.imageUrl}
-                          alt={char.name}
-                          className="h-9 w-9 rounded-full object-cover shrink-0"
-                        />
-                      ) : (
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-purple-950 text-purple-300 font-bold text-xs shrink-0 border border-purple-800/60">
-                          {char.name.charAt(0).toUpperCase()}
+              {isImportingMissing ? (
+                <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+                  {filteredImportableHabitants.length === 0 ? (
+                    <p className="py-4 text-center text-sm text-gray-500">
+                      Nenhum habitante encontrado
+                    </p>
+                  ) : (
+                    filteredImportableHabitants.map((habitant) => {
+                      const isDisappeared =
+                        habitant.status === "missing" ||
+                        (habitant.lines.length > 0 && habitant.lines.every((l) => l.isErased));
+                      const readableLines = habitant.lines.filter((l) => !l.isErased).length;
+                      const initials =
+                        habitant.name
+                          .split(" ")
+                          .map((w) => w[0])
+                          .filter(Boolean)
+                          .slice(0, 2)
+                          .join("")
+                          .toUpperCase() || "H";
+
+                      return (
+                        <div
+                          key={habitant.id}
+                          className="flex items-center justify-between rounded-lg border border-zinc-800 bg-[#121316] p-2.5 font-mono shadow-xs"
+                        >
+                          <div className="flex items-center gap-2.5 overflow-hidden">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-800 border border-zinc-700 text-zinc-200 font-bold text-xs select-none">
+                              {initials}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="truncate text-xs font-semibold text-zinc-100">
+                                  {habitant.name}
+                                </p>
+                                {isDisappeared ? (
+                                  <span className="rounded bg-red-950 text-red-500 border border-red-800 px-1.5 py-0.2 text-[9px] font-bold uppercase tracking-wider">
+                                    Desaparecido
+                                  </span>
+                                ) : (
+                                  <span className="rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800/60 px-1.5 py-0.2 text-[9px] font-bold uppercase tracking-wider">
+                                    Ativo
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[11px] text-zinc-400">
+                                {readableLines} linhas
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            disabled={isLoadingImport}
+                            onClick={() => handleImportCharacter(habitant.id)}
+                            className="shrink-0 rounded-lg border border-red-900/60 bg-red-950/60 px-3 py-1.5 text-xs font-semibold text-red-300 hover:bg-red-900/60 transition-colors disabled:opacity-50"
+                          >
+                            {isLoadingImport ? "…" : "Vincular"}
+                          </button>
                         </div>
-                      )}
-                      <div className="min-w-0">
-                        <p className="truncate text-xs font-semibold text-white">
-                          {char.name}
-                        </p>
-                        <p className="text-[11px] text-gray-400">
-                          Nível {char.level} · HP:{" "}
-                          <span className="text-red-400 font-medium">
-                            {char.hitPointsCurrent}/{char.hitPointsMax}
-                          </span>
-                        </p>
+                      );
+                    })
+                  )}
+                </div>
+              ) : (
+                <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+                  {filteredImportableCharacters.length === 0 ? (
+                    <p className="py-4 text-center text-sm text-gray-500">
+                      Nenhum personagem encontrado
+                    </p>
+                  ) : (
+                    filteredImportableCharacters.map((char) => (
+                      <div
+                        key={char.id}
+                        className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-950 p-2.5"
+                      >
+                        <div className="flex items-center gap-2.5 overflow-hidden">
+                          {char.imageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={char.imageUrl}
+                              alt={char.name}
+                              className="h-9 w-9 rounded-full object-cover shrink-0"
+                            />
+                          ) : (
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-purple-950 text-purple-300 font-bold text-xs shrink-0 border border-purple-800/60">
+                              {char.name.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="truncate text-xs font-semibold text-white">
+                              {char.name}
+                            </p>
+                            <p className="text-[11px] text-gray-400">
+                              Nível {char.level} · HP:{" "}
+                              <span className="text-red-400 font-medium">
+                                {char.hitPointsCurrent}/{char.hitPointsMax}
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={isLoadingImport}
+                          onClick={() => handleImportCharacter(char.id)}
+                          className="shrink-0 rounded-lg border border-purple-800/60 bg-purple-950/60 px-3 py-1.5 text-xs font-semibold text-purple-300 hover:bg-purple-900/60 transition-colors disabled:opacity-50"
+                        >
+                          {isLoadingImport ? "…" : "Vincular"}
+                        </button>
                       </div>
-                    </div>
-                    <button
-                      type="button"
-                      disabled={isLoadingImport}
-                      onClick={() => handleImportCharacter(char.id)}
-                      className="shrink-0 rounded-lg border border-purple-800/60 bg-purple-950/60 px-3 py-1.5 text-xs font-semibold text-purple-300 hover:bg-purple-900/60 transition-colors disabled:opacity-50"
-                    >
-                      {isLoadingImport ? "…" : "Vincular"}
-                    </button>
-                  </div>
-                ))
+                    ))
+                  )}
+                </div>
               )}
             </div>
           </div>
+        );
+      })()}
+
+      {/* Modal / Overlay em Tela Cheia da Ficha de Habitante de MISSING */}
+      {selectedHabitant !== null && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col bg-[#0a0b0d] overflow-hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Ficha de ${selectedHabitant.name}`}
+        >
+          <MissingHabitantSheet
+            habitant={selectedHabitant}
+            campaignId={selectedHabitant.campaignId || undefined}
+            onClose={() => setSelectedHabitant(null)}
+            onEraseLine={handleEraseHabitantLine}
+            onAddLine={handleAddHabitantLine}
+            onUpdateEquipment={handleUpdateHabitantEquipment}
+          />
         </div>
       )}
 

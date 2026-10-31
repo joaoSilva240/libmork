@@ -139,7 +139,9 @@ export function CampaignList() {
 
               <div className="mt-3 flex flex-wrap gap-2 text-xs text-secondary-muted">
                 <span className="inline-flex items-center gap-1 rounded bg-dominant-dark/90 border border-dominant-border px-2 py-1 text-white text-[11px] drop-shadow-sm">
-                  {campaign.rulesEngine === "d20_mod" ? (
+                  {campaign.rulesEngine === "missing_zero" ? (
+                    "MISSING — Edição ZERO"
+                  ) : campaign.rulesEngine === "d20_mod" ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                       src="/DD-Logo.png"

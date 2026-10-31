@@ -26,6 +26,7 @@ export type RosterPlayer = {
   manaPointsCurrent: number;
   manaPointsMax: number;
   conditions: RosterCondition[];
+  status?: string;
 };
 
 export type RosterActor = {
@@ -42,6 +43,7 @@ export type RosterActor = {
   npcType?: string;
   xpReward?: number;
   conditions?: RosterCondition[];
+  status?: string;
 };
 
 export type ContentCategory = "items" | "spells" | "skills";

@@ -3,6 +3,7 @@
 // =============================================================================
 
 import type { AttributeMap } from "@/lib/engine/attributes";
+import type { MissingHabitant } from "@/lib/systems/missing/types";
 import type {
   Attribute,
   ApprovalStatus,
@@ -13,7 +14,16 @@ import type {
   DuelStatus,
 } from "@/lib/utils/constants";
 
-export type { AttributeMap, Attribute };
+export type {
+  AttributeMap,
+  Attribute,
+  ApprovalStatus,
+  DeathStatus,
+  RulesEngine,
+  NpcType,
+  SpellUseType,
+  DuelStatus,
+};
 
 // =============================================================================
 // Schemas JSONB (conforme § 7.1 do documento de requisitos)
@@ -385,6 +395,7 @@ export type PlayerCampaign = {
     imageUrl: string | null;
     isMine: boolean;
   }>;
+  habitants?: MissingHabitant[];
 };
 
 // =============================================================================
@@ -403,3 +414,10 @@ export type PaginatedResponse<T> = {
   page: number;
   pageSize: number;
 };
+
+// =============================================================================
+// Tipos de Domínio: MISSING — Edição ZERO
+// =============================================================================
+
+export type * from "@/lib/systems/missing";
+

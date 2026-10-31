@@ -14,6 +14,8 @@ import { advanceCombatTurn, spendCombatActions } from "@/lib/engine";
 import { Spinner } from "@/components/ui";
 import { WorldSelectorModal } from "@/components/campaigns/WorldSelectorModal";
 import { ExternalLink, Minimize2 } from "lucide-react";
+import { MissingHabitantSheet } from "@/components/systems/missing/MissingHabitantSheet";
+import type { MissingHabitant, EquipmentStatus } from "@/lib/systems/missing/types";
 
 const CombatTrackerModal = dynamic(() => import("@/components/combat/CombatTrackerModal").then(m => ({ default: m.CombatTrackerModal })), {
   ssr: false,
@@ -36,6 +38,7 @@ type MasterRosterProps = {
   onWorldSelected?: (worldId: string) => void;
   isPoppedOut?: boolean;
   onTogglePopOut?: () => void;
+  rulesEngine?: string;
 };
 
 export function MasterRoster({
@@ -44,7 +47,9 @@ export function MasterRoster({
   onWorldSelected,
   isPoppedOut = false,
   onTogglePopOut,
+  rulesEngine,
 }: MasterRosterProps) {
+  const isMissing = rulesEngine === "missing_zero";
   const { isConnected, presenceList, joinCampaign, subscribeActorStatus, subscribeDiceRoll, subscribeCombatState } = useSocket();
   const [roster, setRoster] = useState<RosterData>({ players: [], npcs: [] });
   const [worlds, setWorlds] = useState<World[]>([]);
@@ -55,6 +60,7 @@ export function MasterRoster({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<RosterActor | null>(null);
+  const [selectedMissingHabitant, setSelectedMissingHabitant] = useState<MissingHabitant | null>(null);
   const [recentRolls, setRecentRolls] = useState<RollDataPayload[]>([]);
   const [showRollFeed, setShowRollFeed] = useState(false);
   const [activeCenterView, setActiveCenterView] = useState<"canvas" | "map">("canvas");
@@ -135,6 +141,7 @@ export function MasterRoster({
                 manaPoints: freshPlayer.manaPointsCurrent,
                 manaPointsMax: freshPlayer.manaPointsMax,
                 conditions: freshPlayer.conditions,
+                status: freshPlayer.status,
               };
             }
           } else if (actor.kind === "npc") {
@@ -357,6 +364,127 @@ export function MasterRoster({
     }
   };
 
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSelectedMissingHabitant(null);
+        setSelected(null);
+      }
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, []);
+
+  const handleSelectActor = async (actor: RosterActor) => {
+    if (isMissing && actor.kind === "character") {
+      try {
+        const res = await fetch(
+          `/api/systems/missing/campaigns/${campaignId}/habitants/${actor.id}`,
+          { credentials: "include" }
+        );
+        if (res.ok) {
+          const json = await res.json();
+          if (json.data) {
+            setSelectedMissingHabitant(json.data);
+            setSelected(actor);
+            return;
+          }
+        }
+        const fallbackRes = await fetch(`/api/systems/missing/habitants/${actor.id}`, {
+          credentials: "include",
+        });
+        if (fallbackRes.ok) {
+          const json = await fallbackRes.json();
+          if (json.data) {
+            setSelectedMissingHabitant(json.data);
+            setSelected(actor);
+            return;
+          }
+        }
+      } catch {
+        // segue para overlay padrão
+      }
+    }
+    setSelected(actor);
+  };
+
+  const handleEraseHabitantLine = async (lineId: string, reason?: string) => {
+    if (!selectedMissingHabitant) return;
+    try {
+      const res = await fetch(
+        `/api/systems/missing/campaigns/${campaignId}/habitants/${selectedMissingHabitant.id}/erase`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ lineId, reason }),
+        }
+      );
+      if (res.ok) {
+        const json = await res.json();
+        const updated: MissingHabitant = json.data;
+        setSelectedMissingHabitant(updated);
+        void handleRosterChanged();
+      }
+    } catch {
+      // resiliente
+    }
+  };
+
+  const handleAddHabitantLine = async (text: string) => {
+    if (!selectedMissingHabitant) return;
+    try {
+      const res = await fetch(
+        `/api/systems/missing/campaigns/${campaignId}/habitants/${selectedMissingHabitant.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ addLine: text }),
+        }
+      );
+      if (res.ok) {
+        const json = await res.json();
+        const updated: MissingHabitant = json.data;
+        setSelectedMissingHabitant(updated);
+        void handleRosterChanged();
+      }
+    } catch {
+      // resiliente
+    }
+  };
+
+  const handleUpdateHabitantEquipment = async (
+    slot: 1 | 2 | 3,
+    equipment: { name: string; notes?: string; status: EquipmentStatus }
+  ) => {
+    if (!selectedMissingHabitant) return;
+    try {
+      const res = await fetch(
+        `/api/systems/missing/campaigns/${campaignId}/habitants/${selectedMissingHabitant.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            equipment: {
+              slot,
+              ...equipment,
+            },
+          }),
+        }
+      );
+      if (res.ok) {
+        const json = await res.json();
+        const updated: MissingHabitant = json.data;
+        setSelectedMissingHabitant(updated);
+        void handleRosterChanged();
+      }
+    } catch {
+      // resiliente
+    }
+  };
+
   const toActor = (player: RosterPlayer): RosterActor => ({
     kind: "character",
     id: player.id,
@@ -369,6 +497,7 @@ export function MasterRoster({
     manaPoints: player.manaPointsCurrent,
     manaPointsMax: player.manaPointsMax,
     conditions: player.conditions,
+    status: player.status,
   });
 
   const actors = useMemo<RosterActor[]>(
@@ -434,7 +563,7 @@ export function MasterRoster({
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-1.5 border-b border-gray-800 pb-1.5 shrink-0 text-xs">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-bold text-white truncate">
-            Mesa{selectedWorld ? ` — ${selectedWorld.name}` : ""}
+            {isMissing ? "Dossiê de Campo" : "Mesa"}{selectedWorld ? ` — ${selectedWorld.name}` : ""}
           </h2>
 
           {/* Botão de Adicionar Mundo - Substitui o dropdown */}
@@ -465,22 +594,26 @@ export function MasterRoster({
               onClick={() => setActiveCenterView("canvas")}
               className={`flex items-center gap-1 rounded-md px-2 py-0.5 font-medium transition-colors ${
                 activeCenterView === "canvas"
-                  ? "bg-purple-600 text-white"
+                  ? isMissing
+                    ? "bg-zinc-800 text-amber-300 font-mono"
+                    : "bg-purple-600 text-white"
                   : "text-gray-400 hover:text-white"
               }`}
-              title="Canva Infinito"
+              title={isMissing ? "Quadro de Pistas" : "Canva Infinito"}
             >
-              <span>🎨</span>
-              <span>Canva</span>
+              <span>{isMissing ? "📌" : "🎨"}</span>
+              <span>{isMissing ? "Quadro de Pistas" : "Canva"}</span>
             </button>
             <button
               onClick={() => setActiveCenterView("map")}
               className={`flex items-center gap-1 rounded-md px-2 py-0.5 font-medium transition-colors ${
                 activeCenterView === "map"
-                  ? "bg-purple-600 text-white"
+                  ? isMissing
+                    ? "bg-zinc-800 text-amber-300 font-mono"
+                    : "bg-purple-600 text-white"
                   : "text-gray-400 hover:text-white"
               }`}
-              title="Mapa do Mundo"
+              title={isMissing ? "Mapa de Campo" : "Mapa do Mundo"}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -496,7 +629,7 @@ export function MasterRoster({
                 <line x1="9" y1="3" x2="9" y2="18" />
                 <line x1="15" y1="6" x2="15" y2="21" />
               </svg>
-              <span>Mapa</span>
+              <span>{isMissing ? "Mapa de Campo" : "Mapa"}</span>
             </button>
           </div>
 
@@ -614,6 +747,7 @@ export function MasterRoster({
               key={`map-${selectedWorldId}`}
               worldId={selectedWorldId}
               mapUrl={selectedWorld?.mapUrl || null}
+              isMissing={isMissing}
             />
           ) : (
             <div className="flex h-full items-center justify-center p-6 text-center text-sm text-gray-400">
@@ -623,89 +757,126 @@ export function MasterRoster({
         )}
       </div>
 
-      {/* Barra de Ações sobre o Carrossel (Combate/Encontros) */}
-      <div className="mb-1 flex items-center justify-between rounded-t-lg bg-gray-900 px-3 py-2 border border-b-0 border-gray-800 text-xs flex-wrap gap-2">
-        <div className="flex items-center gap-3">
-          {combatState?.active || activeEncounter ? (
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500"></span>
-              </span>
-              <span className="font-bold text-red-400">
-                COMBATE ATIVO {activeEncounter ? `: ${activeEncounter.name}` : ""} {combatState?.active ? `(Rodada ${combatState.round})` : ""}
-              </span>
-            </div>
-          ) : (
-            <span className="text-gray-400">Nenhum combate ativo</span>
-          )}
-        </div>
+      {/* Barra de Ações sobre o Carrossel (Combate/Encontros ou Registro Civil) */}
+      {isMissing ? (
+        <div className="mb-1 flex items-center justify-between rounded-t-lg bg-[#111215] px-3 py-2 border border-b-0 border-zinc-800 text-xs flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[11px] font-bold text-zinc-400 tracking-wider">
+              [ REGISTRO CIVIL // HABITANTES DA REGIÃO ]
+            </span>
+            <span className="font-mono text-[10px] text-zinc-500">
+              ({carouselActors.length} registrados)
+            </span>
+          </div>
 
-        <div className="flex items-center gap-2">
-          {combatState?.active ? (
-            <>
-              {/* Controles RÁPIDOS de Turno para o Mestre */}
-              <button
-                onClick={() => handleSpendAction(1)}
-                className="rounded-lg border border-purple-600/60 bg-purple-950/60 px-2.5 py-1 text-xs font-bold text-purple-200 hover:bg-purple-900"
-              >
-                ⚡ Gastar 1 Ação
-              </button>
-              <button
-                onClick={handleNextTurn}
-                className="rounded-lg bg-purple-600 px-3 py-1 text-xs font-bold text-white shadow hover:bg-purple-500"
-              >
-                Próximo Turno ⏩
-              </button>
-              <button
-                onClick={() => setShowCombatTrackerModal(true)}
-                className="rounded-lg border border-gray-700 bg-gray-800 px-2.5 py-1 text-xs font-semibold text-gray-200 hover:bg-gray-700"
-              >
-                📋 Detalhes
-              </button>
-              <button
-                onClick={handleEndEncounter}
-                className="rounded-lg bg-red-900/80 px-2.5 py-1 text-xs font-bold text-red-200 hover:bg-red-800"
-              >
-                🏁 Encerrar
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={() => setShowEncounterModal(true)}
-                disabled={!selectedWorldId}
-                className="rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-bold text-white shadow hover:bg-purple-500 disabled:opacity-50"
-              >
-                ⚔️ Iniciar Encontro (Combate)
-              </button>
-
-              {/* Botão recolher/expandir movido para cá */}
-              <button
-                onClick={toggleCarousel}
-                className="flex items-center gap-1 rounded-lg border border-gray-700 bg-gray-800 px-2.5 py-1.5 text-xs font-semibold text-gray-300 hover:bg-gray-700 transition-colors"
-                title={isCarouselCollapsed ? "Expandir carrossel" : "Recolher carrossel"}
-              >
-                {isCarouselCollapsed ? (
-                  <>
-                    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                    </svg>
-                    <span>Expandir</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                    <span>Recolher</span>
-                  </>
-                )}
-              </button>
-            </>
-          )}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleCarousel}
+              className="flex items-center gap-1 rounded border border-zinc-700 bg-zinc-800/80 px-2.5 py-1 text-xs font-mono font-medium text-zinc-300 hover:bg-zinc-700 transition-colors"
+              title={isCarouselCollapsed ? "Expandir carrossel" : "Recolher carrossel"}
+            >
+              {isCarouselCollapsed ? (
+                <>
+                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                  </svg>
+                  <span>Expandir</span>
+                </>
+              ) : (
+                <>
+                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                  <span>Recolher</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="mb-1 flex items-center justify-between rounded-t-lg bg-gray-900 px-3 py-2 border border-b-0 border-gray-800 text-xs flex-wrap gap-2">
+          <div className="flex items-center gap-3">
+            {combatState?.active || activeEncounter ? (
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500"></span>
+                </span>
+                <span className="font-bold text-red-400">
+                  COMBATE ATIVO {activeEncounter ? `: ${activeEncounter.name}` : ""} {combatState?.active ? `(Rodada ${combatState.round})` : ""}
+                </span>
+              </div>
+            ) : (
+              <span className="text-gray-400">Nenhum combate ativo</span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {combatState?.active ? (
+              <>
+                {/* Controles RÁPIDOS de Turno para o Mestre */}
+                <button
+                  onClick={() => handleSpendAction(1)}
+                  className="rounded-lg border border-purple-600/60 bg-purple-950/60 px-2.5 py-1 text-xs font-bold text-purple-200 hover:bg-purple-900"
+                >
+                  ⚡ Gastar 1 Ação
+                </button>
+                <button
+                  onClick={handleNextTurn}
+                  className="rounded-lg bg-purple-600 px-3 py-1 text-xs font-bold text-white shadow hover:bg-purple-500"
+                >
+                  Próximo Turno ⏩
+                </button>
+                <button
+                  onClick={() => setShowCombatTrackerModal(true)}
+                  className="rounded-lg border border-gray-700 bg-gray-800 px-2.5 py-1 text-xs font-semibold text-gray-200 hover:bg-gray-700"
+                >
+                  📋 Detalhes
+                </button>
+                <button
+                  onClick={handleEndEncounter}
+                  className="rounded-lg bg-red-900/80 px-2.5 py-1 text-xs font-bold text-red-200 hover:bg-red-800"
+                >
+                  🏁 Encerrar
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => setShowEncounterModal(true)}
+                  disabled={!selectedWorldId}
+                  className="rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-bold text-white shadow hover:bg-purple-500 disabled:opacity-50"
+                >
+                  ⚔️ Iniciar Encontro (Combate)
+                </button>
+
+                {/* Botão recolher/expandir movido para cá */}
+                <button
+                  onClick={toggleCarousel}
+                  className="flex items-center gap-1 rounded-lg border border-gray-700 bg-gray-800 px-2.5 py-1.5 text-xs font-semibold text-gray-300 hover:bg-gray-700 transition-colors"
+                  title={isCarouselCollapsed ? "Expandir carrossel" : "Recolher carrossel"}
+                >
+                  {isCarouselCollapsed ? (
+                    <>
+                      <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                      </svg>
+                      <span>Expandir</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                      <span>Recolher</span>
+                    </>
+                  )}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Carrossel de personagens fixo na parte inferior */}
       {!isCarouselCollapsed && (
@@ -720,7 +891,9 @@ export function MasterRoster({
             handleDropActor(e);
           }}
           className={`transition-all duration-300 h-56 min-h-[220px] rounded-b-lg border p-2 overflow-visible ${
-            isDragOver
+            isMissing
+              ? "border-zinc-800 bg-[#0d0e11]/80"
+              : isDragOver
               ? "border-purple-500 bg-purple-950/40"
               : "border-gray-800 bg-gray-900/50"
           }`}
@@ -728,23 +901,45 @@ export function MasterRoster({
           <CharacterCarousel
             actors={carouselActors}
             combatState={combatState}
-            onSelect={setSelected}
+            onSelect={handleSelectActor}
             onRemove={handleRemoveDeskActor}
+            isMissing={isMissing}
           />
         </div>
       )}
 
-      {selected && (
-        <ActorOverlay
-          campaignId={campaignId}
-          actor={selected}
-          onClose={() => setSelected(null)}
-          onChanged={handleRosterChanged}
-          combatState={combatState}
-        />
+      {selectedMissingHabitant ? (
+        <div
+          className="fixed inset-0 z-50 flex flex-col bg-[#0a0b0d] overflow-hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Ficha de ${selectedMissingHabitant.name}`}
+        >
+          <MissingHabitantSheet
+            habitant={selectedMissingHabitant}
+            campaignId={campaignId}
+            onClose={() => {
+              setSelectedMissingHabitant(null);
+              setSelected(null);
+            }}
+            onEraseLine={handleEraseHabitantLine}
+            onAddLine={handleAddHabitantLine}
+            onUpdateEquipment={handleUpdateHabitantEquipment}
+          />
+        </div>
+      ) : (
+        selected && (
+          <ActorOverlay
+            campaignId={campaignId}
+            actor={selected}
+            onClose={() => setSelected(null)}
+            onChanged={handleRosterChanged}
+            combatState={combatState}
+          />
+        )
       )}
 
-      {showEncounterModal && selectedWorldId && (
+      {!isMissing && showEncounterModal && selectedWorldId && (
         <EncounterModal
           campaignId={campaignId}
           worldId={selectedWorldId}
@@ -767,7 +962,7 @@ export function MasterRoster({
         />
       )}
 
-      {showCombatTrackerModal && (
+      {!isMissing && showCombatTrackerModal && (
         <CombatTrackerModal
           campaignId={campaignId}
           combatState={combatState}
