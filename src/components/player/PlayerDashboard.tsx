@@ -15,8 +15,30 @@ import { CampaignsFilledIcon, CharactersFilledIcon, TreasuryIcon } from "@/compo
 import { WealthManager, type WealthData } from "@/components/player/WealthManager";
 import { generateUUID } from "@/lib/utils/uuid";
 
+/**
+ * Mapeia o nível de reputação (reputationLevel / trustLevel) para exatamente 0 a 4 pontos (dots):
+ * - Valores no intervalo de 0 a 4 (escala padrão de 4 dots): clamp direto Math.min(4, Math.max(0, Math.round(level))).
+ * - Valores de 5 a 10 (ex.: trustLevel de 0 a 10 do backend): normalizado para escala 0..4 via (level / 10) * 4.
+ * - Valores acima de 10 (ex.: escala percentual 0..100): normalizado via (level / 100) * 4.
+ * - Valores não-numéricos ou negativos são normalizados para 0 dots.
+ */
+function getReputationDots(reputationLevel: number): number {
+  if (typeof reputationLevel !== "number" || isNaN(reputationLevel) || reputationLevel <= 0) {
+    return 0;
+  }
+  if (reputationLevel <= 4) {
+    return Math.min(4, Math.max(0, Math.round(reputationLevel)));
+  }
+  if (reputationLevel <= 10) {
+    return Math.min(4, Math.max(0, Math.round((reputationLevel / 10) * 4)));
+  }
+  return Math.min(4, Math.max(0, Math.round((reputationLevel / 100) * 4)));
+}
+
 export function PlayerDashboard() {
   const [activeTab, setActiveTab] = useState<"characters" | "campaigns" | "wealth">("characters");
+  const [viewMode, setViewMode] = useState<"gallery" | "list">("gallery");
+  const [displayName, setDisplayName] = useState("Jogador");
 
   // Estado de Personagens
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -30,6 +52,9 @@ export function PlayerDashboard() {
   const [selectedCampaign, setSelectedCampaign] = useState<PlayerCampaign | null>(null);
   const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(true);
   const [campaignsError, setCampaignsError] = useState<string | null>(null);
+  const [campaignDetailsTab, setCampaignDetailsTab] = useState<"resumo" | "mundo">("resumo");
+  const [campaignDetails, setCampaignDetails] = useState<{ worlds: any[]; establishments: any[]; npcs: any[] } | null>(null);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
   // Estado de Tesouraria / Wealth
   const [wealthData, setWealthData] = useState<WealthData | null>(null);
@@ -156,7 +181,52 @@ export function PlayerDashboard() {
     void loadMissingHabitants();
     void loadCampaigns();
     void loadWealth();
+    void loadPlayerName();
   }, []);
+
+  useEffect(() => {
+    if (!selectedCampaign) {
+      setCampaignDetailsTab("resumo");
+      setCampaignDetails(null);
+      return;
+    }
+    setCampaignDetailsTab("resumo");
+    setCampaignDetails(null);
+
+    let isMounted = true;
+    setIsLoadingDetails(true);
+    fetch(`/api/player/campaigns/${selectedCampaign.id}/details`, { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (isMounted && data && data.success) {
+          setCampaignDetails(data.data);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (isMounted) setIsLoadingDetails(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedCampaign?.id]);
+
+  const loadPlayerName = async () => {
+    try {
+      const response = await fetch("/api/auth/me", {
+        credentials: "include",
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.data?.displayName) {
+          setDisplayName(data.data.displayName);
+        }
+      }
+    } catch {
+      // Fallback silencioso para "Jogador"
+    }
+  };
 
   const refreshWealth = async () => {
     try {
@@ -392,16 +462,30 @@ export function PlayerDashboard() {
   }, []);
 
   return (
-    <div className="space-y-6 pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
-      <header className="flex items-center justify-between border border-secondary-border bg-secondary-card p-4 rounded-xl shadow-md">
-        <div>
-          <h1 className="text-xl font-bold text-secondary-pure">Libmork — Jogador</h1>
-          <p className="text-xs text-secondary-muted">Gerencie seus heróis e campanhas</p>
+    <div className="pt-[calc(5.5rem+env(safe-area-inset-top,0px))] pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
+      <header className="fixed inset-x-0 top-0 z-30 flex items-center justify-between border-x-0 border-t-0 border-b border-secondary-border bg-secondary-card px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top,0px))] shadow-md">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-secondary-pure">{displayName}</h1>
+            <p className="text-xs text-secondary-muted">Gerencie seus heróis e campanhas</p>
+          </div>
+          <LogoutButton />
         </div>
-        <LogoutButton />
       </header>
 
-      {/* Conteúdo da Aba 1: Meus Personagens */}
+      {activeTab === "characters" && (
+        <Link
+          href="/player/characters/new"
+          aria-label="Novo Personagem"
+          className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] right-4 z-30 flex items-center gap-2 rounded-full border border-purple-400/60 bg-purple-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-purple-950/50 transition-colors hover:bg-purple-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-300 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-950 sm:right-6 sm:px-6"
+        >
+          <span className="text-lg leading-none" aria-hidden="true">+</span>
+          <span>Novo Personagem</span>
+        </Link>
+      )}
+
+      <div className="container mx-auto px-4 space-y-6">
+        {/* Conteúdo da Aba 1: Meus Personagens */}
       {activeTab === "characters" && (
         <div>
           {isLoadingCharacters ? (
@@ -423,22 +507,46 @@ export function PlayerDashboard() {
             </div>
           ) : (
             <div>
-              <div className="mb-4 flex items-center justify-between">
+              <div className="mb-4 flex items-center justify-between gap-4">
                 <h2 className="text-2xl font-bold text-secondary-pure">Meus Personagens</h2>
-                <Link href="/player/characters/new">
-                  <Button variant="primary" className="px-4 py-2 font-semibold">
-                    + Novo Personagem
-                  </Button>
-                </Link>
+                <div className="flex shrink-0 rounded-lg border border-secondary-border bg-secondary-card p-1" role="group" aria-label="Modo de visualização">
+                  <button
+                    type="button"
+                    aria-label="Visualizar como galeria"
+                    aria-pressed={viewMode === "gallery"}
+                    onClick={() => setViewMode("gallery")}
+                    className={`rounded-md p-2 transition-colors ${viewMode === "gallery" ? "bg-purple-700 text-white" : "text-gray-400 hover:bg-gray-800 hover:text-white"}`}
+                  >
+                    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor"><path d="M4 4h6v6H4V4Zm10 0h6v6h-6V4ZM4 14h6v6H4v-6Zm10 0h6v6h-6v-6Z" /></svg>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Visualizar como lista"
+                    aria-pressed={viewMode === "list"}
+                    onClick={() => setViewMode("list")}
+                    className={`rounded-md p-2 transition-colors ${viewMode === "list" ? "bg-purple-700 text-white" : "text-gray-400 hover:bg-gray-800 hover:text-white"}`}
+                  >
+                    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+                  </button>
+                </div>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {characters.map((character) => (
+              <div className={viewMode === "gallery" ? "grid gap-4 sm:grid-cols-2 lg:grid-cols-3" : "flex flex-col gap-2"}>
+                {characters.map((character) => viewMode === "gallery" ? (
                   <CharacterCard key={character.id} character={character} />
+                ) : (
+                  <Link key={character.id} href={`/player/characters/${character.id}`} aria-label={`Ver ficha de ${character.name}`} className="flex items-center gap-3 rounded-xl border border-secondary-border bg-secondary-card p-3 transition-colors hover:border-accent">
+                    <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full ring-2 ring-purple-500">
+                      {character.imageUrl ? <img src={character.imageUrl} alt={character.name} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center bg-purple-950 font-bold text-purple-200">{character.name.charAt(0).toUpperCase()}</div>}
+                    </div>
+                    <span className="min-w-0 flex-1 truncate font-semibold text-secondary-pure">{character.name}</span>
+                    <span className="shrink-0 rounded border border-accent-vibrant/50 bg-accent-dark/90 px-2 py-1 text-xs font-semibold text-secondary-pure">Nv. {character.level}{character.className ? ` · ${character.className}` : ""}</span>
+                  </Link>
                 ))}
                 {missingHabitants.map((habitant) => (
                   <MissingHabitantCard
                     key={habitant.id}
                     habitant={habitant}
+                    compact={viewMode === "list"}
                     onOpen={(h) => setSelectedHabitant(h)}
                   />
                 ))}
@@ -798,8 +906,17 @@ export function PlayerDashboard() {
                   </p>
                 </div>
 
-                {/* Detalhes / Descrição */}
-                <div className="rounded-lg border border-gray-800 bg-gray-950/60 p-4">
+                 <div className="flex gap-2 border-b border-gray-800" role="tablist" aria-label="Detalhes da campanha">
+                   {([['resumo', 'Resumo'], ['mundo', 'Mundo']] as const).map(([id, label]) => (
+                     <button key={id} type="button" role="tab" aria-selected={campaignDetailsTab === id} onClick={() => setCampaignDetailsTab(id)} className={`border-b-2 px-3 py-2 text-sm font-semibold ${campaignDetailsTab === id ? 'border-purple-400 text-purple-300' : 'border-transparent text-gray-500 hover:text-gray-300'}`}>
+                       {label}
+                     </button>
+                   ))}
+                 </div>
+
+                 {campaignDetailsTab === "resumo" ? <>
+                 {/* Detalhes / Descrição */}
+                 <div className="rounded-lg border border-gray-800 bg-gray-950/60 p-4">
                   <h3 className="text-sm font-semibold text-purple-300">Detalhes da Campanha</h3>
                   <p className="mt-2 whitespace-pre-wrap text-sm text-gray-300 leading-relaxed">
                     {selectedCampaign.description || "Nenhuma descrição fornecida."}
@@ -930,42 +1047,213 @@ export function PlayerDashboard() {
                       ))
                     )}
                   </div>
-                </div>
+                 </div>
+               </> : campaignDetailsTab === "mundo" ? (
+                   <div className="space-y-4">
+                     {isLoadingDetails ? (
+                       <div className="flex items-center justify-center py-8">
+                         <Spinner size="md" />
+                       </div>
+                     ) : !campaignDetails ? (
+                       <p className="text-sm text-gray-500 text-center py-4">Erro ao carregar dados do mundo</p>
+                     ) : (
+                       <>
 
-                {/* Ações da Campanha */}
-                {!hasAliveCharacter && (
-                  <div className="space-y-2 border-t border-gray-800 pt-4">
-                    <Link
-                      href={
-                        isMissing
-                          ? `/player/characters/new?campaignId=${selectedCampaign.id}&system=missing_zero`
-                          : `/player/characters/new?campaignId=${selectedCampaign.id}`
-                      }
-                      className="block"
-                    >
-                      <Button variant="primary" className="w-full justify-center">
-                        {isMissing ? "+ Criar Habitante nesta Campanha" : "+ Criar Personagem nesta Campanha"}
-                      </Button>
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleOpenImportModal(
-                          selectedCampaign.id,
-                          selectedCampaign.characters
-                        )
-                      }
-                      className="w-full rounded-xl border border-purple-800/60 bg-purple-950/40 py-2 text-sm font-semibold text-purple-300 hover:bg-purple-900/60 transition-colors"
-                    >
-                      {isMissing ? "↩ Importar Habitante Existente" : "↩ Importar Personagem Existente"}
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      })()}
+                         {/* NPCs */}
+                         <div>
+                           <h3 className="text-sm font-semibold text-purple-300 mb-2">👥 NPCs</h3>
+                           {campaignDetails.npcs.length === 0 ? (
+                             <p className="text-xs text-gray-500">Nenhum NPC disponível</p>
+                           ) : (
+                             <div className="space-y-1.5">
+                               {campaignDetails.npcs.map((npc) => (
+                                 <div key={npc.id} className="flex items-center gap-2.5 rounded-lg border border-gray-800 bg-gray-950/40 px-3 py-2">
+                                   {npc.imageUrl ? (
+                                     /* eslint-disable-next-line @next/next/no-img-element */
+                                     <img src={npc.imageUrl} alt={npc.name} className="h-8 w-8 rounded-full object-cover shrink-0" />
+                                   ) : (
+                                     <div className="h-8 w-8 rounded-full bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-400 shrink-0">
+                                       {npc.name.charAt(0).toUpperCase()}
+                                     </div>
+                                   )}
+                                   <div className="min-w-0">
+                                     <p className="text-sm font-medium text-white truncate">{npc.name}</p>
+                                     <p className="text-xs text-gray-500">{npc.npcType} • Nível {npc.level}</p>
+                                   </div>
+                                 </div>
+                               ))}
+                             </div>
+                           )}
+                         </div>
+
+                           {/* Mundos e Estabelecimentos Unificados */}
+                           <div>
+                             <h3 className="text-sm font-semibold text-purple-300 mb-2">🌍 Mundos</h3>
+                             {campaignDetails.worlds.length === 0 ? (
+                               <p className="text-xs text-gray-500">Nenhum mundo disponível</p>
+                             ) : (
+                               <div className="grid gap-2 sm:grid-cols-2">
+                                 {campaignDetails.worlds.map((world) => {
+                                   // Filtrar estabelecimentos deste mundo
+                                   const worldEstablishments = campaignDetails.establishments.filter(est => est.worldId === world.id);
+                                   
+                                   return (
+                                     <div
+                                       key={world.id}
+                                       className="relative overflow-hidden rounded-lg border border-gray-800 bg-gray-950 min-h-[6.5rem] flex flex-col justify-end p-3"
+                                     >
+                                       {/* Arte de fundo com overlay */}
+                                       {world.coverUrl && (
+                                         <>
+                                           <div
+                                             className="absolute inset-0 bg-cover bg-center"
+                                             style={{ backgroundImage: `url(${world.coverUrl})` }}
+                                           />
+                                           <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/70 to-black/30" />
+                                         </>
+                                       )}
+
+                                       {/* Conteúdo sobreposto */}
+                                       <div className="relative z-10 flex flex-col gap-1.5">
+                                         <div className="flex items-start justify-between gap-2">
+                                           <div className="min-w-0 flex-1">
+                                             <p className="text-sm font-bold text-white truncate drop-shadow-md">{world.name}</p>
+                                             {world.description && (
+                                               <p className="text-xs text-gray-300 truncate drop-shadow">{world.description}</p>
+                                             )}
+                                           </div>
+                                           
+                                           {/* Círculos de estabelecimentos */}
+                                           {worldEstablishments.length > 0 ? (
+                                             <div
+                                               className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end max-w-[50%]"
+                                               aria-label={`Estabelecimentos de ${world.name}`}
+                                             >
+                                               {worldEstablishments.map((est) => {
+                                                 const activeDots = getReputationDots(est.reputationLevel);
+                                                 const dotsArray = [0, 1, 2, 3];
+                                                 
+                                                 return (
+                                                   <div
+                                                     key={est.id}
+                                                     className="relative inline-flex items-center justify-center shrink-0 cursor-default"
+                                                     role="img"
+                                                     title={`${est.name} (${est.type}) - Reputação: ${activeDots}/4 (${est.reputationLevel})`}
+                                                      aria-label={`${est.name}, ${est.type}, Reputação nível ${est.reputationLevel} (${activeDots} de 4 segmentos)`}
+                                                   >
+                                                      {/* SVG com círculo e perímetro contínuo dividido em 4 arcos */}
+                                                      <svg width="30" height="30" viewBox="0 0 30 30" className="drop-shadow-md">
+                                                        {dotsArray.map((segmentIndex) => {
+                                                          const gap = 4;
+                                                          const startAngle = -90 + segmentIndex * 90 + gap / 2;
+                                                          const endAngle = -90 + (segmentIndex + 1) * 90 - gap / 2;
+                                                          const radius = 12.5;
+                                                          const toPoint = (angle: number) => {
+                                                            const radians = angle * (Math.PI / 180);
+                                                            return {
+                                                              x: 15 + radius * Math.cos(radians),
+                                                              y: 15 + radius * Math.sin(radians),
+                                                            };
+                                                          };
+                                                          const start = toPoint(startAngle);
+                                                          const end = toPoint(endAngle);
+                                                          const isActive = segmentIndex < activeDots;
+
+                                                          return (
+                                                            <path
+                                                              key={segmentIndex}
+                                                              data-reputation-segment={segmentIndex}
+                                                              data-active={isActive ? "true" : "false"}
+                                                              d={`M ${start.x} ${start.y} A ${radius} ${radius} 0 0 1 ${end.x} ${end.y}`}
+                                                              fill="none"
+                                                              stroke={isActive ? "#c084fc" : "#374151"}
+                                                              strokeWidth="2"
+                                                              strokeLinecap="round"
+                                                              opacity={isActive ? 1 : 0.7}
+                                                            />
+                                                          );
+                                                        })}
+
+                                                        {/* Círculo central representativo do estabelecimento */}
+                                                        <circle
+                                                          cx="15"
+                                                          cy="15"
+                                                          r="9"
+                                                          fill="#18181b"
+                                                          stroke="#374151"
+                                                          strokeWidth="1"
+                                                        />
+                                                        
+                                                        {/* Inicial representativa do estabelecimento */}
+                                                       <text
+                                                         x="15"
+                                                         y="15"
+                                                         textAnchor="middle"
+                                                         dominantBaseline="central"
+                                                         fontSize="9.5"
+                                                         fontWeight="700"
+                                                         fill="#f3f4f6"
+                                                       >
+                                                         {est.name.charAt(0).toUpperCase()}
+                                                       </text>
+                                                     </svg>
+                                                   </div>
+                                                 );
+                                               })}
+                                             </div>
+                                           ) : (
+                                             <span className="text-[10px] text-gray-400/90 italic bg-black/40 px-1.5 py-0.5 rounded border border-gray-800/60 shrink-0 self-center">
+                                               Nenhum estabelecimento
+                                             </span>
+                                           )}
+                                         </div>
+                                       </div>
+                                     </div>
+                                   );
+                                 })}
+                               </div>
+                             )}
+                           </div>
+                       </>
+                     )}
+                   </div>
+                 ) : null}
+
+                 {campaignDetailsTab === "resumo" && (
+                   !hasAliveCharacter && (
+                     <div className="space-y-2 border-t border-gray-800 pt-4">
+                      <Link
+                        href={
+                          isMissing
+                            ? `/player/characters/new?campaignId=${selectedCampaign.id}&system=missing_zero`
+                            : `/player/characters/new?campaignId=${selectedCampaign.id}`
+                        }
+                        className="block"
+                      >
+                        <Button variant="primary" className="w-full justify-center">
+                          {isMissing ? "+ Criar Habitante nesta Campanha" : "+ Criar Personagem nesta Campanha"}
+                        </Button>
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleOpenImportModal(
+                            selectedCampaign.id,
+                            selectedCampaign.characters
+                          )
+                        }
+                        className="w-full rounded-xl border border-purple-800/60 bg-purple-950/40 py-2 text-sm font-semibold text-purple-300 hover:bg-purple-900/60 transition-colors"
+                      >
+                        {isMissing ? "↩ Importar Habitante Existente" : "↩ Importar Personagem Existente"}
+                      </button>
+                    </div>
+                   )
+                 )}
+               </div>
+             </div>
+           </div>
+         );
+       })()}
 
       {/* Modal de Importação de Personagem / Habitante */}
       {importingCampaignId !== null && (() => {
@@ -1154,6 +1442,7 @@ export function PlayerDashboard() {
         </div>
       )}
 
+      </div>
     </div>
   );
 }

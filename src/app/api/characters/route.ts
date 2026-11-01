@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import {
   characters,
   characterCampaigns,
+  campaigns,
   rpgRaces,
   rpgClasses,
   items,
@@ -41,8 +42,38 @@ export async function GET() {
     }
 
     const userCharacters = await db
-      .select()
+      .select({
+        id: characters.id,
+        ownerId: characters.ownerId,
+        classId: characters.classId,
+        raceId: characters.raceId,
+        activeHeritages: characters.activeHeritages,
+        name: characters.name,
+        imageUrl: characters.imageUrl,
+        hitPointsMax: characters.hitPointsMax,
+        hitPointsCurrent: characters.hitPointsCurrent,
+        manaPointsMax: characters.manaPointsMax,
+        manaPointsCurrent: characters.manaPointsCurrent,
+        attributes: characters.attributes,
+        level: characters.level,
+        xp: characters.xp,
+        block: characters.block,
+        deathStatus: characters.deathStatus,
+        deathSuccesses: characters.deathSuccesses,
+        deathFailures: characters.deathFailures,
+        coins: characters.coins,
+        createdAt: characters.createdAt,
+        updatedAt: characters.updatedAt,
+        className: rpgClasses.name,
+        raceName: rpgRaces.name,
+        campaignId: campaigns.id,
+        campaignName: campaigns.name,
+      })
       .from(characters)
+      .leftJoin(rpgClasses, eq(characters.classId, rpgClasses.id))
+      .leftJoin(rpgRaces, eq(characters.raceId, rpgRaces.id))
+      .leftJoin(characterCampaigns, eq(characters.id, characterCampaigns.characterId))
+      .leftJoin(campaigns, eq(characterCampaigns.campaignId, campaigns.id))
       .where(eq(characters.ownerId, session.user.id));
 
     return NextResponse.json({
