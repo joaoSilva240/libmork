@@ -41,6 +41,8 @@ export async function GET(
         author: {
           id: users.id,
           displayName: users.displayName,
+          masterName: users.masterName,
+          masterAvatar: users.masterAvatar,
         },
       })
       .from(communityComments)

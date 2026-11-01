@@ -19,6 +19,9 @@ describe("MasterSidebar Component", () => {
     expect(screen.getByText("Comunidade")).toBeInTheDocument();
     expect(screen.getByText("Configurações")).toBeInTheDocument();
 
+    // Verifica que "Meu Perfil" não está mais presente
+    expect(screen.queryByText("Meu Perfil")).not.toBeInTheDocument();
+
     const settingsLink = screen.getByRole("link", { name: /configurações/i });
     expect(settingsLink).toHaveAttribute("href", "/master/settings");
     expect(settingsLink).toHaveClass("bg-gray-800", "text-white");
@@ -32,5 +35,32 @@ describe("MasterSidebar Component", () => {
     const communityLink = screen.getByRole("link", { name: /comunidade/i });
     expect(communityLink).toHaveAttribute("href", "/master/community");
     expect(communityLink).toHaveClass("bg-gray-800", "text-white");
+  });
+
+  it("renders accessible navigation links and lucide-react icons in expanded and collapsed states", () => {
+    mockUsePathname.mockReturnValue("/master");
+
+    const { rerender } = render(<MasterSidebar />);
+
+    const links = screen.getAllByRole("link");
+    const campaignsLink = screen.getByRole("link", { name: "Campanhas" });
+    const libraryLink = screen.getByRole("link", { name: "Biblioteca" });
+    const communityLink = screen.getByRole("link", { name: "Comunidade" });
+    const settingsLink = screen.getByRole("link", { name: "Configurações" });
+
+    expect(campaignsLink).toHaveAttribute("title", "Campanhas");
+    expect(campaignsLink).toHaveAttribute("aria-label", "Campanhas");
+    expect(libraryLink).toHaveAttribute("title", "Biblioteca");
+    expect(libraryLink).toHaveAttribute("aria-label", "Biblioteca");
+    expect(communityLink).toHaveAttribute("title", "Comunidade");
+    expect(communityLink).toHaveAttribute("aria-label", "Comunidade");
+    expect(settingsLink).toHaveAttribute("title", "Configurações");
+    expect(settingsLink).toHaveAttribute("aria-label", "Configurações");
+
+    // SVG icons inside links
+    expect(campaignsLink.querySelector("svg")).toBeInTheDocument();
+    expect(libraryLink.querySelector("svg")).toBeInTheDocument();
+    expect(communityLink.querySelector("svg")).toBeInTheDocument();
+    expect(settingsLink.querySelector("svg")).toBeInTheDocument();
   });
 });

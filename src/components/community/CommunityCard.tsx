@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { Heart, MessageCircle, Repeat2, Download } from "lucide-react";
+import Link from "next/link";
+import { ArrowBigDown, ArrowBigUp, Heart, MessageCircle, Repeat2, Download } from "lucide-react";
 import { Toast } from "@/components/ui/Toast";
 import ImportCustomizeModal from "./ImportCustomizeModal";
 
@@ -20,10 +21,16 @@ export type CommunityPost = {
   author?: {
     id: string;
     displayName: string | null;
+    masterName?: string | null;
+    masterAvatar?: string | null;
   };
   likesCount: number;
   commentsCount: number;
   isLikedByMe: boolean;
+  upvotes?: number;
+  downvotes?: number;
+  score?: number;
+  userVote?: number | null;
 };
 
 export const CONTENT_TYPE_CONFIG: Record<
@@ -89,8 +96,103 @@ function formatRelativeTime(dateString: string): string {
 
 export default function CommunityCard({ post, onOpen, onUpdate }: Props) {
   const [isLiking, setIsLiking] = useState(false);
+  const [isVoting, setIsVoting] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+
+  const handleVote = async (e: React.MouseEvent, targetValue: 1 | -1) => {
+    e.stopPropagation();
+    if (isVoting) return;
+
+    const previousUserVote = post.userVote ?? null;
+    const previousScore = post.score ?? 0;
+    const previousUpvotes = post.upvotes ?? 0;
+    const previousDownvotes = post.downvotes ?? 0;
+
+    // Optimistic calculation
+    let optimisticUserVote: number | null = targetValue;
+    let optimisticScore = previousScore;
+    let optimisticUpvotes = previousUpvotes;
+    let optimisticDownvotes = previousDownvotes;
+
+    if (previousUserVote === targetValue) {
+      // Toggle off
+      optimisticUserVote = null;
+      if (targetValue === 1) {
+        optimisticUpvotes = Math.max(0, optimisticUpvotes - 1);
+        optimisticScore = optimisticScore - 1;
+      } else {
+        optimisticDownvotes = Math.max(0, optimisticDownvotes - 1);
+        optimisticScore = optimisticScore + 1;
+      }
+    } else if (previousUserVote === null) {
+      // New vote
+      if (targetValue === 1) {
+        optimisticUpvotes = optimisticUpvotes + 1;
+        optimisticScore = optimisticScore + 1;
+      } else {
+        optimisticDownvotes = optimisticDownvotes + 1;
+        optimisticScore = optimisticScore - 1;
+      }
+    } else {
+      // Vote swap (-1 to 1 or 1 to -1)
+      if (targetValue === 1) {
+        optimisticUpvotes = optimisticUpvotes + 1;
+        optimisticDownvotes = Math.max(0, optimisticDownvotes - 1);
+        optimisticScore = optimisticScore + 2;
+      } else {
+        optimisticDownvotes = optimisticDownvotes + 1;
+        optimisticUpvotes = Math.max(0, optimisticUpvotes - 1);
+        optimisticScore = optimisticScore - 2;
+      }
+    }
+
+    onUpdate?.({
+      ...post,
+      userVote: optimisticUserVote,
+      score: optimisticScore,
+      upvotes: optimisticUpvotes,
+      downvotes: optimisticDownvotes,
+    });
+
+    setIsVoting(true);
+    try {
+      const res = await fetch(`/api/community/posts/${post.id}/vote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value: targetValue }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Falha ao registrar voto");
+      }
+
+      const data = await res.json();
+      onUpdate?.({
+        ...post,
+        score: Number(data.score),
+        upvotes: Number(data.upvotes),
+        downvotes: Number(data.downvotes),
+        userVote: data.userVote !== null && data.userVote !== undefined ? Number(data.userVote) : null,
+      });
+    } catch (err) {
+      // Rollback on error
+      onUpdate?.({
+        ...post,
+        userVote: previousUserVote,
+        score: previousScore,
+        upvotes: previousUpvotes,
+        downvotes: previousDownvotes,
+      });
+      setToast({
+        message: err instanceof Error ? err.message : "Erro ao votar",
+        type: "error",
+      });
+    } finally {
+      setIsVoting(false);
+    }
+  };
 
   const typeConfig = CONTENT_TYPE_CONFIG[post.contentType] || {
     label: post.contentType,
@@ -127,7 +229,8 @@ export default function CommunityCard({ post, onOpen, onUpdate }: Props) {
     }
   };
 
-  const authorName = post.author?.displayName || "Mestre Anônimo";
+  const authorName = post.author?.masterName || post.author?.displayName || "Mestre Anônimo";
+  const authorAvatar = post.author?.masterAvatar;
   const attachedImageUrl =
     post.payload?.imageUrl ||
     post.payload?.iconUrl ||
@@ -162,12 +265,86 @@ export default function CommunityCard({ post, onOpen, onUpdate }: Props) {
 
       <article
         onClick={() => onOpen(post)}
-        className="group relative flex cursor-pointer gap-3.5 px-4 py-3.5 transition-colors hover:bg-gray-900/50"
+        className="group relative flex cursor-pointer items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-gray-900/50"
       >
-        {/* Avatar à esquerda (40px circular) */}
-        <div className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-full bg-gradient-to-tr from-purple-800 to-indigo-700 text-sm font-bold text-white shadow-sm ring-1 ring-white/10">
-          {authorName.charAt(0).toUpperCase()}
+        {/* Controle vertical de votação estilo Reddit à esquerda, centralizado no card */}
+        <div
+          className="flex flex-col items-center justify-center self-center shrink-0 w-8"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={(e) => handleVote(e, 1)}
+            disabled={isVoting}
+            aria-label="Votar positivo"
+            title="Votar positivo"
+            className={`flex items-center justify-center p-0.5 rounded transition-colors ${
+              post.userVote === 1
+                ? "text-orange-500 hover:text-orange-400"
+                : "text-gray-400 hover:text-orange-400"
+            }`}
+          >
+            <ArrowBigUp
+              className={`h-5 w-5 ${
+                post.userVote === 1 ? "fill-orange-500 text-orange-500" : ""
+              }`}
+            />
+          </button>
+          <span
+            className={`text-xs font-bold my-0.5 text-center select-none ${
+              post.userVote === 1
+                ? "text-orange-500"
+                : post.userVote === -1
+                ? "text-blue-500"
+                : "text-gray-300"
+            }`}
+            aria-label={`Pontuação: ${post.score ?? 0}`}
+            title={`Pontuação: ${post.score ?? 0}`}
+          >
+            {post.score ?? 0}
+          </span>
+          <button
+            type="button"
+            onClick={(e) => handleVote(e, -1)}
+            disabled={isVoting}
+            aria-label="Votar negativo"
+            title="Votar negativo"
+            className={`flex items-center justify-center p-0.5 rounded transition-colors ${
+              post.userVote === -1
+                ? "text-blue-500 hover:text-blue-400"
+                : "text-gray-400 hover:text-blue-400"
+            }`}
+          >
+            <ArrowBigDown
+              className={`h-5 w-5 ${
+                post.userVote === -1 ? "fill-blue-500 text-blue-500" : ""
+              }`}
+            />
+          </button>
         </div>
+
+        {/* Avatar (40px circular) */}
+        {authorAvatar ? (
+          <Link
+            href={`/master/community/profile/${post.authorId}`}
+            onClick={(e) => e.stopPropagation()}
+            className="flex h-10 w-10 shrink-0 overflow-hidden rounded-full ring-1 ring-white/10 hover:opacity-80 transition-opacity"
+          >
+            <img
+              src={authorAvatar}
+              alt={authorName}
+              className="h-full w-full object-cover"
+            />
+          </Link>
+        ) : (
+          <Link
+            href={`/master/community/profile/${post.authorId}`}
+            onClick={(e) => e.stopPropagation()}
+            className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-full bg-gradient-to-tr from-purple-800 to-indigo-700 text-sm font-bold text-white shadow-sm ring-1 ring-white/10 hover:opacity-80 transition-opacity"
+          >
+            {authorName.charAt(0).toUpperCase()}
+          </Link>
+        )}
 
         {/* Layout central e direito */}
         <div className="flex min-w-0 flex-1 flex-col md:flex-row gap-4">
@@ -175,7 +352,13 @@ export default function CommunityCard({ post, onOpen, onUpdate }: Props) {
           <div className="flex min-w-0 flex-1 flex-col">
             {/* Linha de cabeçalho: Autor, timestamp, badge */}
             <div className="flex flex-wrap items-center gap-1.5 text-xs">
-              <span className="font-bold text-gray-100 hover:underline">{authorName}</span>
+              <Link
+                href={`/master/community/profile/${post.authorId}`}
+                onClick={(e) => e.stopPropagation()}
+                className="font-bold text-gray-100 hover:underline hover:text-purple-300"
+              >
+                {authorName}
+              </Link>
               <span className="text-gray-600">·</span>
               <span className="text-gray-500">{formatRelativeTime(post.createdAt)}</span>
               <span

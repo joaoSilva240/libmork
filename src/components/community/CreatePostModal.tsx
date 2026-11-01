@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { Globe2, Shield, Sparkles, Sword, UserRound } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
@@ -15,16 +16,16 @@ type Props = {
 type ContentTypeOption = {
   type: "spell" | "item" | "class" | "npc" | "world";
   label: string;
-  icon: string;
+  Icon: React.ComponentType<{ className?: string }>;
   endpoint: string;
 };
 
 const CONTENT_TYPES: ContentTypeOption[] = [
-  { type: "spell", label: "Magia", icon: "🔮", endpoint: "/api/content/spells" },
-  { type: "item", label: "Item", icon: "⚔️", endpoint: "/api/content/items" },
-  { type: "class", label: "Classe", icon: "🛡️", endpoint: "/api/classes" },
-  { type: "npc", label: "NPC", icon: "👤", endpoint: "/api/npcs" },
-  { type: "world", label: "Mundo", icon: "🌍", endpoint: "/api/worlds" },
+  { type: "spell", label: "Magia", Icon: Sparkles, endpoint: "/api/content/spells" },
+  { type: "item", label: "Item", Icon: Sword, endpoint: "/api/content/items" },
+  { type: "class", label: "Classe", Icon: Shield, endpoint: "/api/classes" },
+  { type: "npc", label: "NPC", Icon: UserRound, endpoint: "/api/npcs" },
+  { type: "world", label: "Mundo", Icon: Globe2, endpoint: "/api/worlds" },
 ];
 
 export default function CreatePostModal({ open, onClose, onCreated }: Props) {
@@ -197,7 +198,7 @@ export default function CreatePostModal({ open, onClose, onCreated }: Props) {
           <Modal.Header className="flex items-center justify-between border-b border-gray-800 p-5 shrink-0">
             <div>
               <h2 id="create-post-title" className="text-xl font-bold text-gray-100 flex items-center gap-2">
-                <span>🌐</span> Publicar na Comunidade do Mestre
+                <Globe2 className="h-5 w-5 text-purple-400" aria-hidden="true" /> Publicar na Comunidade do Mestre
               </h2>
               <p className="mt-1 text-xs text-gray-400">
                 Compartilhe suas criações com outros mestres do Libmork
@@ -214,24 +215,27 @@ export default function CreatePostModal({ open, onClose, onCreated }: Props) {
                   Tipo de Conteúdo
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                  {CONTENT_TYPES.map((typeOption) => (
-                    <button
-                      key={typeOption.type}
-                      type="button"
-                      onClick={() => {
-                        setContentType(typeOption.type);
-                        setSourceMode("existing");
-                      }}
-                      className={`flex flex-col items-center justify-center p-3 rounded-lg border text-sm font-medium transition-all ${
-                        contentType === typeOption.type
-                          ? "border-purple-500 bg-purple-950/40 text-purple-200 shadow-sm"
-                          : "border-gray-800 bg-gray-950/60 text-gray-400 hover:border-gray-700 hover:text-gray-200"
-                      }`}
-                    >
-                      <span className="text-xl mb-1">{typeOption.icon}</span>
-                      <span>{typeOption.label}</span>
-                    </button>
-                  ))}
+                  {CONTENT_TYPES.map((typeOption) => {
+                    const Icon = typeOption.Icon;
+                    return (
+                      <button
+                        key={typeOption.type}
+                        type="button"
+                        onClick={() => {
+                          setContentType(typeOption.type);
+                          setSourceMode("existing");
+                        }}
+                        className={`flex flex-col items-center justify-center p-3 rounded-lg border text-sm font-medium transition-all ${
+                          contentType === typeOption.type
+                            ? "border-purple-500 bg-purple-950/40 text-purple-200 shadow-sm"
+                            : "border-gray-800 bg-gray-950/60 text-gray-400 hover:border-gray-700 hover:text-gray-200"
+                        }`}
+                      >
+                        <Icon className="h-5 w-5 mb-1" />
+                        <span>{typeOption.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

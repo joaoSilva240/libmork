@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import Link from "next/link";
+import { User, Plus } from "lucide-react";
 import CommunityFilters from "./CommunityFilters";
 import CommunityCard, { CommunityPost } from "./CommunityCard";
 import CreatePostModal from "./CreatePostModal";
@@ -8,7 +10,18 @@ import PostDetailModal from "./PostDetailModal";
 import { Spinner } from "@/components/ui/Spinner";
 import { Button } from "@/components/ui/Button";
 
-export default function CommunityFeed() {
+type CurrentUser = {
+  id: string;
+  masterName: string | null;
+  masterAvatar: string | null;
+  displayName: string | null;
+};
+
+type CommunityFeedProps = {
+  currentUser?: CurrentUser;
+};
+
+export default function CommunityFeed({ currentUser }: CommunityFeedProps) {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -17,7 +30,7 @@ export default function CommunityFeed() {
   const [filters, setFilters] = useState({
     type: "",
     search: "",
-    sort: "recent",
+    sort: "top",
   });
 
   const [page, setPage] = useState(1);
@@ -103,21 +116,60 @@ export default function CommunityFeed() {
 
   return (
     <section className="flex flex-col flex-1 min-h-0 bg-gray-950">
-      {/* Header sticky com botão publicar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0 px-4 py-3 border-b border-gray-800 bg-gray-950">
-        <div className="text-xs text-gray-400">
-          Mostrando <span className="font-semibold text-gray-200">{sortedPosts.length}</span> criações compartilhadas
-        </div>
+      {/* Cabeçalho compacto do Mestre ou fallback */}
+      {currentUser ? (
+        <header className="flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-gray-950 shrink-0">
+          <Link
+            href={`/master/community/profile/${currentUser.id}`}
+            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+          >
+            {currentUser.masterAvatar ? (
+              <img
+                src={currentUser.masterAvatar}
+                alt="Avatar"
+                className="w-10 h-10 rounded-full object-cover border border-gray-700"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-400">
+                <User size={20} />
+              </div>
+            )}
+            <div>
+              <p className="font-semibold text-gray-100 text-sm">
+                {currentUser.masterName || currentUser.displayName || "Mestre"}
+              </p>
+              <p className="text-xs text-gray-500">Ver perfil</p>
+            </div>
+          </Link>
+          <Button
+            onClick={() => setIsCreateModalOpen(true)}
+            variant="master"
+            className="flex items-center gap-2 text-sm shadow-md"
+          >
+            <Plus size={16} />
+            Publicar Criação
+          </Button>
+        </header>
+      ) : (
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0 px-4 py-3 border-b border-gray-800 bg-gray-950">
+          <div className="text-xs text-gray-400">
+            Mostrando{" "}
+            <span className="font-semibold text-gray-200">
+              {sortedPosts.length}
+            </span>{" "}
+            criações compartilhadas
+          </div>
 
-        <Button
-          onClick={() => setIsCreateModalOpen(true)}
-          variant="master"
-          className="self-start md:self-auto gap-2 text-sm shadow-md"
-        >
-          <span>✨</span>
-          <span>+ Publicar Criação</span>
-        </Button>
-      </div>
+          <Button
+            onClick={() => setIsCreateModalOpen(true)}
+            variant="master"
+            className="self-start md:self-auto gap-2 text-sm shadow-md"
+          >
+            <Plus size={16} />
+            <span>+ Publicar Criação</span>
+          </Button>
+        </div>
+      )}
 
       {/* Barra de Filtros */}
       <div className="border-b border-gray-800 bg-gray-950">

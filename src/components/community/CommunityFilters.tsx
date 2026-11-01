@@ -1,15 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Dices, Globe2, Shield, Sparkles, Sword, UserRound } from "lucide-react";
 
 const CATEGORIES = [
-  { value: "", label: "Todos" },
-  { value: "spell", label: "Magias", icon: "🔮" },
-  { value: "item", label: "Itens", icon: "⚔️" },
-  { value: "class", label: "Classes", icon: "🛡️" },
-  { value: "npc", label: "NPCs", icon: "👤" },
-  { value: "world", label: "Mundos", icon: "🌍" },
-  { value: "campaign", label: "Campanhas", icon: "🎲" },
+  { value: "", label: "Todos", Icon: null },
+  { value: "spell", label: "Magias", Icon: Sparkles },
+  { value: "item", label: "Itens", Icon: Sword },
+  { value: "class", label: "Classes", Icon: Shield },
+  { value: "npc", label: "NPCs", Icon: UserRound },
+  { value: "world", label: "Mundos", Icon: Globe2 },
+  { value: "campaign", label: "Campanhas", Icon: Dices },
 ];
 
 type Filters = {
@@ -71,6 +72,7 @@ export default function CommunityFilters({ value, onChange }: Props) {
           onChange={(e) => onChange({ ...value, sort: e.target.value })}
           className="rounded-full border border-gray-800 bg-gray-900/80 px-3 py-1.5 text-xs text-gray-300 transition-colors focus:border-purple-500 focus:bg-gray-900 focus:outline-none cursor-pointer"
         >
+          <option value="top">Top (Mais Votados)</option>
           <option value="recent">Mais Recentes</option>
           <option value="popular">Mais Populares</option>
           <option value="cloned">Mais Clonados</option>
@@ -85,13 +87,13 @@ export default function CommunityFilters({ value, onChange }: Props) {
             <button
               key={cat.value}
               onClick={() => onChange({ ...value, type: cat.value })}
-              className={`flex shrink-0 items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                 isActive
                   ? "bg-purple-600 text-white"
                   : "bg-gray-900/90 text-gray-400 hover:bg-gray-800 hover:text-gray-200 border border-gray-800"
               }`}
             >
-              {cat.icon && <span className="text-[11px]">{cat.icon}</span>}
+              {cat.Icon && <cat.Icon className="h-3.5 w-3.5" />}
               <span>{cat.label}</span>
             </button>
           );

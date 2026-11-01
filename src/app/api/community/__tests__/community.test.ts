@@ -39,8 +39,18 @@ vi.mock("@/lib/db/schema", () => ({
     userId: "communityLikes.userId",
     createdAt: "communityLikes.createdAt",
   },
-  communityComments: {
-    id: "communityComments.id",
+  communityPostVotes: {
+    postId: "communityPostVotes.postId",
+    userId: "communityPostVotes.userId",
+    value: "communityPostVotes.value",
+  },
+   communityClones: {
+     id: "communityClones.id",
+     postId: "communityClones.postId",
+     userId: "communityClones.userId",
+   },
+   communityComments: {
+     id: "communityComments.id",
     postId: "communityComments.postId",
     userId: "communityComments.userId",
     content: "communityComments.content",
@@ -103,6 +113,10 @@ describe("GET /api/community/posts", () => {
         likesCount: 3,
         commentsCount: 1,
         isLikedByMe: false,
+        upvotes: 2,
+        downvotes: 1,
+        score: 1,
+        userVote: null,
       },
     ];
 
@@ -111,11 +125,13 @@ describe("GET /api/community/posts", () => {
         innerJoin: vi.fn().mockReturnValue({
           leftJoin: vi.fn().mockReturnValue({
             leftJoin: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                groupBy: vi.fn().mockReturnValue({
-                  orderBy: vi.fn().mockReturnValue({
-                    limit: vi.fn().mockReturnValue({
-                      offset: vi.fn().mockResolvedValue(mockRows),
+              leftJoin: vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({
+                  groupBy: vi.fn().mockReturnValue({
+                    orderBy: vi.fn().mockReturnValue({
+                      limit: vi.fn().mockReturnValue({
+                        offset: vi.fn().mockResolvedValue(mockRows),
+                      }),
                     }),
                   }),
                 }),
@@ -164,6 +180,10 @@ describe("GET /api/community/posts", () => {
         likesCount: 0,
         commentsCount: 0,
         isLikedByMe: false,
+        upvotes: 0,
+        downvotes: 0,
+        score: 0,
+        userVote: null,
       },
     ];
 
@@ -172,11 +192,13 @@ describe("GET /api/community/posts", () => {
         innerJoin: vi.fn().mockReturnValue({
           leftJoin: vi.fn().mockReturnValue({
             leftJoin: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                groupBy: vi.fn().mockReturnValue({
-                  orderBy: vi.fn().mockReturnValue({
-                    limit: vi.fn().mockReturnValue({
-                      offset: vi.fn().mockResolvedValue(mockRows),
+              leftJoin: vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({
+                  groupBy: vi.fn().mockReturnValue({
+                    orderBy: vi.fn().mockReturnValue({
+                      limit: vi.fn().mockReturnValue({
+                        offset: vi.fn().mockResolvedValue(mockRows),
+                      }),
                     }),
                   }),
                 }),
@@ -227,11 +249,13 @@ describe("GET /api/community/posts", () => {
         innerJoin: vi.fn().mockReturnValue({
           leftJoin: vi.fn().mockReturnValue({
             leftJoin: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                groupBy: vi.fn().mockReturnValue({
-                  orderBy: vi.fn().mockReturnValue({
-                    limit: vi.fn().mockReturnValue({
-                      offset: vi.fn().mockResolvedValue(mockRows),
+              leftJoin: vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({
+                  groupBy: vi.fn().mockReturnValue({
+                    orderBy: vi.fn().mockReturnValue({
+                      limit: vi.fn().mockReturnValue({
+                        offset: vi.fn().mockResolvedValue(mockRows),
+                      }),
                     }),
                   }),
                 }),
@@ -249,6 +273,68 @@ describe("GET /api/community/posts", () => {
     expect(res.status).toBe(200);
     expect(data.data).toHaveLength(1);
     expect(data.data[0].title).toContain("Fogo");
+  });
+
+  it("aplica ordenação padrão top por score", async () => {
+    mockRequireAuth.mockResolvedValue(null);
+
+    const mockRows = [
+      {
+        post: {
+          id: "post-1",
+          authorId: "user-1",
+          title: "Item Mais Votado",
+          description: null,
+          contentType: "item",
+          contentId: null,
+          tags: [],
+          payload: {},
+          clonesCount: 0,
+          createdAt: "2026-03-01T12:00:00Z",
+          updatedAt: "2026-03-01T12:00:00Z",
+        },
+        author: { id: "user-1", displayName: "Mestre" },
+        likesCount: 1,
+        commentsCount: 0,
+        isLikedByMe: false,
+        upvotes: 10,
+        downvotes: 1,
+        score: 9,
+        userVote: null,
+      },
+    ];
+
+    const mockOrderBy = vi.fn().mockReturnValue({
+      limit: vi.fn().mockReturnValue({
+        offset: vi.fn().mockResolvedValue(mockRows),
+      }),
+    });
+
+    mockDb.select.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        innerJoin: vi.fn().mockReturnValue({
+          leftJoin: vi.fn().mockReturnValue({
+            leftJoin: vi.fn().mockReturnValue({
+              leftJoin: vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({
+                  groupBy: vi.fn().mockReturnValue({
+                    orderBy: mockOrderBy,
+                  }),
+                }),
+              }),
+            }),
+          }),
+        }),
+      }),
+    });
+
+    const req = new NextRequest("http://localhost/api/community/posts?sort=top");
+    const res = await postsGet(req);
+    const data = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(data.data[0].score).toBe(9);
+    expect(mockOrderBy).toHaveBeenCalled();
   });
 });
 

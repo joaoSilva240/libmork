@@ -5,7 +5,8 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { Toast } from "@/components/ui/Toast";
-import { Heart, MessageCircle, Repeat2, Download, Sparkles } from "lucide-react";
+import { ArrowBigDown, ArrowBigUp, Heart, MessageCircle, Repeat2, Download, Sparkles } from "lucide-react";
+import Link from "next/link";
 import { CONTENT_TYPE_CONFIG, CommunityPost } from "./CommunityCard";
 import ImportCustomizeModal from "./ImportCustomizeModal";
 
@@ -28,6 +29,8 @@ type Comment = {
   author: {
     id: string;
     displayName: string | null;
+    masterName?: string | null;
+    masterAvatar?: string | null;
   };
 };
 
@@ -36,8 +39,15 @@ export default function PostDetailModal({ post, onClose, onCloned }: Props) {
   const [loadingComments, setLoadingComments] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [isPosting, setIsPosting] = useState(false);
+  const [isVoting, setIsVoting] = useState(false);
   const [showJson, setShowJson] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+
+  const [localPost, setLocalPost] = useState(post);
+
+  useEffect(() => {
+    setLocalPost(post);
+  }, [post]);
 
   // Estado para o modal de pré-importação / personalização
   const [customizeImportTarget, setCustomizeImportTarget] = useState<{
@@ -46,6 +56,99 @@ export default function PostDetailModal({ post, onClose, onCloned }: Props) {
     postId?: string;
     commentId?: string;
   } | null>(null);
+
+  const handleVote = async (targetValue: 1 | -1) => {
+    if (isVoting) return;
+
+    const previousUserVote = localPost.userVote ?? null;
+    const previousScore = localPost.score ?? 0;
+    const previousUpvotes = localPost.upvotes ?? 0;
+    const previousDownvotes = localPost.downvotes ?? 0;
+
+    // Optimistic calculation
+    let optimisticUserVote: number | null = targetValue;
+    let optimisticScore = previousScore;
+    let optimisticUpvotes = previousUpvotes;
+    let optimisticDownvotes = previousDownvotes;
+
+    if (previousUserVote === targetValue) {
+      // Toggle off
+      optimisticUserVote = null;
+      if (targetValue === 1) {
+        optimisticUpvotes = Math.max(0, optimisticUpvotes - 1);
+        optimisticScore -= 1;
+      } else {
+        optimisticDownvotes = Math.max(0, optimisticDownvotes - 1);
+        optimisticScore += 1;
+      }
+    } else if (previousUserVote === null) {
+      // New vote
+      if (targetValue === 1) {
+        optimisticUpvotes += 1;
+        optimisticScore += 1;
+      } else {
+        optimisticDownvotes += 1;
+        optimisticScore -= 1;
+      }
+    } else {
+      // Vote swap
+      if (targetValue === 1) {
+        optimisticUpvotes += 1;
+        optimisticDownvotes = Math.max(0, optimisticDownvotes - 1);
+        optimisticScore += 2;
+      } else {
+        optimisticDownvotes += 1;
+        optimisticUpvotes = Math.max(0, optimisticUpvotes - 1);
+        optimisticScore -= 2;
+      }
+    }
+
+    setLocalPost({
+      ...localPost,
+      userVote: optimisticUserVote,
+      score: optimisticScore,
+      upvotes: optimisticUpvotes,
+      downvotes: optimisticDownvotes,
+    });
+
+    setIsVoting(true);
+    try {
+      const res = await fetch(`/api/community/posts/${localPost.id}/vote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value: targetValue }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Falha ao registrar voto");
+      }
+
+      const data = await res.json();
+      setLocalPost({
+        ...localPost,
+        score: Number(data.score),
+        upvotes: Number(data.upvotes),
+        downvotes: Number(data.downvotes),
+        userVote: data.userVote !== null && data.userVote !== undefined ? Number(data.userVote) : null,
+      });
+    } catch (err) {
+      // Rollback on error
+      setLocalPost({
+        ...localPost,
+        userVote: previousUserVote,
+        score: previousScore,
+        upvotes: previousUpvotes,
+        downvotes: previousDownvotes,
+      });
+      setToast({
+        message: err instanceof Error ? err.message : "Erro ao votar",
+        type: "error",
+      });
+    } finally {
+      setIsVoting(false);
+    }
+  };
 
   const typeConfig = CONTENT_TYPE_CONFIG[post.contentType] || {
     label: post.contentType,
@@ -121,7 +224,7 @@ export default function PostDetailModal({ post, onClose, onCloned }: Props) {
     });
   };
 
-  const authorName = post.author?.displayName || "Mestre Anônimo";
+  const authorName = post.author?.masterName || post.author?.displayName || "Mestre Anônimo";
   const formattedDateTime = new Date(post.createdAt).toLocaleString("pt-BR", {
     hour: "2-digit",
     minute: "2-digit",
@@ -172,13 +275,34 @@ export default function PostDetailModal({ post, onClose, onCloned }: Props) {
           <Modal.Body className="max-h-[75vh] space-y-4 overflow-y-auto px-5 py-4">
             {/* Linha do autor */}
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-purple-700 to-indigo-600 text-base font-bold text-white shadow-inner">
-                {authorName.charAt(0).toUpperCase()}
-              </div>
+              {post.author?.masterAvatar ? (
+                <Link
+                  href={`/master/community/profile/${post.authorId}`}
+                  className="flex h-11 w-11 shrink-0 overflow-hidden rounded-full ring-1 ring-white/10 hover:opacity-80 transition-opacity"
+                >
+                  <img
+                    src={post.author.masterAvatar}
+                    alt={authorName}
+                    className="h-full w-full object-cover"
+                  />
+                </Link>
+              ) : (
+                <Link
+                  href={`/master/community/profile/${post.authorId}`}
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-purple-700 to-indigo-600 text-base font-bold text-white shadow-inner hover:opacity-80 transition-opacity"
+                >
+                  {authorName.charAt(0).toUpperCase()}
+                </Link>
+              )}
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-gray-100 truncate">{authorName}</span>
+                  <Link
+                    href={`/master/community/profile/${post.authorId}`}
+                    className="font-bold text-gray-100 truncate hover:underline hover:text-purple-300"
+                  >
+                    {authorName}
+                  </Link>
                   <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${typeConfig.badgeClass}`}>
                     <span>{typeConfig.icon}</span>
                     <span>{typeConfig.label}</span>
@@ -243,6 +367,59 @@ export default function PostDetailModal({ post, onClose, onCloned }: Props) {
 
             {/* Métricas / Contadores com ícones minimalistas */}
             <div className="flex items-center gap-6 border-y border-gray-800/80 py-3 text-xs text-gray-400">
+              {/* Votação Reddit */}
+              <div className="inline-flex self-center flex-col items-center justify-center gap-0 rounded-full border border-gray-800 bg-gray-900/60 px-2 py-0.5">
+                <button
+                  type="button"
+                  onClick={() => handleVote(1)}
+                  disabled={isVoting}
+                  aria-label="Votar positivo"
+                  title="Votar positivo"
+                  className={`flex items-center justify-center p-0.5 rounded transition-colors ${
+                    localPost.userVote === 1
+                      ? "text-orange-500 hover:text-orange-400"
+                      : "text-gray-400 hover:text-orange-400"
+                  }`}
+                >
+                  <ArrowBigUp
+                    className={`h-4 w-4 ${
+                      localPost.userVote === 1 ? "fill-orange-500 text-orange-500" : ""
+                    }`}
+                  />
+                </button>
+                <span
+                  className={`text-xs font-bold text-center select-none ${
+                    localPost.userVote === 1
+                      ? "text-orange-500"
+                      : localPost.userVote === -1
+                      ? "text-blue-500"
+                      : "text-gray-200"
+                  }`}
+                  aria-label={`Pontuação: ${localPost.score ?? 0}`}
+                  title={`Pontuação: ${localPost.score ?? 0}`}
+                >
+                  {localPost.score ?? 0}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleVote(-1)}
+                  disabled={isVoting}
+                  aria-label="Votar negativo"
+                  title="Votar negativo"
+                  className={`flex items-center justify-center p-0.5 rounded transition-colors ${
+                    localPost.userVote === -1
+                      ? "text-blue-500 hover:text-blue-400"
+                      : "text-gray-400 hover:text-blue-400"
+                  }`}
+                >
+                  <ArrowBigDown
+                    className={`h-4 w-4 ${
+                      localPost.userVote === -1 ? "fill-blue-500 text-blue-500" : ""
+                    }`}
+                  />
+                </button>
+              </div>
+
               <div className="inline-flex items-center gap-1.5" aria-label="Curtidas" title="Curtidas">
                 <Heart className={`h-4 w-4 ${post.isLikedByMe ? "fill-rose-500 text-rose-500" : ""}`} />
                 <span><strong className="text-gray-100 font-bold">{post.likesCount}</strong></span>

@@ -34,6 +34,10 @@ export const users = pgTable("users", {
   passwordHash: varchar("password_hash", { length: 255 }),
   oauthProvider: varchar("oauth_provider", { length: 20 }).notNull().default("local"),
   displayName: varchar("display_name", { length: 100 }).notNull(),
+  masterName: varchar("master_name", { length: 100 }),
+  masterAvatar: varchar("master_avatar", { length: 500 }),
+  masterBio: text("master_bio"),
+  masterBannerUrl: varchar("master_banner_url", { length: 500 }),
   role: varchar("role", { length: 20 }).notNull().default("player"),
   shadowPoints: integer("shadow_points").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -810,6 +814,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   communityPosts: many(communityPosts),
   communityLikes: many(communityLikes),
   communityComments: many(communityComments),
+  communityClones: many(communityClones),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -1148,6 +1153,42 @@ export const communityComments = pgTable("community_comments", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+/**
+ * COMMUNITY_CLONES — Rastreamento de clonagens de posts da comunidade.
+ */
+export const communityClones = pgTable("community_clones", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  postId: uuid("post_id")
+    .notNull()
+    .references(() => communityPosts.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  clonedAt: timestamp("cloned_at").notNull().defaultNow(),
+});
+
+/**
+ * COMMUNITY_POST_VOTES — Votos em posts da comunidade (Reddit style: 1 ou -1).
+ * Chave primária composta: postId + userId.
+ */
+export const communityPostVotes = pgTable(
+  "community_post_votes",
+  {
+    postId: uuid("post_id")
+      .notNull()
+      .references(() => communityPosts.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    value: integer("value").notNull(), // 1 para upvote, -1 para downvote
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.postId, table.userId] }),
+  })
+);
+
 // Relations da Comunidade
 export const communityPostsRelations = relations(communityPosts, ({ one, many }) => ({
   author: one(users, {
@@ -1155,7 +1196,9 @@ export const communityPostsRelations = relations(communityPosts, ({ one, many })
     references: [users.id],
   }),
   likes: many(communityLikes),
+  votes: many(communityPostVotes),
   comments: many(communityComments),
+  clones: many(communityClones),
 }));
 
 export const communityLikesRelations = relations(communityLikes, ({ one }) => ({
@@ -1169,6 +1212,17 @@ export const communityLikesRelations = relations(communityLikes, ({ one }) => ({
   }),
 }));
 
+export const communityPostVotesRelations = relations(communityPostVotes, ({ one }) => ({
+  post: one(communityPosts, {
+    fields: [communityPostVotes.postId],
+    references: [communityPosts.id],
+  }),
+  user: one(users, {
+    fields: [communityPostVotes.userId],
+    references: [users.id],
+  }),
+}));
+
 export const communityCommentsRelations = relations(communityComments, ({ one }) => ({
   post: one(communityPosts, {
     fields: [communityComments.postId],
@@ -1176,6 +1230,17 @@ export const communityCommentsRelations = relations(communityComments, ({ one })
   }),
   author: one(users, {
     fields: [communityComments.authorId],
+    references: [users.id],
+  }),
+}));
+
+export const communityClonesRelations = relations(communityClones, ({ one }) => ({
+  post: one(communityPosts, {
+    fields: [communityClones.postId],
+    references: [communityPosts.id],
+  }),
+  user: one(users, {
+    fields: [communityClones.userId],
     references: [users.id],
   }),
 }));

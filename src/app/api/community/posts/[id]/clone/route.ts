@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { communityComments, communityPosts, items, npcs, rpgClasses, spells, worlds } from "@/lib/db/schema";
+import { communityClones, communityComments, communityPosts, items, npcs, rpgClasses, spells, worlds } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { isModified, sanitizePayload } from "../../../clone-utils";
 
@@ -170,6 +170,12 @@ export async function POST(
       .update(communityPosts)
       .set({ clonesCount: post.clonesCount + 1 })
       .where(eq(communityPosts.id, postId));
+
+    // Registra a clonagem na tabela communityClones
+    await db.insert(communityClones).values({
+      postId: postId,
+      userId: session.user.id,
+    });
 
     return NextResponse.json({
       success: true,

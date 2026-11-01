@@ -272,11 +272,87 @@ describe("CommunityFeed Component", () => {
       expect(screen.getByText("Bola de Fogo Ancestral")).toBeInTheDocument();
     });
 
-    const publishBtn = screen.getByRole("button", { name: /\+ Publicar Criação/i });
+    const publishBtn = screen.getByRole("button", { name: /\+? ?Publicar Criação/i });
     fireEvent.click(publishBtn);
 
     await waitFor(() => {
       expect(screen.getByText("Publicar na Comunidade do Mestre")).toBeInTheDocument();
     });
+  });
+
+  it("renderiza cabeçalho compacto quando currentUser é fornecido", async () => {
+    global.fetch = vi.fn().mockImplementation((url: string | URL | Request) => {
+      const urlStr = url.toString();
+      if (urlStr.startsWith("/api/community/posts")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ data: mockPosts, page: 1, limit: 12 }),
+        });
+      }
+      if (urlStr.startsWith("/api/content/spells")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ data: [] }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ data: [] }),
+      });
+    });
+
+    const currentUser = {
+      id: "master-42",
+      masterName: "Arquimago Elminster",
+      masterAvatar: "https://example.com/avatar.png",
+      displayName: "Elminster",
+    };
+
+    render(<CommunityFeed currentUser={currentUser} />);
+
+    // Deve exibir o nome do mestre e link para o perfil
+    expect(screen.getByText("Arquimago Elminster")).toBeInTheDocument();
+    expect(screen.getByText("Ver perfil")).toBeInTheDocument();
+
+    const profileLink = screen.getByRole("link", { name: /arquimago elminster/i });
+    expect(profileLink).toHaveAttribute("href", "/master/community/profile/master-42");
+
+    const avatarImg = screen.getByRole("img", { name: /avatar/i });
+    expect(avatarImg).toHaveAttribute("src", "https://example.com/avatar.png");
+
+    // Botão de publicar criação no cabeçalho
+    const publishBtn = screen.getByRole("button", { name: /Publicar Criação/i });
+    expect(publishBtn).toBeInTheDocument();
+    fireEvent.click(publishBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText("Publicar na Comunidade do Mestre")).toBeInTheDocument();
+    });
+  });
+
+  it("renderiza fallback quando currentUser não tem masterName ou masterAvatar", async () => {
+    global.fetch = vi.fn().mockImplementation(() =>
+      Promise.resolve({
+        ok: true,
+        json: async () => ({ data: [], page: 1, limit: 12 }),
+      })
+    );
+
+    const currentUser = {
+      id: "master-99",
+      masterName: null,
+      masterAvatar: null,
+      displayName: "Mestre Iniciante",
+    };
+
+    render(<CommunityFeed currentUser={currentUser} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Mestre Iniciante")).toBeInTheDocument();
+    });
+
+    const profileLink = screen.getByRole("link", { name: /mestre iniciante/i });
+    expect(profileLink).toHaveAttribute("href", "/master/community/profile/master-99");
+    expect(screen.queryByRole("img", { name: /avatar/i })).not.toBeInTheDocument();
   });
 });
