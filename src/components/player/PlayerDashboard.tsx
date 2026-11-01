@@ -17,6 +17,7 @@ import { generateUUID } from "@/lib/utils/uuid";
 
 export function PlayerDashboard() {
   const [activeTab, setActiveTab] = useState<"characters" | "campaigns" | "wealth">("characters");
+  const [displayName, setDisplayName] = useState("Jogador");
 
   // Estado de Personagens
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -156,7 +157,24 @@ export function PlayerDashboard() {
     void loadMissingHabitants();
     void loadCampaigns();
     void loadWealth();
+    void loadPlayerName();
   }, []);
+
+  const loadPlayerName = async () => {
+    try {
+      const response = await fetch("/api/auth/me", {
+        credentials: "include",
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.data?.displayName) {
+          setDisplayName(data.data.displayName);
+        }
+      }
+    } catch {
+      // Fallback silencioso para "Jogador"
+    }
+  };
 
   const refreshWealth = async () => {
     try {
@@ -392,16 +410,30 @@ export function PlayerDashboard() {
   }, []);
 
   return (
-    <div className="space-y-6 pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
-      <header className="flex items-center justify-between border border-secondary-border bg-secondary-card p-4 rounded-xl shadow-md">
-        <div>
-          <h1 className="text-xl font-bold text-secondary-pure">Libmork — Jogador</h1>
-          <p className="text-xs text-secondary-muted">Gerencie seus heróis e campanhas</p>
+    <div className="pt-[calc(5.5rem+env(safe-area-inset-top,0px))] pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
+      <header className="fixed inset-x-0 top-0 z-30 flex items-center justify-between border-x-0 border-t-0 border-b border-secondary-border bg-secondary-card px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top,0px))] shadow-md">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-secondary-pure">{displayName}</h1>
+            <p className="text-xs text-secondary-muted">Gerencie seus heróis e campanhas</p>
+          </div>
+          <LogoutButton />
         </div>
-        <LogoutButton />
       </header>
 
-      {/* Conteúdo da Aba 1: Meus Personagens */}
+      {activeTab === "characters" && (
+        <Link
+          href="/player/characters/new"
+          aria-label="Novo Personagem"
+          className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] right-4 z-30 flex items-center gap-2 rounded-full border border-purple-400/60 bg-purple-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-purple-950/50 transition-colors hover:bg-purple-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-300 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-950 sm:right-6 sm:px-6"
+        >
+          <span className="text-lg leading-none" aria-hidden="true">+</span>
+          <span>Novo Personagem</span>
+        </Link>
+      )}
+
+      <div className="container mx-auto px-4 space-y-6">
+        {/* Conteúdo da Aba 1: Meus Personagens */}
       {activeTab === "characters" && (
         <div>
           {isLoadingCharacters ? (
@@ -425,11 +457,6 @@ export function PlayerDashboard() {
             <div>
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-secondary-pure">Meus Personagens</h2>
-                <Link href="/player/characters/new">
-                  <Button variant="primary" className="px-4 py-2 font-semibold">
-                    + Novo Personagem
-                  </Button>
-                </Link>
               </div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {characters.map((character) => (
@@ -1154,6 +1181,7 @@ export function PlayerDashboard() {
         </div>
       )}
 
+      </div>
     </div>
   );
 }

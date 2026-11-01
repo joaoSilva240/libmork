@@ -103,6 +103,10 @@ export type Character = {
   deathFailures: number;
   createdAt: Date;
   updatedAt: Date;
+  /** Dados opcionais enriquecidos pela listagem de personagens. */
+  className?: string | null;
+  raceName?: string | null;
+  campaignName?: string | null;
   /** Campanha ativa usada pelo realtime; nunca é o id do personagem. */
   campaignId?: string | null;
   /** Wallet de moedas do personagem (Issue #35). */
