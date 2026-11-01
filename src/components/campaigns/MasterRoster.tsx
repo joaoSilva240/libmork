@@ -12,6 +12,8 @@ import { useSocket, type RollDataPayload } from "@/context/SocketContext";
 import type { CombatSessionState } from "@/lib/engine";
 import { advanceCombatTurn, spendCombatActions } from "@/lib/engine";
 import { Spinner } from "@/components/ui";
+import { ResizeHandle } from "@/components/ui";
+import { useResizableLayout } from "@/hooks/useResizableLayout";
 import { WorldSelectorModal } from "@/components/campaigns/WorldSelectorModal";
 import { ExternalLink, Minimize2 } from "lucide-react";
 import { MissingHabitantSheet } from "@/components/systems/missing/MissingHabitantSheet";
@@ -99,6 +101,20 @@ export function MasterRoster({
     } catch {
       return false;
     }
+  });
+
+  const carouselPanel = useResizableLayout({
+    storageKey: campaignId ? `libmork:campaign-carousel:${campaignId}` : undefined,
+    initialHeight: 224,
+    minHeight: 160,
+    maxHeight: 520,
+  });
+
+  const canvasPanel = useResizableLayout({
+    storageKey: campaignId ? `libmork:campaign-canvas:${campaignId}` : undefined,
+    initialHeight: 400,
+    minHeight: 240,
+    maxHeight: 720,
   });
 
   const saveDeskActors = (newActors: RosterActor[]) => {
@@ -753,11 +769,22 @@ export function MasterRoster({
       )}
 
       {/* Contêiner Central: Canva Infinito ou Mapa do Mundo */}
-      <div className="flex-1 min-h-0 overflow-hidden rounded-lg border border-gray-800 bg-gray-950 mb-1.5">
+      <div
+        className="relative overflow-hidden rounded-lg border border-gray-800 bg-gray-950 mb-1.5"
+        style={{ height: `${canvasPanel.height}px` }}
+      >
         {!showCanvas && !showMap ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center text-sm text-gray-400">
             <span>Canvas e mapa estão ocultos nas configurações.</span>
-            {onResetConfig && <button type="button" onClick={onResetConfig} className="rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-500">Restaurar módulos</button>}
+            {onResetConfig && (
+              <button
+                type="button"
+                onClick={onResetConfig}
+                className="rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-500"
+              >
+                Restaurar módulos
+              </button>
+            )}
           </div>
         ) : activeCenterView === "canvas" && showCanvas ? (
           selectedWorldId ? (
@@ -781,6 +808,12 @@ export function MasterRoster({
             </div>
           )
         )}
+        <ResizeHandle
+          direction="vertical"
+          onResize={(_, dy) => canvasPanel.handleResize(0, dy)}
+          title="Redimensionar área da mesa"
+          data-testid="resize-canvas-panel"
+        />
       </div>
 
       {/* Barra de Ações sobre o Carrossel (Combate/Encontros ou Registro Civil) */}
@@ -916,7 +949,8 @@ export function MasterRoster({
             setIsDragOver(false);
             handleDropActor(e);
           }}
-          className={`transition-all duration-300 h-56 min-h-[220px] rounded-b-lg border p-2 overflow-visible ${
+          style={{ height: `${carouselPanel.height}px` }}
+          className={`relative transition-[height] duration-150 rounded-b-lg border p-2 overflow-visible ${
             isMissing
               ? "border-zinc-800 bg-[#0d0e11]/80"
               : isDragOver
@@ -930,6 +964,12 @@ export function MasterRoster({
             onSelect={handleSelectActor}
             onRemove={handleRemoveDeskActor}
             isMissing={isMissing}
+          />
+          <ResizeHandle
+            direction="vertical"
+            onResize={(_, dy) => carouselPanel.handleResize(0, dy)}
+            title="Redimensionar carrossel de personagens"
+            data-testid="resize-carousel-panel"
           />
         </div>
       )}

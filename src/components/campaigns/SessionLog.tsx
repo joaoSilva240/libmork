@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CampaignLog } from "@/types";
-import { Spinner } from "@/components/ui";
+import { ResizeHandle, Spinner } from "@/components/ui";
 import { useSocket } from "@/context/SocketContext";
+import { useResizableLayout } from "@/hooks/useResizableLayout";
 
 type SessionLogProps = {
   campaignId: string;
@@ -24,6 +25,13 @@ export function SessionLog({ campaignId }: SessionLogProps) {
   } = useSocket();
 
   const wasConnectedRef = useRef(isConnected);
+
+  const sessionLogPanel = useResizableLayout({
+    storageKey: campaignId ? `libmork:session-log:${campaignId}` : undefined,
+    initialHeight: 400,
+    minHeight: 200,
+    maxHeight: 800,
+  });
 
   const loadLogs = useCallback(async () => {
     try {
@@ -150,8 +158,11 @@ export function SessionLog({ campaignId }: SessionLogProps) {
   };
 
   return (
-    <div className="flex h-full flex-col rounded-lg border border-gray-800 bg-gray-900">
-      <div className="flex items-center justify-between border-b border-gray-800 p-2">
+    <div
+      className="relative flex flex-col rounded-lg border border-gray-800 bg-gray-900 overflow-hidden"
+      style={{ height: `${sessionLogPanel.height}px` }}
+    >
+      <div className="flex items-center justify-between border-b border-gray-800 p-2 shrink-0">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-bold text-white">Log da Sessão</h2>
           <span
@@ -236,6 +247,13 @@ export function SessionLog({ campaignId }: SessionLogProps) {
       {error && (
         <div className="border-t border-gray-800 p-2 text-xs text-red-400">{error}</div>
       )}
+
+      <ResizeHandle
+        direction="vertical"
+        onResize={(_, dy) => sessionLogPanel.handleResize(0, dy)}
+        title="Redimensionar log da sessão"
+        data-testid="resize-session-log"
+      />
     </div>
   );
 }
