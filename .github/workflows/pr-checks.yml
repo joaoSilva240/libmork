@@ -1,0 +1,139 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  static-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm run test
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          if-no-files-found: ignore
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production application
+        run: npm run build
+
+  route-inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate route inventory
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+
+          const root = path.resolve('src/app');
+          const pages = [];
+          const apiRoutes = [];
+
+          function walk(directory) {
+            let entries;
+            try {
+              entries = fs.readdirSync(directory, { withFileTypes: true });
+            } catch {
+              return;
+            }
+
+            for (const entry of entries) {
+              const entryPath = path.join(directory, entry.name);
+              if (entry.isDirectory()) {
+                walk(entryPath);
+              } else if (entry.isFile() && entry.name === 'page.tsx') {
+                pages.push(`/${path.relative(root, entryPath).replace(/\\/g, '/').replace(/\\/page\\.tsx$/, '')}`.replace(/\\/g, '/'));
+              } else if (entry.isFile() && entry.name === 'route.ts' && entryPath.includes(`${path.sep}api${path.sep}`)) {
+                apiRoutes.push(`/${path.relative(root, entryPath).replace(/\\/g, '/').replace(/\\/route\\.ts$/, '')}`.replace(/\\/g, '/'));
+              }
+            }
+          }
+
+          walk(root);
+          pages.sort();
+          apiRoutes.sort();
+
+          fs.writeFileSync('route-inventory.json', JSON.stringify({
+            generatedAt: new Date().toISOString(),
+            pages: { count: pages.length, paths: pages },
+            apiRoutes: { count: apiRoutes.length, paths: apiRoutes },
+          }, null, 2) + '\n');
+          NODE
+
+      - name: Upload route inventory
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: route-inventory
+          path: route-inventory.json
+          if-no-files-found: warn
