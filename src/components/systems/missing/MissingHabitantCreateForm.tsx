@@ -185,7 +185,7 @@ export function MissingHabitantCreateForm({
               MISSING — Edição ZERO
             </span>
             <span className="text-[11px] text-zinc-500">
-              // NOVO REGISTRO PAUTADO DE HABITANTE
+              {"// NOVO REGISTRO PAUTADO DE HABITANTE"}
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-zinc-100">

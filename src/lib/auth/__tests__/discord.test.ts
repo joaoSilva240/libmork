@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
+import { createHmac } from "node:crypto";
 import { createDiscordState, validateDiscordState, validateDiscordProfile } from "../discord";
 
 describe("Discord OAuth State Management", () => {
@@ -31,7 +32,6 @@ describe("Discord OAuth State Management", () => {
     const payload = { nonce: "test", redirect: "/", issuedAt: oldTimestamp };
     const encoded = Buffer.from(JSON.stringify(payload)).toString("base64url");
     
-    const { createHmac } = require("node:crypto");
     const signature = createHmac("sha256", process.env.AUTH_SECRET!)
       .update(encoded)
       .digest("base64url");
@@ -108,7 +108,7 @@ describe("Discord Profile Validation", () => {
       verified: true,
     };
 
-    expect(() => validateDiscordProfile(profile as any)).toThrow("discord_profile_invalid");
+    expect(() => validateDiscordProfile(profile as unknown as Parameters<typeof validateDiscordProfile>[0])).toThrow("discord_profile_invalid");
   });
 
   it("normalizes email to lowercase and trims whitespace", () => {

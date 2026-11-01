@@ -27,16 +27,18 @@ export function WindowPortal({
   const [portalRoot, setPortalRoot] = useState<HTMLDivElement | null>(null);
   
   const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
   const onBlockedRef = useRef(onBlocked);
-  onBlockedRef.current = onBlocked;
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+    onBlockedRef.current = onBlocked;
+  }, [onClose, onBlocked]);
 
   useEffect(() => {
     if (!isOpen) {
       if (windowRef.current && !windowRef.current.closed) windowRef.current.close();
       windowRef.current = null;
       rootRef.current = null;
-      setPortalRoot(null);
       return;
     }
 

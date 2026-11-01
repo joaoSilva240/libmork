@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 export type MasterScreenConfig = {
   showRoster: boolean;
@@ -36,23 +36,16 @@ export function sanitizeMasterScreenConfig(value: unknown): MasterScreenConfig {
 }
 
 export function useMasterScreenConfig() {
-  const [config, setConfig] = useState<MasterScreenConfig>({ ...DEFAULT_MASTER_SCREEN_CONFIG });
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
+  const [config, setConfig] = useState<MasterScreenConfig>(() => {
+    if (typeof window === "undefined") return { ...DEFAULT_MASTER_SCREEN_CONFIG };
     try {
-      const stored = typeof window !== "undefined" ? window.localStorage.getItem(masterScreenConfigKey) : null;
-      if (stored) {
-        setConfig(sanitizeMasterScreenConfig(JSON.parse(stored)));
-      } else {
-        setConfig({ ...DEFAULT_MASTER_SCREEN_CONFIG });
-      }
+      const stored = window.localStorage.getItem(masterScreenConfigKey);
+      return stored ? sanitizeMasterScreenConfig(JSON.parse(stored)) : { ...DEFAULT_MASTER_SCREEN_CONFIG };
     } catch {
-      setConfig({ ...DEFAULT_MASTER_SCREEN_CONFIG });
-    } finally {
-      setIsLoaded(true);
+      return { ...DEFAULT_MASTER_SCREEN_CONFIG };
     }
-  }, []);
+  });
+  const [isLoaded] = useState(true);
 
   const updateConfig = useCallback(
     (patch: Partial<MasterScreenConfig>) => {

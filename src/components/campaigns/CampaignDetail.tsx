@@ -245,7 +245,7 @@ export function CampaignDetail() {
             )}
             {isMissing ? (
               <span className="shrink-0 rounded bg-rose-950/90 border border-rose-800 px-2 py-0.5 text-[10px] text-rose-300 font-bold uppercase tracking-wider font-mono">
-                <span>MISSING — Edição ZERO</span> // ARQUIVO CONFIDENCIAL
+                <span>MISSING — Edição ZERO</span> {/* ARQUIVO CONFIDENCIAL */}
               </span>
             ) : (
               <span className="hidden sm:inline-flex rounded bg-purple-950/80 border border-purple-800/50 px-2 py-0.5 text-[10px] text-purple-300 font-medium">
