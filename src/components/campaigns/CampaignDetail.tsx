@@ -12,6 +12,7 @@ import { SessionLog } from "@/components/campaigns/SessionLog";
 import { MissingSessionLog } from "@/components/systems/missing/MissingSessionLog";
 import { ContentOverlay } from "@/components/campaigns/ContentOverlay";
 import { WorldOverlay } from "@/components/campaigns/WorldOverlay";
+import { useMasterScreenConfig } from "@/hooks/useMasterScreenConfig";
 
 export function CampaignDetail() {
   const params = useParams<{ id: string }>();
@@ -34,6 +35,8 @@ export function CampaignDetail() {
   const [rosterVersion, setRosterVersion] = useState(0);
   const [isMesaPopped, setIsMesaPopped] = useState(false);
   const [popupBlockedWarning, setPopupBlockedWarning] = useState(false);
+
+  const { config: screenConfig, updateConfig: updateScreenConfig, resetConfig: resetScreenConfig } = useMasterScreenConfig();
 
   const loadWorlds = useCallback(async () => {
     const requestId = ++worldsRequestId.current;
@@ -268,11 +271,19 @@ export function CampaignDetail() {
         </div>
       )}
 
-      <div className={`flex-1 grid gap-2.5 overflow-hidden min-h-0 ${isMesaPopped ? "lg:grid-cols-[1fr_1fr]" : "lg:grid-cols-[220px_minmax(0,1fr)_240px] xl:grid-cols-[240px_minmax(0,1fr)_260px]"}`}>
+      <div className={`flex-1 grid gap-2.5 overflow-hidden min-h-0 ${
+        isMesaPopped
+          ? screenConfig.showSessionLog
+            ? "lg:grid-cols-[1fr_1fr]"
+            : "lg:grid-cols-[1fr]"
+          : screenConfig.showSessionLog
+            ? "lg:grid-cols-[220px_minmax(0,1fr)_240px] xl:grid-cols-[240px_minmax(0,1fr)_260px]"
+            : "lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)]"
+      }`}>
         {/* ===== Coluna esquerda — Gestão ===== */}
         <div className="space-y-3 overflow-y-auto min-h-0">
-          {!isMissing && (
-            <div className="rounded-lg border border-gray-800 bg-gray-900 p-3">
+           {!isMissing && (
+             <div className="rounded-lg border border-gray-800 bg-gray-900 p-3">
               <button
                 onClick={() => setShowContentOverlay(true)}
                 className="w-full rounded-lg bg-purple-600 px-3 py-2 text-sm font-semibold text-white hover:bg-purple-700"
@@ -452,18 +463,24 @@ export function CampaignDetail() {
               onWorldSelected={setSelectedWorldId}
               onTogglePopOut={() => setIsMesaPopped(true)}
               rulesEngine={campaign.rulesEngine}
+              showRoster={screenConfig.showRoster}
+              showCanvas={screenConfig.showCanvas}
+              showMap={screenConfig.showMap}
+              onResetConfig={resetScreenConfig}
             />
           </div>
         )}
 
         {/* ===== Coluna direita — Log da sessão ===== */}
-        <div className="flex flex-col h-full max-h-full min-h-0 overflow-hidden">
-          {isMissing ? (
-            <MissingSessionLog campaignId={campaign.id} className="h-full max-h-full min-h-0" />
-          ) : (
-            <SessionLog campaignId={campaign.id} />
-          )}
-        </div>
+        {screenConfig.showSessionLog && (
+          <div className="flex flex-col h-full max-h-full min-h-0 overflow-hidden">
+            {isMissing ? (
+              <MissingSessionLog campaignId={campaign.id} className="h-full max-h-full min-h-0" />
+            ) : (
+              <SessionLog campaignId={campaign.id} />
+            )}
+          </div>
+        )}
       </div>
 
       {showContentOverlay && (
@@ -507,6 +524,10 @@ export function CampaignDetail() {
             isPoppedOut={true}
             onTogglePopOut={() => setIsMesaPopped(false)}
             rulesEngine={campaign.rulesEngine}
+            showRoster={screenConfig.showRoster}
+            showCanvas={screenConfig.showCanvas}
+            showMap={screenConfig.showMap}
+            onResetConfig={resetScreenConfig}
           />
         </div>
       </WindowPortal>
