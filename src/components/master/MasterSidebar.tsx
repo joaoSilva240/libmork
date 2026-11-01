@@ -37,6 +37,11 @@ export function MasterSidebar() {
       href: "/master/library",
       icon: "📚",
     },
+    {
+      label: "Configurações",
+      href: "/master/settings",
+      icon: "⚙️",
+    },
   ];
 
   return (
