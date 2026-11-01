@@ -17,6 +17,7 @@ import {
   uniqueIndex,
   index,
   real,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 
 // =============================================================================
@@ -33,6 +34,10 @@ export const users = pgTable("users", {
   passwordHash: varchar("password_hash", { length: 255 }),
   oauthProvider: varchar("oauth_provider", { length: 20 }).notNull().default("local"),
   displayName: varchar("display_name", { length: 100 }).notNull(),
+  masterName: varchar("master_name", { length: 100 }),
+  masterAvatar: varchar("master_avatar", { length: 500 }),
+  masterBio: text("master_bio"),
+  masterBannerUrl: varchar("master_banner_url", { length: 500 }),
   role: varchar("role", { length: 20 }).notNull().default("player"),
   shadowPoints: integer("shadow_points").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -806,6 +811,10 @@ export const usersRelations = relations(users, ({ many }) => ({
   campaignInvites: many(campaignInvites),
   missingHabitants: many(missingHabitants),
   missingActionLedger: many(missingActionLedger),
+  communityPosts: many(communityPosts),
+  communityLikes: many(communityLikes),
+  communityComments: many(communityComments),
+  communityClones: many(communityClones),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -1080,5 +1089,160 @@ export const missingActionLedgerRelations = relations(missingActionLedger, ({ on
   }),
 }));
 
+// =============================================================================
+// COMUNIDADE (ISSUE #46 — Modelo Híbrido Relacional + Snapshot JSON)
+// =============================================================================
+
+/**
+ * COMMUNITY_POSTS — Posts compartilhados na comunidade.
+ * Armazena snapshots JSON congelados do conteúdo compartilhado (spell, item, class, npc, world, campaign).
+ */
+export const communityPosts = pgTable("community_posts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  authorId: uuid("author_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 150 }).notNull(),
+  description: text("description"),
+  contentType: varchar("content_type", { length: 30 }).notNull(), // "spell" | "item" | "class" | "npc" | "world" | "campaign"
+  contentId: uuid("content_id"), // ID opcional de referência original
+  tags: jsonb("tags").notNull().default([]), // string[]
+  payload: jsonb("payload").notNull(), // Snapshot JSON congelado da entidade
+  clonesCount: integer("clones_count").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+/**
+ * COMMUNITY_LIKES — Curtidas em posts da comunidade.
+ * Chave primária composta: postId + userId (um usuário curte um post no máximo uma vez).
+ */
+export const communityLikes = pgTable(
+  "community_likes",
+  {
+    postId: uuid("post_id")
+      .notNull()
+      .references(() => communityPosts.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.postId, table.userId] }),
+  })
+);
+
+/**
+ * COMMUNITY_COMMENTS — Comentários em posts da comunidade.
+ */
+export const communityComments = pgTable("community_comments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  postId: uuid("post_id")
+    .notNull()
+    .references(() => communityPosts.id, { onDelete: "cascade" }),
+  authorId: uuid("author_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  commentType: varchar("comment_type", { length: 20 }).notNull().default("text"),
+  attachmentContentType: varchar("attachment_content_type", { length: 50 }),
+  attachmentTitle: varchar("attachment_title", { length: 255 }),
+  attachmentPayload: jsonb("attachment_payload"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+/**
+ * COMMUNITY_CLONES — Rastreamento de clonagens de posts da comunidade.
+ */
+export const communityClones = pgTable("community_clones", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  postId: uuid("post_id")
+    .notNull()
+    .references(() => communityPosts.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  clonedAt: timestamp("cloned_at").notNull().defaultNow(),
+});
+
+/**
+ * COMMUNITY_POST_VOTES — Votos em posts da comunidade (Reddit style: 1 ou -1).
+ * Chave primária composta: postId + userId.
+ */
+export const communityPostVotes = pgTable(
+  "community_post_votes",
+  {
+    postId: uuid("post_id")
+      .notNull()
+      .references(() => communityPosts.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    value: integer("value").notNull(), // 1 para upvote, -1 para downvote
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.postId, table.userId] }),
+  })
+);
+
+// Relations da Comunidade
+export const communityPostsRelations = relations(communityPosts, ({ one, many }) => ({
+  author: one(users, {
+    fields: [communityPosts.authorId],
+    references: [users.id],
+  }),
+  likes: many(communityLikes),
+  votes: many(communityPostVotes),
+  comments: many(communityComments),
+  clones: many(communityClones),
+}));
+
+export const communityLikesRelations = relations(communityLikes, ({ one }) => ({
+  post: one(communityPosts, {
+    fields: [communityLikes.postId],
+    references: [communityPosts.id],
+  }),
+  user: one(users, {
+    fields: [communityLikes.userId],
+    references: [users.id],
+  }),
+}));
+
+export const communityPostVotesRelations = relations(communityPostVotes, ({ one }) => ({
+  post: one(communityPosts, {
+    fields: [communityPostVotes.postId],
+    references: [communityPosts.id],
+  }),
+  user: one(users, {
+    fields: [communityPostVotes.userId],
+    references: [users.id],
+  }),
+}));
+
+export const communityCommentsRelations = relations(communityComments, ({ one }) => ({
+  post: one(communityPosts, {
+    fields: [communityComments.postId],
+    references: [communityPosts.id],
+  }),
+  author: one(users, {
+    fields: [communityComments.authorId],
+    references: [users.id],
+  }),
+}));
+
+export const communityClonesRelations = relations(communityClones, ({ one }) => ({
+  post: one(communityPosts, {
+    fields: [communityClones.postId],
+    references: [communityPosts.id],
+  }),
+  user: one(users, {
+    fields: [communityClones.userId],
+    references: [users.id],
+  }),
+}));
 
 

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoutButton } from "@/components/auth/LogoutButton";
+import { Dices, Library, Globe2, Settings } from "lucide-react";
 
 const STORAGE_KEY = "libmork-master-sidebar-collapsed";
 
@@ -30,17 +31,22 @@ export function MasterSidebar() {
     {
       label: "Campanhas",
       href: "/master",
-      icon: "🎲",
+      Icon: Dices,
     },
     {
       label: "Biblioteca",
       href: "/master/library",
-      icon: "📚",
+      Icon: Library,
+    },
+    {
+      label: "Comunidade",
+      href: "/master/community",
+      Icon: Globe2,
     },
     {
       label: "Configurações",
       href: "/master/settings",
-      icon: "⚙️",
+      Icon: Settings,
     },
   ];
 
@@ -72,6 +78,7 @@ export function MasterSidebar() {
         <nav className="flex flex-col gap-1 p-2">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
+            const Icon = item.Icon;
             return (
               <Link
                 key={item.href}
@@ -81,9 +88,10 @@ export function MasterSidebar() {
                     ? "bg-gray-800 text-white font-medium"
                     : "hover:bg-gray-900 text-gray-400 hover:text-gray-200"
                 } ${isCollapsed ? "justify-center px-0" : ""}`}
-                title={isCollapsed ? item.label : undefined}
+                title={item.label}
+                aria-label={item.label}
               >
-                <span className="text-xl leading-none">{item.icon}</span>
+                <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
                 {!isCollapsed && <span className="truncate">{item.label}</span>}
               </Link>
             );
