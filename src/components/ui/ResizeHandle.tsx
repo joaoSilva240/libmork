@@ -2,10 +2,13 @@
 
 import { useRef, useState, type PointerEvent } from "react";
 
+export type ResizeHandlePosition = "top-left" | "top-right" | "bottom-left" | "bottom-right";
+
 export interface ResizeHandleProps {
   onResize: (deltaX: number, deltaY: number) => void;
   onResizeEnd?: () => void;
   direction?: "both" | "horizontal" | "vertical";
+  position?: ResizeHandlePosition;
   className?: string;
   title?: string;
   "data-testid"?: string;
@@ -15,6 +18,7 @@ export function ResizeHandle({
   onResize,
   onResizeEnd,
   direction = "both",
+  position = "bottom-right",
   className = "",
   title = "Redimensionar",
   "data-testid": testId,
@@ -29,6 +33,15 @@ export function ResizeHandle({
       : direction === "vertical"
         ? "cursor-ns-resize"
         : "cursor-se-resize";
+
+  const positionClass =
+    position === "top-left"
+      ? "top-1 left-1"
+      : position === "top-right"
+        ? "top-1 right-1"
+        : position === "bottom-left"
+          ? "bottom-1 left-1"
+          : "bottom-1 right-1";
 
   const handlePointerDown = (event: PointerEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -61,19 +74,28 @@ export function ResizeHandle({
     onResizeEnd?.();
   };
 
+  const svgRotation =
+    position === "top-left"
+      ? "rotate-180"
+      : position === "bottom-left"
+        ? "rotate-90"
+        : position === "top-right"
+          ? "rotate-270"
+          : "";
+
   return (
     <button
       type="button"
       aria-label={title}
       title={title}
       data-testid={testId}
-      className={`absolute bottom-1 right-1 z-10 touch-none select-none p-1 text-zinc-500 transition-colors hover:text-zinc-200 active:text-purple-400 ${cursor} ${isResizing ? "text-purple-400" : ""} ${className}`}
+      className={`absolute z-10 touch-none select-none p-1 text-zinc-500 transition-colors hover:text-zinc-200 active:text-purple-400 ${cursor} ${isResizing ? "text-purple-400" : ""} ${positionClass} ${className}`}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={finishResize}
       onPointerCancel={finishResize}
     >
-      <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 16 16" fill="none">
+      <svg aria-hidden="true" className={`h-4 w-4 ${svgRotation}`} viewBox="0 0 16 16" fill="none">
         <path d="M5 11h6M8 14h3M11 8v3" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
       </svg>
     </button>

@@ -14,6 +14,23 @@ describe("ResizeHandle", () => {
     expect(handle.querySelector("svg")).toBeInTheDocument();
   });
 
+  it.each([
+    ["top-left", "absolute top-1 left-1"],
+    ["top-right", "absolute top-1 right-1"],
+    ["bottom-left", "absolute bottom-1 left-1"],
+    ["bottom-right", "absolute bottom-1 right-1"],
+  ] as const)("positions the handle at %s", (position, expectedClass) => {
+    render(<ResizeHandle position={position} onResize={vi.fn()} />);
+    const handle = screen.getByRole("button");
+    expect(handle).toHaveClass(expectedClass);
+  });
+
+  it("defaults position to bottom-right when not specified", () => {
+    render(<ResizeHandle onResize={vi.fn()} />);
+    const handle = screen.getByRole("button");
+    expect(handle).toHaveClass("absolute bottom-1 right-1");
+  });
+
   it("respects title, className, and data-testid", () => {
     render(<ResizeHandle onResize={vi.fn()} title="Resize panel" className="custom" data-testid="resize" />);
     const handle = screen.getByTestId("resize");
