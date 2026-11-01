@@ -159,4 +159,36 @@ describe("CharacterCard", () => {
     expect(overlay).toBeInTheDocument();
     expect(overlay).toHaveClass("absolute", "inset-0", "pointer-events-none");
   });
+
+  it("renderiza o gráfico spider de atributos com acessibilidade e polígono de dados", () => {
+    const { container } = render(<CharacterCard character={mockCharacter} />);
+
+    const chart = screen.getByRole("img", { name: "Gráfico de atributos do personagem" });
+    expect(chart).toBeInTheDocument();
+    expect(chart).toHaveClass("pointer-events-none");
+
+    const characterPolygon = chart.querySelector("polygon[fill='url(#character-spider-gradient)']");
+    expect(characterPolygon).toBeInTheDocument();
+    expect(characterPolygon).toHaveAttribute("points");
+
+    const circles = chart.querySelectorAll("circle");
+    expect(circles).toHaveLength(6);
+  });
+
+  it("renderiza o gráfico spider utilizando valores padrão para atributos ausentes", () => {
+    const partialAttributesCharacter: Character = {
+      ...mockCharacter,
+      attributes: {
+        forca: 18,
+      } as any,
+    };
+    render(<CharacterCard character={partialAttributesCharacter} />);
+
+    const chart = screen.getByRole("img", { name: "Gráfico de atributos do personagem" });
+    expect(chart).toBeInTheDocument();
+
+    const characterPolygon = chart.querySelector("polygon[fill='url(#character-spider-gradient)']");
+    expect(characterPolygon).toBeInTheDocument();
+    expect(characterPolygon).toHaveAttribute("points");
+  });
 });

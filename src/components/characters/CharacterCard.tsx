@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Character } from "@/types";
 import { getDerivedStats } from "@/lib/engine/attributes";
+import { CharacterSpiderChart } from "@/components/characters/CharacterSpiderChart";
 
 export function CharacterCard({ character }: { character: Character }) {
   const stats = getDerivedStats(character.attributes, character.level);
@@ -38,9 +39,18 @@ export function CharacterCard({ character }: { character: Character }) {
             <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${status.className}`}>{status.label}</span>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <span className="rounded border border-red-900/60 bg-gray-950/70 px-2 py-1 text-red-200">❤️ HP {character.hitPointsCurrent}/{character.hitPointsMax}</span>
-          <span className="rounded border border-blue-900/60 bg-gray-950/70 px-2 py-1 text-blue-200">✦ Mana {character.manaPointsCurrent}/{character.manaPointsMax}</span>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-1 flex-col gap-2 text-xs">
+            <span className="rounded border border-red-900/60 bg-gray-950/70 px-2.5 py-1.5 text-red-200 font-medium">
+              ❤️ HP {character.hitPointsCurrent}/{character.hitPointsMax}
+            </span>
+            <span className="rounded border border-blue-900/60 bg-gray-950/70 px-2.5 py-1.5 text-blue-200 font-medium">
+              ✦ Mana {character.manaPointsCurrent}/{character.manaPointsMax}
+            </span>
+          </div>
+          <div className="flex shrink-0 items-center justify-center">
+            <CharacterSpiderChart attributes={character.attributes} size={90} />
+          </div>
         </div>
         <div className="flex flex-wrap gap-2 border-t border-secondary-border/60 pt-3 text-xs text-gray-300">
           {character.campaignName && <span className="rounded bg-dominant-dark/90 px-2 py-1 text-purple-200">🏰 Campanha: {character.campaignName}</span>}
