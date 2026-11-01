@@ -25,6 +25,11 @@ export function WindowPortal({
   const windowRef = useRef<Window | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [portalRoot, setPortalRoot] = useState<HTMLDivElement | null>(null);
+  
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const onBlockedRef = useRef(onBlocked);
+  onBlockedRef.current = onBlocked;
 
   useEffect(() => {
     if (!isOpen) {
@@ -42,7 +47,7 @@ export function WindowPortal({
     const features = `popup=yes,width=${width},height=${height},noopener=no`;
     const externalWindow = window.open("", "libmork-mesa", features);
     if (!externalWindow || externalWindow.closed) {
-      onBlocked?.();
+      onBlockedRef.current?.();
       return;
     }
 
@@ -58,11 +63,11 @@ export function WindowPortal({
     rootRef.current = root;
     setPortalRoot(root);
 
-    const handleClose = () => onClose();
+    const handleClose = () => onCloseRef.current();
     externalWindow.addEventListener("beforeunload", handleClose);
     externalWindow.addEventListener("pagehide", handleClose);
     const timer = window.setInterval(() => {
-      if (externalWindow.closed) onClose();
+      if (externalWindow.closed) onCloseRef.current();
     }, 500);
 
     return () => {
@@ -72,8 +77,9 @@ export function WindowPortal({
       if (!externalWindow.closed) externalWindow.close();
       windowRef.current = null;
       rootRef.current = null;
+      setPortalRoot(null);
     };
-  }, [height, isOpen, onBlocked, onClose, title, width]);
+  }, [height, isOpen, title, width]);
 
   return portalRoot ? createPortal(children, portalRoot) : null;
 }

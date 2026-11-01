@@ -38,6 +38,15 @@ export function CampaignDetail() {
 
   const { config: screenConfig, updateConfig: updateScreenConfig, resetConfig: resetScreenConfig } = useMasterScreenConfig();
 
+  const handleCloseMesaPopOut = useCallback(() => {
+    setIsMesaPopped(false);
+  }, []);
+
+  const handleBlockedMesaPopOut = useCallback(() => {
+    setIsMesaPopped(false);
+    setPopupBlockedWarning(true);
+  }, []);
+
   const loadWorlds = useCallback(async () => {
     const requestId = ++worldsRequestId.current;
     try {
@@ -506,14 +515,11 @@ export function CampaignDetail() {
 
       <WindowPortal
         isOpen={isMesaPopped}
-        onClose={() => setIsMesaPopped(false)}
+        onClose={handleCloseMesaPopOut}
         title={`Mesa — ${campaign.name}`}
         width={1280}
         height={800}
-        onBlocked={() => {
-          setIsMesaPopped(false);
-          setPopupBlockedWarning(true);
-        }}
+        onBlocked={handleBlockedMesaPopOut}
       >
         <div className="flex flex-col h-full w-full overflow-hidden bg-gray-950 p-2.5">
           <MasterRoster
