@@ -47,6 +47,11 @@ vi.mock("@/lib/db/schema", () => ({
     id: "communityComments.id",
     postId: "communityComments.postId",
   },
+  communityPostVotes: {
+    postId: "communityPostVotes.postId",
+    userId: "communityPostVotes.userId",
+    value: "communityPostVotes.value",
+  },
   communityClones: {
     id: "communityClones.id",
     postId: "communityClones.postId",
@@ -289,6 +294,10 @@ describe("Master Profile API Routes", () => {
           likesCount: 5,
           commentsCount: 2,
           isLikedByMe: true,
+          upvotes: 4,
+          downvotes: 1,
+          score: 3,
+          userVote: 1,
         },
       ];
 
@@ -314,6 +323,10 @@ describe("Master Profile API Routes", () => {
       expect(data.data).toHaveLength(1);
       expect(data.data[0].title).toBe("Bola de Fogo");
       expect(data.data[0].likesCount).toBe(5);
+      expect(data.data[0].upvotes).toBe(4);
+      expect(data.data[0].downvotes).toBe(1);
+      expect(data.data[0].score).toBe(3);
+      expect(data.data[0].userVote).toBe(1);
       expect(data.page).toBe(1);
       expect(data.limit).toBe(10);
     });

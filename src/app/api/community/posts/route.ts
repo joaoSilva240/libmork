@@ -24,14 +24,45 @@ export async function GET(request: NextRequest) {
   const filters = [type && contentTypes.includes(type as (typeof contentTypes)[number]) ? eq(communityPosts.contentType, type) : undefined,
     search ? or(ilike(communityPosts.title, `%${search}%`), ilike(communityPosts.description, `%${search}%`), sql`${communityPosts.tags}::text ILIKE ${`%${search}%`}`) : undefined].filter(Boolean);
   
+  const scoreExpr = sql<number>`COALESCE(SUM(${communityPostVotes.value}), 0)`;
   let orderByClause;
   if (sort === "top") {
-    orderByClause = desc(sql`COALESCE(SUM(${communityPostVotes.value}), 0)`);
+    orderByClause = desc(scoreExpr);
   } else {
     orderByClause = desc(communityPosts.createdAt);
   }
 
-  const rows = await db.select({ post: communityPosts, author: { id: users.id, displayName: users.displayName, masterName: users.masterName, masterAvatar: users.masterAvatar }, likesCount: sql<number>`count(distinct ${communityLikes.userId})`, commentsCount: sql<number>`count(distinct ${communityComments.id})`, isLikedByMe: session ? sql<boolean>`bool_or(${communityLikes.userId} = ${session.user.id})` : sql<boolean>`false`, upvotes: sql<number>`COALESCE(SUM(CASE WHEN ${communityPostVotes.value} = 1 THEN 1 ELSE 0 END), 0)`, downvotes: sql<number>`COALESCE(SUM(CASE WHEN ${communityPostVotes.value} = -1 THEN 1 ELSE 0 END), 0)`, score: sql<number>`COALESCE(SUM(${communityPostVotes.value}), 0)`, userVote: session ? sql<number>`MAX(CASE WHEN ${communityPostVotes.userId} = ${session.user.id} THEN ${communityPostVotes.value} ELSE NULL END)` : sql<number>`NULL` }).from(communityPosts).innerJoin(users, eq(users.id, communityPosts.authorId)).leftJoin(communityLikes, eq(communityLikes.postId, communityPosts.id)).leftJoin(communityComments, eq(communityComments.postId, communityPosts.id)).leftJoin(communityPostVotes, eq(communityPostVotes.postId, communityPosts.id)).where(and(...filters)).groupBy(communityPosts.id, users.id).orderBy(orderByClause).limit(limit).offset((page - 1) * limit);
+  const rows = await db
+    .select({
+      post: communityPosts,
+      author: {
+        id: users.id,
+        displayName: users.displayName,
+        masterName: users.masterName,
+        masterAvatar: users.masterAvatar,
+      },
+      likesCount: sql<number>`count(distinct ${communityLikes.userId})`,
+      commentsCount: sql<number>`count(distinct ${communityComments.id})`,
+      isLikedByMe: session
+        ? sql<boolean>`bool_or(${communityLikes.userId} = ${session.user.id})`
+        : sql<boolean>`false`,
+      upvotes: sql<number>`COALESCE(SUM(CASE WHEN ${communityPostVotes.value} = 1 THEN 1 ELSE 0 END), 0)`,
+      downvotes: sql<number>`COALESCE(SUM(CASE WHEN ${communityPostVotes.value} = -1 THEN 1 ELSE 0 END), 0)`,
+      score: scoreExpr,
+      userVote: session
+        ? sql<number>`MAX(CASE WHEN ${communityPostVotes.userId} = ${session.user.id} THEN ${communityPostVotes.value} ELSE NULL END)`
+        : sql<number>`NULL`,
+    })
+    .from(communityPosts)
+    .innerJoin(users, eq(users.id, communityPosts.authorId))
+    .leftJoin(communityLikes, eq(communityLikes.postId, communityPosts.id))
+    .leftJoin(communityComments, eq(communityComments.postId, communityPosts.id))
+    .leftJoin(communityPostVotes, eq(communityPostVotes.postId, communityPosts.id))
+    .where(and(...filters))
+    .groupBy(communityPosts.id, users.id)
+    .orderBy(orderByClause)
+    .limit(limit)
+    .offset((page - 1) * limit);
   return NextResponse.json({ success: true, data: rows.map(({ post, author, likesCount, commentsCount, isLikedByMe, upvotes, downvotes, score, userVote }) => ({ ...post, author, likesCount: Number(likesCount), commentsCount: Number(commentsCount), isLikedByMe: Boolean(isLikedByMe), upvotes: Number(upvotes), downvotes: Number(downvotes), score: Number(score), userVote: userVote !== null ? Number(userVote) : null })), page, limit });
   } catch (error) {
     console.error("Erro ao buscar posts da comunidade:", error);

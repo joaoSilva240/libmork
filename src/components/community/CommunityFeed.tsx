@@ -52,6 +52,7 @@ export default function CommunityFeed({ currentUser }: CommunityFeedProps) {
         const query = new URLSearchParams({
           page: String(targetPage),
           limit: "12",
+          sort: currentFilters.sort,
         });
 
         if (currentFilters.type) {
@@ -85,7 +86,7 @@ export default function CommunityFeed({ currentUser }: CommunityFeedProps) {
 
   useEffect(() => {
     void fetchPosts(1, filters);
-  }, [filters.type, filters.search, fetchPosts]);
+  }, [filters.type, filters.search, filters.sort, fetchPosts]);
 
   const handleFilterChange = (newFilters: typeof filters) => {
     setFilters(newFilters);
@@ -100,18 +101,16 @@ export default function CommunityFeed({ currentUser }: CommunityFeedProps) {
     }
   };
 
-  // Ordenação client-side
+  // Ordenação client-side para "popular" e "cloned" apenas
   const sortedPosts = useMemo(() => {
-    return [...posts].sort((a, b) => {
-      if (filters.sort === "popular") {
-        return b.likesCount - a.likesCount;
-      }
-      if (filters.sort === "cloned") {
-        return b.clonesCount - a.clonesCount;
-      }
-      // "recent" (padrão)
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
+    if (filters.sort === "popular") {
+      return [...posts].sort((a, b) => b.likesCount - a.likesCount);
+    }
+    if (filters.sort === "cloned") {
+      return [...posts].sort((a, b) => b.clonesCount - a.clonesCount);
+    }
+    // Para "top" e "recent", confiar na ordenação do servidor
+    return posts;
   }, [posts, filters.sort]);
 
   return (

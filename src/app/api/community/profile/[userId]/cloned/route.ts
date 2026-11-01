@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { communityClones, communityComments, communityLikes, communityPosts, users } from "@/lib/db/schema";
+import { communityClones, communityComments, communityLikes, communityPostVotes, communityPosts, users } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 
 export async function GET(
@@ -30,12 +30,17 @@ export async function GET(
         isLikedByMe: session
           ? sql<boolean>`bool_or(${communityLikes.userId} = ${session.user.id})`
           : sql<boolean>`false`,
+        upvotes: sql<number>`COALESCE(SUM(CASE WHEN ${communityPostVotes.value} = 1 THEN 1 ELSE 0 END), 0)`,
+        downvotes: sql<number>`COALESCE(SUM(CASE WHEN ${communityPostVotes.value} = -1 THEN 1 ELSE 0 END), 0)`,
+        score: sql<number>`COALESCE(SUM(${communityPostVotes.value}), 0)`,
+        userVote: session ? sql<number>`MAX(CASE WHEN ${communityPostVotes.userId} = ${session.user.id} THEN ${communityPostVotes.value} ELSE NULL END)` : sql<number>`NULL`,
       })
       .from(communityClones)
       .innerJoin(communityPosts, eq(communityPosts.id, communityClones.postId))
       .innerJoin(users, eq(users.id, communityPosts.authorId))
       .leftJoin(communityLikes, eq(communityLikes.postId, communityPosts.id))
       .leftJoin(communityComments, eq(communityComments.postId, communityPosts.id))
+      .leftJoin(communityPostVotes, eq(communityPostVotes.postId, communityPosts.id))
       .where(eq(communityClones.userId, userId))
       .groupBy(communityPosts.id, users.id, communityClones.clonedAt)
       .orderBy(desc(communityClones.clonedAt))
@@ -44,14 +49,31 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      data: rows.map(({ post, author, likesCount, commentsCount, isLikedByMe, clonedAt }) => ({
-        ...post,
-        author,
-        clonedAt,
-        likesCount: Number(likesCount),
-        commentsCount: Number(commentsCount),
-        isLikedByMe: Boolean(isLikedByMe),
-      })),
+      data: rows.map(
+        ({
+          post,
+          author,
+          likesCount,
+          commentsCount,
+          isLikedByMe,
+          clonedAt,
+          upvotes,
+          downvotes,
+          score,
+          userVote,
+        }) => ({
+          ...post,
+          author,
+          clonedAt,
+          likesCount: Number(likesCount),
+          commentsCount: Number(commentsCount),
+          isLikedByMe: Boolean(isLikedByMe),
+          upvotes: Number(upvotes),
+          downvotes: Number(downvotes),
+          score: Number(score),
+          userVote: userVote !== null ? Number(userVote) : null,
+        })
+      ),
       page,
       limit,
     });
