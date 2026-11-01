@@ -69,7 +69,7 @@ describe("PlayerDashboard - Import Character Modal", () => {
     render(<PlayerDashboard />);
 
     // Switch to campaigns tab
-    const campaignsTab = screen.getByText("Campanhas");
+    const campaignsTab = screen.getByRole("button", { name: "Campanhas" });
     fireEvent.click(campaignsTab);
 
     // Wait for campaigns tab content to load
@@ -133,7 +133,7 @@ describe("PlayerDashboard - Import Character Modal", () => {
 
     render(<PlayerDashboard />);
 
-    const campaignsTab = screen.getByText("Campanhas");
+    const campaignsTab = screen.getByRole("button", { name: "Campanhas" });
     fireEvent.click(campaignsTab);
 
     await waitFor(() => {
@@ -231,7 +231,7 @@ describe("PlayerDashboard - Import Character Modal", () => {
 
     render(<PlayerDashboard />);
 
-    const campaignsTab = screen.getByText("Campanhas");
+    const campaignsTab = screen.getByRole("button", { name: "Campanhas" });
     fireEvent.click(campaignsTab);
 
     await waitFor(() => {
@@ -303,7 +303,7 @@ describe("PlayerDashboard - Import Character Modal", () => {
 
     render(<PlayerDashboard />);
 
-    const campaignsTab = screen.getByText("Campanhas");
+    const campaignsTab = screen.getByRole("button", { name: "Campanhas" });
     fireEvent.click(campaignsTab);
 
     await waitFor(() => {
@@ -366,7 +366,7 @@ describe("PlayerDashboard - Import Character Modal", () => {
 
     render(<PlayerDashboard />);
 
-    const campaignsTab = screen.getByText("Campanhas");
+    const campaignsTab = screen.getByRole("button", { name: "Campanhas" });
     fireEvent.click(campaignsTab);
 
     await waitFor(() => {
@@ -447,7 +447,7 @@ describe("PlayerDashboard - Import Character Modal", () => {
     render(<PlayerDashboard />);
 
     // Navegar para a aba de Campanhas
-    const campaignsTab = screen.getByText("Campanhas");
+    const campaignsTab = screen.getByRole("button", { name: "Campanhas" });
     fireEvent.click(campaignsTab);
 
     await waitFor(() => {
@@ -526,7 +526,7 @@ describe("PlayerDashboard - Import Character Modal", () => {
 
     render(<PlayerDashboard />);
 
-    const campaignsTab = screen.getByText("Campanhas");
+    const campaignsTab = screen.getByRole("button", { name: "Campanhas" });
     fireEvent.click(campaignsTab);
 
     await waitFor(() => {

@@ -93,7 +93,7 @@ describe("PlayerDashboard - MISSING Campaign Import and Sheet Integration", () =
     render(<PlayerDashboard />);
 
     // Alternar para aba de Campanhas
-    const campaignsTab = screen.getByText("Campanhas");
+    const campaignsTab = screen.getByRole("button", { name: "Campanhas" });
     fireEvent.click(campaignsTab);
 
     await waitFor(() => {
@@ -157,7 +157,7 @@ describe("PlayerDashboard - MISSING Campaign Import and Sheet Integration", () =
 
     render(<PlayerDashboard />);
 
-    const campaignsTab = screen.getByText("Campanhas");
+    const campaignsTab = screen.getByRole("button", { name: "Campanhas" });
     fireEvent.click(campaignsTab);
 
     await waitFor(() => {
@@ -258,7 +258,7 @@ describe("PlayerDashboard - MISSING Campaign Import and Sheet Integration", () =
 
     render(<PlayerDashboard />);
 
-    const campaignsTab = screen.getByText("Campanhas");
+    const campaignsTab = screen.getByRole("button", { name: "Campanhas" });
     fireEvent.click(campaignsTab);
 
     await waitFor(() => {
@@ -352,7 +352,7 @@ describe("PlayerDashboard - MISSING Campaign Import and Sheet Integration", () =
 
     render(<PlayerDashboard />);
 
-    const campaignsTab = screen.getByText("Campanhas");
+    const campaignsTab = screen.getByRole("button", { name: "Campanhas" });
     fireEvent.click(campaignsTab);
 
     await waitFor(() => {
@@ -422,7 +422,7 @@ describe("PlayerDashboard - MISSING Campaign Import and Sheet Integration", () =
 
     render(<PlayerDashboard />);
 
-    const campaignsTab = screen.getByText("Campanhas");
+    const campaignsTab = screen.getByRole("button", { name: "Campanhas" });
     fireEvent.click(campaignsTab);
 
     await waitFor(() => {
