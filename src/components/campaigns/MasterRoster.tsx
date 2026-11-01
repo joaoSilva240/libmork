@@ -41,6 +41,10 @@ type MasterRosterProps = {
   isPoppedOut?: boolean;
   onTogglePopOut?: () => void;
   rulesEngine?: string;
+  showRoster?: boolean;
+  showCanvas?: boolean;
+  showMap?: boolean;
+  onResetConfig?: () => void;
 };
 
 export function MasterRoster({
@@ -50,6 +54,10 @@ export function MasterRoster({
   isPoppedOut = false,
   onTogglePopOut,
   rulesEngine,
+  showRoster = true,
+  showCanvas = true,
+  showMap = true,
+  onResetConfig,
 }: MasterRosterProps) {
   const isMissing = rulesEngine === "missing_zero";
   const { isConnected, presenceList, joinCampaign, subscribeActorStatus, subscribeDiceRoll, subscribeCombatState } = useSocket();
@@ -69,6 +77,11 @@ export function MasterRoster({
   const [showWorldSelector, setShowWorldSelector] = useState(false);
   const [campaignWorldIds, setCampaignWorldIds] = useState<Set<string>>(new Set());
   const [isDragOver, setIsDragOver] = useState(false);
+
+  useEffect(() => {
+    if (!showCanvas && activeCenterView === "canvas" && showMap) setActiveCenterView("map");
+    if (!showMap && activeCenterView === "map" && showCanvas) setActiveCenterView("canvas");
+  }, [showCanvas, showMap, activeCenterView]);
 
   const [deskActors, setDeskActors] = useState<RosterActor[]>(() => {
     if (typeof window === "undefined") return [];
@@ -605,49 +618,57 @@ export function MasterRoster({
           </button>
 
           {/* Alternador de Vista Central: Canva / Mapa */}
-          <div className="flex items-center rounded-lg border border-gray-700 bg-gray-950 p-0.5 text-xs">
-            <button
-              onClick={() => setActiveCenterView("canvas")}
-              className={`flex items-center gap-1 rounded-md px-2 py-0.5 font-medium transition-colors ${
-                activeCenterView === "canvas"
-                  ? isMissing
-                    ? "bg-zinc-800 text-amber-300 font-mono"
-                    : "bg-purple-600 text-white"
-                  : "text-gray-400 hover:text-white"
-              }`}
-              title={isMissing ? "Quadro de Pistas" : "Canva Infinito"}
-            >
-              <span>{isMissing ? "📌" : "🎨"}</span>
-              <span>{isMissing ? "Quadro de Pistas" : "Canva"}</span>
-            </button>
-            <button
-              onClick={() => setActiveCenterView("map")}
-              className={`flex items-center gap-1 rounded-md px-2 py-0.5 font-medium transition-colors ${
-                activeCenterView === "map"
-                  ? isMissing
-                    ? "bg-zinc-800 text-amber-300 font-mono"
-                    : "bg-purple-600 text-white"
-                  : "text-gray-400 hover:text-white"
-              }`}
-              title={isMissing ? "Mapa de Campo" : "Mapa do Mundo"}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-3.5 w-3.5"
-              >
-                <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
-                <line x1="9" y1="3" x2="9" y2="18" />
-                <line x1="15" y1="6" x2="15" y2="21" />
-              </svg>
-              <span>{isMissing ? "Mapa de Campo" : "Mapa"}</span>
-            </button>
-          </div>
+          {(showCanvas || showMap) && (
+            <div className="flex items-center rounded-lg border border-gray-700 bg-gray-950 p-0.5 text-xs">
+              {showCanvas && (
+                <button
+                  type="button"
+                  onClick={() => setActiveCenterView("canvas")}
+                  className={`flex items-center gap-1 rounded-md px-2 py-0.5 font-medium transition-colors ${
+                    activeCenterView === "canvas"
+                      ? isMissing
+                        ? "bg-zinc-800 text-amber-300 font-mono"
+                        : "bg-purple-600 text-white"
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                  title={isMissing ? "Quadro de Pistas" : "Canva Infinito"}
+                >
+                  <span>{isMissing ? "📌" : "🎨"}</span>
+                  <span>{isMissing ? "Quadro de Pistas" : "Canva"}</span>
+                </button>
+              )}
+              {showMap && (
+                <button
+                  type="button"
+                  onClick={() => setActiveCenterView("map")}
+                  className={`flex items-center gap-1 rounded-md px-2 py-0.5 font-medium transition-colors ${
+                    activeCenterView === "map"
+                      ? isMissing
+                        ? "bg-zinc-800 text-amber-300 font-mono"
+                        : "bg-purple-600 text-white"
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                  title={isMissing ? "Mapa de Campo" : "Mapa do Mundo"}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-3.5 w-3.5"
+                  >
+                    <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
+                    <line x1="9" y1="3" x2="9" y2="18" />
+                    <line x1="15" y1="6" x2="15" y2="21" />
+                  </svg>
+                  <span>{isMissing ? "Mapa de Campo" : "Mapa"}</span>
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Status Socket WebSocket em tempo real */}
           <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
@@ -657,7 +678,7 @@ export function MasterRoster({
            {isConnected ? "Ao Vivo" : "Conectando..."}
            </span>
 
-           {onTogglePopOut && (
+           {onTogglePopOut && (isPoppedOut || showRoster) && (
              <button
                onClick={onTogglePopOut}
                className="flex items-center gap-1 rounded-lg border border-gray-700 bg-gray-800 px-2 py-0.5 text-xs font-semibold text-gray-300 hover:bg-gray-700"
@@ -752,7 +773,20 @@ export function MasterRoster({
         className="relative overflow-hidden rounded-lg border border-gray-800 bg-gray-950 mb-1.5"
         style={{ height: `${canvasPanel.height}px` }}
       >
-        {activeCenterView === "canvas" ? (
+        {!showCanvas && !showMap ? (
+          <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center text-sm text-gray-400">
+            <span>Canvas e mapa estão ocultos nas configurações.</span>
+            {onResetConfig && (
+              <button
+                type="button"
+                onClick={onResetConfig}
+                className="rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-500"
+              >
+                Restaurar módulos
+              </button>
+            )}
+          </div>
+        ) : activeCenterView === "canvas" && showCanvas ? (
           selectedWorldId ? (
             <InfiniteCanvas campaignId={`${campaignId}-${selectedWorldId}`} />
           ) : (
@@ -783,7 +817,7 @@ export function MasterRoster({
       </div>
 
       {/* Barra de Ações sobre o Carrossel (Combate/Encontros ou Registro Civil) */}
-      {isMissing ? (
+      {showRoster && (isMissing ? (
         <div className="mb-1 flex items-center justify-between rounded-t-lg bg-[#111215] px-3 py-2 border border-b-0 border-zinc-800 text-xs flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <span className="font-mono text-[11px] font-bold text-zinc-400 tracking-wider">
@@ -901,10 +935,10 @@ export function MasterRoster({
             )}
           </div>
         </div>
-      )}
+      ))}
 
       {/* Carrossel de personagens fixo na parte inferior */}
-      {!isCarouselCollapsed && (
+      {showRoster && !isCarouselCollapsed && (
         <div
           onDragOver={(e) => {
             e.preventDefault();

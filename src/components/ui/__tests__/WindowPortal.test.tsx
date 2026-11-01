@@ -49,4 +49,11 @@ describe("WindowPortal", () => {
     handler();
     expect(onClose).toHaveBeenCalledOnce();
   });
+
+  it("does not close or recreate the window when re-rendered with a new onClose reference", () => {
+    const { rerender } = render(<WindowPortal isOpen onClose={() => {}}>Conteúdo</WindowPortal>);
+    rerender(<WindowPortal isOpen onClose={() => {}}>Conteúdo atualizado</WindowPortal>);
+    expect(externalWindow.close).toHaveBeenCalledTimes(0);
+    expect(window.open).toHaveBeenCalledOnce();
+  });
 });

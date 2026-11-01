@@ -153,7 +153,7 @@ export function MissingSessionLog({ campaignId, className = "" }: MissingSession
   };
 
   const renderEventContent = (ev: LedgerEvent) => {
-    const payload = (ev.payload || {}) as Record<string, any>;
+    const payload = (ev.payload || {}) as Record<string, string | number | boolean | null>;
 
     switch (ev.eventType) {
       case "TEST_ROLLED":
@@ -237,7 +237,7 @@ export function MissingSessionLog({ campaignId, className = "" }: MissingSession
             )}
 
             {/* Detalhes / Rasuras causadas */}
-            {payload.erasuresCount > 0 && !isGain && (
+            {typeof payload.erasuresCount === "number" && payload.erasuresCount > 0 && !isGain && (
               <p className="text-[10px] text-rose-400/90 font-semibold">
                 ⚠ Rasuras provocadas pelo horror: {payload.erasuresCount}
               </p>
@@ -411,7 +411,7 @@ export function MissingSessionLog({ campaignId, className = "" }: MissingSession
               </h2>
             </div>
             <p className="text-[10px] text-zinc-500 uppercase tracking-widest truncate">
-              // DIÁRIO DE INVESTIGAÇÃO
+              {"// DIÁRIO DE INVESTIGAÇÃO"}
             </p>
           </div>
 

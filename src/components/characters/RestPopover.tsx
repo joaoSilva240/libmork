@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { BedIcon } from "@/components/ui/Icons";
 import {
@@ -8,6 +8,8 @@ import {
   REST_OPTIONS,
   calculateRest,
 } from "@/lib/engine/rest";
+
+const emptySubscribe = () => () => {};
 
 export interface RestPopoverProps {
   currentHp: number;
@@ -31,14 +33,10 @@ export function RestPopover({
   disabled = false,
 }: RestPopoverProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const [coords, setCoords] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
   const popoverRef = useRef<HTMLDivElement>(null);
   const triggerButtonRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const updatePosition = () => {
     if (triggerButtonRef.current) {

@@ -599,8 +599,11 @@ export function CharacterWizard() {
       </div>
 
       {/* Barra de Navegação Fixa na Parte Inferior */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-gray-950/95 backdrop-blur-md border-t border-gray-800/80 py-3 px-4 sm:px-8 shadow-2xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+<div
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4"
+        style={{ paddingBottom: `max(0.75rem, env(safe-area-inset-bottom, 0px))` }}
+      >
+        <div className="liquid-glass-dock pointer-events-auto flex w-full max-w-7xl items-center justify-between gap-4 rounded-full px-4 py-3 sm:px-8">
           <Button
             variant="secondary"
             onClick={goBack}

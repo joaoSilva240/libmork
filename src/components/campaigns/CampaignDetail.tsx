@@ -13,6 +13,7 @@ import { SessionLog } from "@/components/campaigns/SessionLog";
 import { MissingSessionLog } from "@/components/systems/missing/MissingSessionLog";
 import { ContentOverlay } from "@/components/campaigns/ContentOverlay";
 import { WorldOverlay } from "@/components/campaigns/WorldOverlay";
+import { useMasterScreenConfig } from "@/hooks/useMasterScreenConfig";
 
 export function CampaignDetail() {
   const params = useParams<{ id: string }>();
@@ -63,6 +64,17 @@ export function CampaignDetail() {
     minWidth: 360,
     maxWidth: 1400,
   });
+
+  const { config: screenConfig, updateConfig: updateScreenConfig, resetConfig: resetScreenConfig } = useMasterScreenConfig();
+
+  const handleCloseMesaPopOut = useCallback(() => {
+    setIsMesaPopped(false);
+  }, []);
+
+  const handleBlockedMesaPopOut = useCallback(() => {
+    setIsMesaPopped(false);
+    setPopupBlockedWarning(true);
+  }, []);
 
   const loadWorlds = useCallback(async () => {
     const requestId = ++worldsRequestId.current;
@@ -262,7 +274,7 @@ export function CampaignDetail() {
             )}
             {isMissing ? (
               <span className="shrink-0 rounded bg-rose-950/90 border border-rose-800 px-2 py-0.5 text-[10px] text-rose-300 font-bold uppercase tracking-wider font-mono">
-                <span>MISSING — Edição ZERO</span> // ARQUIVO CONFIDENCIAL
+                <span>MISSING — Edição ZERO</span> {/* ARQUIVO CONFIDENCIAL */}
               </span>
             ) : (
               <span className="hidden sm:inline-flex rounded bg-purple-950/80 border border-purple-800/50 px-2 py-0.5 text-[10px] text-purple-300 font-medium">
@@ -302,7 +314,11 @@ export function CampaignDetail() {
         style={
           isMesaPopped
             ? undefined
-            : { "--libmork-columns": `${leftPanel.width}px ${centerPanel.width}px ${rightPanel.width}px` } as CSSProperties
+            : ({
+                "--libmork-columns": screenConfig.showSessionLog
+                  ? `${leftPanel.width}px ${centerPanel.width}px ${rightPanel.width}px`
+                  : `${leftPanel.width}px ${centerPanel.width}px`,
+              } as CSSProperties)
         }
       >
         {/* ===== Coluna esquerda — Gestão ===== */}
@@ -504,6 +520,10 @@ export function CampaignDetail() {
               onWorldSelected={setSelectedWorldId}
               onTogglePopOut={() => setIsMesaPopped(true)}
               rulesEngine={campaign.rulesEngine}
+              showRoster={screenConfig.showRoster}
+              showCanvas={screenConfig.showCanvas}
+              showMap={screenConfig.showMap}
+              onResetConfig={resetScreenConfig}
             />
 
             <ResizeHandle
@@ -517,23 +537,25 @@ export function CampaignDetail() {
         )}
 
         {/* ===== Coluna direita — Log da sessão ===== */}
-        <div className="relative flex flex-col h-full max-h-full min-h-0 overflow-hidden">
-          {!isMissing ? (
-            <SessionLog campaignId={campaign.id} />
-          ) : (
-            <MissingSessionLog campaignId={campaign.id} />
-          )}
+        {screenConfig.showSessionLog && (
+          <div className="relative flex flex-col h-full max-h-full min-h-0 overflow-hidden">
+            {!isMissing ? (
+              <SessionLog campaignId={campaign.id} />
+            ) : (
+              <MissingSessionLog campaignId={campaign.id} />
+            )}
 
-          {!isMesaPopped && (
-            <ResizeHandle
-              direction="horizontal"
-              position="bottom-right"
-              onResize={(dx) => rightPanel.handleResize(-dx, 0)}
-              title="Redimensionar coluna de logs"
-              data-testid="resize-right-column"
-            />
-          )}
-        </div>
+            {!isMesaPopped && (
+              <ResizeHandle
+                direction="horizontal"
+                position="bottom-right"
+                onResize={(dx) => rightPanel.handleResize(-dx, 0)}
+                title="Redimensionar coluna de logs"
+                data-testid="resize-right-column"
+              />
+            )}
+          </div>
+        )}
       </div>
 
       {showContentOverlay && (
@@ -559,14 +581,11 @@ export function CampaignDetail() {
 
       <WindowPortal
         isOpen={isMesaPopped}
-        onClose={() => setIsMesaPopped(false)}
+        onClose={handleCloseMesaPopOut}
         title={`Mesa — ${campaign.name}`}
         width={1280}
         height={800}
-        onBlocked={() => {
-          setIsMesaPopped(false);
-          setPopupBlockedWarning(true);
-        }}
+        onBlocked={handleBlockedMesaPopOut}
       >
         <div className="flex flex-col h-full w-full overflow-hidden bg-gray-950 p-2.5">
           <MasterRoster
@@ -577,6 +596,10 @@ export function CampaignDetail() {
             isPoppedOut={true}
             onTogglePopOut={() => setIsMesaPopped(false)}
             rulesEngine={campaign.rulesEngine}
+            showRoster={screenConfig.showRoster}
+            showCanvas={screenConfig.showCanvas}
+            showMap={screenConfig.showMap}
+            onResetConfig={resetScreenConfig}
           />
         </div>
       </WindowPortal>

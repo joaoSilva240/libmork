@@ -12,12 +12,9 @@ type ToastProps = {
 };
 
 export function Toast({ message, type = "error", duration = 2000, onClose }: ToastProps) {
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
-    // Trigger animation
-    setIsVisible(true);
-
     const timer = setTimeout(() => {
       setIsVisible(false);
       setTimeout(onClose, 300); // Wait for fade-out animation

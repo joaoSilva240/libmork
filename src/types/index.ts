@@ -103,6 +103,10 @@ export type Character = {
   deathFailures: number;
   createdAt: Date;
   updatedAt: Date;
+  /** Dados opcionais enriquecidos pela listagem de personagens. */
+  className?: string | null;
+  raceName?: string | null;
+  campaignName?: string | null;
   /** Campanha ativa usada pelo realtime; nunca é o id do personagem. */
   campaignId?: string | null;
   /** Wallet de moedas do personagem (Issue #35). */
@@ -396,6 +400,12 @@ export type PlayerCampaign = {
     isMine: boolean;
   }>;
   habitants?: MissingHabitant[];
+};
+
+export type PlayerCampaignDetails = {
+  worlds: Array<{ id: string; name: string; description: string | null; coverUrl: string | null }>;
+  establishments: Array<{ id: string; name: string; type: string; worldId: string; reputationLevel: number }>;
+  npcs: Array<{ id: string; name: string; npcType: string; level: number; imageUrl: string | null; worldId: string | null }>;
 };
 
 // =============================================================================
