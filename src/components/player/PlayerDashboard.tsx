@@ -477,7 +477,7 @@ export function PlayerDashboard() {
         <Link
           href="/player/characters/new"
           aria-label="Novo Personagem"
-          className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] right-4 z-30 flex items-center gap-2 rounded-full border border-purple-400/60 bg-purple-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-purple-950/50 transition-colors hover:bg-purple-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-300 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-950 sm:right-6 sm:px-6"
+          className="fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom,0px))] right-4 z-30 flex items-center gap-2 rounded-full border border-purple-400/60 bg-purple-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-purple-950/50 transition-colors hover:bg-purple-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-300 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-950 sm:right-6 sm:px-6"
         >
           <span className="text-lg leading-none" aria-hidden="true">+</span>
           <span>Novo Personagem</span>

@@ -8,7 +8,7 @@ describe("BottomNav", () => {
     { id: "campaigns", label: "Campanhas", icon: <span data-testid="icon-camp">icon2</span> },
   ];
 
-  it("renders nav touching bottom 0 across viewport with centered inner container", () => {
+  it("renders a centered floating liquid glass dock", () => {
     const { container } = render(
       <BottomNav tabs={tabs} activeId="characters" onChange={vi.fn()} />
     );
@@ -17,19 +17,17 @@ describe("BottomNav", () => {
     expect(nav).toBeDefined();
     expect(nav).toHaveAttribute("aria-label", "Navegação principal");
     
-    // Navigation fixed at bottom, spanning full width with background
+    // Navigation is fixed at bottom, full width but non-blocking
     expect(nav?.className).toContain("fixed");
     expect(nav?.className).toContain("bottom-0");
     expect(nav?.className).toContain("inset-x-0");
-    expect(nav?.className).toContain("bg-gray-900/95");
+    expect(nav?.className).toContain("pointer-events-none");
 
-    // Inner container preserves max width, centering, and compact padding
-    const innerContainer = nav?.firstElementChild;
-    expect(innerContainer?.className).toContain("mx-auto");
-    expect(innerContainer?.className).toContain("w-full");
-    expect(innerContainer?.className).toContain("max-w-md");
-    expect(innerContainer?.className).toContain("py-1");
-    expect(innerContainer?.className).toContain("border-t");
+    // Inner dock is centered with liquid glass styling
+    const dock = nav?.querySelector(".liquid-glass-dock");
+    expect(dock).toBeDefined();
+    expect(dock?.className).toContain("rounded-full");
+    expect(dock?.className).toContain("pointer-events-auto");
   });
 
   it("triggers onChange when a tab is clicked", () => {
@@ -43,13 +41,33 @@ describe("BottomNav", () => {
     expect(onChange).toHaveBeenCalledWith("campaigns");
   });
 
-  it("marks the active tab with aria-current='page'", () => {
+  it("marks the active tab with aria-current='page' and renders the active pill only on it", () => {
     render(<BottomNav tabs={tabs} activeId="characters" onChange={vi.fn()} />);
 
     const activeTab = screen.getByRole("button", { name: "Meus Personagens" });
     expect(activeTab).toHaveAttribute("aria-current", "page");
+    expect(activeTab.querySelector(".liquid-glass-pill")).not.toBeNull();
 
     const inactiveTab = screen.getByRole("button", { name: "Campanhas" });
     expect(inactiveTab).not.toHaveAttribute("aria-current");
+    expect(inactiveTab.querySelector(".liquid-glass-pill")).toBeNull();
+  });
+
+  it("renders buttons accessible by name but does not render visual text labels in the DOM", () => {
+    const { container } = render(
+      <BottomNav tabs={tabs} activeId="characters" onChange={vi.fn()} />
+    );
+
+    // Buttons remain discoverable by screen readers through their accessible name (aria-label)
+    expect(screen.getByRole("button", { name: "Meus Personagens" })).toBeDefined();
+    expect(screen.getByRole("button", { name: "Campanhas" })).toBeDefined();
+
+    // Visual text elements/labels should not be rendered in the DOM
+    expect(screen.queryByText("Meus Personagens")).toBeNull();
+    expect(screen.queryByText("Campanhas")).toBeNull();
+
+    // Verify icons are present
+    expect(container.querySelector("[data-testid='icon-char']")).toBeDefined();
+    expect(container.querySelector("[data-testid='icon-camp']")).toBeDefined();
   });
 });
