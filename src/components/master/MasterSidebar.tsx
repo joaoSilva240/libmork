@@ -38,6 +38,11 @@ export function MasterSidebar() {
       icon: "📚",
     },
     {
+      label: "Comunidade",
+      href: "/master/community",
+      icon: "🌐",
+    },
+    {
       label: "Configurações",
       href: "/master/settings",
       icon: "⚙️",

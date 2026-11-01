@@ -16,10 +16,21 @@ describe("MasterSidebar Component", () => {
 
     expect(screen.getByText("Campanhas")).toBeInTheDocument();
     expect(screen.getByText("Biblioteca")).toBeInTheDocument();
+    expect(screen.getByText("Comunidade")).toBeInTheDocument();
     expect(screen.getByText("Configurações")).toBeInTheDocument();
 
     const settingsLink = screen.getByRole("link", { name: /configurações/i });
     expect(settingsLink).toHaveAttribute("href", "/master/settings");
     expect(settingsLink).toHaveClass("bg-gray-800", "text-white");
+  });
+
+  it("renders 'Comunidade' link with correct href", () => {
+    mockUsePathname.mockReturnValue("/master/community");
+
+    render(<MasterSidebar />);
+
+    const communityLink = screen.getByRole("link", { name: /comunidade/i });
+    expect(communityLink).toHaveAttribute("href", "/master/community");
+    expect(communityLink).toHaveClass("bg-gray-800", "text-white");
   });
 });
