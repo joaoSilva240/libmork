@@ -1,5 +1,6 @@
 "use client";
 
+import { MoveDiagonal, MoveHorizontal, MoveVertical } from "lucide-react";
 import { useRef, useState, type PointerEvent } from "react";
 
 export type ResizeHandlePosition = "top-left" | "top-right" | "bottom-left" | "bottom-right";
@@ -33,6 +34,8 @@ export function ResizeHandle({
       : direction === "vertical"
         ? "cursor-ns-resize"
         : "cursor-se-resize";
+
+  const Icon = direction === "horizontal" ? MoveHorizontal : direction === "vertical" ? MoveVertical : MoveDiagonal;
 
   const positionClass =
     position === "top-left"
@@ -95,9 +98,7 @@ export function ResizeHandle({
       onPointerUp={finishResize}
       onPointerCancel={finishResize}
     >
-      <svg aria-hidden="true" className={`h-4 w-4 ${svgRotation}`} viewBox="0 0 16 16" fill="none">
-        <path d="M5 11h6M8 14h3M11 8v3" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
-      </svg>
+      <Icon aria-hidden="true" className={`h-3.5 w-3.5 ${svgRotation}`} strokeWidth={1.5} />
     </button>
   );
 }
