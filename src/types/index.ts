@@ -402,6 +402,12 @@ export type PlayerCampaign = {
   habitants?: MissingHabitant[];
 };
 
+export type PlayerCampaignDetails = {
+  worlds: Array<{ id: string; name: string; description: string | null; coverUrl: string | null }>;
+  establishments: Array<{ id: string; name: string; type: string; worldId: string; reputationLevel: number }>;
+  npcs: Array<{ id: string; name: string; npcType: string; level: number; imageUrl: string | null; worldId: string | null }>;
+};
+
 // =============================================================================
 // Tipos de API Response
 // =============================================================================
