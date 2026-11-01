@@ -29,8 +29,8 @@ export function PlayerTurnOverlay({ combatState, characterId }: PlayerTurnOverla
   const actionsLeft = myCombatant.actionsRemaining ?? 3;
 
   return (
-    <div className="fixed bottom-[54px] left-0 right-0 z-30 mx-auto max-w-md px-3 pointer-events-none transition-all duration-300">
-      <div className="relative flex items-center justify-between rounded-t-3xl rounded-b-none border border-b-0 border-purple-600/70 bg-gray-950/95 px-5 pt-6 pb-3.5 backdrop-blur-lg shadow-2xl overflow-visible">
+    <div className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] left-0 right-0 z-30 mx-auto max-w-md px-3 pointer-events-none transition-all duration-300">
+      <div className="liquid-glass-panel relative flex items-center justify-between rounded-2xl px-5 pt-6 pb-3.5 shadow-2xl overflow-visible">
         {/* Avatares dos Combatentes em Posição Absoluta (Ancorados acima da borda superior) */}
         <div className="absolute -top-6 left-4 flex items-center -space-x-2 overflow-visible z-20 pointer-events-auto">
           {combatState.combatants.map((c, idx) => {
