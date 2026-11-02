@@ -3,6 +3,15 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 import type { CampaignLog } from "@/types";
+import type {
+  AudioTrackAddPayload,
+  AudioTrackPlayPayload,
+  AudioTrackPausePayload,
+  AudioTrackLoopPayload,
+  AudioTrackRemovePayload,
+  AudioTrackStatePayload,
+} from "@/lib/audio/jukebox-protocol";
+import { AUDIO_EVENTS } from "@/lib/audio/jukebox-protocol";
 
 // 3-second loading delay constant (3000ms)
 export const DICE_ROLL_LOADING_DELAY = 3000;
@@ -156,6 +165,19 @@ interface SocketContextValue {
   notifyCampaignInviteRevoked: (payload: CampaignInviteRevokedPayload) => void;
   subscribeCampaignInviteCreated: (callback: (payload: CampaignInviteCreatedPayload) => void) => () => void;
   subscribeCampaignInviteRevoked: (callback: (payload: CampaignInviteRevokedPayload) => void) => () => void;
+
+  // Jukebox (Issue #60)
+  emitAudioTrackAdd: (payload: AudioTrackAddPayload) => void;
+  emitAudioTrackPlay: (payload: AudioTrackPlayPayload) => void;
+  emitAudioTrackPause: (payload: AudioTrackPausePayload) => void;
+  emitAudioTrackLoop: (payload: AudioTrackLoopPayload) => void;
+  emitAudioTrackRemove: (payload: AudioTrackRemovePayload) => void;
+  subscribeAudioTrackAdd: (callback: (payload: AudioTrackAddPayload) => void) => () => void;
+  subscribeAudioTrackPlay: (callback: (payload: AudioTrackPlayPayload) => void) => () => void;
+  subscribeAudioTrackPause: (callback: (payload: AudioTrackPausePayload) => void) => () => void;
+  subscribeAudioTrackLoop: (callback: (payload: AudioTrackLoopPayload) => void) => () => void;
+  subscribeAudioTrackRemove: (callback: (payload: AudioTrackRemovePayload) => void) => () => void;
+  subscribeAudioTrackState: (callback: (payload: AudioTrackStatePayload) => void) => () => void;
 }
 
 const SocketContext = createContext<SocketContextValue | undefined>(undefined);
@@ -175,6 +197,12 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   const duelResponseSubscribersRef = useRef<Set<(payload: DuelInviteResponsePayload) => void>>(new Set());
   const duelStateSubscribersRef = useRef<Set<(state: DuelSessionState) => void>>(new Set());
   const duelFinishSubscribersRef = useRef<Set<(payload: { campaignId: string; duelId: string; winnerId?: string }) => void>>(new Set());
+  const audioTrackAddSubscribersRef = useRef<Set<(payload: AudioTrackAddPayload) => void>>(new Set());
+  const audioTrackPlaySubscribersRef = useRef<Set<(payload: AudioTrackPlayPayload) => void>>(new Set());
+  const audioTrackPauseSubscribersRef = useRef<Set<(payload: AudioTrackPausePayload) => void>>(new Set());
+  const audioTrackLoopSubscribersRef = useRef<Set<(payload: AudioTrackLoopPayload) => void>>(new Set());
+  const audioTrackRemoveSubscribersRef = useRef<Set<(payload: AudioTrackRemovePayload) => void>>(new Set());
+  const audioTrackStateSubscribersRef = useRef<Set<(payload: AudioTrackStatePayload) => void>>(new Set());
 
   useEffect(() => {
     // Inicializa a conexão Socket.IO na mesma origem
@@ -246,6 +274,30 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
     socketInstance.on("duel-finished", (payload: { campaignId: string; duelId: string; winnerId?: string }) => {
       duelFinishSubscribersRef.current.forEach((handler) => handler(payload));
+    });
+
+    socketInstance.on(AUDIO_EVENTS.TRACK_ADD, (payload: AudioTrackAddPayload) => {
+      audioTrackAddSubscribersRef.current.forEach((handler) => handler(payload));
+    });
+
+    socketInstance.on(AUDIO_EVENTS.TRACK_PLAY, (payload: AudioTrackPlayPayload) => {
+      audioTrackPlaySubscribersRef.current.forEach((handler) => handler(payload));
+    });
+
+    socketInstance.on(AUDIO_EVENTS.TRACK_PAUSE, (payload: AudioTrackPausePayload) => {
+      audioTrackPauseSubscribersRef.current.forEach((handler) => handler(payload));
+    });
+
+    socketInstance.on(AUDIO_EVENTS.TRACK_LOOP, (payload: AudioTrackLoopPayload) => {
+      audioTrackLoopSubscribersRef.current.forEach((handler) => handler(payload));
+    });
+
+    socketInstance.on(AUDIO_EVENTS.TRACK_REMOVE, (payload: AudioTrackRemovePayload) => {
+      audioTrackRemoveSubscribersRef.current.forEach((handler) => handler(payload));
+    });
+
+    socketInstance.on(AUDIO_EVENTS.TRACK_STATE, (payload: AudioTrackStatePayload) => {
+      audioTrackStateSubscribersRef.current.forEach((handler) => handler(payload));
     });
 
     return () => {
@@ -590,6 +642,156 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     [socket]
   );
 
+  // ============================= Jukebox Emitters =============================
+
+  const emitAudioTrackAdd = useCallback(
+    (payload: AudioTrackAddPayload) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit(AUDIO_EVENTS.TRACK_ADD, payload);
+      }
+    },
+    [socket]
+  );
+
+  const emitAudioTrackPlay = useCallback(
+    (payload: AudioTrackPlayPayload) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit(AUDIO_EVENTS.TRACK_PLAY, payload);
+      }
+    },
+    [socket]
+  );
+
+  const emitAudioTrackPause = useCallback(
+    (payload: AudioTrackPausePayload) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit(AUDIO_EVENTS.TRACK_PAUSE, payload);
+      }
+    },
+    [socket]
+  );
+
+  const emitAudioTrackLoop = useCallback(
+    (payload: AudioTrackLoopPayload) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit(AUDIO_EVENTS.TRACK_LOOP, payload);
+      }
+    },
+    [socket]
+  );
+
+  const emitAudioTrackRemove = useCallback(
+    (payload: AudioTrackRemovePayload) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit(AUDIO_EVENTS.TRACK_REMOVE, payload);
+      }
+    },
+    [socket]
+  );
+
+  // ============================= Jukebox Subscribers =============================
+
+  const subscribeAudioTrackAdd = useCallback(
+    (callback: (payload: AudioTrackAddPayload) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on(AUDIO_EVENTS.TRACK_ADD, callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off(AUDIO_EVENTS.TRACK_ADD, callback);
+        }
+      };
+    },
+    [socket]
+  );
+
+  const subscribeAudioTrackPlay = useCallback(
+    (callback: (payload: AudioTrackPlayPayload) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on(AUDIO_EVENTS.TRACK_PLAY, callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off(AUDIO_EVENTS.TRACK_PLAY, callback);
+        }
+      };
+    },
+    [socket]
+  );
+
+  const subscribeAudioTrackPause = useCallback(
+    (callback: (payload: AudioTrackPausePayload) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on(AUDIO_EVENTS.TRACK_PAUSE, callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off(AUDIO_EVENTS.TRACK_PAUSE, callback);
+        }
+      };
+    },
+    [socket]
+  );
+
+  const subscribeAudioTrackLoop = useCallback(
+    (callback: (payload: AudioTrackLoopPayload) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on(AUDIO_EVENTS.TRACK_LOOP, callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off(AUDIO_EVENTS.TRACK_LOOP, callback);
+        }
+      };
+    },
+    [socket]
+  );
+
+  const subscribeAudioTrackRemove = useCallback(
+    (callback: (payload: AudioTrackRemovePayload) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on(AUDIO_EVENTS.TRACK_REMOVE, callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off(AUDIO_EVENTS.TRACK_REMOVE, callback);
+        }
+      };
+    },
+    [socket]
+  );
+
+  const subscribeAudioTrackState = useCallback(
+    (callback: (payload: AudioTrackStatePayload) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on(AUDIO_EVENTS.TRACK_STATE, callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off(AUDIO_EVENTS.TRACK_STATE, callback);
+        }
+      };
+    },
+    [socket]
+  );
+
   return (
     <SocketContext.Provider
       value={{
@@ -629,6 +831,17 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         notifyCampaignInviteRevoked,
         subscribeCampaignInviteCreated,
         subscribeCampaignInviteRevoked,
+        emitAudioTrackAdd,
+        emitAudioTrackPlay,
+        emitAudioTrackPause,
+        emitAudioTrackLoop,
+        emitAudioTrackRemove,
+        subscribeAudioTrackAdd,
+        subscribeAudioTrackPlay,
+        subscribeAudioTrackPause,
+        subscribeAudioTrackLoop,
+        subscribeAudioTrackRemove,
+        subscribeAudioTrackState,
       }}
     >
       {children}

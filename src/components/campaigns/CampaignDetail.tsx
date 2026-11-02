@@ -13,6 +13,7 @@ import { SessionLog } from "@/components/campaigns/SessionLog";
 import { MissingSessionLog } from "@/components/systems/missing/MissingSessionLog";
 import { ContentOverlay } from "@/components/campaigns/ContentOverlay";
 import { WorldOverlay } from "@/components/campaigns/WorldOverlay";
+import { MasterJukebox } from "./MasterJukebox";
 import { useMasterScreenConfig } from "@/hooks/useMasterScreenConfig";
 
 export function CampaignDetail() {
@@ -323,6 +324,14 @@ export function CampaignDetail() {
       >
         {/* ===== Coluna esquerda — Gestão ===== */}
         <div className="relative space-y-3 overflow-y-auto min-h-0">
+          {/* Jukebox de Áudio (Issue #60) */}
+          <MasterJukebox
+            campaignId={campaign.id}
+            userId=""
+            userName="Mestre"
+            className="rounded-lg border border-gray-800 bg-gray-900 p-3"
+          />
+
           {!isMissing && (
             <div className="rounded-lg border border-gray-800 bg-gray-900 p-3">
               <button

@@ -30,6 +30,10 @@ vi.mock("@/components/campaigns/WorldOverlay", () => ({
   WorldOverlay: () => null,
 }));
 
+vi.mock("@/components/campaigns/MasterJukebox", () => ({
+  MasterJukebox: () => <div data-testid="mock-master-jukebox" />,
+}));
+
 vi.mock("@/components/ui", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/components/ui")>();
   return {

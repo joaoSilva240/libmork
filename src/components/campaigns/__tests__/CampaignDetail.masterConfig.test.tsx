@@ -48,6 +48,10 @@ vi.mock("@/components/campaigns/CampaignInvites", () => ({
   CampaignInvites: () => <div data-testid="mock-campaign-invites">Invites Content</div>,
 }));
 
+vi.mock("../MasterJukebox", () => ({
+  MasterJukebox: () => <div data-testid="mock-master-jukebox">MasterJukebox</div>,
+}));
+
 global.fetch = vi.fn();
 
 describe("CampaignDetail - MasterScreenConfig Integration", () => {
@@ -105,6 +109,7 @@ describe("CampaignDetail - MasterScreenConfig Integration", () => {
 
     expect(screen.queryByText("Visibilidade do Escudo")).not.toBeInTheDocument();
     expect(screen.getByTestId("mock-session-log")).toBeInTheDocument();
+    expect(screen.getByTestId("mock-master-jukebox")).toBeInTheDocument();
   });
 
   it("loads stored global configuration and propagates flags to MasterRoster and SessionLog", async () => {
