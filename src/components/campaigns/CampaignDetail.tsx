@@ -14,6 +14,7 @@ import { MissingSessionLog } from "@/components/systems/missing/MissingSessionLo
 import { ContentOverlay } from "@/components/campaigns/ContentOverlay";
 import { WorldOverlay } from "@/components/campaigns/WorldOverlay";
 import { MasterJukebox } from "./MasterJukebox";
+import { CampaignSettingsModal } from "./CampaignSettingsModal";
 import { useMasterScreenConfig } from "@/hooks/useMasterScreenConfig";
 import { useTheme } from "@/context/ThemeContext";
 
@@ -30,6 +31,7 @@ export function CampaignDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   const [worldError, setWorldError] = useState<string | null>(null);
   const [isEstablishmentsExpanded, setIsEstablishmentsExpanded] = useState(false);
@@ -307,11 +309,13 @@ export function CampaignDetail() {
 
           <div className="flex items-center gap-2">
             <button
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="rounded-lg bg-red-900/70 border border-red-700/60 px-2.5 py-1 text-xs font-semibold text-red-200 hover:bg-red-800 transition disabled:opacity-50 drop-shadow"
+              type="button"
+              onClick={() => setShowSettingsModal(true)}
+              className="flex items-center gap-1.5 rounded-lg border border-secondary-border bg-dominant-container px-3 py-1.5 text-xs font-semibold text-secondary-pure hover:bg-dominant-container/80 hover:border-accent transition shadow"
+              title="Configurações e Edição da Campanha"
             >
-              {isDeleting ? "Excluindo..." : "Excluir"}
+              <span>⚙️</span>
+              <span>Configurações</span>
             </button>
           </div>
         </div>
@@ -347,12 +351,14 @@ export function CampaignDetail() {
         {/* ===== Coluna esquerda — Gestão ===== */}
         <div className="relative space-y-3 overflow-y-auto min-h-0">
           {/* Jukebox de Áudio (Issue #60) */}
-          <MasterJukebox
-            campaignId={campaign.id}
-            userId={campaign.masterId}
-            userName="Mestre"
-            className="rounded-lg border border-gray-800 bg-gray-900 p-3"
-          />
+          {screenConfig.showJukebox && (
+            <MasterJukebox
+              campaignId={campaign.id}
+              userId={campaign.masterId}
+              userName="Mestre"
+              className="rounded-lg border border-gray-800 bg-gray-900 p-3"
+            />
+          )}
 
           {!isMissing && (
             <div className="rounded-lg border border-secondary-border bg-secondary-card p-3">
@@ -537,7 +543,12 @@ export function CampaignDetail() {
             />
           </div>
 
-          <CampaignInvites key={`invites-${rosterVersion}`} campaignId={campaign.id} />
+          <CampaignInvites
+            key={`invites-${rosterVersion}`}
+            campaignId={campaign.id}
+            showCharactersNpcs={screenConfig.showCharactersNpcs}
+            showPlayers={screenConfig.showPlayers}
+          />
 
           <ResizeHandle
             direction="horizontal"
@@ -564,6 +575,7 @@ export function CampaignDetail() {
               showRoster={screenConfig.showRoster}
               showCanvas={screenConfig.showCanvas}
               showMap={screenConfig.showMap}
+              showDiceRolls={screenConfig.showDiceRolls}
               onResetConfig={resetScreenConfig}
             />
 
@@ -620,6 +632,21 @@ export function CampaignDetail() {
         />
       )}
 
+      {showSettingsModal && campaign && (
+        <CampaignSettingsModal
+          campaign={campaign}
+          onClose={() => setShowSettingsModal(false)}
+          onSaved={(updated) => {
+            setCampaign(updated);
+            if (updated.theme) {
+              applyCampaignThemeOverride(updated.theme);
+            }
+          }}
+          onDelete={handleDelete}
+          isDeleting={isDeleting}
+        />
+      )}
+
       <WindowPortal
         isOpen={isMesaPopped}
         onClose={handleCloseMesaPopOut}
@@ -640,6 +667,7 @@ export function CampaignDetail() {
             showRoster={screenConfig.showRoster}
             showCanvas={screenConfig.showCanvas}
             showMap={screenConfig.showMap}
+            showDiceRolls={screenConfig.showDiceRolls}
             onResetConfig={resetScreenConfig}
           />
         </div>

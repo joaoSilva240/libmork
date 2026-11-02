@@ -14,7 +14,17 @@ type PlayerInviteData = {
   activeCharactersCount: number;
 };
 
-export function CampaignInvites({ campaignId }: { campaignId: string }) {
+type CampaignInvitesProps = {
+  campaignId: string;
+  showCharactersNpcs?: boolean;
+  showPlayers?: boolean;
+};
+
+export function CampaignInvites({
+  campaignId,
+  showCharactersNpcs = true,
+  showPlayers = true,
+}: CampaignInvitesProps) {
   const {
     subscribeCampaignInviteCreated,
     subscribeCampaignInviteRevoked,
@@ -222,10 +232,15 @@ export function CampaignInvites({ campaignId }: { campaignId: string }) {
       player.email.toLowerCase().includes(playerSearchQuery.toLowerCase())
   );
 
+  if (!showCharactersNpcs && !showPlayers) {
+    return null;
+  }
+
   return (
     <div className="space-y-3 rounded-lg border border-gray-800 bg-gray-900 p-3">
       {/* Seção Personagens e NPCs com Barra de Pesquisa */}
-      <div>
+      {showCharactersNpcs && (
+        <div>
         <div className="mb-1.5 flex items-center justify-between">
           <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400">
             Personagens e NPCs ({actors.length})
@@ -285,9 +300,11 @@ export function CampaignInvites({ campaignId }: { campaignId: string }) {
           </div>
         )}
       </div>
+      )}
 
       {/* Seção Convidar Jogadores Direto */}
-      <div className="border-t border-gray-800 pt-3">
+      {showPlayers && (
+        <div className={showCharactersNpcs ? "border-t border-gray-800 pt-3" : ""}>
         <div className="mb-1.5 flex items-center justify-between">
           <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400">
             Jogadores ({players.filter((p) => p.isInvited).length}/{players.length})
@@ -373,6 +390,7 @@ export function CampaignInvites({ campaignId }: { campaignId: string }) {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }

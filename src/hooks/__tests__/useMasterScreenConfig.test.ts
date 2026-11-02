@@ -24,6 +24,10 @@ describe("useMasterScreenConfig hook", () => {
       showSessionLog: true,
       showCanvas: false,
       showMap: true,
+      showJukebox: false,
+      showDiceRolls: true,
+      showCharactersNpcs: false,
+      showPlayers: true,
       aiApiKey: "sk-test",
       aiApiEndpoint: "https://api.openai.com/v1",
       aiModel: "gpt-4o-mini",
@@ -38,23 +42,26 @@ describe("useMasterScreenConfig hook", () => {
     const { result } = renderHook(() => useMasterScreenConfig());
 
     act(() => {
-      result.current.updateConfig({ showRoster: false });
+      result.current.updateConfig({ showRoster: false, showJukebox: false });
     });
 
     expect(result.current.config.showRoster).toBe(false);
+    expect(result.current.config.showJukebox).toBe(false);
     expect(result.current.config.showSessionLog).toBe(true);
 
     const stored = JSON.parse(localStorage.getItem(masterScreenConfigKey)!);
     expect(stored.showRoster).toBe(false);
+    expect(stored.showJukebox).toBe(false);
   });
 
   it("should reset config to defaults", () => {
     const { result } = renderHook(() => useMasterScreenConfig());
 
     act(() => {
-      result.current.updateConfig({ showRoster: false, showMap: false });
+      result.current.updateConfig({ showRoster: false, showMap: false, showPlayers: false });
     });
     expect(result.current.config.showRoster).toBe(false);
+    expect(result.current.config.showPlayers).toBe(false);
 
     act(() => {
       result.current.resetConfig();
@@ -79,6 +86,10 @@ describe("useMasterScreenConfig hook", () => {
     expect(result.current.config.showSessionLog).toBe(true);
     expect(result.current.config.showCanvas).toBe(true);
     expect(result.current.config.showMap).toBe(true);
+    expect(result.current.config.showJukebox).toBe(true);
+    expect(result.current.config.showDiceRolls).toBe(true);
+    expect(result.current.config.showCharactersNpcs).toBe(true);
+    expect(result.current.config.showPlayers).toBe(true);
     expect(result.current.config.aiApiKey).toBe("");
     expect(result.current.config.aiApiEndpoint).toBe("");
     expect(result.current.config.aiModel).toBe("");
@@ -126,6 +137,10 @@ describe("sanitizeMasterScreenConfig", () => {
       showSessionLog: true,
       showCanvas: true,
       showMap: true,
+      showJukebox: true,
+      showDiceRolls: true,
+      showCharactersNpcs: true,
+      showPlayers: true,
       aiApiKey: "",
       aiApiEndpoint: "",
       aiModel: "",

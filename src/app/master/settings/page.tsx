@@ -95,6 +95,10 @@ export default function MasterSettingsPage() {
               showSessionLog={config.showSessionLog}
               showCanvas={config.showCanvas}
               showMap={config.showMap}
+              showJukebox={config.showJukebox}
+              showDiceRolls={config.showDiceRolls}
+              showCharactersNpcs={config.showCharactersNpcs}
+              showPlayers={config.showPlayers}
             />
           </div>
         </div>

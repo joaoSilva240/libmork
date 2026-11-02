@@ -7,6 +7,10 @@ export type MasterScreenConfig = {
   showSessionLog: boolean;
   showCanvas: boolean;
   showMap: boolean;
+  showJukebox: boolean;
+  showDiceRolls: boolean;
+  showCharactersNpcs: boolean;
+  showPlayers: boolean;
   aiApiKey?: string;
   aiApiEndpoint?: string;
   aiModel?: string;
@@ -21,6 +25,10 @@ export const DEFAULT_MASTER_SCREEN_CONFIG: MasterScreenConfig = {
   showSessionLog: true,
   showCanvas: true,
   showMap: true,
+  showJukebox: true,
+  showDiceRolls: true,
+  showCharactersNpcs: true,
+  showPlayers: true,
   aiApiKey: "",
   aiApiEndpoint: "",
   aiModel: "",
@@ -38,6 +46,10 @@ export function sanitizeMasterScreenConfig(value: unknown): MasterScreenConfig {
     showSessionLog: typeof input.showSessionLog === "boolean" ? input.showSessionLog : true,
     showCanvas: typeof input.showCanvas === "boolean" ? input.showCanvas : true,
     showMap: typeof input.showMap === "boolean" ? input.showMap : true,
+    showJukebox: typeof input.showJukebox === "boolean" ? input.showJukebox : true,
+    showDiceRolls: typeof input.showDiceRolls === "boolean" ? input.showDiceRolls : true,
+    showCharactersNpcs: typeof input.showCharactersNpcs === "boolean" ? input.showCharactersNpcs : true,
+    showPlayers: typeof input.showPlayers === "boolean" ? input.showPlayers : true,
     aiApiKey: typeof input.aiApiKey === "string" ? input.aiApiKey : "",
     aiApiEndpoint: typeof input.aiApiEndpoint === "string" ? input.aiApiEndpoint : "",
     aiModel: typeof input.aiModel === "string" ? input.aiModel : "",
@@ -58,36 +70,32 @@ export function useMasterScreenConfig() {
 
   const updateConfig = useCallback(
     (patch: Partial<MasterScreenConfig>) => {
-      setConfig((current) => {
-        const next: MasterScreenConfig = {
-          ...current,
-          ...patch,
-        };
-        const sanitized = sanitizeMasterScreenConfig(next);
-        if (typeof window !== "undefined") {
-          try {
-            window.localStorage.setItem(
-              masterScreenConfigKey,
-              JSON.stringify({ version: 1, ...sanitized })
-            );
-          } catch {
-            // Storage quota exceeded or disabled; ignore error without crash
-          }
+      setConfig((prev) => {
+        const next = { ...prev, ...patch };
+        try {
+          window.localStorage.setItem(masterScreenConfigKey, JSON.stringify(next));
+        } catch {
+          // ignore localStorage errors (e.g. quota exceeded)
         }
-        return sanitized;
+        return next;
       });
     },
     []
   );
 
   const resetConfig = useCallback(() => {
-    updateConfig(DEFAULT_MASTER_SCREEN_CONFIG);
-  }, [updateConfig]);
+    setConfig({ ...DEFAULT_MASTER_SCREEN_CONFIG });
+    try {
+      window.localStorage.setItem(masterScreenConfigKey, JSON.stringify(DEFAULT_MASTER_SCREEN_CONFIG));
+    } catch {
+      // ignore
+    }
+  }, []);
 
   return {
     config,
+    isLoaded,
     updateConfig,
     resetConfig,
-    isLoaded,
   };
 }

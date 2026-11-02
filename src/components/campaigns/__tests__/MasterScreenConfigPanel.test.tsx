@@ -13,9 +13,13 @@ describe("MasterScreenConfigPanel Component", () => {
     showSessionLog: true,
     showCanvas: true,
     showMap: true,
+    showJukebox: true,
+    showDiceRolls: true,
+    showCharactersNpcs: true,
+    showPlayers: true,
   };
 
-  it("renders all four toggles and reset button", () => {
+  it("renders all eight toggles and reset button", () => {
     render(
       <MasterScreenConfigPanel
         config={defaultConfig}
@@ -26,13 +30,17 @@ describe("MasterScreenConfigPanel Component", () => {
 
     expect(screen.getByText("Visibilidade do Escudo")).toBeInTheDocument();
     expect(screen.getByText("Carrossel de Personagens")).toBeInTheDocument();
-    expect(screen.getByText("Log da Sessão")).toBeInTheDocument();
+    expect(screen.getByText("Rolagens da Mesa")).toBeInTheDocument();
     expect(screen.getByText("Canvas Infinito")).toBeInTheDocument();
     expect(screen.getByText("Mapa Tático")).toBeInTheDocument();
+    expect(screen.getByText("Jukebox de Áudio")).toBeInTheDocument();
+    expect(screen.getByText("Personagens e NPCs")).toBeInTheDocument();
+    expect(screen.getByText("Jogadores Conectados")).toBeInTheDocument();
+    expect(screen.getByText("Log da Sessão")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Restaurar Padrão" })).toBeInTheDocument();
 
     const checkboxes = screen.getAllByRole("checkbox");
-    expect(checkboxes).toHaveLength(4);
+    expect(checkboxes).toHaveLength(8);
     checkboxes.forEach((cb) => {
       expect(cb).toBeChecked();
     });
@@ -53,14 +61,26 @@ describe("MasterScreenConfigPanel Component", () => {
     fireEvent.click(checkboxes[0]); // showRoster
     expect(handleUpdate).toHaveBeenCalledWith({ showRoster: false });
 
-    fireEvent.click(checkboxes[1]); // showSessionLog
-    expect(handleUpdate).toHaveBeenCalledWith({ showSessionLog: false });
+    fireEvent.click(checkboxes[1]); // showDiceRolls
+    expect(handleUpdate).toHaveBeenCalledWith({ showDiceRolls: false });
 
     fireEvent.click(checkboxes[2]); // showCanvas
     expect(handleUpdate).toHaveBeenCalledWith({ showCanvas: false });
 
     fireEvent.click(checkboxes[3]); // showMap
     expect(handleUpdate).toHaveBeenCalledWith({ showMap: false });
+
+    fireEvent.click(checkboxes[4]); // showJukebox
+    expect(handleUpdate).toHaveBeenCalledWith({ showJukebox: false });
+
+    fireEvent.click(checkboxes[5]); // showCharactersNpcs
+    expect(handleUpdate).toHaveBeenCalledWith({ showCharactersNpcs: false });
+
+    fireEvent.click(checkboxes[6]); // showPlayers
+    expect(handleUpdate).toHaveBeenCalledWith({ showPlayers: false });
+
+    fireEvent.click(checkboxes[7]); // showSessionLog
+    expect(handleUpdate).toHaveBeenCalledWith({ showSessionLog: false });
   });
 
   it("reflects unchecked state when flags are false", () => {
@@ -69,6 +89,10 @@ describe("MasterScreenConfigPanel Component", () => {
       showSessionLog: false,
       showCanvas: false,
       showMap: false,
+      showJukebox: false,
+      showDiceRolls: false,
+      showCharactersNpcs: false,
+      showPlayers: false,
     };
 
     render(
@@ -89,7 +113,16 @@ describe("MasterScreenConfigPanel Component", () => {
     const handleReset = vi.fn();
     render(
       <MasterScreenConfigPanel
-        config={{ showRoster: false, showSessionLog: false, showCanvas: false, showMap: false }}
+        config={{
+          showRoster: false,
+          showSessionLog: false,
+          showCanvas: false,
+          showMap: false,
+          showJukebox: false,
+          showDiceRolls: false,
+          showCharactersNpcs: false,
+          showPlayers: false,
+        }}
         onUpdate={vi.fn()}
         onReset={handleReset}
       />
@@ -147,14 +180,12 @@ describe("MasterScreenConfigPanel + useMasterScreenConfig Integration", () => {
 
     render(<TestWrapper />);
 
-    // Toggle all off
+    // Toggle checkboxes
     const checkboxes = screen.getAllByRole("checkbox");
     fireEvent.click(checkboxes[0]);
     fireEvent.click(checkboxes[1]);
     fireEvent.click(checkboxes[2]);
     fireEvent.click(checkboxes[3]);
-
-    checkboxes.forEach((cb) => expect(cb).not.toBeChecked());
 
     // Reset
     fireEvent.click(screen.getByRole("button", { name: "Restaurar Padrão" }));

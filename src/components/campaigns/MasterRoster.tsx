@@ -44,6 +44,7 @@ type MasterRosterProps = {
   showRoster?: boolean;
   showCanvas?: boolean;
   showMap?: boolean;
+  showDiceRolls?: boolean;
   onResetConfig?: () => void;
 };
 
@@ -57,6 +58,7 @@ export function MasterRoster({
   showRoster = true,
   showCanvas = true,
   showMap = true,
+  showDiceRolls = true,
   onResetConfig,
 }: MasterRosterProps) {
   const isMissing = rulesEngine === "missing_zero";
@@ -710,12 +712,14 @@ export function MasterRoster({
             ))}
           </div>
 
-          <button
-            onClick={() => setShowRollFeed(!showRollFeed)}
-            className="flex items-center gap-1 rounded-lg border border-accent/50 bg-accent/20 px-2 py-0.5 text-xs font-semibold text-accent-hover hover:bg-accent/30 transition-colors"
-          >
-            Rolagens {recentRolls.length > 0 && `(${recentRolls.length})`}
-          </button>
+          {showDiceRolls && (
+            <button
+              onClick={() => setShowRollFeed(!showRollFeed)}
+              className="flex items-center gap-1 rounded-lg border border-accent/50 bg-accent/20 px-2 py-0.5 text-xs font-semibold text-accent-hover hover:bg-accent/30 transition-colors"
+            >
+              Rolagens {recentRolls.length > 0 && `(${recentRolls.length})`}
+            </button>
+          )}
 
           <span className="text-[11px] text-secondary-muted">
             {roster.players.length} J · {visibleActors.filter((actor) => actor.kind === "npc").length} N
@@ -724,7 +728,7 @@ export function MasterRoster({
       </div>
 
       {/* Feed de Rolagens de Dados em Tempo Real (RF-041, RF-046) */}
-      {showRollFeed && (
+      {showDiceRolls && showRollFeed && (
         <div className="mb-1.5 max-h-36 overflow-y-auto rounded-lg border border-accent/40 bg-accent/10 p-2 text-xs text-secondary-pure shadow-inner shrink-0">
           <div className="mb-1 flex items-center justify-between border-b border-accent/30 pb-1">
             <span className="font-bold text-accent-hover">Feed de Rolagens ao Vivo</span>
