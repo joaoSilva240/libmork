@@ -14,6 +14,8 @@ import { ToastContainer } from "@/components/ui/Toast";
 import { CampaignsFilledIcon, CharactersFilledIcon, TreasuryIcon } from "@/components/ui/Icons";
 import { WealthManager, type WealthData } from "@/components/player/WealthManager";
 import { generateUUID } from "@/lib/utils/uuid";
+import { useSocket } from "@/context/SocketContext";
+import { JukeboxAudioBridge } from "@/components/audio/JukeboxAudioBridge";
 
 /**
  * Mapeia o nível de reputação (reputationLevel / trustLevel) para exatamente 0 a 4 pontos (dots):
@@ -36,9 +38,12 @@ function getReputationDots(reputationLevel: number): number {
 }
 
 export function PlayerDashboard() {
+  const { joinCampaign, leaveCampaign } = useSocket();
   const [activeTab, setActiveTab] = useState<"characters" | "campaigns" | "wealth">("characters");
   const [viewMode, setViewMode] = useState<"gallery" | "list">("gallery");
   const [displayName, setDisplayName] = useState("Jogador");
+  const [userId, setUserId] = useState<string>("player-id");
+  const [userName, setUserName] = useState<string>("Jogador");
 
   // Estado de Personagens
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -193,6 +198,13 @@ export function PlayerDashboard() {
     setCampaignDetailsTab("resumo");
     setCampaignDetails(null);
 
+    // Join campaign room (Issue #60 — sincronização de áudio)
+    joinCampaign({
+      campaignId: selectedCampaign.id,
+      user: { id: userId, name: userName },
+      role: "player",
+    });
+
     let isMounted = true;
     setIsLoadingDetails(true);
     fetch(`/api/player/campaigns/${selectedCampaign.id}/details`, { credentials: "include" })
@@ -209,8 +221,9 @@ export function PlayerDashboard() {
 
     return () => {
       isMounted = false;
+      leaveCampaign(selectedCampaign.id);
     };
-  }, [selectedCampaign?.id]);
+  }, [selectedCampaign?.id, joinCampaign, leaveCampaign, userId, userName]);
 
   const loadPlayerName = async () => {
     try {
@@ -221,6 +234,10 @@ export function PlayerDashboard() {
         const data = await response.json();
         if (data.data?.displayName) {
           setDisplayName(data.data.displayName);
+          setUserName(data.data.displayName);
+        }
+        if (data.data?.id) {
+          setUserId(data.data.id);
         }
       }
     } catch {
@@ -855,6 +872,9 @@ export function PlayerDashboard() {
               )}
 
               <div className="p-5 space-y-5">
+                {/* Jukebox de áudio sincronizada (Issue #60) */}
+                <JukeboxAudioBridge campaignId={selectedCampaign.id} />
+
                 {/* Topo do Modal: Badges e Informações da Campanha */}
                 <div className="pr-10">
                   <div className="flex flex-wrap items-center gap-1.5 mb-2.5">

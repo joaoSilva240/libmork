@@ -12,6 +12,62 @@ vi.mock("@/components/auth/LogoutButton", () => ({
   LogoutButton: () => <button data-testid="logout-button">Sair</button>,
 }));
 
+vi.mock("@/context/SocketContext", () => ({
+  useSocket: () => ({
+    socket: null,
+    isConnected: false,
+    presenceList: [],
+    joinCampaign: vi.fn(),
+    leaveCampaign: vi.fn(),
+    updateActorStatus: vi.fn(),
+    rollDice: vi.fn(),
+    updateCombatState: vi.fn(),
+    requestInitiativeRoll: vi.fn(),
+    requestInitiativeRollDelayed: vi.fn(),
+    requestDefenseReaction: vi.fn(),
+    respondDefenseReaction: vi.fn(),
+    requestDuelInvite: vi.fn(),
+    respondDuelInvite: vi.fn(),
+    updateDuelState: vi.fn(),
+    finishDuel: vi.fn(),
+    subscribeActorStatus: vi.fn(() => () => {}),
+    subscribeDiceRoll: vi.fn(() => () => {}),
+    subscribeCombatState: vi.fn(() => () => {}),
+    subscribeInitiativeRequest: vi.fn(() => () => {}),
+    subscribeDefenseRequest: vi.fn(() => () => {}),
+    subscribeDefenseResponse: vi.fn(() => () => {}),
+    subscribeDuelInvite: vi.fn(() => () => {}),
+    subscribeDuelResponse: vi.fn(() => () => {}),
+    subscribeDuelState: vi.fn(() => () => {}),
+    subscribeDuelFinish: vi.fn(() => () => {}),
+    broadcastCampaignLog: vi.fn(),
+    broadcastCampaignLogUpdate: vi.fn(),
+    subscribeCampaignLogCreated: vi.fn(() => () => {}),
+    subscribeCampaignLogUpdated: vi.fn(() => () => {}),
+    notifyCharacterInventoryChange: vi.fn(),
+    subscribeCharacterInventoryChange: vi.fn(() => () => {}),
+    notifyCampaignInviteCreated: vi.fn(),
+    notifyCampaignInviteRevoked: vi.fn(),
+    subscribeCampaignInviteCreated: vi.fn(() => () => {}),
+    subscribeCampaignInviteRevoked: vi.fn(() => () => {}),
+    emitAudioTrackAdd: vi.fn(),
+    emitAudioTrackPlay: vi.fn(),
+    emitAudioTrackPause: vi.fn(),
+    emitAudioTrackLoop: vi.fn(),
+    emitAudioTrackRemove: vi.fn(),
+    subscribeAudioTrackAdd: vi.fn(() => () => {}),
+    subscribeAudioTrackPlay: vi.fn(() => () => {}),
+    subscribeAudioTrackPause: vi.fn(() => () => {}),
+    subscribeAudioTrackLoop: vi.fn(() => () => {}),
+    subscribeAudioTrackRemove: vi.fn(() => () => {}),
+    subscribeAudioTrackState: vi.fn(() => () => {}),
+  }),
+}));
+
+vi.mock("@/components/audio/JukeboxAudioBridge", () => ({
+  JukeboxAudioBridge: () => null,
+}));
+
 describe("PlayerDashboard - Campaign Details Tabs (Resumo e Mundo)", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -49,7 +105,7 @@ describe("PlayerDashboard - Campaign Details Tabs (Resumo e Mundo)", () => {
       if (url === "/api/auth/me") {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ data: { displayName: "Jogador Teste" } }),
+          json: () => Promise.resolve({ data: { id: "user-1", displayName: "Jogador Teste" } }),
         });
       }
       if (url === "/api/characters") {
@@ -198,7 +254,7 @@ describe("PlayerDashboard - Campaign Details Tabs (Resumo e Mundo)", () => {
     const setupEmptyMocks = () => {
       globalThis.fetch = vi.fn().mockImplementation((url: string) => {
         if (url === "/api/auth/me") {
-          return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: { displayName: "Jogador Teste" } }) });
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: { id: "user-1", displayName: "Jogador Teste" } }) });
         }
         if (url === "/api/characters") {
           return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: [] }) });
