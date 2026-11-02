@@ -84,4 +84,23 @@ describe("MasterSettingsPage (/master/settings)", () => {
     expect(screen.queryByText("Canvas/Mapa")).not.toBeInTheDocument();
     expect(screen.getByText("Vazio")).toBeInTheDocument();
   });
+
+  it("configures AI API key and endpoint for library translation and persists to localStorage", () => {
+    render(<MasterSettingsPage />);
+
+    // Alterna para a aba de Tela do Mestre & Módulos
+    fireEvent.click(screen.getByRole("tab", { name: /Tela do Mestre & Módulos/i }));
+
+    expect(screen.getByText("Inteligência Artificial & Tradução da Biblioteca")).toBeInTheDocument();
+
+    const endpointInput = screen.getByPlaceholderText(/https:\/\/api\.openai\.com\/v1/i);
+    const apiKeyInput = screen.getByPlaceholderText(/sk-\.\.\. ou sua chave de acesso/i);
+
+    fireEvent.change(endpointInput, { target: { value: "https://api.openai.com/v1" } });
+    fireEvent.change(apiKeyInput, { target: { value: "sk-test-secret-key-12345" } });
+
+    const saved = JSON.parse(localStorage.getItem(masterScreenConfigKey) || "{}");
+    expect(saved.aiApiEndpoint).toBe("https://api.openai.com/v1");
+    expect(saved.aiApiKey).toBe("sk-test-secret-key-12345");
+  });
 });

@@ -12,13 +12,16 @@ vi.mock("@/components/auth/LogoutButton", () => ({
   LogoutButton: () => <button data-testid="logout-button">Sair</button>,
 }));
 
+const mockJoinCampaign = vi.fn();
+const mockLeaveCampaign = vi.fn();
+
 vi.mock("@/context/SocketContext", () => ({
   useSocket: () => ({
     socket: null,
     isConnected: false,
     presenceList: [],
-    joinCampaign: vi.fn(),
-    leaveCampaign: vi.fn(),
+    joinCampaign: mockJoinCampaign,
+    leaveCampaign: mockLeaveCampaign,
     updateActorStatus: vi.fn(),
     rollDice: vi.fn(),
     updateCombatState: vi.fn(),

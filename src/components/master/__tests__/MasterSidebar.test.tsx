@@ -51,9 +51,8 @@ describe("MasterSidebar Component", () => {
   it("renders accessible navigation links and lucide-react icons in expanded and collapsed states", () => {
     mockUsePathname.mockReturnValue("/master");
 
-    const { rerender } = render(<MasterSidebar />);
+    render(<MasterSidebar />);
 
-    const links = screen.getAllByRole("link");
     const campaignsLink = screen.getByRole("link", { name: "Campanhas" });
     const libraryLink = screen.getByRole("link", { name: "Biblioteca" });
     const communityLink = screen.getByRole("link", { name: "Comunidade" });

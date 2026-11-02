@@ -18,6 +18,8 @@ import {
   type ThemeName,
   type FontFamilyId,
   type FontPresetId,
+  type ThemeUiDetails,
+  DEFAULT_UI_DETAILS,
   themes,
   DEFAULT_THEME,
   AVAILABLE_FONTS,
@@ -43,6 +45,7 @@ export interface ThemeContextValue {
   ) => void;
   setFontPreset: (presetId: FontPresetId) => void;
   setFonts: (headingId: FontFamilyId, bodyId: FontFamilyId) => void;
+  updateUiDetails: (patch: Partial<ThemeUiDetails>) => void;
   optimizeContrast: () => void;
   resetTheme: () => void;
   applyCampaignThemeOverride: (themeName?: string | null) => void;
@@ -204,6 +207,20 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
+  const updateUiDetails = useCallback((patch: Partial<ThemeUiDetails>) => {
+    setThemeState((current) => {
+      const next: ThemeConfig = {
+        ...current,
+        ui: {
+          ...(current.ui || DEFAULT_UI_DETAILS),
+          ...patch,
+        },
+      };
+      saveStoredTheme(next);
+      return next;
+    });
+  }, []);
+
   const optimizeContrast = useCallback(() => {
     setThemeState((current) => {
       const optimized = optimizeForAaa(
@@ -273,6 +290,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       updateColor,
       setFontPreset,
       setFonts,
+      updateUiDetails,
       optimizeContrast,
       resetTheme,
       applyCampaignThemeOverride,
@@ -288,6 +306,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     updateColor,
     setFontPreset,
     setFonts,
+    updateUiDetails,
     optimizeContrast,
     resetTheme,
     applyCampaignThemeOverride,
@@ -307,6 +326,7 @@ const defaultThemeValue: ThemeContextValue = {
   updateColor: () => {},
   setFontPreset: () => {},
   setFonts: () => {},
+  updateUiDetails: () => {},
   optimizeContrast: () => {},
   resetTheme: () => {},
   applyCampaignThemeOverride: () => {},

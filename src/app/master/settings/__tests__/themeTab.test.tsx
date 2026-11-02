@@ -40,4 +40,12 @@ describe("MasterSettingsPage Tabs & Theme Control", () => {
     const themeTab = screen.getByRole("tab", { name: /Tema e Aparência/i });
     expect(themeTab).toHaveAttribute("aria-selected", "false");
   });
+
+  it("provides vertical scroll container (overflow-y-auto) to prevent clipping in settings and theme tab", () => {
+    const { container } = renderComponent();
+
+    const scrollContainer = container.querySelector(".overflow-y-auto");
+    expect(scrollContainer).not.toBeNull();
+    expect(scrollContainer?.className).toContain("overflow-y-auto");
+  });
 });

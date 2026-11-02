@@ -19,7 +19,15 @@ describe("useMasterScreenConfig hook", () => {
   });
 
   it("should load config from localStorage", () => {
-    const stored = { showRoster: false, showSessionLog: true, showCanvas: false, showMap: true };
+    const stored = {
+      showRoster: false,
+      showSessionLog: true,
+      showCanvas: false,
+      showMap: true,
+      aiApiKey: "sk-test",
+      aiApiEndpoint: "https://api.openai.com/v1",
+      aiModel: "gpt-4o-mini",
+    };
     localStorage.setItem(masterScreenConfigKey, JSON.stringify(stored));
 
     const { result } = renderHook(() => useMasterScreenConfig());
@@ -71,6 +79,9 @@ describe("useMasterScreenConfig hook", () => {
     expect(result.current.config.showSessionLog).toBe(true);
     expect(result.current.config.showCanvas).toBe(true);
     expect(result.current.config.showMap).toBe(true);
+    expect(result.current.config.aiApiKey).toBe("");
+    expect(result.current.config.aiApiEndpoint).toBe("");
+    expect(result.current.config.aiModel).toBe("");
   });
 
   it("should sanitize non-boolean fields with defaults", () => {
@@ -115,6 +126,9 @@ describe("sanitizeMasterScreenConfig", () => {
       showSessionLog: true,
       showCanvas: true,
       showMap: true,
+      aiApiKey: "",
+      aiApiEndpoint: "",
+      aiModel: "",
     });
   });
 

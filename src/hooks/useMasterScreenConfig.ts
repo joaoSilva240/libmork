@@ -7,6 +7,9 @@ export type MasterScreenConfig = {
   showSessionLog: boolean;
   showCanvas: boolean;
   showMap: boolean;
+  aiApiKey?: string;
+  aiApiEndpoint?: string;
+  aiModel?: string;
 };
 
 export type MasterScreenConfigPayload = MasterScreenConfig & {
@@ -18,6 +21,9 @@ export const DEFAULT_MASTER_SCREEN_CONFIG: MasterScreenConfig = {
   showSessionLog: true,
   showCanvas: true,
   showMap: true,
+  aiApiKey: "",
+  aiApiEndpoint: "",
+  aiModel: "",
 };
 
 export const masterScreenConfigKey = "libmork:master-screen-config";
@@ -32,6 +38,9 @@ export function sanitizeMasterScreenConfig(value: unknown): MasterScreenConfig {
     showSessionLog: typeof input.showSessionLog === "boolean" ? input.showSessionLog : true,
     showCanvas: typeof input.showCanvas === "boolean" ? input.showCanvas : true,
     showMap: typeof input.showMap === "boolean" ? input.showMap : true,
+    aiApiKey: typeof input.aiApiKey === "string" ? input.aiApiKey : "",
+    aiApiEndpoint: typeof input.aiApiEndpoint === "string" ? input.aiApiEndpoint : "",
+    aiModel: typeof input.aiModel === "string" ? input.aiModel : "",
   };
 }
 

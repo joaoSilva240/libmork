@@ -168,12 +168,55 @@ describe("Theme & WCAG AAA Contrast Engine (src/lib/theme.ts)", () => {
       expect(AVAILABLE_FONTS.mono).toBeDefined();
     });
 
-    it("defines curated font presets", () => {
+    it("registers all local fonts from public/fonts directory", () => {
+      expect(AVAILABLE_FONTS.vecna).toBeDefined();
+      expect(AVAILABLE_FONTS.vecna.origin).toBe("local");
+      expect(AVAILABLE_FONTS["dragon-hunter"]).toBeDefined();
+      expect(AVAILABLE_FONTS["special-elite"]).toBeDefined();
+      expect(AVAILABLE_FONTS.optima).toBeDefined();
+      expect(AVAILABLE_FONTS["roman-new-times"]).toBeDefined();
+      expect(AVAILABLE_FONTS.keyes).toBeDefined();
+      expect(AVAILABLE_FONTS.westsac).toBeDefined();
+      expect(AVAILABLE_FONTS.fstein).toBeDefined();
+      expect(AVAILABLE_FONTS.reappeat).toBeDefined();
+      expect(AVAILABLE_FONTS["215000e"]).toBeDefined();
+    });
+
+    it("registers all Google Fonts with TTRPG & D&D thematic", () => {
+      expect(AVAILABLE_FONTS.medievalsharp).toBeDefined();
+      expect(AVAILABLE_FONTS.medievalsharp.origin).toBe("google");
+      expect(AVAILABLE_FONTS.almendra).toBeDefined();
+      expect(AVAILABLE_FONTS["uncial-antiqua"]).toBeDefined();
+      expect(AVAILABLE_FONTS["pirata-one"]).toBeDefined();
+      expect(AVAILABLE_FONTS["im-fell-english-sc"]).toBeDefined();
+      expect(AVAILABLE_FONTS["grenze-gotisch"]).toBeDefined();
+      expect(AVAILABLE_FONTS.metamorphous).toBeDefined();
+      expect(AVAILABLE_FONTS["eagle-lake"]).toBeDefined();
+      expect(AVAILABLE_FONTS.marcellus).toBeDefined();
+    });
+
+    it("defines curated font presets including D&D and Google Fonts RPG presets", () => {
       expect(FONT_PRESETS["epica-sans"]).toBeDefined();
+      expect(FONT_PRESETS["vecna-handbook"]).toBeDefined();
+      expect(FONT_PRESETS["dragon-saga"]).toBeDefined();
+      expect(FONT_PRESETS["medieval-tavern"]).toBeDefined();
+      expect(FONT_PRESETS["grimorio-cthulhu"]).toBeDefined();
+      expect(FONT_PRESETS["celtic-lore"]).toBeDefined();
+      expect(FONT_PRESETS["gothic-crypt"]).toBeDefined();
+      expect(FONT_PRESETS["corsair-sea"]).toBeDefined();
+      expect(FONT_PRESETS["arcanist-tome"]).toBeDefined();
+      expect(FONT_PRESETS["imperial-decree"]).toBeDefined();
+      expect(FONT_PRESETS["investigator-journal"]).toBeDefined();
       expect(FONT_PRESETS.grimorio).toBeDefined();
       expect(FONT_PRESETS.pergaminho).toBeDefined();
       expect(FONT_PRESETS.moderno).toBeDefined();
       expect(FONT_PRESETS.codex).toBeDefined();
+
+      // Verifica se todos os presets referenciam fontes válidas em AVAILABLE_FONTS
+      for (const preset of Object.values(FONT_PRESETS)) {
+        expect(AVAILABLE_FONTS[preset.headingId]).toBeDefined();
+        expect(AVAILABLE_FONTS[preset.bodyId]).toBeDefined();
+      }
     });
   });
 
