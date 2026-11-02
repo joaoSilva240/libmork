@@ -7,13 +7,27 @@ import type { AudioTrack } from "@/lib/audio/jukebox-protocol";
 
 export interface UseJukeboxReturn {
   tracks: AudioTrack[];
+  playingTrackIds: Set<string>;
   playingTrackId: string | null;
   loopTrackIds: Set<string>;
   playingAt: number | null;
+  isLoading: boolean;
   addTrack: (url: string, addedBy: string, actorName: string) => { ok: boolean; error?: string };
   removeTrack: (trackId: string) => void;
   togglePlay: (trackId: string) => void;
+  stopAll: () => void;
   toggleLoop: (trackId: string) => void;
+}
+
+function getApiUrl(path: string): string {
+  if (
+    typeof window !== "undefined" &&
+    window.location?.origin &&
+    window.location.origin !== "null"
+  ) {
+    return `${window.location.origin}${path}`;
+  }
+  return path;
 }
 
 export function useJukebox(campaignId: string | null, isMaster: boolean): UseJukeboxReturn {
@@ -32,9 +46,48 @@ export function useJukebox(campaignId: string | null, isMaster: boolean): UseJuk
   } = useSocket();
 
   const [tracks, setTracks] = useState<AudioTrack[]>([]);
-  const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
+  const [playingTrackIds, setPlayingTrackIds] = useState<Set<string>>(new Set());
   const [loopTrackIds, setLoopTrackIds] = useState<Set<string>>(new Set());
   const [playingAt, setPlayingAt] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Retrocompatibilidade para single-track (primeira faixa tocando ou null)
+  const playingTrackId = playingTrackIds.size > 0 ? Array.from(playingTrackIds)[0] : null;
+
+  // ============================= Carregamento Inicial (DB) =============================
+
+  useEffect(() => {
+    if (!campaignId) return;
+    let active = true;
+    setIsLoading(true);
+
+    fetch(getApiUrl(`/api/campaigns/${campaignId}/tracks`), { credentials: "include" })
+      .then((res) => {
+        if (!res.ok) throw new Error("Falha ao carregar faixas");
+        return res.json();
+      })
+      .then((data) => {
+        if (!active) return;
+        if (data.success && Array.isArray(data.data)) {
+          setTracks((prev) => {
+            const map = new Map<string, AudioTrack>();
+            data.data.forEach((t: AudioTrack) => map.set(t.id, t));
+            prev.forEach((t) => map.set(t.id, t));
+            return Array.from(map.values());
+          });
+        }
+      })
+      .catch(() => {
+        // Falhas silenciosas em ambiente de teste ou desconexão
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [campaignId]);
 
   // ============================= Mutators (master-only) =============================
 
@@ -71,9 +124,19 @@ export function useJukebox(campaignId: string | null, isMaster: boolean): UseJuk
       // Emit to server
       emitAudioTrackAdd({ campaignId, actorName, track });
 
+      // Persistir no banco de dados via API em segundo plano
+      fetch(getApiUrl(`/api/campaigns/${campaignId}/tracks`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ videoId, title: videoId }),
+      }).catch((err) => {
+        console.error("Erro ao persistir faixa:", err);
+      });
+
       return { ok: true };
     },
-    [isMaster, campaignId, emitAudioTrackAdd]
+    [isMaster, campaignId, emitAudioTrackAdd],
   );
 
   const removeTrack = useCallback(
@@ -87,37 +150,62 @@ export function useJukebox(campaignId: string | null, isMaster: boolean): UseJuk
         next.delete(trackId);
         return next;
       });
-
-      if (playingTrackId === trackId) {
-        setPlayingTrackId(null);
-        setPlayingAt(null);
-      }
+      setPlayingTrackIds((prev) => {
+        const next = new Set(prev);
+        next.delete(trackId);
+        if (next.size === 0) setPlayingAt(null);
+        return next;
+      });
 
       // Emit to server
       emitAudioTrackRemove({ campaignId, trackId });
+
+      // Remover do banco de dados via API em segundo plano
+      fetch(getApiUrl(`/api/campaigns/${campaignId}/tracks/${trackId}`), {
+        method: "DELETE",
+        credentials: "include",
+      }).catch((err) => {
+        console.error("Erro ao deletar faixa:", err);
+      });
     },
-    [isMaster, campaignId, playingTrackId, emitAudioTrackRemove]
+    [isMaster, campaignId, emitAudioTrackRemove],
   );
 
   const togglePlay = useCallback(
     (trackId: string) => {
       if (!isMaster || !campaignId) return;
 
-      if (playingTrackId === trackId) {
-        // Pause
-        setPlayingTrackId(null);
-        setPlayingAt(null);
-        emitAudioTrackPause({ campaignId, trackId });
-      } else {
-        // Play
-        const now = Date.now();
-        setPlayingTrackId(trackId);
-        setPlayingAt(now);
-        emitAudioTrackPlay({ campaignId, trackId, playingAt: now });
-      }
+      setPlayingTrackIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(trackId)) {
+          // Pause faixa
+          next.delete(trackId);
+          if (next.size === 0) setPlayingAt(null);
+          emitAudioTrackPause({ campaignId, trackId });
+        } else {
+          // Play faixa (execução simultânea permitida!)
+          const now = Date.now();
+          next.add(trackId);
+          setPlayingAt(now);
+          emitAudioTrackPlay({ campaignId, trackId, playingAt: now });
+        }
+        return next;
+      });
     },
-    [isMaster, campaignId, playingTrackId, emitAudioTrackPlay, emitAudioTrackPause]
+    [isMaster, campaignId, emitAudioTrackPlay, emitAudioTrackPause],
   );
+
+  const stopAll = useCallback(() => {
+    if (!isMaster || !campaignId) return;
+
+    setPlayingTrackIds((prev) => {
+      prev.forEach((trackId) => {
+        emitAudioTrackPause({ campaignId, trackId });
+      });
+      return new Set();
+    });
+    setPlayingAt(null);
+  }, [isMaster, campaignId, emitAudioTrackPause]);
 
   const toggleLoop = useCallback(
     (trackId: string) => {
@@ -138,7 +226,7 @@ export function useJukebox(campaignId: string | null, isMaster: boolean): UseJuk
         return next;
       });
     },
-    [isMaster, campaignId, emitAudioTrackLoop]
+    [isMaster, campaignId, emitAudioTrackLoop],
   );
 
   // ============================= Subscribers =============================
@@ -158,14 +246,18 @@ export function useJukebox(campaignId: string | null, isMaster: boolean): UseJuk
 
     const unsubPlay = subscribeAudioTrackPlay((payload) => {
       if (payload.campaignId !== campaignId) return;
-      setPlayingTrackId(payload.trackId);
+      setPlayingTrackIds((prev) => new Set(prev).add(payload.trackId));
       setPlayingAt(payload.playingAt);
     });
 
     const unsubPause = subscribeAudioTrackPause((payload) => {
       if (payload.campaignId !== campaignId) return;
-      setPlayingTrackId(null);
-      setPlayingAt(null);
+      setPlayingTrackIds((prev) => {
+        const next = new Set(prev);
+        next.delete(payload.trackId);
+        if (next.size === 0) setPlayingAt(null);
+        return next;
+      });
     });
 
     const unsubLoop = subscribeAudioTrackLoop((payload) => {
@@ -189,18 +281,26 @@ export function useJukebox(campaignId: string | null, isMaster: boolean): UseJuk
         next.delete(payload.trackId);
         return next;
       });
-      if (playingTrackId === payload.trackId) {
-        setPlayingTrackId(null);
-        setPlayingAt(null);
-      }
+      setPlayingTrackIds((prev) => {
+        const next = new Set(prev);
+        next.delete(payload.trackId);
+        if (next.size === 0) setPlayingAt(null);
+        return next;
+      });
     });
 
     const unsubState = subscribeAudioTrackState((payload) => {
       if (payload.campaignId !== campaignId) return;
       // Full state replacement
       setTracks(payload.tracks);
-      setPlayingTrackId(payload.playingTrackId);
-      setPlayingAt(payload.playingAt);
+      if (payload.playingTrackIds && Array.isArray(payload.playingTrackIds)) {
+        setPlayingTrackIds(new Set(payload.playingTrackIds));
+      } else if (payload.playingTrackId) {
+        setPlayingTrackIds(new Set([payload.playingTrackId]));
+      } else {
+        setPlayingTrackIds(new Set());
+      }
+      setPlayingAt(payload.playingAt ?? null);
       setLoopTrackIds(new Set(payload.loopTrackIds));
     });
 
@@ -214,7 +314,6 @@ export function useJukebox(campaignId: string | null, isMaster: boolean): UseJuk
     };
   }, [
     campaignId,
-    playingTrackId,
     subscribeAudioTrackAdd,
     subscribeAudioTrackPlay,
     subscribeAudioTrackPause,
@@ -225,12 +324,15 @@ export function useJukebox(campaignId: string | null, isMaster: boolean): UseJuk
 
   return {
     tracks,
+    playingTrackIds,
     playingTrackId,
     loopTrackIds,
     playingAt,
+    isLoading,
     addTrack,
     removeTrack,
     togglePlay,
+    stopAll,
     toggleLoop,
   };
 }

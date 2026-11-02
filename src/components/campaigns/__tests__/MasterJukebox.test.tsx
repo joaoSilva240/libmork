@@ -8,6 +8,7 @@ const mockAddTrack = vi.fn();
 const mockRemoveTrack = vi.fn();
 const mockTogglePlay = vi.fn();
 const mockToggleLoop = vi.fn();
+const mockStopAll = vi.fn();
 
 vi.mock("@/hooks/useJukebox", () => ({
   useJukebox: vi.fn(),
@@ -31,12 +32,15 @@ describe("MasterJukebox", () => {
     // Reset para o mock padrão
     vi.mocked(useJukebox).mockReturnValue({
       tracks: [],
+      playingTrackIds: new Set(),
       playingTrackId: null,
       loopTrackIds: new Set(),
       playingAt: null,
+      isLoading: false,
       addTrack: mockAddTrack,
       removeTrack: mockRemoveTrack,
       togglePlay: mockTogglePlay,
+      stopAll: mockStopAll,
       toggleLoop: mockToggleLoop,
     });
   });
@@ -49,7 +53,7 @@ describe("MasterJukebox", () => {
   it("mostra placeholder quando tracks = []", () => {
     render(<MasterJukebox campaignId="c1" userId="u1" userName="Mestre" />);
     expect(
-      screen.getByText("Nenhuma faixa de áudio adicionada. Cole uma URL do YouTube para começar.")
+      screen.getByText("Nenhuma faixa de áudio adicionada. Cole uma URL do YouTube para começar."),
     ).toBeInTheDocument();
   });
 
@@ -90,7 +94,7 @@ describe("MasterJukebox", () => {
     expect(mockAddTrack).toHaveBeenCalledWith(
       "https://youtube.com/watch?v=dQw4w9WgXcQ",
       "u1",
-      "Mestre"
+      "Mestre",
     );
     expect(input.value).toBe("");
     expect(screen.queryByText("URL inválida do YouTube")).not.toBeInTheDocument();
@@ -99,53 +103,130 @@ describe("MasterJukebox", () => {
   it("lista de tracks renderiza cada track com título", () => {
     vi.mocked(useJukebox).mockReturnValue({
       tracks: [
-        { id: "dQw4w9WgXcQ", title: "Rick Astley - Never Gonna Give You Up", addedBy: "u1", addedAt: "2026-11-01T00:00:00Z" },
-        { id: "9bZkp7q19f0", title: "PSY - GANGNAM STYLE", addedBy: "u1", addedAt: "2026-11-01T00:01:00Z" },
+        {
+          id: "dQw4w9WgXcQ",
+          title: "Never Gonna Give You Up",
+          addedBy: "u1",
+          addedAt: "2026-11-01T00:00:00Z",
+        },
+        {
+          id: "9bZkp7q19f0",
+          title: "GANGNAM STYLE",
+          addedBy: "u1",
+          addedAt: "2026-11-01T00:01:00Z",
+        },
       ],
+      playingTrackIds: new Set(),
       playingTrackId: null,
       loopTrackIds: new Set(),
       playingAt: null,
+      isLoading: false,
       addTrack: mockAddTrack,
       removeTrack: mockRemoveTrack,
       togglePlay: mockTogglePlay,
+      stopAll: mockStopAll,
       toggleLoop: mockToggleLoop,
     });
 
     render(<MasterJukebox campaignId="c1" userId="u1" userName="Mestre" />);
 
-    expect(screen.getByText("Rick Astley - Never Gonna Give You Up")).toBeInTheDocument();
-    expect(screen.getByText("PSY - GANGNAM STYLE")).toBeInTheDocument();
+    expect(screen.getByText("Never Gonna Give You Up")).toBeInTheDocument();
+    expect(screen.getByText("GANGNAM STYLE")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Reproduzir" })).toHaveLength(2);
   });
 
-  it("botão play → chama togglePlay(trackId)", () => {
+  it("togglePlay alterna entre Play e Pause", () => {
     vi.mocked(useJukebox).mockReturnValue({
-      tracks: [{ id: "dQw4w9WgXcQ", title: "Never Gonna Give You Up", addedBy: "u1", addedAt: "2026-11-01T00:00:00Z" }],
-      playingTrackId: null,
+      tracks: [
+        {
+          id: "dQw4w9WgXcQ",
+          title: "Never Gonna Give You Up",
+          addedBy: "u1",
+          addedAt: "2026-11-01T00:00:00Z",
+        },
+      ],
+      playingTrackIds: new Set(["dQw4w9WgXcQ"]),
+      playingTrackId: "dQw4w9WgXcQ",
       loopTrackIds: new Set(),
-      playingAt: null,
+      playingAt: Date.now(),
+      isLoading: false,
       addTrack: mockAddTrack,
       removeTrack: mockRemoveTrack,
       togglePlay: mockTogglePlay,
+      stopAll: mockStopAll,
       toggleLoop: mockToggleLoop,
     });
 
     render(<MasterJukebox campaignId="c1" userId="u1" userName="Mestre" />);
 
-    const playButton = screen.getByRole("button", { name: "Reproduzir" });
-    fireEvent.click(playButton);
+    const pauseButton = screen.getByRole("button", { name: "Pausar" });
+    expect(pauseButton).toBeInTheDocument();
 
+    fireEvent.click(pauseButton);
     expect(mockTogglePlay).toHaveBeenCalledWith("dQw4w9WgXcQ");
+  });
+
+  it("suporta múltiplas faixas tocando simultaneamente", () => {
+    vi.mocked(useJukebox).mockReturnValue({
+      tracks: [
+        { id: "track-1", title: "Chuva e Trovões", addedBy: "u1", addedAt: "2026-11-01T00:00:00Z" },
+        {
+          id: "track-2",
+          title: "Música de Batalha",
+          addedBy: "u1",
+          addedAt: "2026-11-01T00:01:00Z",
+        },
+      ],
+      playingTrackIds: new Set(["track-1", "track-2"]),
+      playingTrackId: "track-1",
+      loopTrackIds: new Set(),
+      playingAt: Date.now(),
+      isLoading: false,
+      addTrack: mockAddTrack,
+      removeTrack: mockRemoveTrack,
+      togglePlay: mockTogglePlay,
+      stopAll: mockStopAll,
+      toggleLoop: mockToggleLoop,
+    });
+
+    render(<MasterJukebox campaignId="c1" userId="u1" userName="Mestre" />);
+
+    // Ambos os botões devem estar em estado "Pausar"
+    const pauseButtons = screen.getAllByRole("button", { name: "Pausar" });
+    expect(pauseButtons).toHaveLength(2);
+
+    // Ambos os players devem estar com playing=true
+    const player1 = screen.getByTestId("youtube-player-track-1");
+    const player2 = screen.getByTestId("youtube-player-track-2");
+    expect(player1).toHaveAttribute("data-playing", "true");
+    expect(player2).toHaveAttribute("data-playing", "true");
+
+    // Botão Parar Todos visível
+    const stopAllBtn = screen.getByRole("button", { name: "Parar Todos" });
+    expect(stopAllBtn).toBeInTheDocument();
+    fireEvent.click(stopAllBtn);
+    expect(mockStopAll).toHaveBeenCalledTimes(1);
   });
 
   it("botão loop → chama toggleLoop(trackId)", () => {
     vi.mocked(useJukebox).mockReturnValue({
-      tracks: [{ id: "dQw4w9WgXcQ", title: "Never Gonna Give You Up", addedBy: "u1", addedAt: "2026-11-01T00:00:00Z" }],
+      tracks: [
+        {
+          id: "dQw4w9WgXcQ",
+          title: "Never Gonna Give You Up",
+          addedBy: "u1",
+          addedAt: "2026-11-01T00:00:00Z",
+        },
+      ],
+      playingTrackIds: new Set(),
       playingTrackId: null,
-      loopTrackIds: new Set(),
+      loopTrackIds: new Set(["dQw4w9WgXcQ"]),
       playingAt: null,
+      isLoading: false,
       addTrack: mockAddTrack,
       removeTrack: mockRemoveTrack,
       togglePlay: mockTogglePlay,
+      stopAll: mockStopAll,
       toggleLoop: mockToggleLoop,
     });
 
@@ -159,13 +240,23 @@ describe("MasterJukebox", () => {
 
   it("botão remover → chama removeTrack(trackId)", () => {
     vi.mocked(useJukebox).mockReturnValue({
-      tracks: [{ id: "dQw4w9WgXcQ", title: "Never Gonna Give You Up", addedBy: "u1", addedAt: "2026-11-01T00:00:00Z" }],
+      tracks: [
+        {
+          id: "dQw4w9WgXcQ",
+          title: "Never Gonna Give You Up",
+          addedBy: "u1",
+          addedAt: "2026-11-01T00:00:00Z",
+        },
+      ],
+      playingTrackIds: new Set(),
       playingTrackId: null,
       loopTrackIds: new Set(),
       playingAt: null,
+      isLoading: false,
       addTrack: mockAddTrack,
       removeTrack: mockRemoveTrack,
       togglePlay: mockTogglePlay,
+      stopAll: mockStopAll,
       toggleLoop: mockToggleLoop,
     });
 
@@ -179,13 +270,23 @@ describe("MasterJukebox", () => {
 
   it("volume slider onChange atualiza estado local (não chama hook)", () => {
     vi.mocked(useJukebox).mockReturnValue({
-      tracks: [{ id: "dQw4w9WgXcQ", title: "Never Gonna Give You Up", addedBy: "u1", addedAt: "2026-11-01T00:00:00Z" }],
+      tracks: [
+        {
+          id: "dQw4w9WgXcQ",
+          title: "Never Gonna Give You Up",
+          addedBy: "u1",
+          addedAt: "2026-11-01T00:00:00Z",
+        },
+      ],
+      playingTrackIds: new Set(),
       playingTrackId: null,
       loopTrackIds: new Set(),
       playingAt: null,
+      isLoading: false,
       addTrack: mockAddTrack,
       removeTrack: mockRemoveTrack,
       togglePlay: mockTogglePlay,
+      stopAll: mockStopAll,
       toggleLoop: mockToggleLoop,
     });
 
@@ -201,35 +302,5 @@ describe("MasterJukebox", () => {
     expect(mockTogglePlay).not.toHaveBeenCalled();
     expect(mockToggleLoop).not.toHaveBeenCalled();
     expect(mockRemoveTrack).not.toHaveBeenCalled();
-  });
-
-  it("YouTubeAudioPlayer renderizado com props playing, volume, loop corretas", () => {
-    vi.mocked(useJukebox).mockReturnValue({
-      tracks: [
-        { id: "dQw4w9WgXcQ", title: "Never Gonna Give You Up", addedBy: "u1", addedAt: "2026-11-01T00:00:00Z" },
-        { id: "9bZkp7q19f0", title: "GANGNAM STYLE", addedBy: "u1", addedAt: "2026-11-01T00:01:00Z" },
-      ],
-      playingTrackId: "dQw4w9WgXcQ",
-      loopTrackIds: new Set(["9bZkp7q19f0"]),
-      playingAt: Date.now(),
-      addTrack: mockAddTrack,
-      removeTrack: mockRemoveTrack,
-      togglePlay: mockTogglePlay,
-      toggleLoop: mockToggleLoop,
-    });
-
-    render(<MasterJukebox campaignId="c1" userId="u1" userName="Mestre" />);
-
-    // Player 1: playing=true, loop=false, volume=50 (padrão)
-    const player1 = screen.getByTestId("youtube-player-dQw4w9WgXcQ");
-    expect(player1).toHaveAttribute("data-playing", "true");
-    expect(player1).toHaveAttribute("data-volume", "50");
-    expect(player1).toHaveAttribute("data-loop", "false");
-
-    // Player 2: playing=false, loop=true, volume=50 (padrão)
-    const player2 = screen.getByTestId("youtube-player-9bZkp7q19f0");
-    expect(player2).toHaveAttribute("data-playing", "false");
-    expect(player2).toHaveAttribute("data-volume", "50");
-    expect(player2).toHaveAttribute("data-loop", "true");
   });
 });

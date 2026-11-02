@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Music, Play, Pause, Repeat, X } from "lucide-react";
+import { Plus, Music, Play, Pause, Repeat, X, Square, Volume2 } from "lucide-react";
 import { useJukebox } from "@/hooks/useJukebox";
 import { YouTubeAudioPlayer } from "@/components/audio/YouTubeAudioPlayer";
 
@@ -18,8 +18,17 @@ export function MasterJukebox({
   userName,
   className = "",
 }: MasterJukeboxProps) {
-  const { tracks, playingTrackId, loopTrackIds, addTrack, removeTrack, togglePlay, toggleLoop } =
-    useJukebox(campaignId, true);
+  const {
+    tracks,
+    playingTrackIds,
+    playingTrackId,
+    loopTrackIds,
+    addTrack,
+    removeTrack,
+    togglePlay,
+    stopAll,
+    toggleLoop,
+  } = useJukebox(campaignId, true);
 
   const [urlInput, setUrlInput] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -39,9 +48,24 @@ export function MasterJukebox({
     setVolumeLocal((prev) => ({ ...prev, [trackId]: value }));
   };
 
+  const activeCount = playingTrackIds ? playingTrackIds.size : playingTrackId ? 1 : 0;
+
   return (
     <div className={`bg-gray-900 border border-gray-800 rounded p-3 ${className}`}>
-      <h3 className="font-semibold text-white mb-2">🎵 Jukebox de Áudio</h3>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="font-semibold text-white">🎵 Jukebox de Áudio</h3>
+        {activeCount > 0 && (
+          <button
+            onClick={stopAll}
+            className="text-xs bg-red-950 hover:bg-red-900 text-red-300 border border-red-800 rounded px-2 py-0.5 flex items-center gap-1 transition-colors"
+            title="Parar todas as faixas em execução"
+            aria-label="Parar Todos"
+          >
+            <Square size={12} className="fill-current" />
+            Parar Todos ({activeCount})
+          </button>
+        )}
+      </div>
 
       {/* Input de URL */}
       <div className="flex gap-2 mb-3">
@@ -75,20 +99,39 @@ export function MasterJukebox({
       ) : (
         <div className="space-y-2">
           {tracks.map((track) => {
-            const isPlaying = playingTrackId === track.id;
+            const isPlaying = playingTrackIds
+              ? playingTrackIds.has(track.id)
+              : playingTrackId === track.id;
             const isLooping = loopTrackIds.has(track.id);
             const volume = volumeLocal[track.id] ?? 50;
 
             return (
-              <div key={track.id} className="bg-gray-800 rounded p-2 flex items-center gap-2">
-                {/* Thumbnail fake */}
-                <div className="bg-gray-800 p-2 rounded flex-shrink-0">
-                  <Music size={20} className="text-gray-400" />
+              <div
+                key={track.id}
+                className={`rounded p-2 flex items-center gap-2 border transition-colors ${
+                  isPlaying
+                    ? "bg-purple-950/40 border-purple-800/80"
+                    : "bg-gray-800 border-transparent"
+                }`}
+              >
+                {/* Ícone de status */}
+                <div
+                  className={`p-2 rounded flex-shrink-0 ${isPlaying ? "bg-purple-800 text-purple-200" : "bg-gray-800 text-gray-400"}`}
+                >
+                  {isPlaying ? (
+                    <Volume2 size={20} className="animate-pulse" />
+                  ) : (
+                    <Music size={20} />
+                  )}
                 </div>
 
                 {/* Título */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-white truncate">{track.title}</p>
+                  <p
+                    className={`text-sm truncate font-medium ${isPlaying ? "text-purple-200" : "text-white"}`}
+                  >
+                    {track.title}
+                  </p>
                 </div>
 
                 {/* Controles em linha */}

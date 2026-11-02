@@ -22,7 +22,9 @@ export function CampaignDetail() {
   const { socket } = useSocket();
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [worlds, setWorlds] = useState<World[]>([]);
-  const [selectedWorldEstablishments, setSelectedWorldEstablishments] = useState<Establishment[]>([]);
+  const [selectedWorldEstablishments, setSelectedWorldEstablishments] = useState<Establishment[]>(
+    [],
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -66,7 +68,11 @@ export function CampaignDetail() {
     maxWidth: 1400,
   });
 
-  const { config: screenConfig, updateConfig: updateScreenConfig, resetConfig: resetScreenConfig } = useMasterScreenConfig();
+  const {
+    config: screenConfig,
+    updateConfig: updateScreenConfig,
+    resetConfig: resetScreenConfig,
+  } = useMasterScreenConfig();
 
   const handleCloseMesaPopOut = useCallback(() => {
     setIsMesaPopped(false);
@@ -81,7 +87,7 @@ export function CampaignDetail() {
     const requestId = ++worldsRequestId.current;
     try {
       const response = await fetch(`/api/campaigns/${params.id}/worlds`, {
-        credentials: "include"
+        credentials: "include",
       });
       const data = await response.json();
 
@@ -109,7 +115,7 @@ export function CampaignDetail() {
     async function loadData() {
       try {
         const response = await fetch(`/api/campaigns/${params.id}`, {
-          credentials: "include"
+          credentials: "include",
         });
         const data = await response.json();
 
@@ -168,7 +174,7 @@ export function CampaignDetail() {
 
       if (res.ok) {
         setSelectedWorldEstablishments((prev) =>
-          prev.map((item) => (item.id === est.id ? { ...item, isOpen: nextState } : item))
+          prev.map((item) => (item.id === est.id ? { ...item, isOpen: nextState } : item)),
         );
         socket?.emit("toggle-establishment", {
           campaignId: campaign?.id,
@@ -182,7 +188,11 @@ export function CampaignDetail() {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Tem certeza que deseja excluir esta campanha? Todos os mundos e vínculos serão removidos.")) {
+    if (
+      !window.confirm(
+        "Tem certeza que deseja excluir esta campanha? Todos os mundos e vínculos serão removidos.",
+      )
+    ) {
       return;
     }
 
@@ -217,9 +227,7 @@ export function CampaignDetail() {
 
   if (error) {
     return (
-      <div className="rounded-lg border border-red-800 bg-red-900/30 p-4 text-red-300">
-        {error}
-      </div>
+      <div className="rounded-lg border border-red-800 bg-red-900/30 p-4 text-red-300">{error}</div>
     );
   }
 
@@ -264,7 +272,9 @@ export function CampaignDetail() {
             >
               ← Voltar
             </Link>
-            <div className={`h-4 w-[1px] shrink-0 ${isMissing ? "bg-zinc-700" : "bg-gray-700/80"}`} />
+            <div
+              className={`h-4 w-[1px] shrink-0 ${isMissing ? "bg-zinc-700" : "bg-gray-700/80"}`}
+            />
             <h1 className="text-base font-bold text-white truncate drop-shadow-md">
               {campaign.name}
             </h1>
@@ -279,9 +289,7 @@ export function CampaignDetail() {
               </span>
             ) : (
               <span className="hidden sm:inline-flex rounded bg-purple-950/80 border border-purple-800/50 px-2 py-0.5 text-[10px] text-purple-300 font-medium">
-                {campaign.rulesEngine === "dual_d20_sum"
-                  ? "2d20 somado"
-                  : "d20 + mod"}
+                {campaign.rulesEngine === "dual_d20_sum" ? "2d20 somado" : "d20 + mod"}
               </span>
             )}
           </div>
@@ -300,7 +308,10 @@ export function CampaignDetail() {
 
       {popupBlockedWarning && (
         <div className="mb-2 flex items-center justify-between rounded-lg border border-amber-600/50 bg-amber-950/40 px-3 py-2 text-xs text-amber-200">
-          <span>O navegador bloqueou a abertura da janela da Mesa. Permita pop-ups para este site para usar esta função.</span>
+          <span>
+            O navegador bloqueou a abertura da janela da Mesa. Permita pop-ups para este site para
+            usar esta função.
+          </span>
           <button
             onClick={() => setPopupBlockedWarning(false)}
             className="ml-2 font-bold text-amber-400 hover:underline"
@@ -327,7 +338,7 @@ export function CampaignDetail() {
           {/* Jukebox de Áudio (Issue #60) */}
           <MasterJukebox
             campaignId={campaign.id}
-            userId=""
+            userId={campaign.masterId}
             userName="Mestre"
             className="rounded-lg border border-gray-800 bg-gray-900 p-3"
           />
@@ -361,7 +372,9 @@ export function CampaignDetail() {
 
             {worlds.length === 0 ? (
               <p className="mb-2 text-sm text-gray-400">
-                {isMissing ? "Nenhum local de investigação criado ainda." : "Nenhum mundo criado ainda."}
+                {isMissing
+                  ? "Nenhum local de investigação criado ainda."
+                  : "Nenhum mundo criado ainda."}
               </p>
             ) : (
               <div className="mb-3 space-y-2">
@@ -378,9 +391,7 @@ export function CampaignDetail() {
                           : "border-gray-800 bg-gray-950"
                     }`}
                     style={
-                      world.coverUrl
-                        ? { backgroundImage: `url(${world.coverUrl})` }
-                        : undefined
+                      world.coverUrl ? { backgroundImage: `url(${world.coverUrl})` } : undefined
                     }
                   >
                     {world.coverUrl && (
@@ -421,10 +432,14 @@ export function CampaignDetail() {
                           </span>
                         )}
                         {world.description && (
-                          <p className="mt-0.5 text-xs text-gray-300 drop-shadow-sm">{world.description}</p>
+                          <p className="mt-0.5 text-xs text-gray-300 drop-shadow-sm">
+                            {world.description}
+                          </p>
                         )}
                         {world.mapUrl && (
-                          <p className={`mt-1 text-[10px] ${isMissing ? "text-rose-400" : "text-purple-400"}`}>
+                          <p
+                            className={`mt-1 text-[10px] ${isMissing ? "text-rose-400" : "text-purple-400"}`}
+                          >
                             🗺️ Possui mapa
                           </p>
                         )}
@@ -454,14 +469,18 @@ export function CampaignDetail() {
 
                 <div
                   className={`grid transition-all duration-200 ${
-                    isEstablishmentsExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                    isEstablishmentsExpanded
+                      ? "grid-rows-[1fr] opacity-100"
+                      : "grid-rows-[0fr] opacity-0"
                   }`}
                 >
                   <div className="overflow-hidden">
                     {isEstablishmentsExpanded && (
                       <>
                         {selectedWorldEstablishments.length === 0 ? (
-                          <p className="text-xs text-gray-500 italic">Nenhum estabelecimento neste mundo.</p>
+                          <p className="text-xs text-gray-500 italic">
+                            Nenhum estabelecimento neste mundo.
+                          </p>
                         ) : (
                           <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                             {selectedWorldEstablishments.map((est) => (
@@ -470,7 +489,9 @@ export function CampaignDetail() {
                                 className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-950 p-2 text-xs"
                               >
                                 <div className="min-w-0 flex-1 pr-2">
-                                  <span className="font-semibold text-white block truncate">{est.name}</span>
+                                  <span className="font-semibold text-white block truncate">
+                                    {est.name}
+                                  </span>
                                   <span className="text-[10px] text-gray-400 block truncate">
                                     {est.type || "Geral"}
                                   </span>

@@ -126,16 +126,14 @@ export const characters = pgTable(
     hitPointsCurrent: integer("hit_points_current").notNull().default(15),
     manaPointsMax: integer("mana_points_max").notNull().default(5),
     manaPointsCurrent: integer("mana_points_current").notNull().default(5),
-    attributes: jsonb("attributes")
-      .notNull()
-      .default({
-        forca: 8,
-        destreza: 8,
-        vigor: 8,
-        inteligencia: 8,
-        empatia: 8,
-        sorte: 8,
-      }),
+    attributes: jsonb("attributes").notNull().default({
+      forca: 8,
+      destreza: 8,
+      vigor: 8,
+      inteligencia: 8,
+      empatia: 8,
+      sorte: 8,
+    }),
     level: integer("level").notNull().default(1),
     xp: integer("xp").notNull().default(0),
     block: integer("block").notNull().default(0),
@@ -164,14 +162,37 @@ export const campaigns = pgTable("campaigns", {
   description: text("description"),
   rulesEngine: varchar("rules_engine", { length: 20 }).notNull().default("d20_mod"),
   pvpEnabled: boolean("pvp_enabled").notNull().default(false),
-  difficultyModifierShadowPoints: integer("difficulty_modifier_shadow_points")
-    .notNull()
-    .default(0),
+  difficultyModifierShadowPoints: integer("difficulty_modifier_shadow_points").notNull().default(0),
   coverImageUrl: text("cover_image_url"),
   worldMapUrl: text("world_map_url"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
+
+/**
+ * CAMPAIGN_AUDIO_TRACKS — Tracks de áudio da jukebox por campanha (Issue #60).
+ * Persistência de faixas do YouTube adicionadas pelo mestre.
+ */
+export const campaignAudioTracks = pgTable(
+  "campaign_audio_tracks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    campaignId: uuid("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" }),
+    videoId: varchar("video_id", { length: 11 }).notNull(), // ID do YouTube (11 chars)
+    title: varchar("title", { length: 200 }).notNull(),
+    addedBy: uuid("added_by")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    addedAt: timestamp("added_at").notNull().defaultNow(),
+    position: integer("position").notNull().default(0), // ordem de exibição (0, 1, 2...)
+  },
+  (table) => [
+    uniqueIndex("campaign_audio_tracks_campaign_video_idx").on(table.campaignId, table.videoId),
+    index("campaign_audio_tracks_position_idx").on(table.campaignId, table.position),
+  ],
+);
 
 /**
  * WORLD — Mundo dentro de uma campanha (D-06).
@@ -247,7 +268,7 @@ export const establishmentInventory = pgTable(
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
-  (table) => [index("idx_est_inv_establishment").on(table.establishmentId)]
+  (table) => [index("idx_est_inv_establishment").on(table.establishmentId)],
 );
 
 /**
@@ -269,16 +290,14 @@ export const npcs = pgTable(
     hitPointsMax: integer("hit_points_max").notNull().default(10),
     manaPoints: integer("mana_points").notNull().default(0),
     manaPointsMax: integer("mana_points_max").notNull().default(0),
-    attributes: jsonb("attributes")
-      .notNull()
-      .default({
-        forca: 10,
-        destreza: 10,
-        vigor: 10,
-        inteligencia: 10,
-        empatia: 10,
-        sorte: 10,
-      }),
+    attributes: jsonb("attributes").notNull().default({
+      forca: 10,
+      destreza: 10,
+      vigor: 10,
+      inteligencia: 10,
+      empatia: 10,
+      sorte: 10,
+    }),
     level: integer("level").notNull().default(1),
     xp: integer("xp").notNull().default(0),
     block: integer("block").notNull().default(0),
@@ -396,7 +415,11 @@ export const encounterParticipants = pgTable(
   },
   (table) => [
     index("idx_encounter_participant_encounter").on(table.encounterId),
-    uniqueIndex("idx_encounter_participant_unique").on(table.encounterId, table.actorType, table.actorId),
+    uniqueIndex("idx_encounter_participant_unique").on(
+      table.encounterId,
+      table.actorType,
+      table.actorId,
+    ),
   ],
 );
 
@@ -524,7 +547,10 @@ export const items = pgTable(
     sourceData: jsonb("source_data"),
     translation: jsonb("translation"),
   },
-  (table) => [index("idx_item_campaign").on(table.campaignId), index("idx_item_category").on(table.sourceKey)],
+  (table) => [
+    index("idx_item_campaign").on(table.campaignId),
+    index("idx_item_category").on(table.sourceKey),
+  ],
 );
 
 /**
@@ -560,9 +586,7 @@ export const characterSkills = pgTable(
       .references(() => skills.id, { onDelete: "cascade" }),
     trained: boolean("trained").notNull().default(false),
   },
-  (table) => [
-    uniqueIndex("idx_char_skill_unique").on(table.characterId, table.skillId),
-  ],
+  (table) => [uniqueIndex("idx_char_skill_unique").on(table.characterId, table.skillId)],
 );
 
 /**
@@ -579,9 +603,7 @@ export const characterSpells = pgTable(
       .notNull()
       .references(() => spells.id, { onDelete: "cascade" }),
   },
-  (table) => [
-    uniqueIndex("idx_char_spell_unique").on(table.characterId, table.spellId),
-  ],
+  (table) => [uniqueIndex("idx_char_spell_unique").on(table.characterId, table.spellId)],
 );
 
 /**
@@ -601,9 +623,7 @@ export const characterItems = pgTable(
     hitRoll: varchar("hit_roll", { length: 200 }),
     damageRoll: varchar("damage_roll", { length: 200 }),
   },
-  (table) => [
-    uniqueIndex("idx_char_item_unique").on(table.characterId, table.itemId),
-  ],
+  (table) => [uniqueIndex("idx_char_item_unique").on(table.characterId, table.itemId)],
 );
 
 /**
@@ -757,8 +777,7 @@ export const missingHabitants = pgTable(
   "missing_habitants",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    campaignId: uuid("campaign_id")
-      .references(() => campaigns.id, { onDelete: "cascade" }),
+    campaignId: uuid("campaign_id").references(() => campaigns.id, { onDelete: "cascade" }),
     ownerId: uuid("owner_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
@@ -862,6 +881,18 @@ export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
   missingCampaignState: one(missingCampaignStates),
   missingHabitants: many(missingHabitants),
   missingActionLedger: many(missingActionLedger),
+  audioTracks: many(campaignAudioTracks),
+}));
+
+export const campaignAudioTracksRelations = relations(campaignAudioTracks, ({ one }) => ({
+  campaign: one(campaigns, {
+    fields: [campaignAudioTracks.campaignId],
+    references: [campaigns.id],
+  }),
+  addedByUser: one(users, {
+    fields: [campaignAudioTracks.addedBy],
+    references: [users.id],
+  }),
 }));
 
 export const worldsRelations = relations(worlds, ({ one, many }) => ({
@@ -877,7 +908,10 @@ export const establishmentsRelations = relations(establishments, ({ one }) => ({
 }));
 
 export const establishmentInventoryRelations = relations(establishmentInventory, ({ one }) => ({
-  establishment: one(establishments, { fields: [establishmentInventory.establishmentId], references: [establishments.id] }),
+  establishment: one(establishments, {
+    fields: [establishmentInventory.establishmentId],
+    references: [establishments.id],
+  }),
 }));
 
 export const npcsRelations = relations(npcs, ({ one, many }) => ({
@@ -911,7 +945,10 @@ export const encountersRelations = relations(encounters, ({ one, many }) => ({
 }));
 
 export const encounterParticipantsRelations = relations(encounterParticipants, ({ one }) => ({
-  encounter: one(encounters, { fields: [encounterParticipants.encounterId], references: [encounters.id] }),
+  encounter: one(encounters, {
+    fields: [encounterParticipants.encounterId],
+    references: [encounters.id],
+  }),
 }));
 
 export const characterCampaignsRelations = relations(characterCampaigns, ({ one }) => ({
@@ -1130,7 +1167,7 @@ export const communityLikes = pgTable(
   },
   (table) => ({
     pk: primaryKey({ columns: [table.postId, table.userId] }),
-  })
+  }),
 );
 
 /**
@@ -1186,7 +1223,7 @@ export const communityPostVotes = pgTable(
   },
   (table) => ({
     pk: primaryKey({ columns: [table.postId, table.userId] }),
-  })
+  }),
 );
 
 // Relations da Comunidade
@@ -1245,4 +1282,9 @@ export const communityClonesRelations = relations(communityClones, ({ one }) => 
   }),
 }));
 
+// =============================================================================
+// TYPE EXPORTS
+// =============================================================================
 
+export type CampaignAudioTrack = typeof campaignAudioTracks.$inferSelect;
+export type NewCampaignAudioTrack = typeof campaignAudioTracks.$inferInsert;

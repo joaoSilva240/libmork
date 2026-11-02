@@ -62,7 +62,11 @@ describe("useJukebox", () => {
 
       let response: { ok: boolean; error?: string };
       act(() => {
-        response = result.current.addTrack("https://www.youtube.com/watch?v=dQw4w9WgXcQ", "user-1", "Master");
+        response = result.current.addTrack(
+          "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          "user-1",
+          "Master",
+        );
       });
 
       expect(response!).toEqual({ ok: true });
@@ -96,7 +100,11 @@ describe("useJukebox", () => {
 
       let response: { ok: boolean; error?: string };
       act(() => {
-        response = result.current.addTrack("https://www.youtube.com/watch?v=dQw4w9WgXcQ", "user-1", "Master");
+        response = result.current.addTrack(
+          "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          "user-1",
+          "Master",
+        );
       });
 
       expect(response!.ok).toBe(false);
@@ -104,7 +112,7 @@ describe("useJukebox", () => {
     });
   });
 
-  describe("togglePlay", () => {
+  describe("togglePlay (simultaneous playback)", () => {
     it("should emit play event when no track is playing", () => {
       const { result } = renderHook(() => useJukebox("campaign-1", true));
 
@@ -116,6 +124,7 @@ describe("useJukebox", () => {
         result.current.togglePlay("dQw4w9WgXcQ");
       });
 
+      expect(result.current.playingTrackIds.has("dQw4w9WgXcQ")).toBe(true);
       expect(result.current.playingTrackId).toBe("dQw4w9WgXcQ");
       expect(result.current.playingAt).toBeTypeOf("number");
       expect(mockEmitAudioTrackPlay).toHaveBeenCalledWith({
@@ -137,12 +146,43 @@ describe("useJukebox", () => {
         result.current.togglePlay("dQw4w9WgXcQ");
       });
 
+      expect(result.current.playingTrackIds.has("dQw4w9WgXcQ")).toBe(false);
       expect(result.current.playingTrackId).toBeNull();
       expect(result.current.playingAt).toBeNull();
       expect(mockEmitAudioTrackPause).toHaveBeenCalledWith({
         campaignId: "campaign-1",
         trackId: "dQw4w9WgXcQ",
       });
+    });
+
+    it("should allow multiple tracks to play simultaneously", () => {
+      const { result } = renderHook(() => useJukebox("campaign-1", true));
+
+      act(() => {
+        result.current.addTrack("https://www.youtube.com/watch?v=dQw4w9WgXcQ", "user-1", "Master");
+        result.current.addTrack("https://www.youtube.com/watch?v=oHg5SJYRHA0", "user-1", "Master");
+      });
+
+      act(() => {
+        result.current.togglePlay("dQw4w9WgXcQ");
+      });
+
+      act(() => {
+        result.current.togglePlay("oHg5SJYRHA0");
+      });
+
+      expect(result.current.playingTrackIds.has("dQw4w9WgXcQ")).toBe(true);
+      expect(result.current.playingTrackIds.has("oHg5SJYRHA0")).toBe(true);
+      expect(result.current.playingTrackIds.size).toBe(2);
+
+      // Pausing one leaves the other playing
+      act(() => {
+        result.current.togglePlay("dQw4w9WgXcQ");
+      });
+
+      expect(result.current.playingTrackIds.has("dQw4w9WgXcQ")).toBe(false);
+      expect(result.current.playingTrackIds.has("oHg5SJYRHA0")).toBe(true);
+      expect(result.current.playingTrackIds.size).toBe(1);
     });
 
     it("should not emit when isMaster is false", () => {
@@ -154,6 +194,37 @@ describe("useJukebox", () => {
 
       expect(mockEmitAudioTrackPlay).not.toHaveBeenCalled();
       expect(mockEmitAudioTrackPause).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("stopAll", () => {
+    it("should pause all playing tracks and clear playingTrackIds", () => {
+      const { result } = renderHook(() => useJukebox("campaign-1", true));
+
+      act(() => {
+        result.current.addTrack("https://www.youtube.com/watch?v=dQw4w9WgXcQ", "user-1", "Master");
+        result.current.addTrack("https://www.youtube.com/watch?v=oHg5SJYRHA0", "user-1", "Master");
+        result.current.togglePlay("dQw4w9WgXcQ");
+        result.current.togglePlay("oHg5SJYRHA0");
+      });
+
+      expect(result.current.playingTrackIds.size).toBe(2);
+
+      act(() => {
+        result.current.stopAll();
+      });
+
+      expect(result.current.playingTrackIds.size).toBe(0);
+      expect(result.current.playingTrackId).toBeNull();
+      expect(result.current.playingAt).toBeNull();
+      expect(mockEmitAudioTrackPause).toHaveBeenCalledWith({
+        campaignId: "campaign-1",
+        trackId: "dQw4w9WgXcQ",
+      });
+      expect(mockEmitAudioTrackPause).toHaveBeenCalledWith({
+        campaignId: "campaign-1",
+        trackId: "oHg5SJYRHA0",
+      });
     });
   });
 
@@ -215,6 +286,7 @@ describe("useJukebox", () => {
 
       expect(result.current.tracks).toHaveLength(0);
       expect(result.current.loopTrackIds.has("dQw4w9WgXcQ")).toBe(false);
+      expect(result.current.playingTrackIds.has("dQw4w9WgXcQ")).toBe(false);
       expect(result.current.playingTrackId).toBeNull();
       expect(result.current.playingAt).toBeNull();
       expect(mockEmitAudioTrackRemove).toHaveBeenCalledWith({
@@ -274,11 +346,12 @@ describe("useJukebox", () => {
         playHandler!({ campaignId: "campaign-1", trackId: "track-1", playingAt: 1234567890 });
       });
 
+      expect(result.current.playingTrackIds.has("track-1")).toBe(true);
       expect(result.current.playingTrackId).toBe("track-1");
       expect(result.current.playingAt).toBe(1234567890);
     });
 
-    it("should replace full state on remote audio:track-state event", () => {
+    it("should replace full state on remote audio:track-state event with playingTrackIds", () => {
       let stateHandler: ((payload: any) => void) | null = null;
       mockSubscribeAudioTrackState = vi.fn((handler: (payload: any) => void) => {
         stateHandler = handler;
@@ -296,15 +369,16 @@ describe("useJukebox", () => {
         stateHandler!({
           campaignId: "campaign-1",
           tracks,
-          playingTrackId: "track-1",
+          playingTrackIds: ["track-1", "track-2"],
           playingAt: 9876543210,
           loopTrackIds: ["track-2"],
         });
       });
 
       expect(result.current.tracks).toHaveLength(2);
-      expect(result.current.playingTrackId).toBe("track-1");
-      expect(result.current.playingAt).toBe(9876543210);
+      expect(result.current.playingTrackIds.has("track-1")).toBe(true);
+      expect(result.current.playingTrackIds.has("track-2")).toBe(true);
+      expect(result.current.playingTrackIds.size).toBe(2);
       expect(result.current.loopTrackIds.has("track-2")).toBe(true);
     });
 
@@ -338,7 +412,11 @@ describe("useJukebox", () => {
 
       let response: { ok: boolean; error?: string };
       act(() => {
-        response = result.current.addTrack("https://www.youtube.com/watch?v=dQw4w9WgXcQ", "user-1", "Player");
+        response = result.current.addTrack(
+          "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          "user-1",
+          "Player",
+        );
       });
 
       expect(response!.ok).toBe(false);

@@ -5,8 +5,9 @@
 // (server.js CommonJS). Os nomes dos eventos DEVEM ser exatamente estes —
 // use-os verbatim nos handlers do server.js.
 //
-// Design (Option A): volume é LOCAL por usuário; eventos sincronizados são
+// Design: volume é LOCAL por usuário; eventos sincronizados são
 // add/play/pause/loop/remove; late-joiners recebem o snapshot audio:track-state.
+// Suporta execução simultânea através de playingTrackIds (Set/Array).
 
 import { z } from "zod";
 
@@ -22,36 +23,47 @@ export const AUDIO_EVENTS = {
 } as const;
 
 export interface AudioTrack {
-  id: string;            // videoId do YouTube (11 chars)
-  title: string;         // título exibível; se desconhecido, usar o videoId
-  addedBy: string;       // userId do mestre
-  addedAt: string;       // ISO timestamp
+  id: string; // videoId do YouTube (11 chars)
+  title: string; // título exibível; se desconhecido, usar o videoId
+  addedBy: string; // userId do mestre
+  addedAt: string; // ISO timestamp
 }
 
 export interface AudioTrackAddPayload {
   campaignId: string;
   actorId?: string;
-  actorName: string;     // nome do mestre (para log/toast)
+  actorName: string; // nome do mestre (para log/toast)
   track: AudioTrack;
 }
 
 export interface AudioTrackPlayPayload {
   campaignId: string;
   trackId: string;
-  playingAt: number;     // Date.now() no mestre — clientes fazem seekTo( (Date.now()-playingAt)/1000 )
+  playingAt: number; // Date.now() no mestre — clientes fazem seekTo( (Date.now()-playingAt)/1000 )
 }
 
-export interface AudioTrackPausePayload { campaignId: string; trackId: string; }
-export interface AudioTrackRemovePayload { campaignId: string; trackId: string; }
-export interface AudioTrackLoopPayload { campaignId: string; trackId: string; loop: boolean; }
+export interface AudioTrackPausePayload {
+  campaignId: string;
+  trackId: string;
+}
+export interface AudioTrackRemovePayload {
+  campaignId: string;
+  trackId: string;
+}
+export interface AudioTrackLoopPayload {
+  campaignId: string;
+  trackId: string;
+  loop: boolean;
+}
 
 // Snapshot completo para reconstrução do estado (late-joiners + reconexão)
 export interface AudioTrackStatePayload {
   campaignId: string;
   tracks: AudioTrack[];
-  playingTrackId: string | null;
-  playingAt: number | null;   // epoch de início da faixa em play (null se pausada)
-  loopTrackIds: string[];     // versões dinâmicas do estado de loop
+  playingTrackIds?: string[]; // Faixas em reprodução simultânea (Issue #60)
+  playingTrackId?: string | null; // Retrocompatibilidade (primeira faixa ou null)
+  playingAt?: number | null; // epoch de início da primeira faixa em play (null se pausada)
+  loopTrackIds: string[]; // versões dinâmicas do estado de loop
 }
 
 // Payload emitido no socket do CLIENTE para o servidor
