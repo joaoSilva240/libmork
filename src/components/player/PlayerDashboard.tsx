@@ -18,6 +18,8 @@ import { WealthManager, type WealthData } from "@/components/player/WealthManage
 import { generateUUID } from "@/lib/utils/uuid";
 import { useSocket } from "@/context/SocketContext";
 import { JukeboxAudioBridge } from "@/components/audio/JukeboxAudioBridge";
+import { ThemeConfigPanel } from "@/components/theme/ThemeConfigPanel";
+import { useTheme } from "@/context/ThemeContext";
 
 /**
  * Mapeia o nível de reputação (reputationLevel / trustLevel) para exatamente 0 a 4 pontos (dots):
@@ -606,7 +608,7 @@ export function PlayerDashboard() {
                               className="h-full w-full object-cover"
                             />
                           ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-purple-950 font-bold text-purple-200">
+                            <div className="flex h-full w-full items-center justify-center bg-accent-glow text-accent-vibrant [data-theme-mode=light]:bg-accent/20 [data-theme-mode=light]:text-accent-dark font-bold">
                               {character.name.charAt(0).toUpperCase()}
                             </div>
                           )}
@@ -614,7 +616,7 @@ export function PlayerDashboard() {
                         <span className="min-w-0 flex-1 truncate font-semibold text-secondary-pure">
                           {character.name}
                         </span>
-                        <span className="shrink-0 rounded border border-accent-vibrant/50 bg-accent-dark/90 px-2 py-1 text-xs font-semibold text-secondary-pure">
+                        <span className="shrink-0 rounded border border-accent/40 bg-accent/15 px-2 py-1 text-xs font-semibold text-accent-dark [data-theme-mode=dark]:border-accent-vibrant/50 [data-theme-mode=dark]:bg-accent-dark/90 [data-theme-mode=dark]:text-white">
                           Nv. {character.level}
                           {character.className ? ` · ${character.className}` : ""}
                         </span>
@@ -835,8 +837,9 @@ export function PlayerDashboard() {
         )}
 
         {activeTab === "settings" && (
-          <div className="motion-page space-y-4 pb-24">
+          <div className="motion-page space-y-6 pb-24">
             <h2 className="text-lg font-bold text-secondary-pure">Configurações</h2>
+            <ThemeConfigPanel />
             <MotionSettingsPanel />
             <Dice3DSettingsPanel />
           </div>
@@ -854,38 +857,22 @@ export function PlayerDashboard() {
             {
               id: "characters",
               label: "Meus Personagens",
-              icon: (
-                <CharactersFilledIcon
-                  className={`h-6 w-6 ${activeTab === "characters" ? "fill-purple-400" : "fill-gray-500"}`}
-                />
-              ),
+              icon: <CharactersFilledIcon className="h-6 w-6" />,
             },
             {
               id: "campaigns",
               label: "Campanhas",
-              icon: (
-                <CampaignsFilledIcon
-                  className={`h-6 w-6 ${activeTab === "campaigns" ? "fill-purple-400" : "fill-gray-500"}`}
-                />
-              ),
+              icon: <CampaignsFilledIcon className="h-6 w-6" />,
             },
             {
               id: "wealth",
               label: "Tesouraria",
-              icon: (
-                <TreasuryIcon
-                  className={`h-6 w-6 ${activeTab === "wealth" ? "text-purple-400" : "text-gray-500"}`}
-                />
-              ),
+              icon: <TreasuryIcon className="h-6 w-6" />,
             },
             {
               id: "settings",
               label: "Configurações",
-              icon: (
-                <SettingsFilledIcon
-                  className={`h-6 w-6 ${activeTab === "settings" ? "text-purple-400" : "text-gray-500"}`}
-                />
-              ),
+              icon: <SettingsFilledIcon className="h-6 w-6" />,
             },
           ]}
         />
@@ -949,7 +936,7 @@ export function PlayerDashboard() {
                 role="presentation"
               >
                 <div
-                  className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-gray-800 bg-gray-900 shadow-2xl"
+                  className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-secondary-border bg-secondary-card text-secondary-pure shadow-2xl"
                   onClick={(e) => e.stopPropagation()}
                   role="dialog"
                   aria-modal="true"
@@ -960,21 +947,21 @@ export function PlayerDashboard() {
                     type="button"
                     aria-label="Fechar"
                     onClick={() => setSelectedCampaign(null)}
-                    className="absolute top-3.5 right-3.5 z-30 rounded-lg bg-gray-950/80 backdrop-blur-md p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
+                    className="absolute top-3.5 right-3.5 z-30 rounded-lg bg-dominant-container/80 backdrop-blur-md p-1.5 text-secondary-muted hover:bg-dominant-container hover:text-secondary-pure border border-secondary-border transition-colors"
                   >
                     ✕
                   </button>
 
                   {/* Banner Hero com a imagem da campanha */}
                   {selectedCampaign.coverImageUrl && (
-                    <div className="relative h-40 sm:h-48 w-full overflow-hidden border-b border-gray-800/80">
+                    <div className="relative h-40 sm:h-48 w-full overflow-hidden border-b border-secondary-border">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={selectedCampaign.coverImageUrl}
                         alt={selectedCampaign.name}
                         className="h-full w-full object-cover"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-black/40" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-secondary-card via-secondary-card/60 to-transparent" />
                     </div>
                   )}
 
@@ -1027,20 +1014,20 @@ export function PlayerDashboard() {
 
                       <h2
                         id="campaign-details-title"
-                        className="text-2xl font-bold text-white leading-tight"
+                        className="text-2xl font-bold text-secondary-pure leading-tight"
                       >
                         {selectedCampaign.name}
                       </h2>
-                      <p className="mt-1 text-sm text-gray-400">
+                      <p className="mt-1 text-sm text-secondary-muted">
                         Mestre:{" "}
-                        <span className="font-medium text-gray-200">
+                        <span className="font-medium text-secondary-pure">
                           {selectedCampaign.master.displayName}
                         </span>
                       </p>
                     </div>
 
                     <div
-                      className="flex gap-2 border-b border-gray-800"
+                      className="flex gap-2 border-b border-secondary-border"
                       role="tablist"
                       aria-label="Detalhes da campanha"
                     >
@@ -1056,7 +1043,7 @@ export function PlayerDashboard() {
                           role="tab"
                           aria-selected={campaignDetailsTab === id}
                           onClick={() => setCampaignDetailsTab(id)}
-                          className={`border-b-2 px-3 py-2 text-sm font-semibold ${campaignDetailsTab === id ? "border-purple-400 text-purple-300" : "border-transparent text-gray-500 hover:text-gray-300"}`}
+                          className={`border-b-2 px-3 py-2 text-sm font-semibold transition-colors ${campaignDetailsTab === id ? "border-accent text-accent-vibrant [data-theme-mode=light]:text-accent-primary" : "border-transparent text-secondary-muted hover:text-secondary-pure"}`}
                         >
                           {label}
                         </button>
@@ -1066,18 +1053,18 @@ export function PlayerDashboard() {
                     {campaignDetailsTab === "resumo" ? (
                       <>
                         {/* Detalhes / Descrição */}
-                        <div className="rounded-lg border border-gray-800 bg-gray-950/60 p-4">
-                          <h3 className="text-sm font-semibold text-purple-300">
+                        <div className="rounded-lg border border-secondary-border bg-dominant-container/40 p-4">
+                          <h3 className="text-sm font-semibold text-accent-vibrant [data-theme-mode=light]:text-accent-primary">
                             Detalhes da Campanha
                           </h3>
-                          <p className="mt-2 whitespace-pre-wrap text-sm text-gray-300 leading-relaxed">
+                          <p className="mt-2 whitespace-pre-wrap text-sm text-secondary-offwhite leading-relaxed">
                             {selectedCampaign.description || "Nenhuma descrição fornecida."}
                           </p>
                         </div>
 
                         {/* Meus Personagens / Habitantes nesta campanha */}
                         <div>
-                          <h3 className="text-sm font-semibold text-purple-300 mb-2.5">
+                          <h3 className="text-sm font-semibold text-accent-vibrant [data-theme-mode=light]:text-accent-primary mb-2.5">
                             {isMissing
                               ? "Meus Habitantes nesta campanha"
                               : "Meus Personagens nesta campanha"}
@@ -1110,15 +1097,15 @@ export function PlayerDashboard() {
                                   return (
                                     <div
                                       key={habitant.id}
-                                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-[#121316] p-3.5 font-mono shadow-sm transition-colors hover:border-zinc-700"
+                                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-secondary-border bg-dominant-deep/70 p-3.5 font-mono shadow-sm transition-colors hover:border-accent/40"
                                     >
                                       <div className="flex items-center gap-3.5 min-w-0">
-                                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-zinc-800 border border-zinc-700 text-zinc-200 font-bold text-sm select-none">
+                                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-dominant-container border border-secondary-border text-secondary-pure font-bold text-sm select-none">
                                           {initials}
                                         </div>
                                         <div className="min-w-0">
                                           <div className="flex flex-wrap items-center gap-2">
-                                            <p className="font-semibold text-zinc-100 text-sm sm:text-base truncate">
+                                            <p className="font-semibold text-secondary-pure text-sm sm:text-base truncate">
                                               {habitant.name}
                                             </p>
                                             {isDisappeared ? (
@@ -1134,7 +1121,7 @@ export function PlayerDashboard() {
                                               MISSING — Edição ZERO
                                             </span>
                                           </div>
-                                          <div className="mt-1 text-xs text-zinc-400">
+                                          <div className="mt-1 text-xs text-secondary-muted">
                                             <span>
                                               {activeLines} / {totalLines} linhas de memórias
                                               legíveis
@@ -1142,7 +1129,7 @@ export function PlayerDashboard() {
                                           </div>
                                         </div>
                                       </div>
-                                      <div className="flex items-center justify-end sm:shrink-0 pt-2 sm:pt-0 border-t border-zinc-900 sm:border-t-0">
+                                      <div className="flex items-center justify-end sm:shrink-0 pt-2 sm:pt-0 border-t border-secondary-border sm:border-t-0">
                                         <Button
                                           variant="secondary"
                                           className="px-3.5 py-1.5 text-xs font-semibold"
@@ -1163,7 +1150,7 @@ export function PlayerDashboard() {
                               selectedCampaign.characters.map((char) => (
                                 <div
                                   key={char.id}
-                                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-gray-800 bg-gray-950 p-3.5 transition-colors hover:border-gray-700 shadow-sm"
+                                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-secondary-border bg-dominant-deep/70 p-3.5 transition-colors hover:border-accent/40 shadow-sm"
                                 >
                                   <div className="flex items-center gap-3.5 min-w-0">
                                     <div className="relative h-12 w-12 shrink-0">
@@ -1172,32 +1159,32 @@ export function PlayerDashboard() {
                                         <img
                                           src={char.imageUrl}
                                           alt={char.name}
-                                          className="h-full w-full rounded-full object-cover ring-2 ring-purple-500 shadow-md"
+                                          className="h-full w-full rounded-full object-cover ring-2 ring-accent shadow-md"
                                         />
                                       ) : (
-                                        <div className="flex h-full w-full items-center justify-center rounded-full bg-purple-950 text-purple-200 font-bold text-base uppercase ring-2 ring-purple-500 shadow-md">
+                                        <div className="flex h-full w-full items-center justify-center rounded-full bg-accent-glow text-accent-vibrant [data-theme-mode=light]:text-accent-primary font-bold text-base uppercase ring-2 ring-accent shadow-md">
                                           {char.name.charAt(0).toUpperCase()}
                                         </div>
                                       )}
                                     </div>
                                     <div className="min-w-0">
-                                      <p className="font-semibold text-white text-sm sm:text-base truncate">
+                                      <p className="font-semibold text-secondary-pure text-sm sm:text-base truncate">
                                         {char.name}
                                       </p>
                                       <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
-                                        <span className="rounded bg-purple-950/80 border border-purple-800/60 px-2 py-0.5 text-[11px] font-medium text-purple-200">
+                                        <span className="rounded bg-accent-glow border border-accent/40 px-2 py-0.5 text-[11px] font-medium text-accent-vibrant [data-theme-mode=light]:text-accent-primary">
                                           Nível {char.level}
                                         </span>
-                                        <span className="rounded bg-red-950/60 border border-red-800/50 px-2 py-0.5 text-[11px] font-medium text-red-300">
+                                        <span className="rounded border border-red-300 bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700 [data-theme-mode=dark]:border-red-800/50 [data-theme-mode=dark]:bg-red-950/60 [data-theme-mode=dark]:text-red-300">
                                           HP {char.hitPointsCurrent}/{char.hitPointsMax}
                                         </span>
-                                        <span className="rounded bg-blue-950/60 border border-blue-800/50 px-2 py-0.5 text-[11px] font-medium text-blue-300">
+                                        <span className="rounded border border-blue-300 bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700 [data-theme-mode=dark]:border-blue-800/50 [data-theme-mode=dark]:bg-blue-950/60 [data-theme-mode=dark]:text-blue-300">
                                           Mana {char.manaPointsCurrent}/{char.manaPointsMax}
                                         </span>
                                       </div>
                                     </div>
                                   </div>
-                                  <div className="flex items-center justify-end sm:shrink-0 pt-2 sm:pt-0 border-t border-gray-900 sm:border-t-0">
+                                  <div className="flex items-center justify-end sm:shrink-0 pt-2 sm:pt-0 border-t border-secondary-border sm:border-t-0">
                                     <Link
                                       href={`/player/characters/${char.id}`}
                                       onClick={() => setSelectedCampaign(null)}
@@ -1230,7 +1217,7 @@ export function PlayerDashboard() {
                           <>
                             {/* NPCs */}
                             <div>
-                              <h3 className="text-sm font-semibold text-purple-300 mb-2">
+                              <h3 className="text-sm font-semibold text-accent-vibrant [data-theme-mode=light]:text-accent-primary mb-2">
                                 👥 NPCs
                               </h3>
                               {campaignDetails.npcs.length === 0 ? (
@@ -1240,7 +1227,7 @@ export function PlayerDashboard() {
                                   {campaignDetails.npcs.map((npc) => (
                                     <div
                                       key={npc.id}
-                                      className="flex items-center gap-2.5 rounded-lg border border-gray-800 bg-gray-950/40 px-3 py-2"
+                                      className="flex items-center gap-2.5 rounded-lg border border-secondary-border bg-dominant-deep/50 px-3 py-2"
                                     >
                                       {npc.imageUrl ? (
                                         /* eslint-disable-next-line @next/next/no-img-element */
@@ -1250,15 +1237,15 @@ export function PlayerDashboard() {
                                           className="h-8 w-8 rounded-full object-cover shrink-0"
                                         />
                                       ) : (
-                                        <div className="h-8 w-8 rounded-full bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-400 shrink-0">
+                                        <div className="h-8 w-8 rounded-full bg-dominant-container flex items-center justify-center text-xs font-bold text-secondary-muted shrink-0">
                                           {npc.name.charAt(0).toUpperCase()}
                                         </div>
                                       )}
                                       <div className="min-w-0">
-                                        <p className="text-sm font-medium text-white truncate">
+                                        <p className="text-sm font-medium text-secondary-pure truncate">
                                           {npc.name}
                                         </p>
-                                        <p className="text-xs text-gray-500">
+                                        <p className="text-xs text-secondary-muted">
                                           {npc.npcType} • Nível {npc.level}
                                         </p>
                                       </div>
@@ -1270,7 +1257,7 @@ export function PlayerDashboard() {
 
                             {/* Mundos e Estabelecimentos Unificados */}
                             <div>
-                              <h3 className="text-sm font-semibold text-purple-300 mb-2">
+                              <h3 className="text-sm font-semibold text-accent-vibrant [data-theme-mode=light]:text-accent-primary mb-2">
                                 🌍 Mundos
                               </h3>
                               {campaignDetails.worlds.length === 0 ? (
@@ -1287,7 +1274,7 @@ export function PlayerDashboard() {
                                     return (
                                       <div
                                         key={world.id}
-                                        className="relative overflow-hidden rounded-lg border border-gray-800 bg-gray-950 min-h-[6.5rem] flex flex-col justify-end p-3"
+                                        className="relative overflow-hidden rounded-lg border border-secondary-border bg-dominant-deep/80 min-h-[6.5rem] flex flex-col justify-end p-3"
                                       >
                                         {/* Arte de fundo com overlay */}
                                         {world.coverUrl && (
@@ -1370,7 +1357,7 @@ export function PlayerDashboard() {
                                                               d={`M ${start.x} ${start.y} A ${radius} ${radius} 0 0 1 ${end.x} ${end.y}`}
                                                               fill="none"
                                                               stroke={
-                                                                isActive ? "#c084fc" : "#374151"
+                                                                isActive ? "var(--accent-vibrant, #c084fc)" : "var(--secondary-border, #374151)"
                                                               }
                                                               strokeWidth="2"
                                                               strokeLinecap="round"
@@ -1384,8 +1371,8 @@ export function PlayerDashboard() {
                                                           cx="15"
                                                           cy="15"
                                                           r="9"
-                                                          fill="#18181b"
-                                                          stroke="#374151"
+                                                          fill="var(--secondary-card, #18181b)"
+                                                          stroke="var(--secondary-border, #374151)"
                                                           strokeWidth="1"
                                                         />
 
@@ -1397,7 +1384,7 @@ export function PlayerDashboard() {
                                                           dominantBaseline="central"
                                                           fontSize="9.5"
                                                           fontWeight="700"
-                                                          fill="#f3f4f6"
+                                                          fill="var(--secondary-pure, #f3f4f6)"
                                                         >
                                                           {est.name.charAt(0).toUpperCase()}
                                                         </text>
@@ -1407,7 +1394,7 @@ export function PlayerDashboard() {
                                                 })}
                                               </div>
                                             ) : (
-                                              <span className="text-[10px] text-gray-400/90 italic bg-black/40 px-1.5 py-0.5 rounded border border-gray-800/60 shrink-0 self-center">
+                                              <span className="text-[10px] text-secondary-muted italic bg-dominant-container/60 px-1.5 py-0.5 rounded border border-secondary-border shrink-0 self-center">
                                                 Nenhum estabelecimento
                                               </span>
                                             )}
@@ -1425,7 +1412,7 @@ export function PlayerDashboard() {
                     ) : null}
 
                     {campaignDetailsTab === "resumo" && !hasAliveCharacter && (
-                      <div className="space-y-2 border-t border-gray-800 pt-4">
+                      <div className="space-y-2 border-t border-secondary-border pt-4">
                         <Link
                           href={
                             isMissing
@@ -1445,7 +1432,7 @@ export function PlayerDashboard() {
                           onClick={() =>
                             handleOpenImportModal(selectedCampaign.id, selectedCampaign.characters)
                           }
-                          className="w-full rounded-xl border border-purple-800/60 bg-purple-950/40 py-2 text-sm font-semibold text-purple-300 hover:bg-purple-900/60 transition-colors"
+                          className="w-full rounded-xl border border-accent/40 bg-accent-glow py-2 text-sm font-semibold text-accent-vibrant [data-theme-mode=light]:text-accent-primary hover:bg-accent/20 transition-colors"
                         >
                           {isMissing
                             ? "↩ Importar Habitante Existente"
@@ -1479,13 +1466,13 @@ export function PlayerDashboard() {
                 role="presentation"
               >
                 <div
-                  className="w-full max-w-md rounded-xl border border-gray-800 bg-gray-900 p-5 shadow-2xl"
+                  className="w-full max-w-md rounded-xl border border-secondary-border bg-secondary-card p-5 shadow-2xl text-secondary-pure"
                   onClick={(e) => e.stopPropagation()}
                   role="dialog"
                   aria-modal="true"
                 >
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-bold text-white">
+                    <h2 className="text-lg font-bold text-secondary-pure">
                       {isImportingMissing ? "Importar Habitante" : "Importar Personagem"}
                     </h2>
                     <button
@@ -1496,7 +1483,7 @@ export function PlayerDashboard() {
                         setImportableHabitants([]);
                         setImportSearch("");
                       }}
-                      className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
+                      className="rounded-lg p-1.5 text-secondary-muted hover:bg-dominant-container hover:text-secondary-pure transition-colors"
                     >
                       ✕
                     </button>
@@ -1507,7 +1494,7 @@ export function PlayerDashboard() {
                     placeholder="Buscar por nome..."
                     value={importSearch}
                     onChange={(e) => setImportSearch(e.target.value)}
-                    className="mb-4 w-full rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-600"
+                    className="mb-4 w-full rounded-lg border border-secondary-border bg-dominant-deep px-3 py-2 text-sm text-secondary-pure placeholder-secondary-muted outline-none focus:border-accent"
                   />
 
                   {isImportingMissing ? (
@@ -1583,7 +1570,7 @@ export function PlayerDashboard() {
                         filteredImportableCharacters.map((char) => (
                           <div
                             key={char.id}
-                            className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-950 p-2.5"
+                            className="flex items-center justify-between rounded-lg border border-secondary-border bg-dominant-deep p-2.5"
                           >
                             <div className="flex items-center gap-2.5 overflow-hidden">
                               {char.imageUrl ? (
@@ -1594,15 +1581,15 @@ export function PlayerDashboard() {
                                   className="h-9 w-9 rounded-full object-cover shrink-0"
                                 />
                               ) : (
-                                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-purple-950 text-purple-300 font-bold text-xs shrink-0 border border-purple-800/60">
+                                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-glow text-accent-vibrant [data-theme-mode=light]:text-accent-primary font-bold text-xs shrink-0 border border-accent/40">
                                   {char.name.charAt(0).toUpperCase()}
                                 </div>
                               )}
                               <div className="min-w-0">
-                                <p className="truncate text-xs font-semibold text-white">
+                                <p className="truncate text-xs font-semibold text-secondary-pure">
                                   {char.name}
                                 </p>
-                                <p className="text-[11px] text-gray-400">
+                                <p className="text-[11px] text-secondary-muted">
                                   Nível {char.level} · HP:{" "}
                                   <span className="text-red-400 font-medium">
                                     {char.hitPointsCurrent}/{char.hitPointsMax}
@@ -1614,7 +1601,7 @@ export function PlayerDashboard() {
                               type="button"
                               disabled={isLoadingImport}
                               onClick={() => handleImportCharacter(char.id)}
-                              className="shrink-0 rounded-lg border border-purple-800/60 bg-purple-950/60 px-3 py-1.5 text-xs font-semibold text-purple-300 hover:bg-purple-900/60 transition-colors disabled:opacity-50"
+                              className="shrink-0 rounded-lg border border-accent/40 bg-accent-glow px-3 py-1.5 text-xs font-semibold text-accent-vibrant [data-theme-mode=light]:text-accent-primary hover:bg-accent/20 transition-colors disabled:opacity-50"
                             >
                               {isLoadingImport ? "…" : "Vincular"}
                             </button>

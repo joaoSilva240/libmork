@@ -53,6 +53,19 @@ describe("BottomNav", () => {
     expect(inactiveTab.querySelector(".liquid-glass-pill")).toBeNull();
   });
 
+  it("applies theme-adaptive classes to active and inactive tabs instead of hardcoded colors", () => {
+    render(<BottomNav tabs={tabs} activeId="characters" onChange={vi.fn()} />);
+
+    const activeTab = screen.getByRole("button", { name: "Meus Personagens" });
+    expect(activeTab.className).toContain("liquid-glass-tab-active");
+    expect(activeTab.className).not.toContain("text-purple-300");
+    expect(activeTab.className).toContain("ring-[var(--accent-primary)]");
+
+    const inactiveTab = screen.getByRole("button", { name: "Campanhas" });
+    expect(inactiveTab.className).toContain("liquid-glass-tab-inactive");
+    expect(inactiveTab.className).not.toContain("text-gray-400");
+  });
+
   it("renders buttons accessible by name but does not render visual text labels in the DOM", () => {
     const { container } = render(
       <BottomNav tabs={tabs} activeId="characters" onChange={vi.fn()} />

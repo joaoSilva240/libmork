@@ -66,6 +66,7 @@ export async function GET() {
         pvpEnabled: campaigns.pvpEnabled,
         coverImageUrl: campaigns.coverImageUrl,
         worldMapUrl: campaigns.worldMapUrl,
+        theme: campaigns.theme,
         masterId: users.id,
         masterDisplayName: users.displayName,
         masterEmail: users.email,
@@ -194,6 +195,7 @@ export async function GET() {
         pvpEnabled: camp.pvpEnabled,
         coverImageUrl: camp.coverImageUrl,
         worldMapUrl: camp.worldMapUrl,
+        theme: camp.theme,
         master: {
           id: camp.masterId,
           displayName: camp.masterDisplayName,

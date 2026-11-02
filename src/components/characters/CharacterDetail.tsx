@@ -890,18 +890,18 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
             onClick={() => setActiveRollResult(null)}
           >
             <div
-              className="w-full max-w-xs rounded-2xl border border-purple-600/50 bg-gray-900 p-5 text-center shadow-2xl animate-in fade-in zoom-in"
+              className="w-full max-w-xs rounded-2xl border border-secondary-border bg-secondary-card p-5 text-center shadow-2xl animate-in fade-in zoom-in"
               onClick={(e) => e.stopPropagation()}
             >
-              <h4 className="text-sm font-bold text-white">{activeRollResult.title}</h4>
-              <p className="text-xs text-purple-300 font-semibold mb-3">{activeRollResult.formula}</p>
-              <div className="my-2 rounded-xl bg-purple-950/80 border border-purple-800/60 py-4">
-                <span className="text-4xl font-black text-purple-400">{activeRollResult.result}</span>
+              <h4 className="text-sm font-bold text-secondary-pure">{activeRollResult.title}</h4>
+              <p className="text-xs text-accent-vibrant [data-theme-mode=light]:text-accent-dark font-semibold mb-3">{activeRollResult.formula}</p>
+              <div className="my-2 rounded-xl bg-accent-glow border border-accent/40 [data-theme-mode=light]:bg-accent/15 [data-theme-mode=light]:border-accent/30 py-4">
+                <span className="text-4xl font-black text-accent-vibrant [data-theme-mode=light]:text-accent-dark">{activeRollResult.result}</span>
               </div>
-              <p className="text-[11px] text-gray-400 mb-4">{activeRollResult.detail}</p>
+              <p className="text-[11px] text-secondary-muted mb-4">{activeRollResult.detail}</p>
               <button
                 onClick={() => setActiveRollResult(null)}
-                className="w-full rounded-xl bg-purple-600 py-2 text-xs font-bold text-white hover:bg-purple-700"
+                className="w-full rounded-xl bg-accent py-2 text-xs font-bold text-white hover:bg-accent-hover transition-colors"
               >
                 Fechar
               </button>
@@ -911,7 +911,7 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
 
         {/* Header Hero Card com Síntese de Status (Fixo/Sticky em todas as abas) */}
         <div
-          className={`sticky ${isCombatActive ? "top-[6.5rem]" : "top-14"} z-30 overflow-hidden rounded-2xl border border-gray-800/90 bg-gray-950/95 backdrop-blur-md p-3.5 shadow-xl space-y-2.5 transition-all`}
+          className={`sticky ${isCombatActive ? "top-[6.5rem]" : "top-14"} z-30 overflow-hidden rounded-2xl border border-secondary-border bg-secondary-card/95 backdrop-blur-md p-3.5 shadow-xl space-y-2.5 transition-all`}
           data-testid="character-status-summary"
         >
           <div className="flex items-center gap-3.5">
@@ -961,8 +961,8 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
                  </div>
                </div>
 
-              <h2 className="mt-1 truncate text-lg font-bold text-white tracking-tight">{character.name}</h2>
-              <p className="text-[11px] text-gray-400">{character.xp} XP total</p>
+              <h2 className="mt-1 truncate text-lg font-bold text-secondary-pure tracking-tight">{character.name}</h2>
+              <p className="text-[11px] text-secondary-muted">{character.xp} XP total</p>
             </div>
           </div>
 
@@ -1044,10 +1044,10 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
         {activeTab === "status" && (
           <div className="space-y-4 animate-in fade-in duration-200 flex-1 flex flex-col">
             {/* Atributos do Personagem com Rolagem Instantânea */}
-            <div className="rounded-2xl border border-gray-800 bg-gray-900/80 p-4 shadow-sm">
+            <div className="rounded-2xl border border-secondary-border bg-secondary-card p-4 shadow-sm">
               <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-300">Atributos Principais</h3>
-                <span className="text-[10px] text-purple-400 font-medium">Toque para rolar d20</span>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-secondary-muted">Atributos Principais</h3>
+                <span className="text-[10px] text-accent-vibrant [data-theme-mode=light]:text-accent-dark font-medium">Toque para rolar d20</span>
               </div>
 
               <div className="space-y-2">
@@ -1059,22 +1059,24 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
                        key={attr}
                        onClick={() => handleRollAttribute(attr)}
                        disabled={isTurnLocked || isRollingDice}
-                       className={`flex w-full items-center justify-between rounded-xl border border-gray-800/80 bg-gray-950 p-2.5 transition-all ${
+                       className={`flex w-full items-center justify-between rounded-xl border border-secondary-border bg-dominant-deep/70 p-2.5 transition-all ${
                          isTurnLocked || isRollingDice
-                           ? "opacity-50 cursor-not-allowed border-gray-900 bg-gray-950/40"
-                           : "hover:border-purple-600/60 hover:bg-purple-950/20 active:scale-[0.99]"
+                           ? "opacity-50 cursor-not-allowed border-secondary-border bg-dominant-deep/40"
+                           : "hover:border-accent/60 hover:bg-accent-glow/20 active:scale-[0.99]"
                        }`}
                      >
                        <div className="flex items-center gap-2.5">
                          <span className="text-[1.575rem] font-dings leading-none">{ATTRIBUTE_DINGS_LETTERS[attr]}</span>
-                         <span className="text-xs font-semibold text-gray-200">{ATTRIBUTE_LABELS[attr]}</span>
+                         <span className="text-xs font-semibold text-secondary-pure">{ATTRIBUTE_LABELS[attr]}</span>
                        </div>
 
                        <div className="flex items-center gap-2">
-                         <span className="text-xs font-bold text-white">{value}</span>
+                         <span className="text-xs font-bold text-secondary-pure">{value}</span>
                          <span
                            className={`min-w-8 rounded-md py-0.5 px-1.5 text-center text-xs font-black ${
-                             mod >= 0 ? "bg-emerald-950 text-emerald-400 border border-emerald-800/60" : "bg-rose-950 text-rose-400 border border-rose-800/60"
+                             mod >= 0
+                               ? "border border-emerald-300 bg-emerald-50 text-emerald-800 [data-theme-mode=dark]:border-emerald-800/60 [data-theme-mode=dark]:bg-emerald-950 [data-theme-mode=dark]:text-emerald-400"
+                               : "border border-rose-300 bg-rose-50 text-rose-800 [data-theme-mode=dark]:border-rose-800/60 [data-theme-mode=dark]:bg-rose-950 [data-theme-mode=dark]:text-rose-400"
                            }`}
                          >
                            {mod >= 0 ? `+${mod}` : mod}
@@ -1296,22 +1298,22 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
           {
             id: "status",
             label: "Status",
-            icon: <StatusFilledIcon className={`h-6 w-6 ${activeTab === "status" ? "fill-purple-400" : "fill-gray-500"}`} />,
+            icon: <StatusFilledIcon className="h-6 w-6" />,
           },
           {
             id: "skills",
             label: "Perícias",
-            icon: <SkillsFilledIcon className={`h-6 w-6 ${activeTab === "skills" ? "fill-purple-400" : "fill-gray-500"}`} />,
+            icon: <SkillsFilledIcon className="h-6 w-6" />,
           },
           {
             id: "inventory",
             label: "Inventário",
-            icon: <InventoryFilledIcon className={`h-6 w-6 ${activeTab === "inventory" ? "fill-purple-400" : "fill-gray-500"}`} />,
+            icon: <InventoryFilledIcon className="h-6 w-6" />,
           },
           {
             id: "settings",
             label: "Configurações",
-            icon: <SettingsFilledIcon className={`h-6 w-6 ${activeTab === "settings" ? "fill-purple-400" : "fill-gray-500"}`} />,
+            icon: <SettingsFilledIcon className="h-6 w-6" />,
           },
         ]}
       />

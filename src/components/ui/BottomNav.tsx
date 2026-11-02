@@ -21,7 +21,7 @@ export function BottomNav({ tabs, activeId, onChange }: BottomNavProps) {
       className="fixed inset-x-0 bottom-0 z-40 flex items-end justify-center pointer-events-none"
       style={{ paddingBottom: `max(0.75rem, env(safe-area-inset-bottom, 0px))` }}
     >
-      <div className="liquid-glass-dock rounded-full px-4 py-2 pointer-events-auto">
+      <div className="liquid-glass-dock rounded-full px-4 py-2 pointer-events-auto transition-colors duration-300">
         <div className="flex items-center gap-1">
           {tabs.map((tab) => {
             const isActive = activeId === tab.id;
@@ -32,8 +32,8 @@ export function BottomNav({ tabs, activeId, onChange }: BottomNavProps) {
                 aria-label={tab.label}
                 aria-current={isActive ? "page" : undefined}
                 onClick={() => onChange(tab.id)}
-                className={`liquid-glass-interactive relative flex items-center justify-center px-4 py-2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${
-                  isActive ? "text-purple-300" : "text-gray-400 hover:text-gray-200"
+                className={`liquid-glass-interactive relative flex items-center justify-center px-4 py-2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent transition-colors ${
+                  isActive ? "liquid-glass-tab-active" : "liquid-glass-tab-inactive"
                 }`}
               >
                 {isActive && (

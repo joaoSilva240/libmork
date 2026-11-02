@@ -1472,17 +1472,17 @@ export function CharacterContent({
                             </div>
                           )}
                           <div className="min-w-0">
-                            <p className="text-xs font-bold text-white truncate" title={rowName}>
+                            <p className="text-xs font-bold text-secondary-pure truncate" title={rowName}>
                               {rowName}
                             </p>
                             <div className="mt-1 flex flex-wrap gap-2">
                               {activeType === "skills" && (
                                 row.junction.trained ? (
-                                  <span className="rounded bg-purple-950 px-2 py-0.5 text-[10px] font-bold text-purple-300 border border-purple-800/60">
+                                  <span className="rounded border border-accent/40 bg-accent-glow px-2 py-0.5 text-[10px] font-bold text-accent-vibrant [data-theme-mode=light]:bg-accent/15 [data-theme-mode=light]:border-accent/40 [data-theme-mode=light]:text-accent-dark">
                                     ★ Treinada
                                   </span>
                                 ) : (
-                                  <span className="rounded bg-gray-900 px-2 py-0.5 text-[10px] font-medium text-gray-400 border border-gray-800">
+                                  <span className="rounded border border-secondary-border bg-dominant-container/60 px-2 py-0.5 text-[10px] font-medium text-secondary-muted">
                                     Não Treinada
                                   </span>
                                 )

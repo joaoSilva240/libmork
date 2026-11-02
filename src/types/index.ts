@@ -379,6 +379,7 @@ export type PlayerCampaign = {
   pvpEnabled: boolean;
   coverImageUrl?: string | null;
   worldMapUrl?: string | null;
+  theme?: string | null;
   master: {
     id: string;
     displayName: string;

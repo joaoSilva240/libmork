@@ -197,6 +197,15 @@ describe("PlayerDashboard - Campaign Details Tabs (Resumo e Mundo)", () => {
     expect(tabResumo).toBeDefined();
     expect(tabMundo).toBeDefined();
 
+    // Valida que o modal de detalhes utiliza as classes adaptativas do tema
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.className).toContain("bg-secondary-card");
+    expect(dialog.className).toContain("border-secondary-border");
+    expect(dialog.className).toContain("text-secondary-pure");
+    expect(dialog.className).not.toContain("bg-gray-900");
+    expect(tabResumo.className).toContain("border-accent");
+    expect(tabResumo.className).not.toContain("border-purple-400");
+
     // Estado inicial na aba Resumo
     expect(screen.getByText("Detalhes da Campanha")).toBeDefined();
 
