@@ -24,7 +24,7 @@ describe("MasterSidebar Component", () => {
 
     const settingsLink = screen.getByRole("link", { name: /configurações/i });
     expect(settingsLink).toHaveAttribute("href", "/master/settings");
-    expect(settingsLink).toHaveClass("bg-gray-800", "text-white");
+    expect(settingsLink).toHaveClass("bg-accent/20", "text-accent-hover");
   });
 
   it("renders 'Comunidade' link with correct href", () => {
@@ -34,7 +34,18 @@ describe("MasterSidebar Component", () => {
 
     const communityLink = screen.getByRole("link", { name: /comunidade/i });
     expect(communityLink).toHaveAttribute("href", "/master/community");
-    expect(communityLink).toHaveClass("bg-gray-800", "text-white");
+    expect(communityLink).toHaveClass("bg-accent/20", "text-accent-hover");
+  });
+
+  it("renders accessible collapse/expand button with aria-expanded, aria-controls and lucide icon", () => {
+    mockUsePathname.mockReturnValue("/master");
+    render(<MasterSidebar />);
+
+    const toggleButton = screen.getByRole("button", { name: "Recolher menu lateral" });
+    expect(toggleButton).toHaveAttribute("aria-expanded", "true");
+    expect(toggleButton).toHaveAttribute("aria-controls", "master-sidebar-nav");
+    expect(toggleButton).toHaveClass("focus-visible:ring-2", "focus-visible:ring-accent");
+    expect(toggleButton.querySelector("svg")).toBeInTheDocument();
   });
 
   it("renders accessible navigation links and lucide-react icons in expanded and collapsed states", () => {
