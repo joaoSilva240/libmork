@@ -36,6 +36,7 @@ import {
   type DefenseReactionRequestPayload,
   type DuelInviteRequestPayload,
 } from "@/context/SocketContext";
+import { d20s, showDice3D } from "@/lib/dice3d";
 import { DefenseReactionModal } from "@/components/combat/DefenseReactionModal";
 import { DeathSaveModal } from "@/components/combat/DeathSaveModal";
 import { PlayerTurnOverlay } from "@/components/combat/PlayerTurnOverlay";
@@ -740,12 +741,14 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
     
     // Set loading state and roll after 3 seconds
     setIsRollingDice(true);
-    
+
+    const stats = getDerivedStats(character.attributes, character.level);
+    const mod = stats.modifiers[attr];
+    const luckMod = stats.modifiers.sorte;
+    const rollRes = rollD20WithModifier(mod, luckMod);
+    showDice3D(d20s(rollRes.die));
+
     setTimeout(() => {
-      const stats = getDerivedStats(character.attributes, character.level);
-      const mod = stats.modifiers[attr];
-      const luckMod = stats.modifiers.sorte;
-      const rollRes = rollD20WithModifier(mod, luckMod);
       const total = rollRes.total;
       const label = ATTRIBUTE_LABELS[attr];
       const luckDetail = rollRes.luckActivated && rollRes.luckRoll
@@ -1367,6 +1370,7 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
                 onClick={() => {
                   const mod = Math.floor(((character?.attributes?.destreza ?? 10) - 10) / 2);
                   const die = Math.floor(Math.random() * 20) + 1;
+                  showDice3D(d20s(die));
                   handleSendInitiative(die + mod);
                 }}
                 className="w-full rounded-2xl bg-purple-600 py-3 text-sm font-bold text-white shadow-lg hover:bg-purple-500"

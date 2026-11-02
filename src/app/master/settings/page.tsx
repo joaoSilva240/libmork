@@ -5,8 +5,9 @@ import { MasterScreenConfigPanel } from "@/components/campaigns/MasterScreenConf
 import { MasterScreenPreview } from "@/components/campaigns/MasterScreenPreview";
 import { ThemeConfigPanel } from "@/components/theme/ThemeConfigPanel";
 import { useMasterScreenConfig } from "@/hooks/useMasterScreenConfig";
+import { Dice3DSettingsPanel } from "@/components/dice/Dice3DSettingsPanel";
 
-type SettingsTab = "theme" | "screen";
+type SettingsTab = "theme" | "screen" | "dice";
 
 export default function MasterSettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>("theme");
@@ -52,11 +53,29 @@ export default function MasterSettingsPage() {
         >
           <span>🛡️</span> Tela do Mestre & Módulos
         </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "dice"}
+          onClick={() => setActiveTab("dice")}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition select-none ${
+            activeTab === "dice"
+              ? "border-accent text-secondary-pure"
+              : "border-transparent text-secondary-muted hover:text-secondary-pure"
+          }`}
+        >
+          <span>🎲</span> Dados 3D
+        </button>
       </div>
 
       {/* Painel 1: Tema e Aparência (Cores, Contraste AAA, Modo Claro/Escuro, Fontes) */}
       <div className={activeTab === "theme" ? "block" : "hidden"} role="tabpanel">
         <ThemeConfigPanel />
+      </div>
+
+      <div className={activeTab === "dice" ? "block" : "hidden"} role="tabpanel">
+        <Dice3DSettingsPanel />
       </div>
 
       {/* Painel 2: Configuração e Visibilidade dos Módulos do Escudo */}

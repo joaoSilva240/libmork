@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Dices, Plus, Trash2, ArrowLeft, AlertCircle, FileText, Sparkles } from "lucide-react";
 import { EQUIPMENT_TABLE_2D6 } from "@/lib/systems/missing/types";
+import { d6s, showDice3D } from "@/lib/dice3d";
 
 interface MissingHabitantCreateFormProps {
   campaignId?: string | null;
@@ -66,10 +67,12 @@ export function MissingHabitantCreateForm({
   const handleRollAllEquipments = () => {
     const updatedEquipments = [...equipments];
     const updatedLastRolls: Record<number, { total: number; d1: number; d2: number }> = {};
+    const rolledValues: number[] = [];
 
     for (let slotIndex = 0; slotIndex < 3; slotIndex++) {
       const d1 = Math.floor(Math.random() * 6) + 1;
       const d2 = Math.floor(Math.random() * 6) + 1;
+      rolledValues.push(d1, d2);
       const total = d1 + d2;
       const itemDef = EQUIPMENT_TABLE_2D6[total];
 
@@ -82,6 +85,7 @@ export function MissingHabitantCreateForm({
       }
     }
 
+    showDice3D(d6s(rolledValues));
     setEquipments(updatedEquipments);
     setLastRolls(updatedLastRolls);
   };

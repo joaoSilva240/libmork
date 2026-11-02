@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { getGameSystem } from "@/lib/engine";
+import { d20s, showDice3D } from "@/lib/dice3d";
 
 interface DeathSaveModalProps {
   characterName: string;
@@ -35,6 +36,7 @@ export function DeathSaveModal({
 
   const handleRoll = () => {
     const die = Math.floor(Math.random() * 20) + 1;
+    showDice3D(d20s(die));
     const res = system.processDeathSaveRoll(successes, failures, die, vigorMod);
 
     setSuccesses(res.newSuccesses);

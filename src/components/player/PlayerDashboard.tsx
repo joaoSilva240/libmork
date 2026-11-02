@@ -11,7 +11,8 @@ import { LogoutButton } from "@/components/auth/LogoutButton";
 import { Spinner, Button } from "@/components/ui";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { ToastContainer } from "@/components/ui/Toast";
-import { CampaignsFilledIcon, CharactersFilledIcon, TreasuryIcon } from "@/components/ui/Icons";
+import { CampaignsFilledIcon, CharactersFilledIcon, SettingsFilledIcon, TreasuryIcon } from "@/components/ui/Icons";
+import { Dice3DSettingsPanel } from "@/components/dice/Dice3DSettingsPanel";
 import { WealthManager, type WealthData } from "@/components/player/WealthManager";
 import { generateUUID } from "@/lib/utils/uuid";
 import { useSocket } from "@/context/SocketContext";
@@ -39,7 +40,7 @@ function getReputationDots(reputationLevel: number): number {
 
 export function PlayerDashboard() {
   const { joinCampaign, leaveCampaign } = useSocket();
-  const [activeTab, setActiveTab] = useState<"characters" | "campaigns" | "wealth">("characters");
+  const [activeTab, setActiveTab] = useState<"characters" | "campaigns" | "wealth" | "settings">("characters");
   const [viewMode, setViewMode] = useState<"gallery" | "list">("gallery");
   const [displayName, setDisplayName] = useState("Jogador");
   const [userId, setUserId] = useState<string>("player-id");
@@ -829,6 +830,13 @@ export function PlayerDashboard() {
           />
         )}
 
+        {activeTab === "settings" && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-bold text-secondary-pure">Configurações</h2>
+            <Dice3DSettingsPanel />
+          </div>
+        )}
+
         <ToastContainer
           toasts={toasts}
           onRemove={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))}
@@ -862,6 +870,15 @@ export function PlayerDashboard() {
               icon: (
                 <TreasuryIcon
                   className={`h-6 w-6 ${activeTab === "wealth" ? "text-purple-400" : "text-gray-500"}`}
+                />
+              ),
+            },
+            {
+              id: "settings",
+              label: "Configurações",
+              icon: (
+                <SettingsFilledIcon
+                  className={`h-6 w-6 ${activeTab === "settings" ? "text-purple-400" : "text-gray-500"}`}
                 />
               ),
             },

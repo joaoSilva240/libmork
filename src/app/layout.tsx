@@ -17,6 +17,7 @@ import { SocketProvider } from "@/context/SocketContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import CsrfInit from "@/components/CsrfInit";
+import Dice3DLayer from "@/components/dice/Dice3DLayer";
 import "./globals.css";
 
 const cinzel = Cinzel({
@@ -125,6 +126,7 @@ export default function RootLayout({
         <QueryProvider>
           <ThemeProvider>
             <SocketProvider>{children}</SocketProvider>
+            <Dice3DLayer />
           </ThemeProvider>
         </QueryProvider>
         <ServiceWorkerRegistrar />
