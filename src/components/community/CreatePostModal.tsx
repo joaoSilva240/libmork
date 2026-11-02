@@ -227,7 +227,7 @@ export default function CreatePostModal({ open, onClose, onCreated }: Props) {
                         }}
                         className={`flex flex-col items-center justify-center p-3 rounded-lg border text-sm font-medium transition-all ${
                           contentType === typeOption.type
-                            ? "border-purple-500 bg-purple-950/40 text-purple-200 shadow-sm"
+                            ? "border-accent bg-accent/20 text-accent-hover shadow-sm"
                             : "border-gray-800 bg-gray-950/60 text-gray-400 hover:border-gray-700 hover:text-gray-200"
                         }`}
                       >
@@ -251,7 +251,7 @@ export default function CreatePostModal({ open, onClose, onCreated }: Props) {
                       onClick={() => handleModeChange("existing")}
                       className={`px-3 py-1 rounded text-xs font-medium transition-all ${
                         sourceMode === "existing"
-                          ? "bg-purple-700 text-white"
+                          ? "bg-accent text-white shadow-sm"
                           : "bg-gray-800 text-gray-400 hover:text-gray-200"
                       }`}
                     >
@@ -262,7 +262,7 @@ export default function CreatePostModal({ open, onClose, onCreated }: Props) {
                       onClick={() => handleModeChange("manual")}
                       className={`px-3 py-1 rounded text-xs font-medium transition-all ${
                         sourceMode === "manual"
-                          ? "bg-purple-700 text-white"
+                          ? "bg-accent text-white shadow-sm"
                           : "bg-gray-800 text-gray-400 hover:text-gray-200"
                       }`}
                     >

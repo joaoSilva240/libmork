@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cinzel, Cinzel_Decorative } from "next/font/google";
 import QueryProvider from "@/components/providers/QueryProvider";
 import { SocketProvider } from "@/context/SocketContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import CsrfInit from "@/components/CsrfInit";
 import "./globals.css";
@@ -33,7 +34,9 @@ export default function RootLayout({
     <html lang="pt-BR" data-theme="default-dark" suppressHydrationWarning className={`${cinzel.variable} ${cinzelDecorative.variable}`}>
       <body className="antialiased" suppressHydrationWarning>
         <QueryProvider>
-          <SocketProvider>{children}</SocketProvider>
+          <ThemeProvider>
+            <SocketProvider>{children}</SocketProvider>
+          </ThemeProvider>
         </QueryProvider>
         <ServiceWorkerRegistrar />
         <CsrfInit />

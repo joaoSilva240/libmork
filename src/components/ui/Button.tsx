@@ -22,18 +22,18 @@ export function Button({
     'px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center';
 
   const variantStyles = {
-    // Primary: Accent Roxo
+    // Primary: Accent com texto branco de alto contraste
     primary:
-      'bg-accent text-secondary-pure hover:bg-accent-vibrant active:bg-accent-dark shadow-sm',
-    // Secondary: Secundário Branco/Card com borda secundária
+      'bg-accent text-white hover:bg-accent-vibrant active:bg-accent-dark shadow-sm',
+    // Secondary: Secundário Card com borda secundária e texto puro
     secondary:
       'bg-secondary-card text-secondary-pure border border-secondary-border hover:bg-dominant-container hover:border-accent-vibrant',
-    // Danger: Accent Dark com borda contrastante/roxo escuro
+    // Danger: Accent Dark com borda contrastante
     danger:
-      'bg-accent-dark text-secondary-pure border border-accent-vibrant/40 hover:bg-accent hover:border-accent-vibrant',
-    // Master: Accent Roxo com Glow
+      'bg-accent-dark text-white border border-accent-vibrant/40 hover:bg-accent hover:border-accent-vibrant',
+    // Master: Accent com Glow e texto branco de alto contraste
     master:
-      'bg-accent text-secondary-pure hover:bg-accent-vibrant shadow-[0_0_15px_rgba(147,51,234,0.35)] border border-accent-vibrant/30',
+      'bg-accent text-white hover:bg-accent-vibrant shadow-[0_0_15px_var(--accent-glow)] border border-accent-vibrant/30',
   };
 
   const hasBgImage = bgImage !== undefined;

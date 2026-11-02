@@ -598,7 +598,7 @@ export function MasterRoster({
           {/* Botão de Adicionar Mundo - Substitui o dropdown */}
           <button
             onClick={() => setShowWorldSelector(true)}
-            className="flex items-center gap-1 rounded-lg border border-purple-700/60 bg-purple-950/40 px-2 py-1 text-xs font-semibold text-purple-300 hover:bg-purple-900/50 transition-colors"
+            className="flex items-center gap-1 rounded-lg border border-accent/50 bg-accent/20 px-2 py-1 text-xs font-semibold text-accent-hover hover:bg-accent/30 transition-colors"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -628,8 +628,8 @@ export function MasterRoster({
                     activeCenterView === "canvas"
                       ? isMissing
                         ? "bg-zinc-800 text-amber-300 font-mono"
-                        : "bg-purple-600 text-white"
-                      : "text-gray-400 hover:text-white"
+                        : "bg-accent text-white"
+                      : "text-secondary-muted hover:text-secondary-pure"
                   }`}
                   title={isMissing ? "Quadro de Pistas" : "Canva Infinito"}
                 >
@@ -645,8 +645,8 @@ export function MasterRoster({
                     activeCenterView === "map"
                       ? isMissing
                         ? "bg-zinc-800 text-amber-300 font-mono"
-                        : "bg-purple-600 text-white"
-                      : "text-gray-400 hover:text-white"
+                        : "bg-accent text-white"
+                      : "text-secondary-muted hover:text-secondary-pure"
                   }`}
                   title={isMissing ? "Mapa de Campo" : "Mapa do Mundo"}
                 >
@@ -712,12 +712,12 @@ export function MasterRoster({
 
           <button
             onClick={() => setShowRollFeed(!showRollFeed)}
-            className="flex items-center gap-1 rounded-lg border border-purple-700/60 bg-purple-950/40 px-2 py-0.5 text-xs font-semibold text-purple-300 hover:bg-purple-900/50"
+            className="flex items-center gap-1 rounded-lg border border-accent/50 bg-accent/20 px-2 py-0.5 text-xs font-semibold text-accent-hover hover:bg-accent/30 transition-colors"
           >
             Rolagens {recentRolls.length > 0 && `(${recentRolls.length})`}
           </button>
 
-          <span className="text-[11px] text-gray-400">
+          <span className="text-[11px] text-secondary-muted">
             {roster.players.length} J · {visibleActors.filter((actor) => actor.kind === "npc").length} N
           </span>
         </div>
@@ -725,12 +725,12 @@ export function MasterRoster({
 
       {/* Feed de Rolagens de Dados em Tempo Real (RF-041, RF-046) */}
       {showRollFeed && (
-        <div className="mb-1.5 max-h-36 overflow-y-auto rounded-lg border border-purple-900/60 bg-purple-950/20 p-2 text-xs text-purple-200 shadow-inner shrink-0">
-          <div className="mb-1 flex items-center justify-between border-b border-purple-900/40 pb-1">
-            <span className="font-bold text-purple-300">Feed de Rolagens ao Vivo</span>
+        <div className="mb-1.5 max-h-36 overflow-y-auto rounded-lg border border-accent/40 bg-accent/10 p-2 text-xs text-secondary-pure shadow-inner shrink-0">
+          <div className="mb-1 flex items-center justify-between border-b border-accent/30 pb-1">
+            <span className="font-bold text-accent-hover">Feed de Rolagens ao Vivo</span>
             <button
               onClick={() => setRecentRolls([])}
-              className="text-[10px] text-purple-400 hover:underline"
+              className="text-[10px] text-accent-hover hover:underline"
             >
               Limpar
             </button>
@@ -904,7 +904,7 @@ export function MasterRoster({
                 <button
                   onClick={() => setShowEncounterModal(true)}
                   disabled={!selectedWorldId}
-                  className="rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-bold text-white shadow hover:bg-purple-500 disabled:opacity-50"
+                  className="rounded-lg bg-accent px-3 py-1.5 text-xs font-bold text-white shadow-md hover:bg-accent-vibrant disabled:opacity-50 transition"
                 >
                   ⚔️ Iniciar Encontro (Combate)
                 </button>

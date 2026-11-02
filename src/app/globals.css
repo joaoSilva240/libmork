@@ -6,10 +6,13 @@ body {
   padding: 0;
   min-height: 100dvh;
   background-color: var(--dominant-deep, #09090b);
+  color: var(--secondary-pure, #ffffff);
+  font-family: var(--font-body, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
 }
 
 :root,
-[data-theme="default-dark"] {
+[data-theme="default-dark"],
+[data-theme-mode="dark"] {
   /* 60% Dominante - Preto e Tons Escuros de Fundo/Estrutura Base */
   --dominant-pure: #000000;
   --dominant-deep: #09090b;
@@ -20,20 +23,135 @@ body {
   /* 30% Secundário - Branco e Neutros de Alto Contraste para Leitura, Cards e Superfícies Elevadas */
   --secondary-pure: #ffffff;
   --secondary-offwhite: #f4f4f7;
-  --secondary-muted: #a1a1aa;
+  --secondary-muted: #d1d1db;
   --secondary-border: #3f3f4e;
-  --secondary-card: #1c1c26;
+  --secondary-card: #16161f;
 
   /* 10% Accent / Destaque - Roxo e Variações Interativas/Foco/Ações */
-  --accent-primary: #9333ea;
-  --accent-vibrant: #a855f7;
-  --accent-hover: #c084fc;
+  --accent-primary: #a855f7;
+  --accent-vibrant: #c084fc;
+  --accent-hover: #d8b4fe;
   --accent-dark: #7e22ce;
-  --accent-glow: rgba(147, 51, 234, 0.15);
+  --accent-glow: rgba(168, 85, 247, 0.2);
 
   /* Variáveis de Fonte */
   --font-cinzel: 'Cinzel', serif;
   --font-cinzel-decorative: 'Cinzel Decorative', fantasy, serif;
+  --font-heading: var(--font-cinzel-decorative);
+  --font-body: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* Variáveis dinâmicas de superfície e texto neutro para o tema escuro */
+  --theme-bg-deep: var(--dominant-deep, #09090b);
+  --theme-bg-card: var(--secondary-card, #16161f);
+  --theme-bg-container: var(--dominant-container, #1a1a24);
+  --theme-border-dominant: var(--dominant-border, #272730);
+  --theme-border-secondary: var(--secondary-border, #3f3f4e);
+  --theme-text-pure: var(--secondary-pure, #ffffff);
+  --theme-text-offwhite: var(--secondary-offwhite, #f4f4f7);
+  --theme-text-muted: var(--secondary-muted, #d1d1db);
+}
+
+[data-theme-mode="light"] {
+  --theme-bg-deep: var(--dominant-deep, #f8fafc);
+  --theme-bg-card: var(--secondary-card, #ffffff);
+  --theme-bg-container: var(--dominant-container, #e2e8f0);
+  --theme-border-dominant: var(--dominant-border, #cbd5e1);
+  --theme-border-secondary: var(--secondary-border, #94a3b8);
+  --theme-text-pure: var(--secondary-pure, #09090b);
+  --theme-text-offwhite: var(--secondary-offwhite, #18181b);
+  --theme-text-muted: var(--secondary-muted, #3f3f46);
+}
+
+[data-theme="parchment-light"] {
+  --dominant-pure: #efe5cd;
+  --dominant-deep: #f7f1e1;
+  --dominant-dark: #ede3cb;
+  --dominant-container: #e4d8bc;
+  --dominant-border: #cbbb9b;
+
+  --secondary-pure: #170f06;
+  --secondary-offwhite: #2d1e0d;
+  --secondary-muted: #4a341b;
+  --secondary-border: #bfae8a;
+  --secondary-card: #fffcf2;
+
+  --accent-primary: #78350f;
+  --accent-vibrant: #92400e;
+  --accent-hover: #5c2707;
+  --accent-dark: #451a03;
+  --accent-glow: rgba(120, 53, 15, 0.15);
+
+  --font-heading: var(--font-cinzel);
+  --font-body: Georgia, Cambria, 'Times New Roman', Times, serif;
+}
+
+[data-theme="alabaster-light"] {
+  --dominant-pure: #e2e8f0;
+  --dominant-deep: #f8fafc;
+  --dominant-dark: #f1f5f9;
+  --dominant-container: #e2e8f0;
+  --dominant-border: #cbd5e1;
+
+  --secondary-pure: #09090b;
+  --secondary-offwhite: #18181b;
+  --secondary-muted: #3f3f46;
+  --secondary-border: #94a3b8;
+  --secondary-card: #ffffff;
+
+  --accent-primary: #6b21a8;
+  --accent-vibrant: #7e22ce;
+  --accent-hover: #581c87;
+  --accent-dark: #3b0764;
+  --accent-glow: rgba(107, 33, 168, 0.15);
+
+  --font-heading: var(--font-cinzel-decorative);
+  --font-body: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+[data-theme="nordic-light"] {
+  --dominant-pure: #dbeafe;
+  --dominant-deep: #f0f9ff;
+  --dominant-dark: #e0f2fe;
+  --dominant-container: #bae6fd;
+  --dominant-border: #93c5fd;
+
+  --secondary-pure: #082f49;
+  --secondary-offwhite: #0c4a6e;
+  --secondary-muted: #0369a1;
+  --secondary-border: #7dd3fc;
+  --secondary-card: #ffffff;
+
+  --accent-primary: #0284c7;
+  --accent-vibrant: #0369a1;
+  --accent-hover: #075985;
+  --accent-dark: #0c4a6e;
+  --accent-glow: rgba(2, 132, 199, 0.15);
+
+  --font-heading: var(--font-cinzel);
+  --font-body: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+[data-theme="high-contrast-light"] {
+  --dominant-pure: #ffffff;
+  --dominant-deep: #ffffff;
+  --dominant-dark: #f5f5f5;
+  --dominant-container: #ebebeb;
+  --dominant-border: #000000;
+
+  --secondary-pure: #000000;
+  --secondary-offwhite: #000000;
+  --secondary-muted: #1a1a1a;
+  --secondary-border: #000000;
+  --secondary-card: #ffffff;
+
+  --accent-primary: #0000cc;
+  --accent-vibrant: #000088;
+  --accent-hover: #000055;
+  --accent-dark: #000033;
+  --accent-glow: rgba(0, 0, 0, 0.2);
+
+  --font-heading: var(--font-cinzel-decorative);
+  --font-body: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 @theme {
@@ -58,6 +176,31 @@ body {
   --color-accent-dark: var(--accent-dark);
   --color-accent-glow: var(--accent-glow);
 
+  /* Mapeamento dinâmico das classes purple para acompanhar a cor de destaque (accent) */
+  --color-purple-50: var(--accent-glow);
+  --color-purple-100: var(--accent-glow);
+  --color-purple-200: var(--accent-hover);
+  --color-purple-300: var(--accent-hover);
+  --color-purple-400: var(--accent-hover);
+  --color-purple-500: var(--accent-vibrant);
+  --color-purple-600: var(--accent-primary);
+  --color-purple-700: var(--accent-dark);
+  --color-purple-800: var(--accent-dark);
+  --color-purple-900: var(--accent-dark);
+  --color-purple-950: var(--accent-dark);
+
+  /* Mapeamento dinâmico das superfícies gray para suporte perfeito a Tema Claro e Escuro */
+  --color-gray-950: var(--theme-bg-deep);
+  --color-gray-900: var(--theme-bg-card);
+  --color-gray-800: var(--theme-bg-container);
+  --color-gray-700: var(--theme-border-secondary);
+  --color-gray-600: var(--theme-text-muted);
+  --color-gray-500: var(--theme-text-muted);
+  --color-gray-400: var(--theme-text-muted);
+  --color-gray-300: var(--theme-text-offwhite);
+  --color-gray-200: var(--theme-text-pure);
+  --color-gray-100: var(--theme-text-pure);
+
   --font-serif: var(--font-cinzel);
   --font-fantasy-title: var(--font-cinzel-decorative);
 }
@@ -71,11 +214,25 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-cinzel);
+  font-family: var(--font-heading, var(--font-cinzel));
 }
 
 .btn-rpg {
-  font-family: var(--font-cinzel);
+  font-family: var(--font-heading, var(--font-cinzel));
+}
+
+/* Regras de Legibilidade AAA para Modo Claro */
+[data-theme-mode="light"] h1,
+[data-theme-mode="light"] h2,
+[data-theme-mode="light"] h3,
+[data-theme-mode="light"] h4,
+[data-theme-mode="light"] h5,
+[data-theme-mode="light"] h6 {
+  color: var(--secondary-pure, #09090b);
+}
+
+[data-theme-mode="light"] .text-white:not(button):not(button *):not(.btn):not(.btn *):not([role="button"]):not([role="button"] *):not([class*="bg-purple"]):not([class*="bg-accent"]):not([class*="bg-gradient"]):not([class*="badge"]) {
+  color: var(--secondary-pure, #09090b);
 }
 
 @font-face {

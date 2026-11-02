@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Button, Form, Input } from "@/components/ui";
 import { InitialContentModal } from "@/components/campaigns/InitialContentModal";
 import type { RulesEngine } from "@/lib/utils/constants";
+import { themes, type ThemeName, evaluateThemeContrast } from "@/lib/theme";
 
 export function CampaignForm() {
   const router = useRouter();
@@ -16,6 +17,8 @@ export function CampaignForm() {
   const [rulesEngine, setRulesEngine] = useState<RulesEngine>("d20_mod");
   const [pvpEnabled, setPvpEnabled] = useState(false);
   const [difficultyModifierShadowPoints, setDifficultyModifierShadowPoints] = useState(0);
+  const [selectedTheme, setSelectedTheme] = useState<ThemeName>("default-dark");
+  const [themeModeFilter, setThemeModeFilter] = useState<"all" | "dark" | "light">("all");
   const [selectedNpcIds, setSelectedNpcIds] = useState<string[]>([]);
   const [selectedWorldIds, setSelectedWorldIds] = useState<string[]>([]);
   const [isContentModalOpen, setIsContentModalOpen] = useState(false);
@@ -108,6 +111,7 @@ export function CampaignForm() {
           difficultyModifierShadowPoints: rulesEngine === "missing_zero" ? 0 : difficultyModifierShadowPoints,
           coverImageUrl: coverImageUrl || null,
           worldMapUrl: worldMapUrl || null,
+          theme: selectedTheme,
           initialNpcIds: selectedNpcIds,
           initialWorldIds: selectedWorldIds,
         }),
@@ -410,6 +414,143 @@ export function CampaignForm() {
               )}
             </div>
 
+            {/* Bloco 3: Tema e Acessibilidade da Campanha */}
+            <div className="rounded-2xl border border-gray-800/80 bg-gray-900/60 p-5 shadow-lg backdrop-blur-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
+                  <span>🎨</span> Tema Visual da Campanha
+                </h2>
+                <div className="flex items-center gap-1 bg-gray-950 p-1 rounded-lg border border-gray-800 text-[11px]">
+                  <button
+                    type="button"
+                    onClick={() => setThemeModeFilter("all")}
+                    className={`px-2 py-0.5 rounded transition ${
+                      themeModeFilter === "all"
+                        ? "bg-purple-600 text-white font-bold"
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    Todos
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setThemeModeFilter("dark")}
+                    className={`px-2 py-0.5 rounded transition ${
+                      themeModeFilter === "dark"
+                        ? "bg-purple-600 text-white font-bold"
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    Escuros
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setThemeModeFilter("light")}
+                    className={`px-2 py-0.5 rounded transition ${
+                      themeModeFilter === "light"
+                        ? "bg-purple-600 text-white font-bold"
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    Claros
+                  </button>
+                </div>
+              </div>
+
+              <p className="text-xs text-gray-400">
+                Selecione a identidade visual e atmosfera desta mesa. Todos os temas são calibrados com padrão AAA de contraste.
+              </p>
+
+              <div
+                className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-72 overflow-y-auto pr-1"
+                role="radiogroup"
+                aria-label="Seleção de tema da campanha"
+              >
+                {Object.values(themes)
+                  .filter((t) => t.name !== "custom")
+                  .filter((t) => (themeModeFilter === "all" ? true : t.mode === themeModeFilter))
+                  .map((t) => {
+                    const isSelected = selectedTheme === t.name;
+                    const evalResult = evaluateThemeContrast(t);
+
+                    return (
+                      <div
+                        key={t.name}
+                        onClick={() => !isLoading && setSelectedTheme(t.name)}
+                        role="radio"
+                        aria-checked={isSelected}
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === " " || e.key === "Enter") {
+                            e.preventDefault();
+                            if (!isLoading) setSelectedTheme(t.name);
+                          }
+                        }}
+                        className={`cursor-pointer rounded-xl border p-3 transition-all select-none flex flex-col justify-between gap-2 ${
+                          isSelected
+                            ? "border-purple-500 bg-purple-950/40 shadow-md ring-1 ring-purple-500/70"
+                            : "border-gray-800 bg-gray-950/70 hover:border-gray-700 hover:bg-gray-950"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="font-bold text-xs text-white truncate">
+                              {t.label}
+                            </span>
+                            <span
+                              className={`text-[9px] px-1.5 py-0.2 rounded font-mono ${
+                                t.mode === "dark"
+                                  ? "bg-gray-800 text-gray-300"
+                                  : "bg-amber-100 text-amber-900"
+                              }`}
+                            >
+                              {t.mode === "dark" ? "Escuro" : "Claro"}
+                            </span>
+                          </div>
+                          {isSelected && (
+                            <span className="h-2 w-2 rounded-full bg-purple-400 shrink-0" />
+                          )}
+                        </div>
+
+                        <p className="text-[11px] text-gray-400 line-clamp-1">
+                          {t.description}
+                        </p>
+
+                        <div className="flex items-center justify-between pt-1 border-t border-gray-800/60">
+                          {/* Amostras das 4 cores do sistema */}
+                          <div className="flex items-center gap-1">
+                            <span
+                              className="h-3.5 w-3.5 rounded-full border border-gray-700 shadow-sm"
+                              style={{ backgroundColor: t.colors.dominant.deep }}
+                              title="Fundo Dominante"
+                            />
+                            <span
+                              className="h-3.5 w-3.5 rounded-full border border-gray-700 shadow-sm"
+                              style={{ backgroundColor: t.colors.secondary.card }}
+                              title="Superfície de Card"
+                            />
+                            <span
+                              className="h-3.5 w-3.5 rounded-full border border-gray-700 shadow-sm"
+                              style={{ backgroundColor: t.colors.accent.primary }}
+                              title="Destaque Interativo"
+                            />
+                            <span
+                              className="h-3.5 w-3.5 rounded-full border border-gray-700 shadow-sm"
+                              style={{ backgroundColor: t.colors.secondary.pure }}
+                              title="Texto Principal"
+                            />
+                          </div>
+
+                          <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-950/70 px-1.5 py-0.5 rounded border border-emerald-800/60">
+                            AAA ({evalResult.textOnDeepRatio}:1)
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+
             {/* Ação de Submissão */}
             <div className="pt-2">
               <Button
@@ -569,77 +710,115 @@ export function CampaignForm() {
               </p>
 
               {/* Card Simulado */}
-              <div
-                className="relative overflow-hidden rounded-xl border border-secondary-border bg-secondary-card p-5 shadow-xl transition-all"
-                style={
-                  coverImageUrl
-                    ? {
-                        backgroundImage: `url(${coverImageUrl})`,
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                      }
-                    : undefined
-                }
-              >
-                {/* Overlay escuro elegante */}
-                {coverImageUrl && (
-                  <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/80 to-gray-950/60 pointer-events-none" />
-                )}
+              {(() => {
+                const previewTheme = themes[selectedTheme] || themes["default-dark"];
+                return (
+                  <div
+                    className="relative overflow-hidden rounded-xl border p-5 shadow-xl transition-all"
+                    style={{
+                      backgroundColor: previewTheme.colors.secondary.card,
+                      borderColor: previewTheme.colors.secondary.border,
+                      fontFamily: previewTheme.fonts.body,
+                      ...(coverImageUrl
+                        ? {
+                            backgroundImage: `url(${coverImageUrl})`,
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
+                          }
+                        : {}),
+                    }}
+                  >
+                    {/* Overlay escuro elegante se houver capa */}
+                    {coverImageUrl && (
+                      <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/80 to-gray-950/60 pointer-events-none" />
+                    )}
 
-                <div className="relative z-10 space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-lg font-bold text-white drop-shadow-md">
-                      {name || "Nome da Sua Campanha"}
-                    </h3>
-                    <div className="flex shrink-0 items-center gap-1.5">
-                      {pvpEnabled && (
-                        <span className="rounded bg-accent-dark/90 border border-accent-vibrant/50 px-2 py-0.5 text-[10px] font-semibold text-secondary-pure drop-shadow">
-                          PvP Ativo
+                    <div className="relative z-10 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3
+                          className="text-lg font-bold drop-shadow-md"
+                          style={{
+                            color: previewTheme.colors.secondary.pure,
+                            fontFamily: previewTheme.fonts.heading,
+                          }}
+                        >
+                          {name || "Nome da Sua Campanha"}
+                        </h3>
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          {pvpEnabled && (
+                            <span
+                              className="rounded border px-2 py-0.5 text-[10px] font-semibold drop-shadow"
+                              style={{
+                                backgroundColor: previewTheme.colors.accent.dark,
+                                borderColor: previewTheme.colors.accent.vibrant,
+                                color: previewTheme.colors.secondary.pure,
+                              }}
+                            >
+                              PvP Ativo
+                            </span>
+                          )}
+                          {worldMapUrl && (
+                            <span className="rounded-full bg-emerald-950/90 border border-emerald-700/60 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 drop-shadow">
+                              🗺️ Mapa Mundi
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <p
+                        className="text-xs line-clamp-2 drop-shadow-sm min-h-[2rem]"
+                        style={{ color: previewTheme.colors.secondary.offwhite }}
+                      >
+                        {description || "A descrição da campanha aparecerá aqui..."}
+                      </p>
+
+                      <div className="flex flex-wrap gap-2 text-xs pt-1">
+                        <span
+                          className="inline-flex items-center gap-1 rounded border px-2 py-1 text-[11px] drop-shadow-sm"
+                          style={{
+                            backgroundColor: previewTheme.colors.dominant.dark,
+                            borderColor: previewTheme.colors.dominant.border,
+                            color: previewTheme.colors.secondary.pure,
+                          }}
+                        >
+                          {rulesEngine === "d20_mod" ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
+                              src="/DD-Logo.png"
+                              alt="D&D Logo"
+                              className="h-4 w-auto object-contain inline-block"
+                            />
+                          ) : (
+                            "2d20 somado"
+                          )}
                         </span>
-                      )}
-                      {worldMapUrl && (
-                        <span className="rounded-full bg-emerald-950/90 border border-emerald-700/60 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 drop-shadow">
-                          🗺️ Mapa Mundi
-                        </span>
-                      )}
+                        {difficultyModifierShadowPoints > 0 && (
+                          <span
+                            className="rounded border px-2 py-1 text-[11px] drop-shadow-sm"
+                            style={{
+                              backgroundColor: previewTheme.colors.accent.glow,
+                              borderColor: previewTheme.colors.accent.primary,
+                              color: previewTheme.colors.accent.hover,
+                            }}
+                          >
+                            Sombra +{difficultyModifierShadowPoints}
+                          </span>
+                        )}
+                        {selectedNpcIds.length > 0 && (
+                          <span className="rounded bg-purple-950/80 border border-purple-700/50 px-2 py-1 text-purple-300 text-[11px] drop-shadow-sm">
+                            {selectedNpcIds.length} NPCs
+                          </span>
+                        )}
+                        {selectedWorldIds.length > 0 && (
+                          <span className="rounded bg-blue-950/80 border border-blue-700/50 px-2 py-1 text-blue-300 text-[11px] drop-shadow-sm">
+                            {selectedWorldIds.length} {selectedWorldIds.length === 1 ? "Mundo" : "Mundos"}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-
-                  <p className="text-xs text-gray-300 line-clamp-2 drop-shadow-sm min-h-[2rem]">
-                    {description || "A descrição da campanha aparecerá aqui..."}
-                  </p>
-
-                  <div className="flex flex-wrap gap-2 text-xs pt-1">
-                    <span className="inline-flex items-center gap-1 rounded bg-dominant-dark/90 border border-dominant-border px-2 py-1 text-white text-[11px] drop-shadow-sm">
-                      {rulesEngine === "d20_mod" ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
-                          src="/DD-Logo.png"
-                          alt="D&D Logo"
-                          className="h-4 w-auto object-contain inline-block"
-                        />
-                      ) : (
-                        "2d20 somado"
-                      )}
-                    </span>
-                    {difficultyModifierShadowPoints > 0 && (
-                      <span className="rounded bg-accent/20 border border-accent/40 px-2 py-1 text-accent-hover text-[11px] drop-shadow-sm">
-                        Sombra +{difficultyModifierShadowPoints}
-                      </span>
-                    )}
-                    {selectedNpcIds.length > 0 && (
-                      <span className="rounded bg-purple-950/80 border border-purple-700/50 px-2 py-1 text-purple-300 text-[11px] drop-shadow-sm">
-                        {selectedNpcIds.length} NPCs
-                      </span>
-                    )}
-                    {selectedWorldIds.length > 0 && (
-                      <span className="rounded bg-blue-950/80 border border-blue-700/50 px-2 py-1 text-blue-300 text-[11px] drop-shadow-sm">
-                        {selectedWorldIds.length} {selectedWorldIds.length === 1 ? "Mundo" : "Mundos"}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
+                );
+              })()}
             </div>
           </div>
         </div>

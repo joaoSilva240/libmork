@@ -63,14 +63,14 @@ export default function CommunityFilters({ value, onChange }: Props) {
             placeholder="Buscar por palavras-chave ou tags..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-full border border-gray-800 bg-gray-900/80 py-1.5 pl-9 pr-4 text-xs text-gray-200 placeholder-gray-500 transition-colors focus:border-purple-500 focus:bg-gray-900 focus:outline-none"
+            className="w-full rounded-full border border-gray-800 bg-gray-900/80 py-1.5 pl-9 pr-4 text-xs text-gray-200 placeholder-gray-500 transition-colors focus:border-accent focus:bg-gray-900 focus:outline-none"
           />
         </div>
 
         <select
           value={value.sort}
           onChange={(e) => onChange({ ...value, sort: e.target.value })}
-          className="rounded-full border border-gray-800 bg-gray-900/80 px-3 py-1.5 text-xs text-gray-300 transition-colors focus:border-purple-500 focus:bg-gray-900 focus:outline-none cursor-pointer"
+          className="rounded-full border border-gray-800 bg-gray-900/80 px-3 py-1.5 text-xs text-gray-300 transition-colors focus:border-accent focus:bg-gray-900 focus:outline-none cursor-pointer"
         >
           <option value="top">Top (Mais Votados)</option>
           <option value="recent">Mais Recentes</option>
@@ -89,7 +89,7 @@ export default function CommunityFilters({ value, onChange }: Props) {
               onClick={() => onChange({ ...value, type: cat.value })}
               className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                 isActive
-                  ? "bg-purple-600 text-white"
+                  ? "bg-accent text-white shadow-sm"
                   : "bg-gray-900/90 text-gray-400 hover:bg-gray-800 hover:text-gray-200 border border-gray-800"
               }`}
             >

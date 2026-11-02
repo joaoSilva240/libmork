@@ -129,6 +129,7 @@ export type Campaign = {
   difficultyModifierShadowPoints: number;
   coverImageUrl: string | null;
   worldMapUrl: string | null;
+  theme?: string | null;
   createdAt: Date;
   updatedAt: Date;
 };

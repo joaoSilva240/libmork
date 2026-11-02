@@ -57,11 +57,13 @@ vi.mock("@/context/SocketContext", () => ({
     emitAudioTrackPause: vi.fn(),
     emitAudioTrackLoop: vi.fn(),
     emitAudioTrackRemove: vi.fn(),
+    emitAudioTrackPlaylist: vi.fn(),
     subscribeAudioTrackAdd: vi.fn(() => () => {}),
     subscribeAudioTrackPlay: vi.fn(() => () => {}),
     subscribeAudioTrackPause: vi.fn(() => () => {}),
     subscribeAudioTrackLoop: vi.fn(() => () => {}),
     subscribeAudioTrackRemove: vi.fn(() => () => {}),
+    subscribeAudioTrackPlaylist: vi.fn(() => () => {}),
     subscribeAudioTrackState: vi.fn(() => () => {}),
   }),
 }));

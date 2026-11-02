@@ -15,11 +15,13 @@ import { ContentOverlay } from "@/components/campaigns/ContentOverlay";
 import { WorldOverlay } from "@/components/campaigns/WorldOverlay";
 import { MasterJukebox } from "./MasterJukebox";
 import { useMasterScreenConfig } from "@/hooks/useMasterScreenConfig";
+import { useTheme } from "@/context/ThemeContext";
 
 export function CampaignDetail() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { socket } = useSocket();
+  const { applyCampaignThemeOverride, clearCampaignThemeOverride } = useTheme();
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [worlds, setWorlds] = useState<World[]>([]);
   const [selectedWorldEstablishments, setSelectedWorldEstablishments] = useState<Establishment[]>(
@@ -135,6 +137,15 @@ export function CampaignDetail() {
 
     loadData();
   }, [params.id, loadWorlds]);
+
+  useEffect(() => {
+    if (campaign?.theme) {
+      applyCampaignThemeOverride(campaign.theme);
+    }
+    return () => {
+      clearCampaignThemeOverride();
+    };
+  }, [campaign?.theme, applyCampaignThemeOverride, clearCampaignThemeOverride]);
 
   useEffect(() => {
     if (!selectedWorldId) {
@@ -267,15 +278,15 @@ export function CampaignDetail() {
               className={`text-xs font-semibold transition-colors drop-shadow ${
                 isMissing
                   ? "text-rose-400 hover:text-rose-300"
-                  : "text-purple-400 hover:text-purple-300"
+                  : "text-accent-hover hover:text-accent"
               }`}
             >
               ← Voltar
             </Link>
             <div
-              className={`h-4 w-[1px] shrink-0 ${isMissing ? "bg-zinc-700" : "bg-gray-700/80"}`}
+              className={`h-4 w-[1px] shrink-0 ${isMissing ? "bg-zinc-700" : "bg-dominant-border"}`}
             />
-            <h1 className="text-base font-bold text-white truncate drop-shadow-md">
+            <h1 className="text-base font-bold text-secondary-pure truncate drop-shadow-md">
               {campaign.name}
             </h1>
             {campaign.worldMapUrl && (
@@ -288,7 +299,7 @@ export function CampaignDetail() {
                 <span>MISSING — Edição ZERO</span> {/* ARQUIVO CONFIDENCIAL */}
               </span>
             ) : (
-              <span className="hidden sm:inline-flex rounded bg-purple-950/80 border border-purple-800/50 px-2 py-0.5 text-[10px] text-purple-300 font-medium">
+              <span className="hidden sm:inline-flex rounded bg-accent/20 border border-accent/40 px-2 py-0.5 text-[10px] text-accent-hover font-medium">
                 {campaign.rulesEngine === "dual_d20_sum" ? "2d20 somado" : "d20 + mod"}
               </span>
             )}
@@ -344,10 +355,10 @@ export function CampaignDetail() {
           />
 
           {!isMissing && (
-            <div className="rounded-lg border border-gray-800 bg-gray-900 p-3">
+            <div className="rounded-lg border border-secondary-border bg-secondary-card p-3">
               <button
                 onClick={() => setShowContentOverlay(true)}
-                className="w-full rounded-lg bg-purple-600 px-3 py-2 text-sm font-semibold text-white hover:bg-purple-700"
+                className="w-full rounded-lg bg-accent px-3 py-2 text-sm font-bold text-white hover:bg-accent-vibrant transition shadow-md"
               >
                 Gerenciar Conteúdo
               </button>
@@ -385,10 +396,10 @@ export function CampaignDetail() {
                       selectedWorldId === world.id
                         ? isMissing
                           ? "border-rose-600 bg-rose-950/40 ring-1 ring-rose-500/50"
-                          : "border-purple-500 bg-purple-950/60 ring-1 ring-purple-400/60"
+                          : "border-accent bg-accent/20 ring-1 ring-accent/60"
                         : isMissing
                           ? "border-zinc-800 bg-zinc-950"
-                          : "border-gray-800 bg-gray-950"
+                          : "border-secondary-border bg-secondary-card"
                     }`}
                     style={
                       world.coverUrl ? { backgroundImage: `url(${world.coverUrl})` } : undefined
@@ -402,7 +413,7 @@ export function CampaignDetail() {
                         <div className="flex items-center justify-between gap-1">
                           <button
                             onClick={() => setSelectedWorldId(world.id)}
-                            className="text-left text-sm font-semibold text-white hover:text-purple-300 drop-shadow-sm flex-1 truncate"
+                            className="text-left text-sm font-semibold text-secondary-pure hover:text-accent-hover drop-shadow-sm flex-1 truncate"
                           >
                             {world.name}
                           </button>
@@ -415,7 +426,7 @@ export function CampaignDetail() {
                             className={`rounded-lg border px-2 py-1 text-[11px] font-bold transition-colors shrink-0 ${
                               isMissing
                                 ? "bg-zinc-800 border-zinc-700 text-zinc-200 hover:bg-zinc-700"
-                                : "bg-purple-900/60 border-purple-700/80 text-purple-200 hover:bg-purple-800"
+                                : "bg-accent/20 border-accent/40 text-accent-hover hover:bg-accent/30"
                             }`}
                             title="Abrir Detalhes do Local (NPCs, Encontros)"
                           >
@@ -425,20 +436,20 @@ export function CampaignDetail() {
                         {selectedWorldId === world.id && (
                           <span
                             className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold text-white ${
-                              isMissing ? "bg-rose-700" : "bg-purple-600"
+                              isMissing ? "bg-rose-700" : "bg-accent"
                             }`}
                           >
                             Selecionado
                           </span>
                         )}
                         {world.description && (
-                          <p className="mt-0.5 text-xs text-gray-300 drop-shadow-sm">
+                          <p className="mt-0.5 text-xs text-secondary-muted drop-shadow-sm">
                             {world.description}
                           </p>
                         )}
                         {world.mapUrl && (
                           <p
-                            className={`mt-1 text-[10px] ${isMissing ? "text-rose-400" : "text-purple-400"}`}
+                            className={`mt-1 text-[10px] ${isMissing ? "text-rose-400" : "text-accent-hover"}`}
                           >
                             🗺️ Possui mapa
                           </p>
@@ -452,17 +463,17 @@ export function CampaignDetail() {
 
             {/* ===== Estabelecimentos do Mundo Selecionado (apenas regras padrão d20) ===== */}
             {!isMissing && selectedWorldId && (
-              <div className="rounded-lg border border-gray-800 bg-gray-900 p-3 mt-3">
+              <div className="rounded-lg border border-secondary-border bg-secondary-card p-3 mt-3">
                 <button
                   type="button"
                   onClick={() => setIsEstablishmentsExpanded((prev) => !prev)}
-                  className="mb-2 flex w-full items-center justify-between font-semibold text-xs text-white"
+                  className="mb-2 flex w-full items-center justify-between font-semibold text-xs text-secondary-pure"
                 >
                   <span className="flex items-center gap-1">
                     <span>{isEstablishmentsExpanded ? "▼" : "►"}</span>
                     <span>🏬 Estabelecimentos</span>
                   </span>
-                  <span className="text-[10px] font-normal text-purple-400">
+                  <span className="text-[10px] font-normal text-accent-hover">
                     ({selectedWorldEstablishments.length})
                   </span>
                 </button>

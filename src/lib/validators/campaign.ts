@@ -16,6 +16,7 @@ export const createCampaignSchema = z.object({
   difficultyModifierShadowPoints: z.number().int().min(0).default(0),
   coverImageUrl: z.string().url().or(z.string().startsWith("/")).optional().nullable(),
   worldMapUrl: z.string().url().or(z.string().startsWith("/")).optional().nullable(),
+  theme: z.string().max(50).optional().default("default-dark"),
   initialNpcIds: z.array(z.string().uuid()).optional().default([]),
   initialWorldIds: z.array(z.string().uuid()).optional().default([]),
 });
@@ -33,6 +34,7 @@ export const updateCampaignSchema = z.object({
   difficultyModifierShadowPoints: z.number().int().min(0).optional(),
   coverImageUrl: z.string().url().or(z.string().startsWith("/")).optional().nullable(),
   worldMapUrl: z.string().url().or(z.string().startsWith("/")).optional().nullable(),
+  theme: z.string().max(50).optional(),
 });
 
 export type UpdateCampaignInput = z.infer<typeof updateCampaignSchema>;

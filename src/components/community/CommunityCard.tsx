@@ -40,7 +40,7 @@ export const CONTENT_TYPE_CONFIG: Record<
   spell: {
     label: "Magia",
     icon: "🔮",
-    badgeClass: "bg-purple-950/60 text-purple-300 border-purple-800/50",
+    badgeClass: "bg-accent/20 text-accent-hover border-accent/40",
   },
   item: {
     label: "Item",
@@ -355,7 +355,7 @@ export default function CommunityCard({ post, onOpen, onUpdate }: Props) {
               <Link
                 href={`/master/community/profile/${post.authorId}`}
                 onClick={(e) => e.stopPropagation()}
-                className="font-bold text-gray-100 hover:underline hover:text-purple-300"
+                className="font-bold text-gray-100 hover:underline hover:text-accent-hover"
               >
                 {authorName}
               </Link>
@@ -370,7 +370,7 @@ export default function CommunityCard({ post, onOpen, onUpdate }: Props) {
             </div>
 
             {/* Título do post */}
-            <h3 className="mt-1 text-base font-bold text-gray-100 transition-colors group-hover:text-purple-300">
+            <h3 className="mt-1 text-base font-bold text-gray-100 transition-colors group-hover:text-accent-hover">
               {post.title}
             </h3>
 
@@ -385,7 +385,7 @@ export default function CommunityCard({ post, onOpen, onUpdate }: Props) {
                 {post.tags.slice(0, 5).map((tag, idx) => (
                   <span
                     key={idx}
-                    className="rounded-full bg-gray-900/90 border border-gray-800 px-2 py-0.5 text-[11px] text-gray-400 hover:text-purple-300 transition-colors"
+                    className="rounded-full bg-gray-900/90 border border-gray-800 px-2 py-0.5 text-[11px] text-gray-400 hover:text-accent-hover transition-colors"
                   >
                     #{tag}
                   </span>
@@ -448,7 +448,7 @@ export default function CommunityCard({ post, onOpen, onUpdate }: Props) {
                   e.stopPropagation();
                   setShowImportModal(true);
                 }}
-                className="inline-flex items-center gap-1.5 rounded-full bg-purple-600 px-3 py-1 text-xs font-semibold text-white transition-all hover:bg-purple-500 shadow-sm"
+                className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-xs font-semibold text-white transition-all hover:bg-accent-vibrant shadow-sm"
               >
                 <Download className="h-3.5 w-3.5" />
                 <span>Importar</span>

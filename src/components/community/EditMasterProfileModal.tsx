@@ -185,7 +185,7 @@ export default function EditMasterProfileModal({ profile, onClose, onSaved }: Pr
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-purple-600 px-4 py-2 text-xs font-semibold text-white shadow-md transition-colors hover:bg-purple-500 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-white shadow-md transition-colors hover:bg-accent-vibrant disabled:opacity-50"
           >
             {saving ? "Salvando..." : "Salvar Alterações"}
           </button>

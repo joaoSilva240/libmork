@@ -126,7 +126,7 @@ export default function MasterProfile({
   if (loadingProfile) {
     return (
       <div className="flex h-64 flex-col items-center justify-center gap-3 text-gray-400">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
         <span className="text-sm">Carregando perfil do mestre...</span>
       </div>
     );
@@ -222,9 +222,9 @@ export default function MasterProfile({
                 <button
                   type="button"
                   onClick={() => setEditModalOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-full border border-gray-700 bg-gray-900/90 px-4 py-1.5 text-xs font-semibold text-gray-200 shadow-sm transition-all hover:border-purple-500 hover:bg-gray-800 hover:text-white"
+                  className="inline-flex items-center gap-2 rounded-full border border-gray-700 bg-gray-900/90 px-4 py-1.5 text-xs font-semibold text-gray-200 shadow-sm transition-all hover:border-accent hover:bg-gray-800 hover:text-white"
                 >
-                  <Pencil className="h-3.5 w-3.5 text-purple-400" />
+                  <Pencil className="h-3.5 w-3.5 text-accent-hover" />
                   <span>Editar Perfil</span>
                 </button>
               )}
@@ -257,9 +257,9 @@ export default function MasterProfile({
               return (
                 <div
                   key={key}
-                  className="flex flex-col items-center justify-center rounded-xl border border-gray-800/80 bg-gray-900/40 p-2.5 transition-all hover:border-purple-800/60 hover:bg-gray-900/80"
+                  className="flex flex-col items-center justify-center rounded-xl border border-gray-800/80 bg-gray-900/40 p-2.5 transition-all hover:border-accent/60 hover:bg-gray-900/80"
                 >
-                  <Icon className="h-5 w-5 text-purple-400" />
+                  <Icon className="h-5 w-5 text-accent-hover" />
                   <span className="text-base font-bold text-gray-100 mt-1">{count}</span>
                   <span className="text-[11px] font-medium text-gray-400">{label}</span>
                 </div>
@@ -283,13 +283,13 @@ export default function MasterProfile({
                     onClick={() => setTab(id)}
                     className={`relative px-5 py-3 text-sm font-semibold transition-colors ${
                       isActive
-                        ? "text-purple-400"
+                        ? "text-accent-hover"
                         : "text-gray-400 hover:text-gray-200"
                     }`}
                   >
                     <span>{label}</span>
                     {isActive && (
-                      <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-purple-500" />
+                      <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-accent" />
                     )}
                   </button>
                 );
@@ -301,7 +301,7 @@ export default function MasterProfile({
           <div className="mt-4">
             {loadingPosts ? (
               <div className="flex h-40 flex-col items-center justify-center gap-2 text-gray-400">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
                 <span className="text-xs">Carregando conteúdo...</span>
               </div>
             ) : posts.length === 0 ? (

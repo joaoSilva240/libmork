@@ -49,21 +49,21 @@ export function MasterSidebar() {
 
   return (
     <aside
-      className={`flex flex-col justify-between bg-gray-950 border-r border-gray-800 text-gray-300 transition-all duration-300 ${
+      className={`flex flex-col justify-between bg-dominant-deep border-r border-dominant-border text-secondary-offwhite transition-all duration-300 ${
         isCollapsed ? "w-16" : "w-64"
       }`}
     >
       <div className="flex flex-col">
         {/* Top Header & Toggle Button */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-800">
+        <div className="flex items-center justify-between p-4 border-b border-dominant-border">
           {!isCollapsed && (
-            <span className="font-bold text-gray-100 truncate">
+            <span className="font-bold text-secondary-pure truncate">
               Área do Mestre
             </span>
           )}
           <button
             onClick={toggleCollapse}
-            className="p-1.5 rounded hover:bg-gray-800 text-gray-400 hover:text-gray-100 transition-colors focus:outline-none ml-auto"
+            className="p-1.5 rounded hover:bg-dominant-container text-secondary-muted hover:text-secondary-pure transition-colors focus:outline-none ml-auto"
             title={isCollapsed ? "Expandir" : "Recolher"}
             aria-label={isCollapsed ? "Expandir sidebar" : "Recolher sidebar"}
           >
@@ -82,8 +82,8 @@ export function MasterSidebar() {
                 href={item.href}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
                   isActive
-                    ? "bg-gray-800 text-white font-medium"
-                    : "hover:bg-gray-900 text-gray-400 hover:text-gray-200"
+                    ? "bg-accent/20 text-accent-hover border border-accent/40 font-medium"
+                    : "hover:bg-dominant-container text-secondary-muted hover:text-secondary-pure"
                 } ${isCollapsed ? "justify-center px-0" : ""}`}
                 title={item.label}
                 aria-label={item.label}
@@ -97,7 +97,7 @@ export function MasterSidebar() {
       </div>
 
       {/* Footer / Logout */}
-      <div className="p-4 border-t border-gray-800 flex items-center justify-center">
+      <div className="p-4 border-t border-dominant-border flex items-center justify-center">
         {isCollapsed ? (
           <LogoutButton iconOnly={true} />
         ) : (

@@ -820,7 +820,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-2xl font-bold text-white">{title}</h2>
+        <h2 className="text-2xl font-bold text-secondary-pure">{title}</h2>
 
         <div className="flex items-center gap-2">
           {activeType === "classes" && (
@@ -828,7 +828,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
               <button
                 type="button"
                 onClick={() => classActionsRef.current?.openCreate()}
-                className="rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-purple-500 transition shadow-lg flex items-center gap-1.5"
+                className="rounded-xl bg-accent px-4 py-2.5 text-xs font-bold text-white hover:bg-accent-vibrant transition shadow-lg flex items-center gap-1.5"
               >
                 <span>+</span>
                 <span>Criar Classe</span>
@@ -836,7 +836,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
               <button
                 type="button"
                 onClick={() => classActionsRef.current?.openPf2eCatalog?.()}
-                className="rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2.5 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg flex items-center gap-2"
+                className="rounded-xl border border-accent/50 bg-accent/20 px-4 py-2.5 text-xs font-bold text-accent-hover hover:bg-accent/30 transition shadow-lg flex items-center gap-2"
               >
                 <span>⚔️</span>
                 <span>Catálogo Pathfinder 2e</span>
@@ -844,7 +844,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
               <button
                 type="button"
                 onClick={() => classActionsRef.current?.openCatalog()}
-                className="rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2.5 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg flex items-center gap-2"
+                className="rounded-xl border border-accent/50 bg-accent/20 px-4 py-2.5 text-xs font-bold text-accent-hover hover:bg-accent/30 transition shadow-lg flex items-center gap-2"
               >
                 <span>🐉</span>
                 <span>Catálogo D&D 5e</span>
@@ -857,7 +857,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
               <button
                 type="button"
                 onClick={() => raceActionsRef.current?.openCreate()}
-                className="rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-purple-500 transition shadow-lg flex items-center gap-1.5"
+                className="rounded-xl bg-accent px-4 py-2.5 text-xs font-bold text-white hover:bg-accent-vibrant transition shadow-lg flex items-center gap-1.5"
               >
                 <span>+</span>
                 <span>Criar Raça</span>
@@ -865,7 +865,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
               <button
                 type="button"
                 onClick={() => raceActionsRef.current?.openPf2eCatalog?.()}
-                className="rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2.5 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg flex items-center gap-2"
+                className="rounded-xl border border-accent/50 bg-accent/20 px-4 py-2.5 text-xs font-bold text-accent-hover hover:bg-accent/30 transition shadow-lg flex items-center gap-2"
               >
                 <span>⚔️</span>
                 <span>Catálogo Pathfinder 2e</span>
@@ -873,7 +873,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
               <button
                 type="button"
                 onClick={() => raceActionsRef.current?.openCatalog()}
-                className="rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2.5 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg flex items-center gap-2"
+                className="rounded-xl border border-accent/50 bg-accent/20 px-4 py-2.5 text-xs font-bold text-accent-hover hover:bg-accent/30 transition shadow-lg flex items-center gap-2"
               >
                 <span>🐉</span>
                 <span>Catálogo D&D 5e</span>
@@ -886,7 +886,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
               <button
                 type="button"
                 onClick={() => npcActionsRef.current?.openCreate()}
-                className="rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-purple-500 transition shadow-lg flex items-center gap-1.5"
+                className="rounded-xl bg-accent px-4 py-2.5 text-xs font-bold text-white hover:bg-accent-vibrant transition shadow-lg flex items-center gap-1.5"
               >
                 <span>+</span>
                 <span>Criar Novo NPC</span>
@@ -894,7 +894,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
               <button
                 type="button"
                 onClick={() => npcActionsRef.current?.openPf2eCatalog?.()}
-                className="rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2.5 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg flex items-center gap-2"
+                className="rounded-xl border border-accent/50 bg-accent/20 px-4 py-2.5 text-xs font-bold text-accent-hover hover:bg-accent/30 transition shadow-lg flex items-center gap-2"
               >
                 <span>⚔️</span>
                 <span>Catálogo Pathfinder 2e</span>
@@ -902,7 +902,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
               <button
                 type="button"
                 onClick={() => npcActionsRef.current?.openCatalog()}
-                className="rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2.5 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg flex items-center gap-2"
+                className="rounded-xl border border-accent/50 bg-accent/20 px-4 py-2.5 text-xs font-bold text-accent-hover hover:bg-accent/30 transition shadow-lg flex items-center gap-2"
               >
                 <span>🐉</span>
                 <span>Catálogo D&D 5e (334 Monstros)</span>
@@ -914,7 +914,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
             <button
               type="button"
               onClick={() => worldActionsRef.current?.openCreate()}
-              className="rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-purple-500 transition shadow-lg flex items-center gap-1.5"
+              className="rounded-xl bg-accent px-4 py-2.5 text-xs font-bold text-white hover:bg-accent-vibrant transition shadow-lg flex items-center gap-1.5"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -928,7 +928,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
               <button
                 type="button"
                 onClick={() => documentActionsRef.current?.openTome?.()}
-                className="rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2.5 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg flex items-center gap-1.5"
+                className="rounded-xl border border-accent/50 bg-accent/20 px-4 py-2.5 text-xs font-bold text-accent-hover hover:bg-accent/30 transition shadow-lg flex items-center gap-1.5"
                 title="Abrir Tome"
               >
                 <span>Tome</span>
@@ -941,7 +941,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
               <button
                 type="button"
                 onClick={() => setShowCreateModal(true)}
-                className="rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-purple-500 transition shadow-lg flex items-center gap-1.5"
+                className="rounded-xl bg-accent px-4 py-2.5 text-xs font-bold text-white hover:bg-accent-vibrant transition shadow-lg flex items-center gap-1.5"
               >
                 <span>+</span>
                 <span>Criar {config.label.replace(/s$/, "")}</span>
@@ -950,7 +950,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
                 type="button"
                 onClick={handleImportDndContent}
                 disabled={isImportingDnd}
-                className="rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2.5 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg flex items-center gap-2 disabled:opacity-50"
+                className="rounded-xl border border-accent/50 bg-accent/20 px-4 py-2.5 text-xs font-bold text-accent-hover hover:bg-accent/30 transition shadow-lg flex items-center gap-2 disabled:opacity-50"
               >
                 <span>🐉</span>
                 <span>{isImportingDnd ? "Importando..." : activeType === "items" ? "Importar itens SF2e" : `Importar ${config.label}`}</span>
@@ -984,8 +984,8 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
                 }}
                 className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
                   activeType === type
-                    ? "bg-purple-600 text-white shadow"
-                    : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                    ? "bg-accent text-white shadow-md"
+                    : "bg-dominant-container text-secondary-muted hover:bg-dominant-container/80 hover:text-secondary-pure"
                 }`}
               >
                 {TYPE_CONFIGS[type].label}
@@ -1326,8 +1326,8 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
                             }
                           : undefined
                       }
-                      className={`rounded-xl border border-gray-800 bg-gray-950 p-3.5 hover:border-purple-600/60 hover:shadow-lg transition-all cursor-pointer ${
-                        activeType === "spells" || activeType === "items" ? "focus:outline-none focus:ring-2 focus:ring-purple-500" : ""
+                      className={`rounded-xl border border-secondary-border bg-secondary-card p-3.5 hover:border-accent hover:shadow-lg transition-all cursor-pointer ${
+                        activeType === "spells" || activeType === "items" ? "focus:outline-none focus:ring-2 focus:ring-accent" : ""
                       }`}
                     >
                       <div className={activeType === "spells" || activeType === "items" ? "flex items-center gap-3" : "flex items-start justify-between"}>
@@ -1342,12 +1342,12 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
                             onError={() => setFailedImages((previous) => new Set(previous).add(item.id as string))}
                           />
                         ) : activeType === "spells" || activeType === "items" ? (
-                          <div aria-label={`Ícone indisponível para ${String(item.name)}`} className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border border-gray-800 bg-gray-900 text-3xl text-gray-600">✦</div>
+                          <div aria-label={`Ícone indisponível para ${String(item.name)}`} className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border border-secondary-border bg-dominant-deep text-3xl text-secondary-muted">✦</div>
                         ) : null}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-2">
                             {activeType === "spells" || activeType === "items" ? (
-                              <span className="text-left font-bold text-sm text-white hover:text-purple-300">
+                              <span className="text-left font-bold text-sm text-secondary-pure hover:text-accent-hover">
                                 {item.name as string}
                               </span>
                             ) : (
@@ -1355,7 +1355,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
                                 onClick={() =>
                                   editingId === item.id ? setEditingId(null) : startEditing(item)
                                 }
-                                className="text-left font-bold text-sm text-white hover:text-purple-300 flex items-center gap-1.5"
+                                className="text-left font-bold text-sm text-secondary-pure hover:text-accent-hover flex items-center gap-1.5"
                               >
                                 <span>{item.name as string}</span>
                                 <span className="text-xs text-purple-400 opacity-70">
@@ -1693,8 +1693,8 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
                         onClick={() => setModalLanguage("pt")}
                         className={`rounded-md px-2 py-1 text-xs font-bold transition ${
                           modalLanguage === "pt"
-                            ? "bg-purple-600 text-white"
-                            : "text-gray-400 hover:text-white"
+                            ? "bg-accent text-white"
+                            : "text-secondary-muted hover:text-secondary-pure"
                         }`}
                       >
                         🇧🇷 PT-BR
@@ -1704,8 +1704,8 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
                         onClick={() => setModalLanguage("en")}
                         className={`rounded-md px-2 py-1 text-xs font-bold transition ${
                           modalLanguage === "en"
-                            ? "bg-purple-600 text-white"
-                            : "text-gray-400 hover:text-white"
+                            ? "bg-accent text-white"
+                            : "text-secondary-muted hover:text-secondary-pure"
                         }`}
                       >
                         🇺🇸 EN
@@ -1748,10 +1748,10 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
                 <div className="flex items-start gap-4">
                   {/* Lado Esquerdo (Box de Dano Compacto - D20) */}
                   {displayDamage && (
-                    <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-purple-950/25 border border-purple-900/30 w-24 shrink-0">
+                    <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-accent/20 border border-accent/40 w-24 shrink-0">
                       {/* D20 SVG */}
                       <div className="relative flex h-12 w-12 shrink-0 items-center justify-center">
-                        <svg className="absolute inset-0 h-full w-full text-purple-600 hover:text-purple-500 transition-colors" viewBox="0 0 100 100" fill="currentColor">
+                        <svg className="absolute inset-0 h-full w-full text-accent hover:text-accent-vibrant transition-colors" viewBox="0 0 100 100" fill="currentColor">
                           <polygon points="50,2 95,25 95,75 50,98 5,75 5,25" fill="rgba(15, 10, 25, 0.8)" stroke="currentColor" strokeWidth="3" />
                           <polygon points="50,2 50,98" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2,2" opacity="0.4" />
                           <polygon points="5,25 95,25" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2,2" opacity="0.4" />
@@ -1934,7 +1934,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="w-1/2 rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2.5 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg"
+                  className="w-1/2 rounded-xl border border-secondary-border bg-dominant-container px-4 py-2.5 text-xs font-bold text-secondary-offwhite hover:bg-dominant-container/80 transition shadow-md"
                 >
                   Cancelar
                 </button>

@@ -315,7 +315,7 @@ export default function PostDetailModal({ post, onClose, onCloned }: Props) {
               <button
                 type="button"
                 onClick={handleOpenPostImport}
-                className="inline-flex items-center gap-1.5 rounded-full bg-purple-600 px-4 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-purple-500 shadow-sm"
+                className="inline-flex items-center gap-1.5 rounded-full bg-accent px-4 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-accent-vibrant shadow-sm"
               >
                 <Download className="h-3.5 w-3.5" />
                 <span>Importar</span>
@@ -508,11 +508,11 @@ export default function PostDetailModal({ post, onClose, onCloned }: Props) {
                       return (
                         <div
                           key={comment.id}
-                          className="rounded-xl border border-purple-800/40 bg-purple-950/20 p-3.5 space-y-2.5 transition-all hover:border-purple-700/60"
+                          className="rounded-xl border border-accent/40 bg-accent/10 p-3.5 space-y-2.5 transition-all hover:border-accent/60"
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <span className="inline-flex items-center gap-1 rounded-full bg-purple-900/60 px-2 py-0.5 text-[10px] font-semibold text-purple-300 border border-purple-700/50">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-semibold text-accent-hover border border-accent/30">
                                 <Sparkles className="h-3 w-3" />
                                 Adaptação da Comunidade
                               </span>
@@ -529,7 +529,7 @@ export default function PostDetailModal({ post, onClose, onCloned }: Props) {
                             <button
                               type="button"
                               onClick={() => handleOpenCommentImport(comment)}
-                              className="inline-flex items-center gap-1 rounded-full bg-purple-600/90 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-purple-500 transition-colors"
+                              className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-accent-vibrant transition-colors"
                             >
                               <Download className="h-3 w-3" />
                               <span>Importar esta versão</span>
@@ -542,7 +542,7 @@ export default function PostDetailModal({ post, onClose, onCloned }: Props) {
                               <img
                                 src={String(commentImg)}
                                 alt={comment.attachmentTitle || "Anexo"}
-                                className="h-14 w-14 rounded-lg object-cover border border-purple-800/40 shrink-0"
+                                className="h-14 w-14 rounded-lg object-cover border border-accent/40 shrink-0"
                               />
                             ) : null}
                             <div className="min-w-0 flex-1">

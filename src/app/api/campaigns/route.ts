@@ -81,6 +81,7 @@ export async function POST(request: NextRequest) {
       difficultyModifierShadowPoints,
       coverImageUrl,
       worldMapUrl,
+      theme,
       initialNpcIds,
       initialWorldIds,
     } = validation.data;
@@ -96,6 +97,7 @@ export async function POST(request: NextRequest) {
         difficultyModifierShadowPoints,
         coverImageUrl,
         worldMapUrl,
+        theme: theme || "default-dark",
       })
       .returning();
 
