@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoutButton } from "@/components/auth/LogoutButton";
-import { Dices, Library, Globe2, Settings } from "lucide-react";
+import { Dices, Library, Globe2, Settings, ChevronLeft, ChevronRight } from "lucide-react";
 
 const STORAGE_KEY = "libmork-master-sidebar-collapsed";
 
@@ -57,22 +57,26 @@ export function MasterSidebar() {
         {/* Top Header & Toggle Button */}
         <div className="flex items-center justify-between p-4 border-b border-dominant-border">
           {!isCollapsed && (
-            <span className="font-bold text-secondary-pure truncate">
-              Área do Mestre
-            </span>
+            <span className="font-bold text-secondary-pure truncate">Área do Mestre</span>
           )}
           <button
             onClick={toggleCollapse}
-            className="p-1.5 rounded hover:bg-dominant-container text-secondary-muted hover:text-secondary-pure transition-colors focus:outline-none ml-auto"
-            title={isCollapsed ? "Expandir" : "Recolher"}
-            aria-label={isCollapsed ? "Expandir sidebar" : "Recolher sidebar"}
+            className="p-1.5 rounded hover:bg-dominant-container text-secondary-muted hover:text-secondary-pure transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ml-auto cursor-pointer"
+            title={isCollapsed ? "Expandir menu lateral" : "Recolher menu lateral"}
+            aria-label={isCollapsed ? "Expandir menu lateral" : "Recolher menu lateral"}
+            aria-expanded={!isCollapsed}
+            aria-controls="master-sidebar-nav"
           >
-            {isCollapsed ? ">" : "<"}
+            {isCollapsed ? (
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+            )}
           </button>
         </div>
 
         {/* Navigation Links */}
-        <nav className="flex flex-col gap-1 p-2">
+        <nav id="master-sidebar-nav" className="flex flex-col gap-1 p-2">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.Icon;
