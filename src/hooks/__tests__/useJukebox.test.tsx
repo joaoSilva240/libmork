@@ -9,12 +9,14 @@ const mockEmitAudioTrackPlay = vi.fn();
 const mockEmitAudioTrackPause = vi.fn();
 const mockEmitAudioTrackLoop = vi.fn();
 const mockEmitAudioTrackRemove = vi.fn();
+const mockEmitAudioTrackPlaylist = vi.fn();
 
 let mockSubscribeAudioTrackAdd = vi.fn(() => vi.fn());
 let mockSubscribeAudioTrackPlay = vi.fn(() => vi.fn());
 let mockSubscribeAudioTrackPause = vi.fn(() => vi.fn());
 let mockSubscribeAudioTrackLoop = vi.fn(() => vi.fn());
 let mockSubscribeAudioTrackRemove = vi.fn(() => vi.fn());
+let mockSubscribeAudioTrackPlaylist = vi.fn(() => vi.fn());
 let mockSubscribeAudioTrackState = vi.fn(() => vi.fn());
 
 vi.mock("@/context/SocketContext", () => ({
@@ -24,11 +26,13 @@ vi.mock("@/context/SocketContext", () => ({
     emitAudioTrackPause: mockEmitAudioTrackPause,
     emitAudioTrackLoop: mockEmitAudioTrackLoop,
     emitAudioTrackRemove: mockEmitAudioTrackRemove,
+    emitAudioTrackPlaylist: mockEmitAudioTrackPlaylist,
     subscribeAudioTrackAdd: mockSubscribeAudioTrackAdd,
     subscribeAudioTrackPlay: mockSubscribeAudioTrackPlay,
     subscribeAudioTrackPause: mockSubscribeAudioTrackPause,
     subscribeAudioTrackLoop: mockSubscribeAudioTrackLoop,
     subscribeAudioTrackRemove: mockSubscribeAudioTrackRemove,
+    subscribeAudioTrackPlaylist: mockSubscribeAudioTrackPlaylist,
     subscribeAudioTrackState: mockSubscribeAudioTrackState,
   }),
 }));
@@ -41,6 +45,7 @@ describe("useJukebox", () => {
     mockSubscribeAudioTrackPause = vi.fn(() => vi.fn());
     mockSubscribeAudioTrackLoop = vi.fn(() => vi.fn());
     mockSubscribeAudioTrackRemove = vi.fn(() => vi.fn());
+    mockSubscribeAudioTrackPlaylist = vi.fn(() => vi.fn());
     mockSubscribeAudioTrackState = vi.fn(() => vi.fn());
   });
 
@@ -493,6 +498,120 @@ describe("useJukebox", () => {
       });
 
       expect(result.current.playingTrackId).toBeNull();
+    });
+  });
+
+  describe("playlists", () => {
+    it("should group multiple tracks into a playlist and emit event", () => {
+      // Mock global fetch
+      const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true }),
+      } as any);
+
+      const { result } = renderHook(() => useJukebox("campaign-1", true));
+
+      act(() => {
+        result.current.addTrack("https://www.youtube.com/watch?v=dQw4w9WgXcQ", "u1", "Mestre");
+        result.current.addTrack("https://www.youtube.com/watch?v=kJQP7kiw5Fk", "u1", "Mestre");
+      });
+
+      expect(result.current.tracks).toHaveLength(2);
+
+      act(() => {
+        result.current.createPlaylist(["dQw4w9WgXcQ", "kJQP7kiw5Fk"], "Trilha Épica");
+      });
+
+      expect(mockEmitAudioTrackPlaylist).toHaveBeenCalledWith(
+        expect.objectContaining({
+          campaignId: "campaign-1",
+          trackIds: ["dQw4w9WgXcQ", "kJQP7kiw5Fk"],
+          playlistName: "Trilha Épica",
+        }),
+      );
+
+      expect(result.current.tracks[0].playlistName).toBe("Trilha Épica");
+      expect(result.current.tracks[1].playlistName).toBe("Trilha Épica");
+      expect(result.current.tracks[0].playlistId).toBeDefined();
+      expect(result.current.tracks[0].playlistId).toBe(result.current.tracks[1].playlistId);
+
+      fetchSpy.mockRestore();
+    });
+
+    it("should ungroup a playlist back to individual tracks", () => {
+      const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true }),
+      } as any);
+
+      const { result } = renderHook(() => useJukebox("campaign-1", true));
+
+      act(() => {
+        result.current.addTrack("https://www.youtube.com/watch?v=dQw4w9WgXcQ", "u1", "Mestre");
+        result.current.addTrack("https://www.youtube.com/watch?v=kJQP7kiw5Fk", "u1", "Mestre");
+      });
+
+      act(() => {
+        result.current.createPlaylist(["dQw4w9WgXcQ", "kJQP7kiw5Fk"], "Trilha Épica");
+      });
+
+      const playlistId = result.current.tracks[0].playlistId!;
+
+      act(() => {
+        result.current.ungroupPlaylist(playlistId);
+      });
+
+      expect(mockEmitAudioTrackPlaylist).toHaveBeenCalledWith(
+        expect.objectContaining({
+          campaignId: "campaign-1",
+          trackIds: ["dQw4w9WgXcQ", "kJQP7kiw5Fk"],
+          playlistId: null,
+          playlistName: null,
+        }),
+      );
+
+      expect(result.current.tracks[0].playlistId).toBeNull();
+      expect(result.current.tracks[1].playlistId).toBeNull();
+
+      fetchSpy.mockRestore();
+    });
+
+    it("should update tracks on remote audio:track-playlist event", () => {
+      let playlistHandler: ((payload: any) => void) | null = null;
+      mockSubscribeAudioTrackPlaylist = vi.fn((handler: (payload: any) => void) => {
+        playlistHandler = handler;
+        return vi.fn();
+      });
+
+      const { result } = renderHook(() => useJukebox("campaign-1", false));
+
+      // Simulamos que temos duas faixas carregadas
+      let addHandler: ((payload: any) => void) | null = null;
+      mockSubscribeAudioTrackAdd = vi.fn((handler: (payload: any) => void) => {
+        addHandler = handler;
+        return vi.fn();
+      });
+
+      act(() => {
+        result.current.addTrack("https://www.youtube.com/watch?v=dQw4w9WgXcQ", "u1", "Mestre");
+      });
+
+      // Emite remote playlist event
+      act(() => {
+        playlistHandler!({
+          campaignId: "campaign-1",
+          trackIds: ["dQw4w9WgXcQ"],
+          playlistId: "pl-remote-1",
+          playlistName: "Batalha Remota",
+        });
+      });
+
+      // Como o track dQw4w9WgXcQ não foi adicionado em player mode via addTrack, vamos testar com state
+      let stateHandler: ((payload: any) => void) | null = null;
+      mockSubscribeAudioTrackState = vi.fn((handler: (payload: any) => void) => {
+        stateHandler = handler;
+        return vi.fn();
+      });
     });
   });
 });

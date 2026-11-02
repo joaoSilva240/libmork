@@ -1,23 +1,24 @@
 "use client";
 
 // =============================================================================
-// Libmork â€” Audio: Componente YouTubeAudioPlayer (Issue #60)
+// Libmork — Audio: Componente YouTubeAudioPlayer (Issue #60)
 // =============================================================================
-// Player de Ã¡udio invisÃ­vel via YouTube IFrame API. Controle declarativo
-// via props (playing, volume, loop). O iframe nÃ£o deve ser visÃ­vel â€” a jukebox
-// Ã© audio-only.
+// Player de áudio invisível via YouTube IFrame API. Controle declarativo
+// via props (playing, volume, loop, seekTime). Suporta callback de progresso
+// onTimeUpdate(currentTime, duration).
+// Estável contra re-renders (callbacks preservados em refs).
 
 import { useEffect, useRef, useState } from "react";
 import { loadYouTubeIframeApi } from "@/lib/audio/youTubeApi";
 
-interface YouTubeAudioPlayerProps {
+export interface YouTubeAudioPlayerProps {
   videoId: string;
   volume?: number;
   loop?: boolean;
   playing?: boolean;
-  onStateChange?: (
-    state: "playing" | "paused" | "ended" | "unstarted" | "error",
-  ) => void;
+  seekTime?: number | null;
+  onTimeUpdate?: (currentTime: number, duration: number) => void;
+  onStateChange?: (state: "playing" | "paused" | "ended" | "unstarted" | "error") => void;
 }
 
 export function YouTubeAudioPlayer({
@@ -25,19 +26,56 @@ export function YouTubeAudioPlayer({
   volume = 50,
   loop = false,
   playing = false,
+  seekTime,
+  onTimeUpdate,
   onStateChange,
 }: YouTubeAudioPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YTPlayer | null>(null);
-  const loopRef = useRef(loop);
   const [playerReady, setPlayerReady] = useState(false);
+  const lastSeekRef = useRef<number | null>(null);
 
-  // Atualiza ref de loop (para uso no callback onStateChange)
+  // Armazena callbacks e props dinâmicos em refs para NÃO disparar re-mount do player
+  const onStateChangeRef = useRef(onStateChange);
+  const onTimeUpdateRef = useRef(onTimeUpdate);
+  const loopRef = useRef(loop);
+  const playingRef = useRef(playing);
+  const volumeRef = useRef(volume);
+
+  useEffect(() => {
+    onStateChangeRef.current = onStateChange;
+  }, [onStateChange]);
+
+  useEffect(() => {
+    onTimeUpdateRef.current = onTimeUpdate;
+  }, [onTimeUpdate]);
+
   useEffect(() => {
     loopRef.current = loop;
   }, [loop]);
 
-  // Mount: carrega API + cria player
+  useEffect(() => {
+    playingRef.current = playing;
+  }, [playing]);
+
+  useEffect(() => {
+    volumeRef.current = volume;
+  }, [volume]);
+
+  // Função pura para reportar tempo atual usando ref estável
+  const reportTime = () => {
+    const player = playerRef.current;
+    if (!player || !onTimeUpdateRef.current) return;
+    try {
+      const cur = typeof player.getCurrentTime === "function" ? player.getCurrentTime() : 0;
+      const dur = typeof player.getDuration === "function" ? player.getDuration() : 0;
+      onTimeUpdateRef.current(cur, dur);
+    } catch {
+      // Ignora erro se player não estiver pronto
+    }
+  };
+
+  // Mount: carrega API + cria player (APENAS quando videoId mudar)
   useEffect(() => {
     let mounted = true;
 
@@ -57,39 +95,57 @@ export function YouTubeAudioPlayer({
         },
         events: {
           onReady: () => {
-            if (mounted) {
-              setPlayerReady(true);
+            if (!mounted) return;
+            setPlayerReady(true);
+
+            const player = playerRef.current;
+            if (player) {
+              // Aplica volume inicial
+              try {
+                const vol = Math.max(0, Math.min(100, volumeRef.current));
+                player.setVolume(vol);
+                if (vol > 0) player.unMute();
+              } catch {}
+
+              // Se já estiver marcado para tocar, inicia imediatamente
+              if (playingRef.current) {
+                try {
+                  player.playVideo();
+                } catch {}
+              }
+
+              // Notifica tempo inicial
+              reportTime();
             }
           },
           onStateChange: (event) => {
             const state = event.data;
-            
+            reportTime();
+
             // Notifica callback se presente
-            if (onStateChange) {
+            if (onStateChangeRef.current) {
               if (state === YT.PlayerState.UNSTARTED) {
-                onStateChange("unstarted");
+                onStateChangeRef.current("unstarted");
               } else if (state === YT.PlayerState.ENDED) {
-                onStateChange("ended");
+                onStateChangeRef.current("ended");
               } else if (state === YT.PlayerState.PLAYING) {
-                onStateChange("playing");
+                onStateChangeRef.current("playing");
               } else if (state === YT.PlayerState.PAUSED) {
-                onStateChange("paused");
+                onStateChangeRef.current("paused");
               }
             }
-            
+
             // Loop: se ativado e chegou ao fim, reinicia
             if (state === YT.PlayerState.ENDED && loopRef.current && playerRef.current) {
               try {
                 playerRef.current.seekTo(0, true);
                 playerRef.current.playVideo();
-              } catch {
-                // Ignora erros de seek/play
-              }
+              } catch {}
             }
           },
           onError: () => {
-            if (onStateChange) {
-              onStateChange("error");
+            if (onStateChangeRef.current) {
+              onStateChangeRef.current("error");
             }
           },
         },
@@ -101,13 +157,11 @@ export function YouTubeAudioPlayer({
       if (playerRef.current) {
         try {
           playerRef.current.destroy();
-        } catch {
-          // Ignora erros de cleanup
-        }
+        } catch {}
         playerRef.current = null;
       }
     };
-  }, [videoId, onStateChange]);
+  }, [videoId]);
 
   // Controle declarativo: playing
   useEffect(() => {
@@ -116,17 +170,41 @@ export function YouTubeAudioPlayer({
     if (!player) return;
 
     try {
-      const currentState = player.getPlayerState();
+      const currentState =
+        typeof player.getPlayerState === "function" ? player.getPlayerState() : -1;
       if (playing && currentState !== 1) {
         // 1 = PLAYING
         player.playVideo();
       } else if (!playing && currentState === 1) {
         player.pauseVideo();
       }
-    } catch {
-      // Player pode nÃ£o estar pronto
-    }
+    } catch {}
   }, [playing, playerReady]);
+
+  // Controle declarativo: seekTime (apenas quando seekTime mudar explicitamente)
+  useEffect(() => {
+    if (seekTime == null || !playerReady) return;
+    if (lastSeekRef.current === seekTime) return;
+    lastSeekRef.current = seekTime;
+
+    const player = playerRef.current;
+    if (!player || typeof player.seekTo !== "function") return;
+
+    try {
+      player.seekTo(seekTime, true);
+      reportTime();
+    } catch {}
+  }, [seekTime, playerReady]);
+
+  // Atualização periódica de tempo enquanto playing (apenas se onTimeUpdate for fornecido)
+  useEffect(() => {
+    if (!playerReady || !playing || !onTimeUpdate) return;
+
+    reportTime();
+    const interval = setInterval(reportTime, 500);
+
+    return () => clearInterval(interval);
+  }, [playing, playerReady, onTimeUpdate]);
 
   // Controle declarativo: volume
   useEffect(() => {
@@ -140,16 +218,8 @@ export function YouTubeAudioPlayer({
       if (clampedVolume > 0) {
         player.unMute();
       }
-    } catch {
-      // Player pode nÃ£o estar pronto
-    }
+    } catch {}
   }, [volume, playerReady]);
 
-  return (
-    <div
-      ref={containerRef}
-      aria-hidden
-      data-testid={`youtube-audio-player-${videoId}`}
-    />
-  );
+  return <div ref={containerRef} aria-hidden data-testid={`youtube-audio-player-${videoId}`} />;
 }

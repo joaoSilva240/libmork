@@ -187,10 +187,13 @@ export const campaignAudioTracks = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     addedAt: timestamp("added_at").notNull().defaultNow(),
     position: integer("position").notNull().default(0), // ordem de exibição (0, 1, 2...)
+    playlistId: varchar("playlist_id", { length: 100 }), // agrupamento em playlist
+    playlistName: varchar("playlist_name", { length: 100 }),
   },
   (table) => [
     uniqueIndex("campaign_audio_tracks_campaign_video_idx").on(table.campaignId, table.videoId),
     index("campaign_audio_tracks_position_idx").on(table.campaignId, table.position),
+    index("campaign_audio_tracks_playlist_idx").on(table.campaignId, table.playlistId),
   ],
 );
 

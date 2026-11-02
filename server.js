@@ -317,6 +317,19 @@ findAvailablePort(initialPort)
           io.to(`campaign:${payload.campaignId}`).emit("audio:track-remove", payload);
         });
 
+        socket.on("audio:track-playlist", (payload) => {
+          if (!payload || !payload.campaignId || !payload.trackIds) return;
+          const state = getOrCreateAudioState(payload.campaignId);
+          for (const trackId of payload.trackIds) {
+            const track = state.tracks.get(trackId);
+            if (track) {
+              track.playlistId = payload.playlistId || null;
+              track.playlistName = payload.playlistName || null;
+            }
+          }
+          io.to(`campaign:${payload.campaignId}`).emit("audio:track-playlist", payload);
+        });
+
         // Sair explicitamente de uma campanha
         socket.on("leave-campaign", ({ campaignId }) => {
           if (!campaignId) return;

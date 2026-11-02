@@ -19,6 +19,7 @@ export const AUDIO_EVENTS = {
   TRACK_PAUSE: "audio:track-pause",
   TRACK_LOOP: "audio:track-loop",
   TRACK_REMOVE: "audio:track-remove",
+  TRACK_PLAYLIST: "audio:track-playlist", // agrupamento/desagrupamento em playlist
   TRACK_STATE: "audio:track-state", // snapshot para late-joiners (servidor -> cliente)
 } as const;
 
@@ -27,6 +28,8 @@ export interface AudioTrack {
   title: string; // título exibível; se desconhecido, usar o videoId
   addedBy: string; // userId do mestre
   addedAt: string; // ISO timestamp
+  playlistId?: string | null;
+  playlistName?: string | null;
 }
 
 export interface AudioTrackAddPayload {
@@ -56,6 +59,13 @@ export interface AudioTrackLoopPayload {
   loop: boolean;
 }
 
+export interface AudioTrackPlaylistPayload {
+  campaignId: string;
+  trackIds: string[];
+  playlistId: string | null;
+  playlistName?: string | null;
+}
+
 // Snapshot completo para reconstrução do estado (late-joiners + reconexão)
 export interface AudioTrackStatePayload {
   campaignId: string;
@@ -72,7 +82,8 @@ export type AudioTrackEventPayload =
   | AudioTrackPlayPayload
   | AudioTrackPausePayload
   | AudioTrackLoopPayload
-  | AudioTrackRemovePayload;
+  | AudioTrackRemovePayload
+  | AudioTrackPlaylistPayload;
 
 // ============================== Zod (servidor) ==============================
 
@@ -83,6 +94,8 @@ export const audioTrackSchema = z.object({
   title: z.string(),
   addedBy: z.string(),
   addedAt: z.iso.datetime(),
+  playlistId: z.string().nullable().optional(),
+  playlistName: z.string().nullable().optional(),
 });
 
 export const audioTrackAddSchema = z.object({
@@ -112,4 +125,11 @@ export const audioTrackLoopSchema = z.object({
 export const audioTrackRemoveSchema = z.object({
   campaignId: z.string().min(1, "campaignId é obrigatório"),
   trackId: z.string().min(1, "trackId é obrigatório"),
+});
+
+export const audioTrackPlaylistSchema = z.object({
+  campaignId: z.string().min(1, "campaignId é obrigatório"),
+  trackIds: z.array(z.string()),
+  playlistId: z.string().nullable(),
+  playlistName: z.string().nullable().optional(),
 });

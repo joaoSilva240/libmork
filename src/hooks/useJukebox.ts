@@ -11,12 +11,16 @@ export interface UseJukeboxReturn {
   playingTrackId: string | null;
   loopTrackIds: Set<string>;
   playingAt: number | null;
+  trackPlayingAts: Record<string, number>;
   isLoading: boolean;
   addTrack: (url: string, addedBy: string, actorName: string) => { ok: boolean; error?: string };
   removeTrack: (trackId: string) => void;
   togglePlay: (trackId: string) => void;
+  seekTrack: (trackId: string, seconds: number) => void;
   stopAll: () => void;
   toggleLoop: (trackId: string) => void;
+  createPlaylist: (trackIds: string[], name: string) => void;
+  ungroupPlaylist: (playlistId: string) => void;
 }
 
 function getApiUrl(path: string): string {
@@ -37,11 +41,13 @@ export function useJukebox(campaignId: string | null, isMaster: boolean): UseJuk
     emitAudioTrackPause,
     emitAudioTrackLoop,
     emitAudioTrackRemove,
+    emitAudioTrackPlaylist,
     subscribeAudioTrackAdd,
     subscribeAudioTrackPlay,
     subscribeAudioTrackPause,
     subscribeAudioTrackLoop,
     subscribeAudioTrackRemove,
+    subscribeAudioTrackPlaylist,
     subscribeAudioTrackState,
   } = useSocket();
 
@@ -49,6 +55,7 @@ export function useJukebox(campaignId: string | null, isMaster: boolean): UseJuk
   const [playingTrackIds, setPlayingTrackIds] = useState<Set<string>>(new Set());
   const [loopTrackIds, setLoopTrackIds] = useState<Set<string>>(new Set());
   const [playingAt, setPlayingAt] = useState<number | null>(null);
+  const [trackPlayingAts, setTrackPlayingAts] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
 
   // Retrocompatibilidade para single-track (primeira faixa tocando ou null)
@@ -156,6 +163,11 @@ export function useJukebox(campaignId: string | null, isMaster: boolean): UseJuk
         if (next.size === 0) setPlayingAt(null);
         return next;
       });
+      setTrackPlayingAts((prev) => {
+        const next = { ...prev };
+        delete next[trackId];
+        return next;
+      });
 
       // Emit to server
       emitAudioTrackRemove({ campaignId, trackId });
@@ -187,12 +199,37 @@ export function useJukebox(campaignId: string | null, isMaster: boolean): UseJuk
           const now = Date.now();
           next.add(trackId);
           setPlayingAt(now);
+          setTrackPlayingAts((curr) => ({ ...curr, [trackId]: now }));
           emitAudioTrackPlay({ campaignId, trackId, playingAt: now });
         }
         return next;
       });
     },
     [isMaster, campaignId, emitAudioTrackPlay, emitAudioTrackPause],
+  );
+
+  const seekTrack = useCallback(
+    (trackId: string, seconds: number) => {
+      if (!isMaster || !campaignId) return;
+
+      const now = Date.now();
+      const virtualPlayingAt = now - Math.round(seconds * 1000);
+      setPlayingAt(virtualPlayingAt);
+      setTrackPlayingAts((curr) => ({ ...curr, [trackId]: virtualPlayingAt }));
+
+      // Garante que a faixa esteja marcada como playing
+      setPlayingTrackIds((prev) => {
+        if (!prev.has(trackId)) {
+          const next = new Set(prev);
+          next.add(trackId);
+          return next;
+        }
+        return prev;
+      });
+
+      emitAudioTrackPlay({ campaignId, trackId, playingAt: virtualPlayingAt });
+    },
+    [isMaster, campaignId, emitAudioTrackPlay],
   );
 
   const stopAll = useCallback(() => {
@@ -205,6 +242,7 @@ export function useJukebox(campaignId: string | null, isMaster: boolean): UseJuk
       return new Set();
     });
     setPlayingAt(null);
+    setTrackPlayingAts({});
   }, [isMaster, campaignId, emitAudioTrackPause]);
 
   const toggleLoop = useCallback(
@@ -229,6 +267,57 @@ export function useJukebox(campaignId: string | null, isMaster: boolean): UseJuk
     [isMaster, campaignId, emitAudioTrackLoop],
   );
 
+  const createPlaylist = useCallback(
+    (trackIds: string[], name: string) => {
+      if (!isMaster || !campaignId || trackIds.length < 2) return;
+      const playlistId = `pl_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      const playlistName = name.trim() || "Nova Playlist";
+
+      setTracks((prev) =>
+        prev.map((t) => (trackIds.includes(t.id) ? { ...t, playlistId, playlistName } : t)),
+      );
+
+      emitAudioTrackPlaylist({ campaignId, trackIds, playlistId, playlistName });
+
+      fetch(getApiUrl(`/api/campaigns/${campaignId}/tracks`), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ trackIds, playlistId, playlistName }),
+      }).catch((err) => {
+        console.error("Erro ao criar playlist:", err);
+      });
+    },
+    [isMaster, campaignId, emitAudioTrackPlaylist],
+  );
+
+  const ungroupPlaylist = useCallback(
+    (playlistId: string) => {
+      if (!isMaster || !campaignId) return;
+
+      const trackIds = tracks.filter((t) => t.playlistId === playlistId).map((t) => t.id);
+      if (trackIds.length === 0) return;
+
+      setTracks((prev) =>
+        prev.map((t) =>
+          t.playlistId === playlistId ? { ...t, playlistId: null, playlistName: null } : t,
+        ),
+      );
+
+      emitAudioTrackPlaylist({ campaignId, trackIds, playlistId: null, playlistName: null });
+
+      fetch(getApiUrl(`/api/campaigns/${campaignId}/tracks`), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ trackIds, playlistId: null }),
+      }).catch((err) => {
+        console.error("Erro ao desagrupar playlist:", err);
+      });
+    },
+    [isMaster, campaignId, tracks, emitAudioTrackPlaylist],
+  );
+
   // ============================= Subscribers =============================
 
   useEffect(() => {
@@ -248,6 +337,7 @@ export function useJukebox(campaignId: string | null, isMaster: boolean): UseJuk
       if (payload.campaignId !== campaignId) return;
       setPlayingTrackIds((prev) => new Set(prev).add(payload.trackId));
       setPlayingAt(payload.playingAt);
+      setTrackPlayingAts((curr) => ({ ...curr, [payload.trackId]: payload.playingAt }));
     });
 
     const unsubPause = subscribeAudioTrackPause((payload) => {
@@ -256,6 +346,11 @@ export function useJukebox(campaignId: string | null, isMaster: boolean): UseJuk
         const next = new Set(prev);
         next.delete(payload.trackId);
         if (next.size === 0) setPlayingAt(null);
+        return next;
+      });
+      setTrackPlayingAts((curr) => {
+        const next = { ...curr };
+        delete next[payload.trackId];
         return next;
       });
     });
@@ -287,6 +382,27 @@ export function useJukebox(campaignId: string | null, isMaster: boolean): UseJuk
         if (next.size === 0) setPlayingAt(null);
         return next;
       });
+      setTrackPlayingAts((curr) => {
+        const next = { ...curr };
+        delete next[payload.trackId];
+        return next;
+      });
+    });
+
+    const unsubPlaylist = subscribeAudioTrackPlaylist((payload) => {
+      if (payload.campaignId !== campaignId) return;
+      setTracks((prev) =>
+        prev.map((t) => {
+          if (payload.trackIds.includes(t.id)) {
+            return {
+              ...t,
+              playlistId: payload.playlistId ?? null,
+              playlistName: payload.playlistName ?? null,
+            };
+          }
+          return t;
+        }),
+      );
     });
 
     const unsubState = subscribeAudioTrackState((payload) => {
@@ -310,6 +426,7 @@ export function useJukebox(campaignId: string | null, isMaster: boolean): UseJuk
       unsubPause();
       unsubLoop();
       unsubRemove();
+      unsubPlaylist();
       unsubState();
     };
   }, [
@@ -319,6 +436,7 @@ export function useJukebox(campaignId: string | null, isMaster: boolean): UseJuk
     subscribeAudioTrackPause,
     subscribeAudioTrackLoop,
     subscribeAudioTrackRemove,
+    subscribeAudioTrackPlaylist,
     subscribeAudioTrackState,
   ]);
 
@@ -328,11 +446,15 @@ export function useJukebox(campaignId: string | null, isMaster: boolean): UseJuk
     playingTrackId,
     loopTrackIds,
     playingAt,
+    trackPlayingAts,
     isLoading,
     addTrack,
     removeTrack,
     togglePlay,
+    seekTrack,
     stopAll,
     toggleLoop,
+    createPlaylist,
+    ungroupPlaylist,
   };
 }

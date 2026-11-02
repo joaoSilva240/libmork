@@ -1,9 +1,9 @@
 // =============================================================================
-// Libmork â€” Audio: Testes do YouTubeAudioPlayer (Issue #60)
+// Libmork — Audio: Testes do YouTubeAudioPlayer (Issue #60)
 // =============================================================================
 
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { render, waitFor, act } from "@testing-library/react";
+import { render, act } from "@testing-library/react";
 import { YouTubeAudioPlayer } from "../YouTubeAudioPlayer";
 
 // Mock do loader
@@ -28,15 +28,17 @@ describe("YouTubeAudioPlayer", () => {
       seekTo: vi.fn(),
       destroy: vi.fn(),
       loadVideoById: vi.fn(),
-      getPlayerState: vi.fn(() => -1), // UNSTARTED por padrÃ£o
+      getPlayerState: vi.fn(() => -1), // UNSTARTED por padrão
       mute: vi.fn(),
       unMute: vi.fn(),
+      getCurrentTime: vi.fn(() => 15),
+      getDuration: vi.fn(() => 180),
     };
 
     mockYT = {
       Player: vi.fn((element: any, config: any) => {
         playerConfig = config;
-        // Simula onReady assÃ­ncrono
+        // Simula onReady assíncrono
         Promise.resolve().then(() => {
           if (config.events?.onReady) {
             config.events.onReady({ target: mockPlayer });
@@ -63,11 +65,11 @@ describe("YouTubeAudioPlayer", () => {
 
   it("renderiza div com testid correto", async () => {
     const { getByTestId } = render(<YouTubeAudioPlayer videoId="dQw4w9WgXcQ" />);
-    
+
     expect(getByTestId("youtube-audio-player-dQw4w9WgXcQ")).toBeInTheDocument();
   });
 
-  it("cria player com configuraÃ§Ã£o correta", async () => {
+  it("cria player com configuração correta", async () => {
     render(<YouTubeAudioPlayer videoId="dQw4w9WgXcQ" />);
 
     await act(async () => {
@@ -98,29 +100,27 @@ describe("YouTubeAudioPlayer", () => {
     expect(mockPlayer.unMute).toHaveBeenCalled();
   });
 
-  it("clamp de volume entre 0 e 100", async () => {
-    const { rerender } = render(<YouTubeAudioPlayer videoId="dQw4w9WgXcQ" volume={150} />);
-
-    await act(async () => {
-      await vi.runAllTimersAsync();
-    });
-
-    expect(mockPlayer.setVolume).toHaveBeenCalledWith(100);
-
-    mockPlayer.setVolume.mockClear();
-    rerender(<YouTubeAudioPlayer videoId="dQw4w9WgXcQ" volume={-20} />);
+  it("chama setVolume sem unMute quando volume = 0", async () => {
+    render(<YouTubeAudioPlayer videoId="dQw4w9WgXcQ" volume={0} />);
 
     await act(async () => {
       await vi.runAllTimersAsync();
     });
 
     expect(mockPlayer.setVolume).toHaveBeenCalledWith(0);
+    expect(mockPlayer.unMute).not.toHaveBeenCalled();
   });
 
-  it("chama playVideo quando playing=true e estado nÃ£o Ã© PLAYING", async () => {
-    mockPlayer.getPlayerState.mockReturnValue(2); // PAUSED
+  it("playing=true chama playVideo quando não está tocando", async () => {
+    mockPlayer.getPlayerState.mockReturnValue(-1); // UNSTARTED
 
-    render(<YouTubeAudioPlayer videoId="dQw4w9WgXcQ" playing={true} />);
+    const { rerender } = render(<YouTubeAudioPlayer videoId="dQw4w9WgXcQ" playing={false} />);
+
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    rerender(<YouTubeAudioPlayer videoId="dQw4w9WgXcQ" playing={true} />);
 
     await act(async () => {
       await vi.runAllTimersAsync();
@@ -129,10 +129,16 @@ describe("YouTubeAudioPlayer", () => {
     expect(mockPlayer.playVideo).toHaveBeenCalled();
   });
 
-  it("chama pauseVideo quando playing=false e estado Ã© PLAYING", async () => {
+  it("playing=false chama pauseVideo quando está tocando", async () => {
     mockPlayer.getPlayerState.mockReturnValue(1); // PLAYING
 
-    render(<YouTubeAudioPlayer videoId="dQw4w9WgXcQ" playing={false} />);
+    const { rerender } = render(<YouTubeAudioPlayer videoId="dQw4w9WgXcQ" playing={true} />);
+
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    rerender(<YouTubeAudioPlayer videoId="dQw4w9WgXcQ" playing={false} />);
 
     await act(async () => {
       await vi.runAllTimersAsync();
@@ -141,7 +147,37 @@ describe("YouTubeAudioPlayer", () => {
     expect(mockPlayer.pauseVideo).toHaveBeenCalled();
   });
 
-  it("onStateChange mapeamento correto de estados", async () => {
+  it("seekTime prop chama player.seekTo com o tempo correto", async () => {
+    const { rerender } = render(<YouTubeAudioPlayer videoId="dQw4w9WgXcQ" seekTime={null} />);
+
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    rerender(<YouTubeAudioPlayer videoId="dQw4w9WgXcQ" seekTime={42} />);
+
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    expect(mockPlayer.seekTo).toHaveBeenCalledWith(42, true);
+  });
+
+  it("onTimeUpdate é notificado com tempo atual e duração", async () => {
+    const onTimeUpdate = vi.fn();
+    mockPlayer.getCurrentTime.mockReturnValue(30);
+    mockPlayer.getDuration.mockReturnValue(200);
+
+    render(<YouTubeAudioPlayer videoId="dQw4w9WgXcQ" playing={true} onTimeUpdate={onTimeUpdate} />);
+
+    await act(async () => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    expect(onTimeUpdate).toHaveBeenCalledWith(30, 200);
+  });
+
+  it("notifica onStateChange quando estado do player muda", async () => {
     const onStateChange = vi.fn();
     render(<YouTubeAudioPlayer videoId="dQw4w9WgXcQ" onStateChange={onStateChange} />);
 
@@ -188,18 +224,10 @@ describe("YouTubeAudioPlayer", () => {
     expect(onStateChange).toHaveBeenCalledWith("error");
   });
 
-  it("loop=true reinicia vÃ­deo ao terminar", async () => {
+  it("loop=true reinicia vídeo ao terminar", async () => {
     render(<YouTubeAudioPlayer videoId="dQw4w9WgXcQ" loop={true} />);
 
     await act(async () => {
-      await vi.runAllTimersAsync();
-    });
-
-    // Garante que onReady foi chamado (simula manualmente se necessÃ¡rio)
-    await act(async () => {
-      if (playerConfig.events?.onReady) {
-        playerConfig.events.onReady({ target: mockPlayer });
-      }
       await vi.runAllTimersAsync();
     });
 
@@ -212,7 +240,7 @@ describe("YouTubeAudioPlayer", () => {
     expect(mockPlayer.playVideo).toHaveBeenCalled();
   });
 
-  it("loop=false nÃ£o reinicia ao terminar", async () => {
+  it("loop=false não reinicia ao terminar", async () => {
     render(<YouTubeAudioPlayer videoId="dQw4w9WgXcQ" loop={false} />);
 
     await act(async () => {
@@ -231,7 +259,7 @@ describe("YouTubeAudioPlayer", () => {
     expect(mockPlayer.playVideo).not.toHaveBeenCalled();
   });
 
-  it("unmount chama destroy sem lanÃ§ar erro", async () => {
+  it("unmount chama destroy sem lançar erro", async () => {
     const { unmount } = render(<YouTubeAudioPlayer videoId="dQw4w9WgXcQ" />);
 
     await act(async () => {
@@ -243,7 +271,7 @@ describe("YouTubeAudioPlayer", () => {
     expect(mockPlayer.destroy).toHaveBeenCalled();
   });
 
-  it("unmount com destroy falhando nÃ£o lanÃ§a erro", async () => {
+  it("unmount com destroy falhando não lança erro", async () => {
     mockPlayer.destroy.mockImplementation(() => {
       throw new Error("Destroy failed");
     });

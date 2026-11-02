@@ -39,6 +39,8 @@ declare global {
     pauseVideo(): void;
     setVolume(volume: number): void;
     seekTo(seconds: number, allowSeekAhead: boolean): void;
+    getCurrentTime(): number;
+    getDuration(): number;
     destroy(): void;
     loadVideoById(videoId: string): void;
     getPlayerState(): number;

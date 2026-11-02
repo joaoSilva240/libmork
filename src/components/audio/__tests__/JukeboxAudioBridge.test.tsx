@@ -1,17 +1,17 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { JukeboxAudioBridge } from "../JukeboxAudioBridge";
 import type { UseJukeboxReturn } from "@/hooks/useJukebox";
 import type { AudioTrack } from "@/lib/audio/jukebox-protocol";
 
-// Mock useJukebox
+// Mock do hook useJukebox
 vi.mock("@/hooks/useJukebox", () => ({
   useJukebox: vi.fn(),
 }));
 
-// Mock YouTubeAudioPlayer
+// Mock do YouTubeAudioPlayer
 vi.mock("../YouTubeAudioPlayer", () => ({
-  YouTubeAudioPlayer: vi.fn(({ videoId, playing, volume, loop }) => (
+  YouTubeAudioPlayer: vi.fn(({ videoId, playing, volume, loop }: any) => (
     <div
       data-testid={`youtube-player-${videoId}`}
       data-playing={playing}
@@ -23,26 +23,34 @@ vi.mock("../YouTubeAudioPlayer", () => ({
 
 const { useJukebox } = await import("@/hooks/useJukebox");
 
+function createMockReturn(overrides: Partial<UseJukeboxReturn> = {}): UseJukeboxReturn {
+  return {
+    tracks: [],
+    playingTrackIds: new Set(),
+    playingTrackId: null,
+    loopTrackIds: new Set(),
+    playingAt: null,
+    trackPlayingAts: {},
+    isLoading: false,
+    addTrack: vi.fn(),
+    removeTrack: vi.fn(),
+    togglePlay: vi.fn(),
+    seekTrack: vi.fn(),
+    stopAll: vi.fn(),
+    toggleLoop: vi.fn(),
+    createPlaylist: vi.fn(),
+    ungroupPlaylist: vi.fn(),
+    ...overrides,
+  };
+}
+
 describe("JukeboxAudioBridge", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("renderiza sem UI visível (div.hidden)", () => {
-    const mockReturn: UseJukeboxReturn = {
-      tracks: [],
-      playingTrackIds: new Set(),
-      playingTrackId: null,
-      loopTrackIds: new Set(),
-      playingAt: null,
-      isLoading: false,
-      addTrack: vi.fn(),
-      removeTrack: vi.fn(),
-      togglePlay: vi.fn(),
-      stopAll: vi.fn(),
-      toggleLoop: vi.fn(),
-    };
-    vi.mocked(useJukebox).mockReturnValue(mockReturn);
+    vi.mocked(useJukebox).mockReturnValue(createMockReturn());
 
     render(<JukeboxAudioBridge campaignId="campaign-123" />);
 
@@ -59,20 +67,7 @@ describe("JukeboxAudioBridge", () => {
       { id: "video3", title: "Track 3", addedBy: "Master", addedAt: "2026-11-01T00:00:00Z" },
     ];
 
-    const mockReturn: UseJukeboxReturn = {
-      tracks,
-      playingTrackIds: new Set(),
-      playingTrackId: null,
-      loopTrackIds: new Set(),
-      playingAt: null,
-      isLoading: false,
-      addTrack: vi.fn(),
-      removeTrack: vi.fn(),
-      togglePlay: vi.fn(),
-      stopAll: vi.fn(),
-      toggleLoop: vi.fn(),
-    };
-    vi.mocked(useJukebox).mockReturnValue(mockReturn);
+    vi.mocked(useJukebox).mockReturnValue(createMockReturn({ tracks }));
 
     render(<JukeboxAudioBridge campaignId="campaign-123" />);
 
@@ -91,20 +86,14 @@ describe("JukeboxAudioBridge", () => {
       { id: "video2", title: "Track 2", addedBy: "Master", addedAt: "2026-11-01T00:00:00Z" },
     ];
 
-    const mockReturn: UseJukeboxReturn = {
-      tracks,
-      playingTrackIds: new Set(["video2"]),
-      playingTrackId: "video2",
-      loopTrackIds: new Set(),
-      playingAt: 1234567890,
-      isLoading: false,
-      addTrack: vi.fn(),
-      removeTrack: vi.fn(),
-      togglePlay: vi.fn(),
-      stopAll: vi.fn(),
-      toggleLoop: vi.fn(),
-    };
-    vi.mocked(useJukebox).mockReturnValue(mockReturn);
+    vi.mocked(useJukebox).mockReturnValue(
+      createMockReturn({
+        tracks,
+        playingTrackIds: new Set(["video2"]),
+        playingTrackId: "video2",
+        playingAt: 1234567890,
+      }),
+    );
 
     render(<JukeboxAudioBridge campaignId="campaign-123" />);
 
@@ -122,20 +111,14 @@ describe("JukeboxAudioBridge", () => {
       { id: "video3", title: "Track 3", addedBy: "Master", addedAt: "2026-11-01T00:00:00Z" },
     ];
 
-    const mockReturn: UseJukeboxReturn = {
-      tracks,
-      playingTrackIds: new Set(["video1", "video2"]),
-      playingTrackId: "video1",
-      loopTrackIds: new Set(),
-      playingAt: Date.now(),
-      isLoading: false,
-      addTrack: vi.fn(),
-      removeTrack: vi.fn(),
-      togglePlay: vi.fn(),
-      stopAll: vi.fn(),
-      toggleLoop: vi.fn(),
-    };
-    vi.mocked(useJukebox).mockReturnValue(mockReturn);
+    vi.mocked(useJukebox).mockReturnValue(
+      createMockReturn({
+        tracks,
+        playingTrackIds: new Set(["video1", "video2"]),
+        playingTrackId: "video1",
+        playingAt: Date.now(),
+      }),
+    );
 
     render(<JukeboxAudioBridge campaignId="campaign-123" />);
 
@@ -155,20 +138,12 @@ describe("JukeboxAudioBridge", () => {
       { id: "video3", title: "Track 3", addedBy: "Master", addedAt: "2026-11-01T00:00:00Z" },
     ];
 
-    const mockReturn: UseJukeboxReturn = {
-      tracks,
-      playingTrackIds: new Set(),
-      playingTrackId: null,
-      loopTrackIds: new Set(["video1", "video3"]),
-      playingAt: null,
-      isLoading: false,
-      addTrack: vi.fn(),
-      removeTrack: vi.fn(),
-      togglePlay: vi.fn(),
-      stopAll: vi.fn(),
-      toggleLoop: vi.fn(),
-    };
-    vi.mocked(useJukebox).mockReturnValue(mockReturn);
+    vi.mocked(useJukebox).mockReturnValue(
+      createMockReturn({
+        tracks,
+        loopTrackIds: new Set(["video1", "video3"]),
+      }),
+    );
 
     render(<JukeboxAudioBridge campaignId="campaign-123" />);
 
@@ -186,20 +161,7 @@ describe("JukeboxAudioBridge", () => {
       { id: "video1", title: "Track 1", addedBy: "Master", addedAt: "2026-11-01T00:00:00Z" },
     ];
 
-    const mockReturn: UseJukeboxReturn = {
-      tracks,
-      playingTrackIds: new Set(),
-      playingTrackId: null,
-      loopTrackIds: new Set(),
-      playingAt: null,
-      isLoading: false,
-      addTrack: vi.fn(),
-      removeTrack: vi.fn(),
-      togglePlay: vi.fn(),
-      stopAll: vi.fn(),
-      toggleLoop: vi.fn(),
-    };
-    vi.mocked(useJukebox).mockReturnValue(mockReturn);
+    vi.mocked(useJukebox).mockReturnValue(createMockReturn({ tracks }));
 
     render(<JukeboxAudioBridge campaignId="campaign-123" />);
 

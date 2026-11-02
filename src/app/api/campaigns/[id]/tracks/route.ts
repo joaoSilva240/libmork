@@ -11,7 +11,7 @@ import { campaigns, campaignInvites, campaignAudioTracks } from "@/lib/db/schema
 import { requireAuth } from "@/lib/auth/session";
 import { getCampaignAsMaster } from "@/lib/auth/campaign-access";
 import { extractYouTubeId } from "@/lib/audio/youtube";
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, inArray } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -68,13 +68,15 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       .where(eq(campaignAudioTracks.campaignId, campaignId))
       .orderBy(asc(campaignAudioTracks.position), asc(campaignAudioTracks.addedAt));
 
-    // Formatar para o contrato AudioTrack ({ id: videoId, title, addedBy, addedAt })
+    // Formatar para o contrato AudioTrack ({ id: videoId, title, addedBy, addedAt, playlistId, playlistName })
     const formatted = tracks.map((t) => ({
       id: t.videoId,
       dbId: t.id,
       title: t.title,
       addedBy: t.addedBy,
       addedAt: t.addedAt.toISOString(),
+      playlistId: t.playlistId ?? null,
+      playlistName: t.playlistName ?? null,
     }));
 
     return NextResponse.json({
@@ -171,6 +173,64 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     );
   } catch (error) {
     logger.error({ err: error }, "Erro ao adicionar faixa de áudio");
+    return NextResponse.json(
+      { success: false, error: "Erro interno do servidor" },
+      { status: 500 },
+    );
+  }
+}
+
+/**
+ * PATCH /api/campaigns/:id/tracks
+ * Atualiza o playlistId e playlistName de uma lista de faixas da campanha (apenas o mestre).
+ * Se playlistId for null, desagrupa as faixas.
+ */
+export async function PATCH(request: NextRequest, { params }: RouteContext) {
+  try {
+    const session = await requireAuth();
+    if (!session) {
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
+    }
+
+    const { id: campaignId } = await params;
+
+    const campaign = await getCampaignAsMaster(campaignId, session.user.id);
+    if (!campaign) {
+      return NextResponse.json(
+        { success: false, error: "Apenas o mestre pode modificar playlists da campanha" },
+        { status: 403 },
+      );
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const { trackIds, playlistId, playlistName } = body;
+
+    if (!Array.isArray(trackIds) || trackIds.length === 0) {
+      return NextResponse.json(
+        { success: false, error: "Lista de trackIds inválida" },
+        { status: 400 },
+      );
+    }
+
+    await db
+      .update(campaignAudioTracks)
+      .set({
+        playlistId: playlistId ?? null,
+        playlistName: playlistName ?? null,
+      })
+      .where(
+        and(
+          eq(campaignAudioTracks.campaignId, campaignId),
+          inArray(campaignAudioTracks.videoId, trackIds),
+        ),
+      );
+
+    return NextResponse.json({
+      success: true,
+      data: { trackIds, playlistId: playlistId ?? null, playlistName: playlistName ?? null },
+    });
+  } catch (error) {
+    logger.error({ err: error }, "Erro ao atualizar playlist das faixas");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
       { status: 500 },

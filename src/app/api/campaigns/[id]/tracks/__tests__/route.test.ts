@@ -1,18 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
-import { GET, POST } from "../route";
+import { GET, POST, PATCH } from "../route";
 import { DELETE } from "../[trackId]/route";
 
 // Mocks
 const mockSelect = vi.fn();
 const mockInsert = vi.fn();
 const mockDelete = vi.fn();
+const mockUpdate = vi.fn();
 
 vi.mock("@/lib/db", () => ({
   db: {
     select: () => mockSelect(),
     insert: () => mockInsert(),
     delete: () => mockDelete(),
+    update: () => mockUpdate(),
   },
 }));
 
@@ -196,6 +198,59 @@ describe("/api/campaigns/[id]/tracks", () => {
       expect(response.status).toBe(200);
       const json = await response.json();
       expect(json.success).toBe(true);
+    });
+  });
+
+  describe("PATCH", () => {
+    it("deve atualizar playlist das faixas com sucesso", async () => {
+      vi.mocked(requireAuth).mockResolvedValue({
+        user: { id: "user-1", name: "Master" },
+        session: { id: "s1" },
+      } as any);
+      vi.mocked(getCampaignAsMaster).mockResolvedValue({ id: "c1", masterId: "user-1" } as any);
+
+      const mockWhere = vi.fn().mockResolvedValue(undefined);
+      const mockSet = vi.fn().mockReturnValue({ where: mockWhere });
+      mockUpdate.mockReturnValueOnce({ set: mockSet });
+
+      const request = new NextRequest("http://localhost/api/campaigns/c1/tracks", {
+        method: "PATCH",
+        body: JSON.stringify({
+          trackIds: ["track-1", "track-2"],
+          playlistId: "playlist-1",
+          playlistName: "Batalha",
+        }),
+      });
+
+      const response = await PATCH(request, { params: Promise.resolve({ id: "c1" }) });
+
+      expect(response.status).toBe(200);
+      const json = await response.json();
+      expect(json.success).toBe(true);
+      expect(json.data.playlistId).toBe("playlist-1");
+      expect(mockSet).toHaveBeenCalledWith({
+        playlistId: "playlist-1",
+        playlistName: "Batalha",
+      });
+    });
+
+    it("deve rejeitar se trackIds for vazio", async () => {
+      vi.mocked(requireAuth).mockResolvedValue({
+        user: { id: "user-1", name: "Master" },
+        session: { id: "s1" },
+      } as any);
+      vi.mocked(getCampaignAsMaster).mockResolvedValue({ id: "c1", masterId: "user-1" } as any);
+
+      const request = new NextRequest("http://localhost/api/campaigns/c1/tracks", {
+        method: "PATCH",
+        body: JSON.stringify({
+          trackIds: [],
+          playlistId: "playlist-1",
+        }),
+      });
+
+      const response = await PATCH(request, { params: Promise.resolve({ id: "c1" }) });
+      expect(response.status).toBe(400);
     });
   });
 });
