@@ -17,6 +17,7 @@ import {
   resolveForcedTest,
   calculateErasuresOnLoss,
 } from "@/lib/systems/missing/rules";
+import { d6s, showDice3D } from "@/lib/dice3d";
 
 export interface MissingDiceRollerModalProps {
   isOpen: boolean;
@@ -121,6 +122,7 @@ export function MissingDiceRollerModal({
                   : data.originalResult.details,
             };
 
+            showDice3D(d6s(parsedResult.dice));
             setRollResult(parsedResult);
             if (onRollComplete) onRollComplete(data);
             setIsRolling(false);
@@ -167,6 +169,7 @@ export function MissingDiceRollerModal({
           details: forcedResult.details,
         };
 
+        showDice3D(d6s(resultObj.dice));
         setRollResult(resultObj);
         if (onRollComplete) onRollComplete(resultObj);
       } else {
@@ -184,6 +187,7 @@ export function MissingDiceRollerModal({
           details: standardResult.details,
         };
 
+        showDice3D(d6s(resultObj.dice));
         setRollResult(resultObj);
         if (onRollComplete) onRollComplete(resultObj);
       }

@@ -7,6 +7,7 @@
 import React, { useState } from "react";
 import { Swords, Heart, Zap, Sparkles, X, Award } from "lucide-react";
 import { useSocket } from "@/context/SocketContext";
+import { d20s, showDice3D } from "@/lib/dice3d";
 import {
   type DuelSessionState,
   spendDuelActions,
@@ -45,6 +46,7 @@ export function DuelArenaModal({
     // Rolar dado e emitir no socket
     const mod = myParticipant ? Math.floor((myParticipant.vigor - 10) / 2) : 0;
     const d20 = Math.floor(Math.random() * 20) + 1;
+    showDice3D(d20s(d20));
     const total = d20 + mod;
 
     rollDice({

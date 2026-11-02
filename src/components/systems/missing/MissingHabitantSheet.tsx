@@ -11,6 +11,7 @@ import type {
 } from "@/lib/systems/missing/types";
 import { EQUIPMENT_TABLE_2D6 } from "@/lib/systems/missing/types";
 import { checkHabitantDisappearance, roll2d6 } from "@/lib/systems/missing/rules";
+import { d6s, showDice3D } from "@/lib/dice3d";
 import { MissingDiceRollerModal } from "./MissingDiceRollerModal";
 
 export interface MissingHabitantSheetProps {
@@ -86,6 +87,7 @@ export function MissingHabitantSheet({
       return;
     }
     const [d1, d2] = roll2d6();
+    showDice3D(d6s([d1, d2]));
     const sum = d1 + d2;
     const itemDef = EQUIPMENT_TABLE_2D6[sum] ?? {
       name: "Objeto Misterioso",

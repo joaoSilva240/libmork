@@ -114,6 +114,8 @@ export function getExpression(value: unknown): string | number | null {
   return null;
 }
 
+export type RolledDie = { sides: number; value: number };
+
 /** Rola apenas expressões seguras no formato NdM (+/- inteiros). */
 export function rollExpression(expression: unknown, fallback = 0, options?: {
   luckModifier?: number;
@@ -127,6 +129,7 @@ export function rollExpression(expression: unknown, fallback = 0, options?: {
   valid: boolean;
   luckActivated?: boolean;
   luckDetails?: LuckRollResult[];
+  rolledDice?: RolledDie[];
 } {
   const luckModifier = options?.luckModifier ?? 0;
   const rng = options?.rng ?? Math.random;
@@ -157,6 +160,7 @@ export function rollExpression(expression: unknown, fallback = 0, options?: {
   let total = 0;
   const details: string[] = [];
   const luckDetails: LuckRollResult[] = [];
+  const rolledDice: RolledDie[] = [];
   let anyLuckActivated = false;
   for (const part of parts) {
     const sign = part.trim().startsWith("-") ? -1 : 1;
@@ -170,6 +174,7 @@ export function rollExpression(expression: unknown, fallback = 0, options?: {
         const roll = rollDie(sides, rng);
         const luckResult = applyLuckToRoll({ roll, luckModifier, sides, rng });
         rolls.push(luckResult.final);
+        rolledDice.push({ sides, value: luckResult.final });
         luckDetails.push(luckResult);
         if (luckResult.wasLuckActivated) anyLuckActivated = true;
       }
@@ -188,6 +193,7 @@ export function rollExpression(expression: unknown, fallback = 0, options?: {
     valid: true,
     luckActivated: anyLuckActivated,
     luckDetails: anyLuckActivated ? luckDetails : undefined,
+    rolledDice,
   };
 }
 

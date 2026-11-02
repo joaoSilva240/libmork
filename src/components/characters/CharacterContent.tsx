@@ -11,6 +11,7 @@ import {
 } from "@/hooks/queries/useCharacterContentQueries";
 import type { ContentType } from "@/lib/validators/content";
 import { useSocket, DICE_ROLL_LOADING_DELAY } from "@/context/SocketContext";
+import { showDice3D } from "@/lib/dice3d";
 import { TargetSelectionModal } from "@/components/combat/TargetSelectionModal";
 import { Spinner } from "@/components/ui";
 import { SpellFilledIcon, InventoryFilledIcon } from "@/components/ui/Icons";
@@ -734,6 +735,7 @@ export function CharacterContent({
       ? normalizeItemDamageRoll(itemContent, characterAttributeModifiers ?? {})
       : normalizeActionDamage(row.content);
     const damageResult = damageValue !== null ? rollExpression(String(damageValue), 0, { luckModifier }) : null;
+    showDice3D([...(rollResult.rolledDice ?? []), ...(damageResult?.rolledDice ?? [])]);
 
     const hasValidDamage = Boolean(damageResult && !damageResult.missing && damageResult.valid);
     const formula = hasValidDamage
@@ -770,12 +772,14 @@ export function CharacterContent({
       onStartRolling?.();
       setIsBusy(true);
 
+      const name = getContentName(row.content, "Perícia");
+      const rawExpression = getExpression(row.content.rollExpression);
+      const expr = normalizeSkillExpression(rawExpression, characterAttributeModifiers ?? {}) ?? "1d20";
+      const luckModifier = characterAttributeModifiers?.sorte ?? 0;
+      const rollResult = rollExpression(expr, 1, { luckModifier });
+      showDice3D(rollResult.rolledDice ?? []);
+
       setTimeout(() => {
-        const name = getContentName(row.content, "Perícia");
-        const rawExpression = getExpression(row.content.rollExpression);
-        const expr = normalizeSkillExpression(rawExpression, characterAttributeModifiers ?? {}) ?? "1d20";
-        const luckModifier = characterAttributeModifiers?.sorte ?? 0;
-        const rollResult = rollExpression(expr, 1, { luckModifier });
 
         if (campaignId) {
           rollDice({
@@ -891,6 +895,7 @@ export function CharacterContent({
     const luckModifier = characterAttributeModifiers?.sorte ?? 0;
     if (selectedActionItem.isHealing) {
       const healed = rollExpression(selectedActionItem.rollExpr, 0, { luckModifier });
+      showDice3D(healed.rolledDice ?? []);
       const healAmount = Math.max(0, healed.total);
       const currentTarget = spent.session.combatants.find((combatant) => combatant.id === target.id);
       if (!currentTarget) {
@@ -925,6 +930,7 @@ export function CharacterContent({
     } else {
       const attack = rollExpression((selectedActionItem.rollExpr || "1d20") as string, 1, { luckModifier });
       const damage = rollExpression(selectedActionItem.damageExpr, 0, { luckModifier });
+      showDice3D([...(attack.rolledDice ?? []), ...(damage.rolledDice ?? [])]);
       const damageConfigured = !damage.missing && damage.valid;
       const damageNotice = damage.missing
         ? "Dano não configurado (nenhuma fórmula foi encontrada)."

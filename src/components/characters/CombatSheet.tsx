@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { Character, Skill, Spell } from "@/types";
 import { Spinner } from "@/components/ui";
 import { useSocket, DICE_ROLL_LOADING_DELAY } from "@/context/SocketContext";
+import { d20s, showDice3D } from "@/lib/dice3d";
 
 type CombatSheetProps = {
   characterId: string;
@@ -222,8 +223,9 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
                 <button
                   onClick={() => {
                     setIsRollingDice(true);
+                    const d20 = Math.floor(Math.random() * 20) + 1;
+                    showDice3D(d20s(d20));
                     setTimeout(() => {
-                      const d20 = Math.floor(Math.random() * 20) + 1;
                       const total = d20 + character.attributes.forca;
                       rollDice({
                         campaignId: character.campaignId ?? "",
@@ -258,8 +260,9 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
                 <button
                   onClick={() => {
                     setIsRollingDice(true);
+                    const d20 = Math.floor(Math.random() * 20) + 1;
+                    showDice3D(d20s(d20));
                     setTimeout(() => {
-                      const d20 = Math.floor(Math.random() * 20) + 1;
                       const total = d20 + character.attributes.destreza;
                       rollDice({
                         campaignId: character.campaignId ?? "",
@@ -304,28 +307,30 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
                       onClick={() => {
                         setIsRollingDice(true);
                         const rollExpr = s.rollExpression || "1d20";
-                        setTimeout(() => {
-                          const match = rollExpr.trim().match(/^(\d+)d(\d+)(?:\s*([+-])\s*(\d+))?$/i);
-                          let result = 0;
-                          let detail = rollExpr;
-                          if (match) {
-                            const count = parseInt(match[1], 10);
-                            const sides = parseInt(match[2], 10);
-                            const sign = match[3] === "-" ? -1 : 1;
-                            const mod = match[4] ? parseInt(match[4], 10) * sign : 0;
-                            let sum = 0;
-                            const rolls: number[] = [];
-                            for (let i = 0; i < count; i++) {
-                              const r = Math.floor(Math.random() * sides) + 1;
-                              rolls.push(r);
-                              sum += r;
-                            }
-                            result = sum + mod;
-                            detail = `Rolou [${rolls.join(", ")}]${mod !== 0 ? (mod > 0 ? ` + ${mod}` : ` - ${Math.abs(mod)}`) : ""} = ${result}`;
-                          } else {
-                            result = Math.floor(Math.random() * 20) + 1;
-                            detail = `Rolou [${result}]`;
+                        const match = rollExpr.trim().match(/^(\d+)d(\d+)(?:\s*([+-])\s*(\d+))?$/i);
+                        let result = 0;
+                        let detail = rollExpr;
+                        if (match) {
+                          const count = parseInt(match[1], 10);
+                          const sides = parseInt(match[2], 10);
+                          const sign = match[3] === "-" ? -1 : 1;
+                          const mod = match[4] ? parseInt(match[4], 10) * sign : 0;
+                          let sum = 0;
+                          const rolls: number[] = [];
+                          for (let i = 0; i < count; i++) {
+                            const r = Math.floor(Math.random() * sides) + 1;
+                            rolls.push(r);
+                            sum += r;
                           }
+                          result = sum + mod;
+                          detail = `Rolou [${rolls.join(", ")}]${mod !== 0 ? (mod > 0 ? ` + ${mod}` : ` - ${Math.abs(mod)}`) : ""} = ${result}`;
+                          showDice3D(rolls.map((value) => ({ sides, value })));
+                        } else {
+                          result = Math.floor(Math.random() * 20) + 1;
+                          detail = `Rolou [${result}]`;
+                          showDice3D(d20s(result));
+                        }
+                        setTimeout(() => {
                           rollDice({
                             campaignId: character.campaignId ?? "",
                             actorId: characterId,
@@ -370,8 +375,9 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
                     <button
                       onClick={() => {
                         setIsRollingDice(true);
+                        const d20 = Math.floor(Math.random() * 20) + 1;
+                        showDice3D(d20s(d20));
                         setTimeout(() => {
-                          const d20 = Math.floor(Math.random() * 20) + 1;
                           rollDice({
                             campaignId: character.campaignId ?? "",
                             actorId: characterId,

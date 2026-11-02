@@ -7,6 +7,7 @@ import { getDefenseValue } from "@/lib/engine/combat";
 import type { CombatSessionState, Combatant } from "@/lib/engine";
 import { TargetSelectionModal } from "@/components/combat/TargetSelectionModal";
 import { spendSpell, spendCombatActions, applyResolvedDamage, applyHealing, rollExpression as rollExpressionFn } from "@/lib/engine";
+import { d20s, showDice3D } from "@/lib/dice3d";
 
 export type RosterCondition = {
   junctionId: string;
@@ -396,9 +397,11 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
           }
           finalResult = sum + mod;
           detailText = `Rolou [${rolls.join(", ")}]${mod !== 0 ? (mod > 0 ? ` + ${mod}` : ` - ${Math.abs(mod)}`) : ""} = ${finalResult}`;
+          showDice3D(rolls.map((value) => ({ sides, value })));
         } else {
           finalResult = Math.floor(Math.random() * 20) + 1;
           detailText = `Rolou [${finalResult}]`;
+          showDice3D(d20s(finalResult));
         }
       }
 
@@ -541,6 +544,7 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
     } else {
       // Se não estiver em combate, rola diretamente
       const attack = rollExpressionFn(attackExpr, 1);
+      showDice3D(attack.rolledDice ?? []);
       const die = attack.total;
       rollDice({
         campaignId,
@@ -605,6 +609,7 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
 
     if (selectedActionItem.isHealing) {
       const healed = rollExpressionFn(selectedActionItem.rollExpr, 0);
+      showDice3D(healed.rolledDice ?? []);
       const healAmount = Math.max(0, healed.total);
 
       const currentTarget = spent.session.combatants.find((combatant) => combatant.id === target.id);
@@ -652,6 +657,7 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
     } else {
       const attack = rollExpressionFn((selectedActionItem.rollExpr || "1d20") as string, 1);
       const damage = rollExpressionFn(selectedActionItem.damageExpr, 0);
+      showDice3D([...(attack.rolledDice ?? []), ...(damage.rolledDice ?? [])]);
       const damageConfigured = !damage.missing && damage.valid;
 
       const currentTarget = spent.session.combatants.find((combatant) => combatant.id === target.id);
