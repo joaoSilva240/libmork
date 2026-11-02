@@ -13,6 +13,7 @@ import { BottomNav } from "@/components/ui/BottomNav";
 import { ToastContainer } from "@/components/ui/Toast";
 import { CampaignsFilledIcon, CharactersFilledIcon, SettingsFilledIcon, TreasuryIcon } from "@/components/ui/Icons";
 import { Dice3DSettingsPanel } from "@/components/dice/Dice3DSettingsPanel";
+import { MotionSettingsPanel } from "@/components/motion/MotionSettingsPanel";
 import { WealthManager, type WealthData } from "@/components/player/WealthManager";
 import { generateUUID } from "@/lib/utils/uuid";
 import { useSocket } from "@/context/SocketContext";
@@ -516,7 +517,7 @@ export function PlayerDashboard() {
       <div className="container mx-auto px-4 space-y-6">
         {/* Conteúdo da Aba 1: Meus Personagens */}
         {activeTab === "characters" && (
-          <div>
+          <div className="motion-page">
             {isLoadingCharacters ? (
               <div className="flex min-h-[300px] items-center justify-center py-12">
                 <Spinner size="lg" />
@@ -580,10 +581,11 @@ export function PlayerDashboard() {
                   </div>
                 </div>
                 <div
+                  key={viewMode}
                   className={
                     viewMode === "gallery"
-                      ? "grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-                      : "flex flex-col gap-2"
+                      ? "motion-stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+                      : "motion-stagger flex flex-col gap-2"
                   }
                 >
                   {characters.map((character) =>
@@ -635,7 +637,7 @@ export function PlayerDashboard() {
 
         {/* Conteúdo da Aba 2: Campanhas */}
         {activeTab === "campaigns" && (
-          <div>
+          <div className="motion-page">
             {isLoadingCampaigns ? (
               <div className="flex min-h-[300px] items-center justify-center py-12">
                 <Spinner size="lg" />
@@ -654,11 +656,11 @@ export function PlayerDashboard() {
                 </p>
               </div>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div className="motion-stagger grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {campaigns.map((campaign) => (
                   <div
                     key={campaign.id}
-                    className="group relative overflow-hidden flex flex-col justify-between rounded-xl border border-secondary-border bg-secondary-card p-5 transition-all hover:border-accent hover:shadow-[0_0_20px_rgba(147,51,234,0.25)] cursor-pointer"
+                    className="motion-lift group relative overflow-hidden flex flex-col justify-between rounded-xl border border-secondary-border bg-secondary-card p-5 transition-all hover:border-accent hover:shadow-[0_0_20px_rgba(147,51,234,0.25)] cursor-pointer"
                     style={
                       campaign.coverImageUrl
                         ? {
@@ -821,18 +823,21 @@ export function PlayerDashboard() {
 
         {/* Conteúdo da Aba 3: Tesouraria (Wealth) */}
         {activeTab === "wealth" && (
-          <WealthManager
-            initialData={wealthData}
-            isLoading={isLoadingWealth}
-            error={wealthError}
-            onRefresh={refreshWealth}
-            onShowToast={addToast}
-          />
+          <div className="motion-page">
+            <WealthManager
+              initialData={wealthData}
+              isLoading={isLoadingWealth}
+              error={wealthError}
+              onRefresh={refreshWealth}
+              onShowToast={addToast}
+            />
+          </div>
         )}
 
         {activeTab === "settings" && (
-          <div className="space-y-4">
+          <div className="motion-page space-y-4 pb-24">
             <h2 className="text-lg font-bold text-secondary-pure">Configurações</h2>
+            <MotionSettingsPanel />
             <Dice3DSettingsPanel />
           </div>
         )}

@@ -17,7 +17,7 @@ export function CharacterCard({ character }: { character: Character }) {
     <Link
       href={`/player/characters/${character.id}`}
       aria-label={`Ver ficha de ${character.name}`}
-      className="group relative overflow-hidden flex flex-col justify-between rounded-xl border border-secondary-border bg-secondary-card p-5 transition-all hover:border-accent hover:shadow-[0_0_20px_rgba(147,51,234,0.25)] cursor-pointer"
+      className="motion-lift group relative overflow-hidden flex flex-col justify-between rounded-xl border border-secondary-border bg-secondary-card p-5 transition-all hover:border-accent hover:shadow-[0_0_20px_rgba(147,51,234,0.25)] cursor-pointer"
       style={character.imageUrl ? { backgroundImage: `url(${character.imageUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
     >
       <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/85 to-gray-950/65 group-hover:via-gray-950/75 transition-colors pointer-events-none" />

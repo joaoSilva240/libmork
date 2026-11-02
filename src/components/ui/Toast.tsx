@@ -32,7 +32,9 @@ export function Toast({ message, type = "error", duration = 2000, onClose }: Toa
 
   return (
     <div
-      className={`fixed top-4 right-4 z-[9999] rounded-lg border px-4 py-3 text-sm font-medium shadow-lg transition-all duration-300 ${
+      role="status"
+      aria-live="polite"
+      className={`motion-toast fixed top-4 right-4 z-[9999] rounded-lg border px-4 py-3 text-sm font-medium shadow-lg transition-all duration-300 ${
         typeStyles[type]
       } ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"}`}
     >
