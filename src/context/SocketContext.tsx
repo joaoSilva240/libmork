@@ -13,6 +13,8 @@ import type {
   AudioTrackStatePayload,
 } from "@/lib/audio/jukebox-protocol";
 import { AUDIO_EVENTS } from "@/lib/audio/jukebox-protocol";
+import { useDice3D } from "./Dice3DContext";
+import { extractDiceRolls } from "@/components/dice3d";
 
 // 3-second loading delay constant (3000ms)
 export const DICE_ROLL_LOADING_DELAY = 3000;
@@ -212,6 +214,7 @@ const SocketContext = createContext<SocketContextValue | undefined>(undefined);
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
   const [socket, setSocket] = useState<Socket | null>(null);
+  const { rollDice3D } = useDice3D();
   const [isConnected, setIsConnected] = useState(false);
   const [presenceList, setPresenceList] = useState<PresenceUser[]>([]);
   const socketRef = useRef<Socket | null>(null);
@@ -405,6 +408,17 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
   const rollDice = useCallback(
     (rollPayload: RollDataPayload) => {
+      try {
+        const diceToRoll = extractDiceRolls(
+          rollPayload.formula,
+          rollPayload.result,
+          rollPayload.diceDetail,
+        );
+        rollDice3D(diceToRoll);
+      } catch (err) {
+        console.warn("[SocketContext] Falha ao disparar dados 3D:", err);
+      }
+
       const currentSocket = socketRef.current || socket;
       if (currentSocket) {
         currentSocket.emit("roll-dice", {
@@ -413,7 +427,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         });
       }
     },
-    [socket],
+    [socket, rollDice3D],
   );
 
   const requestInitiativeRollDelayed = useCallback(

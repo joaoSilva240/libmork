@@ -3,6 +3,8 @@ import { Cinzel, Cinzel_Decorative } from "next/font/google";
 import QueryProvider from "@/components/providers/QueryProvider";
 import { SocketProvider } from "@/context/SocketContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { Dice3DProvider } from "@/context/Dice3DContext";
+import { Dice3DCanvas } from "@/components/dice3d";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import CsrfInit from "@/components/CsrfInit";
 import "./globals.css";
@@ -31,11 +33,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" data-theme="default-dark" suppressHydrationWarning className={`${cinzel.variable} ${cinzelDecorative.variable}`}>
+    <html
+      lang="pt-BR"
+      data-theme="default-dark"
+      suppressHydrationWarning
+      className={`${cinzel.variable} ${cinzelDecorative.variable}`}
+    >
       <body className="antialiased" suppressHydrationWarning>
         <QueryProvider>
           <ThemeProvider>
-            <SocketProvider>{children}</SocketProvider>
+            <Dice3DProvider>
+              <SocketProvider>{children}</SocketProvider>
+              <Dice3DCanvas />
+            </Dice3DProvider>
           </ThemeProvider>
         </QueryProvider>
         <ServiceWorkerRegistrar />

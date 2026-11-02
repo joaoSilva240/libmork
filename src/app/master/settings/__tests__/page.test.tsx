@@ -25,7 +25,9 @@ describe("MasterSettingsPage (/master/settings)", () => {
     render(<MasterSettingsPage />);
 
     expect(screen.getByText("Preview do Layout")).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "Preview do layout do Escudo do Mestre" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: "Preview do layout do Escudo do Mestre" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Gestão")).toBeInTheDocument();
     expect(screen.getByText("Canvas/Mapa")).toBeInTheDocument();
     expect(screen.getByText("Roster")).toBeInTheDocument();

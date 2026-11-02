@@ -17,6 +17,7 @@ import {
   resolveForcedTest,
   calculateErasuresOnLoss,
 } from "@/lib/systems/missing/rules";
+import { useDice3D } from "@/context/Dice3DContext";
 
 export interface MissingDiceRollerModalProps {
   isOpen: boolean;
@@ -37,6 +38,7 @@ export function MissingDiceRollerModal({
   onRollComplete,
   className = "",
 }: MissingDiceRollerModalProps) {
+  const { rollDice3D } = useDice3D();
   const [testType, setTestType] = useState<TestType>("common");
   const [quotedLine, setQuotedLine] = useState<string | null>(null);
   const [isQuotingOpen, setIsQuotingOpen] = useState(false);
@@ -122,6 +124,9 @@ export function MissingDiceRollerModal({
             };
 
             setRollResult(parsedResult);
+            if (rollDice3D && parsedResult.dice) {
+              rollDice3D(parsedResult.dice.map((d: number) => ({ sides: 6, result: d })));
+            }
             if (onRollComplete) onRollComplete(data);
             setIsRolling(false);
             return;
@@ -168,6 +173,9 @@ export function MissingDiceRollerModal({
         };
 
         setRollResult(resultObj);
+        if (rollDice3D && resultObj.dice) {
+          rollDice3D(resultObj.dice.map((d: number) => ({ sides: 6, result: d })));
+        }
         if (onRollComplete) onRollComplete(resultObj);
       } else {
         const erasuresCount =
@@ -185,6 +193,9 @@ export function MissingDiceRollerModal({
         };
 
         setRollResult(resultObj);
+        if (rollDice3D && resultObj.dice) {
+          rollDice3D(resultObj.dice.map((d: number) => ({ sides: 6, result: d })));
+        }
         if (onRollComplete) onRollComplete(resultObj);
       }
     } catch (err: unknown) {

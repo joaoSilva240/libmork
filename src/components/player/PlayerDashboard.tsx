@@ -11,7 +11,13 @@ import { LogoutButton } from "@/components/auth/LogoutButton";
 import { Spinner, Button } from "@/components/ui";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { ToastContainer } from "@/components/ui/Toast";
-import { CampaignsFilledIcon, CharactersFilledIcon, TreasuryIcon } from "@/components/ui/Icons";
+import {
+  CampaignsFilledIcon,
+  CharactersFilledIcon,
+  TreasuryIcon,
+  SettingsFilledIcon,
+} from "@/components/ui/Icons";
+import { useDice3D } from "@/context/Dice3DContext";
 import { WealthManager, type WealthData } from "@/components/player/WealthManager";
 import { generateUUID } from "@/lib/utils/uuid";
 import { useSocket } from "@/context/SocketContext";
@@ -39,8 +45,11 @@ function getReputationDots(reputationLevel: number): number {
 
 export function PlayerDashboard() {
   const { joinCampaign, leaveCampaign } = useSocket();
-  const [activeTab, setActiveTab] = useState<"characters" | "campaigns" | "wealth">("characters");
+  const [activeTab, setActiveTab] = useState<"characters" | "campaigns" | "wealth" | "settings">(
+    "characters",
+  );
   const [viewMode, setViewMode] = useState<"gallery" | "list">("gallery");
+  const { isDice3DEnabled, toggleDice3D } = useDice3D();
   const [displayName, setDisplayName] = useState("Jogador");
   const [userId, setUserId] = useState<string>("player-id");
   const [userName, setUserName] = useState<string>("Jogador");
@@ -829,6 +838,41 @@ export function PlayerDashboard() {
           />
         )}
 
+        {/* Conteúdo da Aba 4: Configurações */}
+        {activeTab === "settings" && (
+          <div className="space-y-6 max-w-xl mx-auto py-4">
+            <h2 className="text-2xl font-bold text-secondary-pure">Configurações</h2>
+            <div className="rounded-xl border border-secondary-border bg-secondary-card p-6 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-semibold text-secondary-pure">
+                    Ferramentas de Dados 3D
+                  </h3>
+                  <p className="text-xs text-secondary-muted mt-1">
+                    Ativa animações físicas de dados tridimensionais nas suas rolagens.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isDice3DEnabled}
+                  data-testid="toggle-dice-3d"
+                  onClick={() => toggleDice3D()}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    isDice3DEnabled ? "bg-accent" : "bg-gray-700"
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      isDice3DEnabled ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <ToastContainer
           toasts={toasts}
           onRemove={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))}
@@ -862,6 +906,15 @@ export function PlayerDashboard() {
               icon: (
                 <TreasuryIcon
                   className={`h-6 w-6 ${activeTab === "wealth" ? "text-purple-400" : "text-gray-500"}`}
+                />
+              ),
+            },
+            {
+              id: "settings",
+              label: "Configurações",
+              icon: (
+                <SettingsFilledIcon
+                  className={`h-6 w-6 ${activeTab === "settings" ? "fill-purple-400" : "fill-gray-500"}`}
                 />
               ),
             },
