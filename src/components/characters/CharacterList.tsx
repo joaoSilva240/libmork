@@ -217,7 +217,7 @@ export function CharacterList() {
             </Button>
           </Link>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="motion-stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {characters.map((character) => (
             <CharacterCard key={character.id} character={character} />
           ))}

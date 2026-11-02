@@ -6,11 +6,13 @@ import {
   useContext,
   useEffect,
   useRef,
+  useState,
   type HTMLAttributes,
   type ButtonHTMLAttributes,
   type ReactNode,
   type RefObject,
 } from "react";
+import { isMotionCategoryEnabledInDocument } from "@/lib/motion";
 
 type ModalProps = {
   open?: boolean;
@@ -52,6 +54,16 @@ function unlockBodyScroll() {
     document.body.style.overflow = originalBodyOverflow ?? "";
     originalBodyOverflow = null;
   }
+}
+
+const EXIT_FALLBACK_MS = 1200;
+
+function canAnimateExit(): boolean {
+  return (
+    typeof Element !== "undefined" &&
+    typeof Element.prototype.getAnimations === "function" &&
+    isMotionCategoryEnabledInDocument("overlays")
+  );
 }
 
 const ModalContext = createContext<{ onClose: () => void } | null>(null);
@@ -122,6 +134,13 @@ function ModalComponent({
 }: ModalProps) {
   const active = open ?? isOpen ?? false;
   const dialogRef = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const [wasActive, setWasActive] = useState(active);
+  const [exiting, setExiting] = useState(false);
+  if (wasActive !== active) {
+    setWasActive(active);
+    setExiting(!active && canAnimateExit());
+  }
   const labelledById = labelledBy ?? titleId;
   const onCloseRef = useRef(onClose);
   const closeOnEscapeRef = useRef(closeOnEscape);
@@ -202,13 +221,38 @@ function ModalComponent({
     };
   }, [active, focusDialog]);
 
-  if (!active) return null;
+  // Mantém o modal montado enquanto a animação de saída roda.
+  useEffect(() => {
+    if (!exiting) return;
+    const overlay = overlayRef.current;
+    const animations = (overlay?.getAnimations({ subtree: true }) ?? []).filter((animation) =>
+      String((animation as CSSAnimation).animationName ?? "").startsWith("lm-"),
+    );
+    let cancelled = false;
+    const finish = () => {
+      if (!cancelled) setExiting(false);
+    };
+    const fallback = window.setTimeout(finish, animations.length ? EXIT_FALLBACK_MS : 0);
+    if (animations.length) {
+      Promise.all(animations.map((animation) => animation.finished)).then(finish, finish);
+    }
+    return () => {
+      cancelled = true;
+      window.clearTimeout(fallback);
+    };
+  }, [exiting]);
+
+  if (!active && !exiting) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-black/80 backdrop-blur-sm p-4"
+      ref={overlayRef}
+      aria-hidden={active ? undefined : true}
+      className={`fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-black/80 backdrop-blur-sm p-4 ${
+        active ? "" : "motion-exit"
+      }`}
       onClick={(event) => {
-        if (closeOnBackdropRef.current && event.target === event.currentTarget)
+        if (active && closeOnBackdropRef.current && event.target === event.currentTarget)
           onCloseRef.current();
       }}
     >

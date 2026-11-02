@@ -37,7 +37,10 @@ export function BottomNav({ tabs, activeId, onChange }: BottomNavProps) {
                 }`}
               >
                 {isActive && (
-                  <span className="liquid-glass-pill absolute inset-0 rounded-full" aria-hidden="true" />
+                  <span
+                    className="liquid-glass-pill motion-pop motion-glow absolute inset-0 rounded-full"
+                    aria-hidden="true"
+                  />
                 )}
                 <span className="relative z-10">{tab.icon}</span>
               </button>

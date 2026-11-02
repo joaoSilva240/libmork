@@ -257,6 +257,14 @@ body {
   --radius-2xl: var(--theme-radius-2xl);
   --radius-3xl: var(--theme-radius-3xl);
   --radius: var(--theme-radius);
+
+  /* Sistema de Movimento: as transições/animações nativas do Tailwind seguem a velocidade escolhida */
+  --default-transition-duration: calc(150ms * var(--motion-factor, 1));
+  --animate-spin: spin calc(1s * var(--motion-factor, 1)) linear infinite;
+  --animate-spin-slow: spin calc(3s * var(--motion-factor, 1)) linear infinite;
+  --animate-ping: ping calc(1s * var(--motion-factor, 1)) cubic-bezier(0, 0, 0.2, 1) infinite;
+  --animate-pulse: pulse calc(2s * var(--motion-factor, 1)) cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-bounce: bounce calc(1s * var(--motion-factor, 1)) infinite;
 }
 
 .font-serif {
@@ -464,7 +472,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @utility liquid-glass-interactive {
-  transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1), color 180ms ease, background-color 180ms ease;
+  transition: transform calc(220ms * var(--motion-factor, 1)) cubic-bezier(0.34, 1.56, 0.64, 1), color calc(180ms * var(--motion-factor, 1)) ease, background-color calc(180ms * var(--motion-factor, 1)) ease;
   &:active {
     transform: scale(0.96);
   }
@@ -484,7 +492,7 @@ h1, h2, h3, h4, h5, h6 {
 svg.lucide, .lucide {
   transform: scale(var(--theme-icon-scale, 1));
   transform-origin: center;
-  transition: transform 150ms ease;
+  transition: transform calc(150ms * var(--motion-factor, 1)) ease;
 }
 
 /* =============================================================================
@@ -513,3 +521,211 @@ svg.lucide, .lucide {
 
 .rounded-none { border-radius: 0px !important; }
 .rounded-full { border-radius: 9999px !important; }
+
+/* =============================================================================
+   Sistema de Movimento (Animações, Transições e Efeitos)
+   Configurado em src/lib/motion + MotionProvider, que definem no <html>:
+   - data-motion="full | reduced | off"
+   - data-motion-off="<categorias desligadas>" (pages overlays lists interactions feedback ambient)
+   - variáveis --motion-* (velocidade, curva, deslocamentos do estilo escolhido)
+   Tudo usa animation-fill-mode "backwards" para não deixar transform residual.
+   ============================================================================= */
+:root {
+  --motion-factor: 1;
+  --motion-ease: cubic-bezier(0.2, 0, 0, 1);
+  --motion-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --motion-enter-x: 0px;
+  --motion-enter-y: 14px;
+  --motion-enter-scale: 1;
+  --motion-enter-blur: 0px;
+  --motion-enter-rotate: 0deg;
+  --motion-press-scale: 0.97;
+  --motion-lift: 2px;
+  --motion-d-fast: calc(150ms * var(--motion-factor));
+  --motion-d-base: calc(260ms * var(--motion-factor));
+  --motion-d-slow: calc(420ms * var(--motion-factor));
+}
+
+@keyframes lm-enter {
+  from {
+    opacity: 0;
+    transform: perspective(900px) translate3d(var(--motion-enter-x), var(--motion-enter-y), 0)
+      scale(var(--motion-enter-scale)) rotateX(var(--motion-enter-rotate));
+    filter: blur(var(--motion-enter-blur));
+  }
+}
+
+@keyframes lm-exit {
+  to {
+    opacity: 0;
+    transform: perspective(900px) translate3d(var(--motion-enter-x), var(--motion-enter-y), 0)
+      scale(var(--motion-enter-scale)) rotateX(var(--motion-enter-rotate));
+    filter: blur(var(--motion-enter-blur));
+  }
+}
+
+@keyframes lm-fade-in {
+  from { opacity: 0; }
+}
+
+@keyframes lm-fade-out {
+  to { opacity: 0; }
+}
+
+@keyframes lm-toast-in {
+  from {
+    opacity: 0;
+    transform: translate3d(calc(var(--motion-lift) * 10), 0, 0) scale(var(--motion-press-scale));
+  }
+}
+
+@keyframes lm-pop {
+  0% { opacity: 0; transform: scale(max(0.6, calc(1 - (1 - var(--motion-press-scale)) * 12))); }
+  60% { opacity: 1; transform: scale(calc(1 + (1 - var(--motion-press-scale)) * 1.5)); }
+  100% { transform: scale(1); }
+}
+
+@keyframes lm-breathe {
+  50% { opacity: 0.6; }
+}
+
+/* Interações básicas (camada base: utilitários do Tailwind têm prioridade) */
+@layer base {
+  :where(button, a[href], [role="button"], [role="tab"], [role="switch"], summary, select, input, textarea) {
+    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, box-shadow, opacity, scale;
+    transition-duration: var(--motion-d-fast);
+    transition-timing-function: var(--motion-ease);
+  }
+
+  :root:not([data-motion-off~="interactions"]) :where(button, [role="button"], [role="tab"]):where(:not(:disabled)):active {
+    scale: var(--motion-press-scale);
+  }
+
+  :root[data-motion-off~="interactions"] :where(button, a[href], [role="button"], [role="tab"], [role="switch"], summary, select, input, textarea) {
+    transition-duration: 0s;
+  }
+}
+
+/* Animações de entrada por categoria (camada components: `animate-*` do Tailwind têm prioridade) */
+@layer components {
+  /* Páginas e abas */
+  :root:not([data-motion-off~="pages"]) :where(.motion-page, [role="tabpanel"]) {
+    animation: lm-enter var(--motion-d-base) var(--motion-ease) backwards;
+  }
+
+  /* Modais, painéis, menus e as classes animate-in/fade-in já usadas pela aplicação */
+  :root:not([data-motion-off~="overlays"]) :where([role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], .motion-dialog, .animate-in, .animate-fade-in, .animate-fade) {
+    animation: lm-enter var(--motion-d-base) var(--motion-ease) backwards;
+  }
+
+  :root:not([data-motion-off~="overlays"]) :where(.motion-backdrop, .fixed.inset-0[class*="bg-black/"]) {
+    animation: lm-fade-in var(--motion-d-fast) ease-out backwards;
+  }
+
+  :root:not([data-motion-off~="overlays"]) .motion-exit {
+    pointer-events: none;
+    animation: lm-fade-out calc(var(--motion-d-base) * 0.8) var(--motion-ease-exit) forwards;
+  }
+
+  :root:not([data-motion-off~="overlays"]) .motion-exit :where([role="dialog"], .motion-dialog) {
+    animation: lm-exit calc(var(--motion-d-base) * 0.8) var(--motion-ease-exit) forwards;
+  }
+
+  /* Listas e cartões em cascata */
+  :root:not([data-motion-off~="lists"]) :where(.motion-stagger) > * {
+    animation: lm-enter var(--motion-d-base) var(--motion-ease) backwards;
+  }
+
+  /* Notificações e alertas */
+  :root:not([data-motion-off~="feedback"]) :where(.motion-toast) {
+    animation: lm-toast-in var(--motion-d-base) var(--motion-ease) backwards;
+  }
+
+  :root:not([data-motion-off~="feedback"]) :where([role="alert"]) {
+    animation: lm-enter var(--motion-d-base) var(--motion-ease) backwards;
+  }
+
+  /* Destaque ao ativar (ex.: aba ativa do menu inferior) */
+  :root:not([data-motion-off~="interactions"]) :where(.motion-pop) {
+    animation: lm-pop var(--motion-d-slow) var(--motion-ease) backwards;
+  }
+
+  /* Efeito contínuo: brilho pulsante suave (só opacidade, barato para a GPU) */
+  .motion-glow::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    box-shadow: 0 0 18px var(--accent-primary);
+    opacity: 0;
+    pointer-events: none;
+    animation: lm-breathe calc(3.2s * var(--motion-factor, 1)) ease-in-out infinite;
+  }
+}
+
+:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(2) { animation-delay: calc(45ms * var(--motion-factor, 1)); }
+:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(3) { animation-delay: calc(90ms * var(--motion-factor, 1)); }
+:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(4) { animation-delay: calc(135ms * var(--motion-factor, 1)); }
+:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(5) { animation-delay: calc(180ms * var(--motion-factor, 1)); }
+:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(6) { animation-delay: calc(225ms * var(--motion-factor, 1)); }
+:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(7) { animation-delay: calc(270ms * var(--motion-factor, 1)); }
+:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(8) { animation-delay: calc(315ms * var(--motion-factor, 1)); }
+:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(9) { animation-delay: calc(360ms * var(--motion-factor, 1)); }
+:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(10) { animation-delay: calc(405ms * var(--motion-factor, 1)); }
+:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(11) { animation-delay: calc(450ms * var(--motion-factor, 1)); }
+:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(12) { animation-delay: calc(495ms * var(--motion-factor, 1)); }
+:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(n + 13) { animation-delay: calc(540ms * var(--motion-factor, 1)); }
+
+/* Elevação no hover para cartões interativos */
+@media (hover: hover) {
+  :root:not([data-motion-off~="interactions"]) .motion-lift {
+    transition: transform var(--motion-d-fast) var(--motion-ease), box-shadow var(--motion-d-fast) var(--motion-ease),
+      border-color var(--motion-d-fast) var(--motion-ease), background-color var(--motion-d-fast) var(--motion-ease);
+  }
+
+  :root:not([data-motion-off~="interactions"]) .motion-lift:hover {
+    transform: translateY(calc(var(--motion-lift) * -1));
+  }
+
+  @layer components {
+    :root:not([data-motion-off~="interactions"]) .motion-lift:hover {
+      box-shadow: 0 12px 28px -14px var(--accent-primary);
+    }
+  }
+}
+
+/* Durações explícitas do Tailwind também seguem a velocidade escolhida */
+.duration-75 { --tw-duration: calc(75ms * var(--motion-factor, 1)); transition-duration: calc(75ms * var(--motion-factor, 1)); }
+.duration-100 { --tw-duration: calc(100ms * var(--motion-factor, 1)); transition-duration: calc(100ms * var(--motion-factor, 1)); }
+.duration-150 { --tw-duration: calc(150ms * var(--motion-factor, 1)); transition-duration: calc(150ms * var(--motion-factor, 1)); }
+.duration-200 { --tw-duration: calc(200ms * var(--motion-factor, 1)); transition-duration: calc(200ms * var(--motion-factor, 1)); }
+.duration-300 { --tw-duration: calc(300ms * var(--motion-factor, 1)); transition-duration: calc(300ms * var(--motion-factor, 1)); }
+.duration-500 { --tw-duration: calc(500ms * var(--motion-factor, 1)); transition-duration: calc(500ms * var(--motion-factor, 1)); }
+.duration-700 { --tw-duration: calc(700ms * var(--motion-factor, 1)); transition-duration: calc(700ms * var(--motion-factor, 1)); }
+.duration-1000 { --tw-duration: calc(1000ms * var(--motion-factor, 1)); transition-duration: calc(1000ms * var(--motion-factor, 1)); }
+
+/* Efeitos contínuos desligados */
+:root[data-motion-off~="ambient"] :is(.animate-pulse, .animate-ping, .animate-bounce, .animate-spin-slow) {
+  animation: none !important;
+}
+
+:root[data-motion-off~="ambient"] .motion-glow::after {
+  animation: none !important;
+}
+
+/* Tudo desligado: sem transições nem animações (spinners de carregamento continuam girando) */
+:root[data-motion="off"] *,
+:root[data-motion="off"] *::before,
+:root[data-motion="off"] *::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+}
+
+:root[data-motion="off"] .animate-spin {
+  animation-duration: 1s !important;
+  animation-iteration-count: infinite !important;
+}

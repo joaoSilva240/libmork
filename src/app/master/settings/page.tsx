@@ -6,8 +6,9 @@ import { MasterScreenPreview } from "@/components/campaigns/MasterScreenPreview"
 import { ThemeConfigPanel } from "@/components/theme/ThemeConfigPanel";
 import { useMasterScreenConfig } from "@/hooks/useMasterScreenConfig";
 import { Dice3DSettingsPanel } from "@/components/dice/Dice3DSettingsPanel";
+import { MotionSettingsPanel } from "@/components/motion/MotionSettingsPanel";
 
-type SettingsTab = "theme" | "screen" | "dice";
+type SettingsTab = "theme" | "screen" | "motion" | "dice";
 
 export default function MasterSettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>("theme");
@@ -25,7 +26,7 @@ export default function MasterSettingsPage() {
       </div>
 
       {/* Navegação entre Abas de Configuração */}
-      <div className="flex items-center gap-2 border-b border-secondary-border mb-6" role="tablist">
+      <div className="flex items-center gap-2 border-b border-secondary-border mb-6 overflow-x-auto scrollbar-hide" role="tablist">
         <button
           type="button"
           role="tab"
@@ -57,6 +58,20 @@ export default function MasterSettingsPage() {
         <button
           type="button"
           role="tab"
+          aria-selected={activeTab === "motion"}
+          onClick={() => setActiveTab("motion")}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition select-none ${
+            activeTab === "motion"
+              ? "border-accent text-secondary-pure"
+              : "border-transparent text-secondary-muted hover:text-secondary-pure"
+          }`}
+        >
+          <span>✨</span> Animações e Efeitos
+        </button>
+
+        <button
+          type="button"
+          role="tab"
           aria-selected={activeTab === "dice"}
           onClick={() => setActiveTab("dice")}
           className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition select-none ${
@@ -72,6 +87,10 @@ export default function MasterSettingsPage() {
       {/* Painel 1: Tema e Aparência (Cores, Contraste AAA, Modo Claro/Escuro, Fontes) */}
       <div className={activeTab === "theme" ? "block" : "hidden"} role="tabpanel">
         <ThemeConfigPanel />
+      </div>
+
+      <div className={activeTab === "motion" ? "block" : "hidden"} role="tabpanel">
+        <MotionSettingsPanel />
       </div>
 
       <div className={activeTab === "dice" ? "block" : "hidden"} role="tabpanel">

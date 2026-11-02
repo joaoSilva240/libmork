@@ -92,7 +92,10 @@ export function MasterSidebar() {
                 title={item.label}
                 aria-label={item.label}
               >
-                <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                <Icon
+                  className={`h-5 w-5 shrink-0 ${isActive ? "motion-pop" : ""}`}
+                  aria-hidden="true"
+                />
                 {!isCollapsed && <span className="truncate">{item.label}</span>}
               </Link>
             );
