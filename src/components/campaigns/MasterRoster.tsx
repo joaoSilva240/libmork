@@ -600,7 +600,7 @@ export function MasterRoster({
           {/* Botão de Adicionar Mundo - Substitui o dropdown */}
           <button
             onClick={() => setShowWorldSelector(true)}
-            className="flex items-center gap-1 rounded-lg border border-accent/50 bg-accent/20 px-2 py-1 text-xs font-semibold text-accent-hover hover:bg-accent/30 transition-colors"
+            className="flex shrink-0 items-center whitespace-nowrap gap-1 rounded-lg border border-accent/50 bg-accent/20 px-2 py-1 text-xs font-semibold text-accent-hover hover:bg-accent/30 transition-colors"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -621,12 +621,12 @@ export function MasterRoster({
 
           {/* Alternador de Vista Central: Canva / Mapa */}
           {(showCanvas || showMap) && (
-            <div className="flex items-center rounded-lg border border-gray-700 bg-gray-950 p-0.5 text-xs">
+            <div className="flex shrink-0 items-center rounded-lg border border-gray-700 bg-gray-950 p-0.5 text-xs">
               {showCanvas && (
                 <button
                   type="button"
                   onClick={() => setActiveCenterView("canvas")}
-                  className={`flex items-center gap-1 rounded-md px-2 py-0.5 font-medium transition-colors ${
+                  className={`flex shrink-0 items-center whitespace-nowrap gap-1 rounded-md px-2 py-0.5 font-medium transition-colors ${
                     activeCenterView === "canvas"
                       ? isMissing
                         ? "bg-zinc-800 text-amber-300 font-mono"
@@ -643,7 +643,7 @@ export function MasterRoster({
                 <button
                   type="button"
                   onClick={() => setActiveCenterView("map")}
-                  className={`flex items-center gap-1 rounded-md px-2 py-0.5 font-medium transition-colors ${
+                  className={`flex shrink-0 items-center whitespace-nowrap gap-1 rounded-md px-2 py-0.5 font-medium transition-colors ${
                     activeCenterView === "map"
                       ? isMissing
                         ? "bg-zinc-800 text-amber-300 font-mono"
@@ -683,7 +683,7 @@ export function MasterRoster({
            {onTogglePopOut && (isPoppedOut || showRoster) && (
              <button
                onClick={onTogglePopOut}
-               className="flex items-center gap-1 rounded-lg border border-gray-700 bg-gray-800 px-2 py-0.5 text-xs font-semibold text-gray-300 hover:bg-gray-700"
+               className="flex shrink-0 items-center whitespace-nowrap gap-1 rounded-lg border border-gray-700 bg-gray-800 px-2 py-0.5 text-xs font-semibold text-gray-300 hover:bg-gray-700"
                title={isPoppedOut ? "Reencaixar Mesa no painel principal" : "Destacar Mesa em nova janela"}
                aria-label={isPoppedOut ? "Reencaixar Mesa no painel principal" : "Destacar Mesa em nova janela"}
              >
@@ -715,7 +715,7 @@ export function MasterRoster({
           {showDiceRolls && (
             <button
               onClick={() => setShowRollFeed(!showRollFeed)}
-              className="flex items-center gap-1 rounded-lg border border-accent/50 bg-accent/20 px-2 py-0.5 text-xs font-semibold text-accent-hover hover:bg-accent/30 transition-colors"
+              className="flex shrink-0 items-center whitespace-nowrap gap-1 rounded-lg border border-accent/50 bg-accent/20 px-2 py-0.5 text-xs font-semibold text-accent-hover hover:bg-accent/30 transition-colors"
             >
               Rolagens {recentRolls.length > 0 && `(${recentRolls.length})`}
             </button>

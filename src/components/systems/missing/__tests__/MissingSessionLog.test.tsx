@@ -129,6 +129,26 @@ describe("MissingSessionLog Component", () => {
     });
   });
 
+  it("utiliza layout flex-wrap no cabeçalho (botões-filtro nunca ficam inacessíveis em tela estreita)", async () => {
+    render(<MissingSessionLog campaignId="camp-123" />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("log-test-ev-test-1")).toBeInTheDocument();
+    });
+
+    const allFilterButton = screen.getByText(/^Todos \(\d+\)$/);
+
+    // Container dos botões-filtro: flex-wrap e sem overflow escondido
+    const filterContainer = allFilterButton.closest("div");
+    expect(filterContainer).toHaveClass("flex-wrap");
+
+    // Cabeçalho do boletim: também flex-wrap
+    const headerRow = screen
+      .getByText("BOLETIM DE OCORRÊNCIAS")
+      .closest("div")?.parentElement?.parentElement;
+    expect(headerRow).toHaveClass("flex-wrap");
+  });
+
   it("permite filtrar por testes ou rasuras", async () => {
     render(<MissingSessionLog campaignId="camp-123" />);
 

@@ -162,8 +162,8 @@ export function SessionLog({ campaignId }: SessionLogProps) {
       className="relative flex flex-col rounded-lg border border-gray-800 bg-gray-900 overflow-hidden"
       style={{ height: `${sessionLogPanel.height}px` }}
     >
-      <div className="flex items-center justify-between border-b border-gray-800 p-2 shrink-0">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 p-2 shrink-0">
+        <div className="flex shrink-0 items-center gap-2">
           <h2 className="text-sm font-bold text-white">Log da Sessão</h2>
           <span
             className={`inline-block h-2 w-2 rounded-full ${
@@ -177,7 +177,7 @@ export function SessionLog({ campaignId }: SessionLogProps) {
           disabled={isLoading}
           aria-label="Recarregar logs"
           title="Recarregar logs"
-          className="rounded p-1 text-xs text-gray-400 hover:bg-gray-800 hover:text-white disabled:opacity-50 transition-colors"
+          className="shrink-0 rounded p-1 text-xs text-gray-400 hover:bg-gray-800 hover:text-white disabled:opacity-50 transition-colors"
         >
           {isLoading ? (
             <span className="inline-block animate-spin">⟳</span>
@@ -212,7 +212,7 @@ export function SessionLog({ campaignId }: SessionLogProps) {
               </div>
 
               {log.action === "roll_request" && (
-                <div className="mt-2 flex items-center gap-2">
+                <div className="mt-2 flex flex-wrap items-center gap-2">
                   <input
                     type="number"
                     placeholder="Resultado do dado"
@@ -221,12 +221,12 @@ export function SessionLog({ campaignId }: SessionLogProps) {
                       setRollInputs((prev) => ({ ...prev, [log.id]: e.target.value }))
                     }
                     disabled={submittingId === log.id}
-                    className="w-28 rounded-lg border border-gray-700 bg-gray-900 px-2 py-1 text-sm text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                    className="min-w-0 flex-1 rounded-lg border border-gray-700 bg-gray-900 px-2 py-1 text-sm text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                   />
                   <button
                     onClick={() => submitRollResult(log.id)}
                     disabled={submittingId === log.id}
-                    className="rounded-lg bg-amber-600 px-2 py-1 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
+                    className="rounded-lg shrink-0 whitespace-nowrap bg-amber-600 px-2 py-1 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
                   >
                     {submittingId === log.id ? "..." : "Registrar resultado"}
                   </button>

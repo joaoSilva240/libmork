@@ -790,3 +790,18 @@ svg.lucide, .lucide, .font-dings {
   animation-duration: 1s !important;
   animation-iteration-count: infinite !important;
 }
+/* ============================================================
+   Grid do Escudo do Mestre (CampaignDetail) - minmax auto-correctivo
+   Maximo de resiliencia: template em CSS puro, fora do JIT do Tailwind.
+   ============================================================ */
+@media (min-width: 1024px) {
+  .libmork-master-grid {
+    grid-template-columns: minmax(180px, var(--w-l, 240px)) minmax(360px, var(--w-c, 640px)) minmax(200px, var(--w-r, 260px));
+  }
+  .libmork-master-grid-slim {
+    grid-template-columns: minmax(180px, var(--w-l, 240px)) minmax(360px, var(--w-c, 640px));
+  }
+  .libmork-master-grid-popped {
+    grid-template-columns: 1fr 1fr;
+  }
+}

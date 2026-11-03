@@ -311,7 +311,7 @@ export function CampaignDetail() {
             <button
               type="button"
               onClick={() => setShowSettingsModal(true)}
-              className="flex items-center gap-1.5 rounded-lg border border-secondary-border bg-dominant-container px-3 py-1.5 text-xs font-semibold text-secondary-pure hover:bg-dominant-container/80 hover:border-accent transition shadow"
+              className="flex items-center gap-1.5 rounded-lg border border-secondary-border bg-dominant-container px-3 py-1.5 text-xs font-semibold whitespace-nowrap shrink-0 text-secondary-pure hover:bg-dominant-container/80 hover:border-accent transition shadow"
               title="Configurações e Edição da Campanha"
             >
               <span>⚙️</span>
@@ -337,19 +337,25 @@ export function CampaignDetail() {
       )}
 
       <div
-        className={`flex-1 grid grid-cols-1 gap-2.5 overflow-hidden min-h-0 ${isMesaPopped ? "lg:grid-cols-[1fr_1fr]" : "lg:grid-cols-[var(--libmork-columns)]"}`}
+        className={`flex-1 grid grid-cols-1 gap-2.5 overflow-hidden min-h-0 ${
+          isMesaPopped
+            ? "libmork-master-grid-popped"
+            : screenConfig.showSessionLog
+              ? "libmork-master-grid"
+              : "libmork-master-grid-slim"
+        }`}
         style={
           isMesaPopped
             ? undefined
             : ({
-                "--libmork-columns": screenConfig.showSessionLog
-                  ? `${leftPanel.width}px ${centerPanel.width}px ${rightPanel.width}px`
-                  : `${leftPanel.width}px ${centerPanel.width}px`,
+                "--w-l": `${leftPanel.width}px`,
+                "--w-c": `${centerPanel.width}px`,
+                "--w-r": `${rightPanel.width}px`,
               } as CSSProperties)
         }
       >
         {/* ===== Coluna esquerda — Gestão ===== */}
-        <div className="relative space-y-3 overflow-y-auto min-h-0">
+        <div className="relative space-y-3 overflow-y-auto min-h-0 min-w-0">
           {/* Jukebox de Áudio (Issue #60) */}
           {screenConfig.showJukebox && (
             <MasterJukebox
@@ -364,7 +370,7 @@ export function CampaignDetail() {
             <div className="rounded-lg border border-secondary-border bg-secondary-card p-3">
               <button
                 onClick={() => setShowContentOverlay(true)}
-                className="w-full rounded-lg bg-accent px-3 py-2 text-sm font-bold text-white hover:bg-accent-vibrant transition shadow-md"
+                className="w-full rounded-lg whitespace-nowrap bg-accent px-3 py-2 text-sm font-bold text-white hover:bg-accent-vibrant transition shadow-md"
               >
                 Gerenciar Conteúdo
               </button>
@@ -516,7 +522,7 @@ export function CampaignDetail() {
                                 <button
                                   type="button"
                                   onClick={() => handleToggleEstablishment(est)}
-                                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold transition-all cursor-pointer ${
+                                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                                     est.isOpen
                                       ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 hover:bg-emerald-900"
                                       : "bg-gray-800 text-gray-400 border border-gray-700 hover:text-white"
@@ -561,7 +567,7 @@ export function CampaignDetail() {
 
         {!isMesaPopped && (
           <div
-            className={`relative flex flex-col h-full min-h-0 overflow-hidden rounded-xl border p-2.5 ${
+            className={`relative flex flex-col h-full min-h-0 min-w-0 overflow-hidden rounded-xl border p-2.5 ${
               isMissing ? "border-zinc-800 bg-[#0d0e12]" : "border-gray-800 bg-gray-900"
             }`}
           >
@@ -591,7 +597,7 @@ export function CampaignDetail() {
 
         {/* ===== Coluna direita — Log da sessão ===== */}
         {screenConfig.showSessionLog && (
-          <div className="relative flex flex-col h-full max-h-full min-h-0 overflow-hidden">
+          <div className="relative flex flex-col h-full max-h-full min-h-0 min-w-0 overflow-hidden">
             {!isMissing ? (
               <SessionLog campaignId={campaign.id} />
             ) : (

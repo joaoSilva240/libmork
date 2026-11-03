@@ -26,13 +26,13 @@ export default function MasterSettingsPage() {
       </div>
 
       {/* Navegação entre Abas de Configuração */}
-      <div className="flex items-center gap-2 border-b border-secondary-border mb-6 overflow-x-auto scrollbar-hide" role="tablist">
+      <div className="flex flex-wrap items-center gap-2 border-b border-secondary-border mb-6" role="tablist">
         <button
           type="button"
           role="tab"
           aria-selected={activeTab === "theme"}
           onClick={() => setActiveTab("theme")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition select-none ${
+          className={`flex shrink-0 whitespace-nowrap items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition select-none ${
             activeTab === "theme"
               ? "border-accent text-secondary-pure"
               : "border-transparent text-secondary-muted hover:text-secondary-pure"
@@ -46,7 +46,7 @@ export default function MasterSettingsPage() {
           role="tab"
           aria-selected={activeTab === "screen"}
           onClick={() => setActiveTab("screen")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition select-none ${
+          className={`flex shrink-0 whitespace-nowrap items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition select-none ${
             activeTab === "screen"
               ? "border-accent text-secondary-pure"
               : "border-transparent text-secondary-muted hover:text-secondary-pure"
@@ -60,7 +60,7 @@ export default function MasterSettingsPage() {
           role="tab"
           aria-selected={activeTab === "motion"}
           onClick={() => setActiveTab("motion")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition select-none ${
+          className={`flex shrink-0 whitespace-nowrap items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition select-none ${
             activeTab === "motion"
               ? "border-accent text-secondary-pure"
               : "border-transparent text-secondary-muted hover:text-secondary-pure"
@@ -74,7 +74,7 @@ export default function MasterSettingsPage() {
           role="tab"
           aria-selected={activeTab === "dice"}
           onClick={() => setActiveTab("dice")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition select-none ${
+          className={`flex shrink-0 whitespace-nowrap items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition select-none ${
             activeTab === "dice"
               ? "border-accent text-secondary-pure"
               : "border-transparent text-secondary-muted hover:text-secondary-pure"
