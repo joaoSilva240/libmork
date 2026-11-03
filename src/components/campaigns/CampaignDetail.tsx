@@ -17,6 +17,16 @@ import { MasterJukebox } from "./MasterJukebox";
 import { CampaignSettingsModal } from "./CampaignSettingsModal";
 import { useMasterScreenConfig } from "@/hooks/useMasterScreenConfig";
 import { useTheme } from "@/context/ThemeContext";
+import {
+  SHIELD_LEFT_MAX,
+  SHIELD_LEFT_MIN,
+  SHIELD_RIGHT_MAX,
+  SHIELD_RIGHT_MIN,
+  fitShieldColumns,
+  getMaxSideWidth,
+  getShieldGridTemplate,
+  type ShieldSide,
+} from "@/lib/layout/shieldColumns";
 
 export function CampaignDetail() {
   const params = useParams<{ id: string }>();
@@ -54,22 +64,15 @@ export function CampaignDetail() {
   const leftPanel = useResizableLayout({
     storageKey: campaign ? `libmork:campaign-left-panel:${campaign.id}` : undefined,
     initialWidth: 240,
-    minWidth: 180,
-    maxWidth: 420,
+    minWidth: SHIELD_LEFT_MIN,
+    maxWidth: SHIELD_LEFT_MAX,
   });
 
   const rightPanel = useResizableLayout({
     storageKey: campaign ? `libmork:campaign-right-panel:${campaign.id}` : undefined,
     initialWidth: 260,
-    minWidth: 200,
-    maxWidth: 460,
-  });
-
-  const centerPanel = useResizableLayout({
-    storageKey: campaign ? `libmork:campaign-center-panel:${campaign.id}` : undefined,
-    initialWidth: 640,
-    minWidth: 360,
-    maxWidth: 1400,
+    minWidth: SHIELD_RIGHT_MIN,
+    maxWidth: SHIELD_RIGHT_MAX,
   });
 
   const {
@@ -77,6 +80,40 @@ export function CampaignDetail() {
     updateConfig: updateScreenConfig,
     resetConfig: resetScreenConfig,
   } = useMasterScreenConfig();
+
+  const [shieldGridEl, setShieldGridEl] = useState<HTMLDivElement | null>(null);
+  const [shieldGridWidth, setShieldGridWidth] = useState(0);
+
+  useEffect(() => {
+    if (!shieldGridEl) return;
+    const measure = () => setShieldGridWidth(shieldGridEl.clientWidth);
+    measure();
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", measure);
+      return () => window.removeEventListener("resize", measure);
+    }
+    const observer = new ResizeObserver(measure);
+    observer.observe(shieldGridEl);
+    return () => observer.disconnect();
+  }, [shieldGridEl]);
+
+  const shieldLayoutInput = {
+    left: leftPanel.width,
+    right: rightPanel.width,
+    containerWidth: shieldGridWidth,
+    showSessionLog: screenConfig.showSessionLog,
+  };
+  const shieldColumns = fitShieldColumns(shieldLayoutInput);
+
+  const resizeShieldSide = (side: ShieldSide, delta: number) => {
+    if (delta === 0) return;
+    const panel = side === "left" ? leftPanel : rightPanel;
+    const current = shieldColumns[side];
+    const maxWidth = getMaxSideWidth(side, { ...shieldLayoutInput, ...shieldColumns });
+    // Só cresce até o limite que preserva a coluna central; encolher é sempre permitido.
+    const next = delta > 0 ? Math.min(current + delta, Math.max(current, maxWidth)) : current + delta;
+    if (next !== panel.width) panel.setWidth(next);
+  };
 
   const handleCloseMesaPopOut = useCallback(() => {
     setIsMesaPopped(false);
@@ -337,19 +374,21 @@ export function CampaignDetail() {
       )}
 
       <div
-        className={`flex-1 grid grid-cols-1 gap-2.5 overflow-hidden min-h-0 ${isMesaPopped ? "lg:grid-cols-[1fr_1fr]" : "lg:grid-cols-[var(--libmork-columns)]"}`}
+        ref={setShieldGridEl}
+        data-testid="shield-grid"
+        className={`flex-1 grid grid-cols-1 gap-2.5 overflow-hidden min-h-0 min-w-0 w-full ${isMesaPopped ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]" : "lg:grid-cols-[var(--libmork-columns)]"}`}
         style={
           isMesaPopped
             ? undefined
             : ({
-                "--libmork-columns": screenConfig.showSessionLog
-                  ? `${leftPanel.width}px ${centerPanel.width}px ${rightPanel.width}px`
-                  : `${leftPanel.width}px ${centerPanel.width}px`,
+                "--w-l": `${shieldColumns.left}px`,
+                "--w-r": `${shieldColumns.right}px`,
+                "--libmork-columns": getShieldGridTemplate(screenConfig.showSessionLog),
               } as CSSProperties)
         }
       >
         {/* ===== Coluna esquerda — Gestão ===== */}
-        <div className="relative space-y-3 overflow-y-auto min-h-0">
+        <div className="relative space-y-3 overflow-y-auto overflow-x-hidden min-h-0 min-w-0">
           {/* Jukebox de Áudio (Issue #60) */}
           {screenConfig.showJukebox && (
             <MasterJukebox
@@ -553,7 +592,7 @@ export function CampaignDetail() {
           <ResizeHandle
             direction="horizontal"
             position="bottom-right"
-            onResize={(dx) => leftPanel.handleResize(dx, 0)}
+            onResize={(dx) => resizeShieldSide("left", dx)}
             title="Redimensionar coluna de gestão"
             data-testid="resize-left-column"
           />
@@ -561,7 +600,7 @@ export function CampaignDetail() {
 
         {!isMesaPopped && (
           <div
-            className={`relative flex flex-col h-full min-h-0 overflow-hidden rounded-xl border p-2.5 ${
+            className={`relative flex flex-col h-full min-h-0 min-w-0 overflow-hidden rounded-xl border p-2.5 ${
               isMissing ? "border-zinc-800 bg-[#0d0e12]" : "border-gray-800 bg-gray-900"
             }`}
           >
@@ -579,19 +618,21 @@ export function CampaignDetail() {
               onResetConfig={resetScreenConfig}
             />
 
-            <ResizeHandle
-              direction="horizontal"
-              position="bottom-right"
-              onResize={(dx) => centerPanel.handleResize(dx, 0)}
-              title="Redimensionar coluna da mesa"
-              data-testid="resize-center-column"
-            />
+            {screenConfig.showSessionLog && (
+              <ResizeHandle
+                direction="horizontal"
+                position="bottom-right"
+                onResize={(dx) => resizeShieldSide("right", -dx)}
+                title="Redimensionar coluna da mesa"
+                data-testid="resize-center-column"
+              />
+            )}
           </div>
         )}
 
         {/* ===== Coluna direita — Log da sessão ===== */}
         {screenConfig.showSessionLog && (
-          <div className="relative flex flex-col h-full max-h-full min-h-0 overflow-hidden">
+          <div className="relative flex flex-col h-full max-h-full min-h-0 min-w-0 overflow-hidden">
             {!isMissing ? (
               <SessionLog campaignId={campaign.id} />
             ) : (
@@ -602,7 +643,7 @@ export function CampaignDetail() {
               <ResizeHandle
                 direction="horizontal"
                 position="bottom-right"
-                onResize={(dx) => rightPanel.handleResize(-dx, 0)}
+                onResize={(dx) => resizeShieldSide("right", -dx)}
                 title="Redimensionar coluna de logs"
                 data-testid="resize-right-column"
               />
