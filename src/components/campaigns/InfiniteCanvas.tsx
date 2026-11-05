@@ -197,7 +197,7 @@ export function InfiniteCanvas({ campaignId }: InfiniteCanvasProps) {
       <div className="absolute left-2 top-2 z-10 flex gap-2">
         <button
           onClick={addNote}
-          className="rounded bg-yellow-500 px-3 py-1.5 text-xs font-semibold text-gray-900 shadow-lg hover:bg-yellow-400"
+          className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white shadow-lg transition-colors hover:bg-accent-vibrant"
         >
           + Post-it
         </button>

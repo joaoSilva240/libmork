@@ -66,9 +66,20 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const [campaignOverride, setCampaignOverride] = useState<ThemeConfig | null>(null);
 
-  // O tema ativo é o override da campanha (se presente) ou o tema global do usuário
-  const activeTheme = useMemo(() => {
-    return campaignOverride || theme;
+  // O tema da campanha sobrescreve apenas a paleta de cores; tipografia e
+  // detalhes de UI (arredondamento, escalas) seguem as preferências do usuário.
+  const activeTheme = useMemo<ThemeConfig>(() => {
+    if (!campaignOverride) return theme;
+    return {
+      ...theme,
+      name: campaignOverride.name,
+      label: campaignOverride.label,
+      description: campaignOverride.description,
+      mode: campaignOverride.mode,
+      colors: campaignOverride.colors,
+      fonts: theme.fonts,
+      ui: theme.ui,
+    };
   }, [campaignOverride, theme]);
 
   // Aplica o tema ativo no DOM sempre que mudar

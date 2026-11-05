@@ -20,7 +20,17 @@ import {
   DEFAULT_UI_DETAILS,
 } from "@/lib/theme";
 
-export function ThemeConfigPanel() {
+export interface ThemeConfigPanelProps {
+  activeSubTab?: "themes_colors" | "fonts" | "ui_details";
+  onSubTabChange?: (tab: "themes_colors" | "fonts" | "ui_details") => void;
+  hideSubTabsBar?: boolean;
+}
+
+export function ThemeConfigPanel({
+  activeSubTab: externalSubTab,
+  onSubTabChange,
+  hideSubTabsBar = false,
+}: ThemeConfigPanelProps = {}) {
   const {
     theme,
     mode,
@@ -32,12 +42,13 @@ export function ThemeConfigPanel() {
     updateUiDetails,
     optimizeContrast,
     resetTheme,
-    isAaaCompliant,
-    contrastEvaluation,
   } = useTheme();
 
   const [filterMode, setFilterMode] = useState<"all" | "dark" | "light">("all");
-  const [activeSubTab, setActiveSubTab] = useState<"themes_colors" | "fonts" | "ui_details">("themes_colors");
+  const [internalSubTab, setInternalSubTab] = useState<"themes_colors" | "fonts" | "ui_details">("themes_colors");
+
+  const activeSubTab = externalSubTab ?? internalSubTab;
+  const setActiveSubTab = onSubTabChange ?? setInternalSubTab;
 
   const filteredPresets = Object.values(themes)
     .filter((t) => t.name !== "custom")
@@ -46,187 +57,54 @@ export function ThemeConfigPanel() {
   return (
     <div className="space-y-6">
       {/* ======================================================================= */}
-      {/* 1. SELETOR DE MODO (CLARO / ESCURO) E RESTAURAÇÃO                       */}
+      {/* NAVEGAÇÃO DE SUB-ABAS (LADO A LADO)                                      */}
       {/* ======================================================================= */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-secondary-border bg-secondary-card p-4">
-        <div>
-          <h3 className="text-sm font-bold text-secondary-pure flex items-center gap-2">
-            <span>🌓</span> Modo de Luminosidade
-          </h3>
-          <p className="text-xs text-secondary-muted">
-            Alterne entre temas escuros e claros com calibração automática de superfície.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 rounded-lg border border-secondary-border bg-dominant-deep p-1">
-            <button
-              type="button"
-              onClick={() => {
-                setThemeMode("dark");
-                setFilterMode("dark");
-              }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ${
-                mode === "dark"
-                  ? "bg-accent text-white shadow"
-                  : "text-secondary-muted hover:text-secondary-pure"
-              }`}
-            >
-              <span>🌙</span> Escuro
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setThemeMode("light");
-                setFilterMode("light");
-              }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ${
-                mode === "light"
-                  ? "bg-amber-500 text-gray-950 shadow"
-                  : "text-secondary-muted hover:text-secondary-pure"
-              }`}
-            >
-              <span>☀️</span> Claro
-            </button>
-          </div>
-
+      {!hideSubTabsBar && (
+        <div className="grid grid-cols-3 gap-2 border-b border-secondary-border pb-3">
           <button
             type="button"
-            onClick={resetTheme}
-            className="rounded-lg border border-secondary-border bg-dominant-container px-3 py-1.5 text-xs font-semibold text-secondary-offwhite hover:bg-dominant-container/80 hover:text-secondary-pure transition"
+            aria-label="Temas & Cores do Sistema (60-30-10)"
+            aria-pressed={activeSubTab === "themes_colors"}
+            onClick={() => setActiveSubTab("themes_colors")}
+            className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
+              activeSubTab === "themes_colors"
+                ? "bg-accent text-white shadow-sm ring-1 ring-accent"
+                : "text-secondary-muted hover:text-secondary-pure hover:bg-dominant-container/50"
+            }`}
           >
-            Restaurar Tema Padrão
+            <span className="text-sm">🎨</span>
+            <span className="truncate">Temas</span>
+          </button>
+          <button
+            type="button"
+            aria-label="Tipografia & Fontes"
+            aria-pressed={activeSubTab === "fonts"}
+            onClick={() => setActiveSubTab("fonts")}
+            className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
+              activeSubTab === "fonts"
+                ? "bg-accent text-white shadow-sm ring-1 ring-accent"
+                : "text-secondary-muted hover:text-secondary-pure hover:bg-dominant-container/50"
+            }`}
+          >
+            <span className="text-sm">✍️</span>
+            <span className="truncate">Tipografia</span>
+          </button>
+          <button
+            type="button"
+            aria-label="Detalhes da UI & Aparência"
+            aria-pressed={activeSubTab === "ui_details"}
+            onClick={() => setActiveSubTab("ui_details")}
+            className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
+              activeSubTab === "ui_details"
+                ? "bg-accent text-white shadow-sm ring-1 ring-accent"
+                : "text-secondary-muted hover:text-secondary-pure hover:bg-dominant-container/50"
+            }`}
+          >
+            <span className="text-sm">📐</span>
+            <span className="truncate">Detalhes</span>
           </button>
         </div>
-      </div>
-
-      {/* ======================================================================= */}
-      {/* 2. MONITOR WCAG AAA EM TEMPO REAL                                       */}
-      {/* ======================================================================= */}
-      <div
-        className={`rounded-xl border p-4 transition-colors ${
-          isAaaCompliant
-            ? "border-emerald-800/80 bg-emerald-950/30"
-            : "border-amber-700/80 bg-amber-950/30"
-        }`}
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">{isAaaCompliant ? "🛡️" : "⚠️"}</span>
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-white">
-                Auditoria de Acessibilidade — Padrão WCAG 2.1 (AAA)
-              </h4>
-              <p className="text-[11px] text-gray-300">
-                {isAaaCompliant
-                  ? "Excelente! A paleta ativa atinge a meta máxima de contraste AAA (mínimo 7.0:1 para textos)."
-                  : "Atenção: Algumas combinações de cores personalizadas estão abaixo do limiar estrito AAA (7.0:1)."}
-              </p>
-            </div>
-          </div>
-
-          {!isAaaCompliant && (
-            <button
-              type="button"
-              onClick={optimizeContrast}
-              className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-gray-950 hover:bg-amber-400 transition shrink-0 shadow"
-            >
-              ⚡ Otimizar para AAA
-            </button>
-          )}
-        </div>
-
-        {/* Métricas de Contraste Detalhadas */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-white/10 text-[11px]">
-          <div className="rounded-lg bg-dominant-deep/70 p-2">
-            <span className="block text-secondary-muted text-[10px]">Texto / Fundo</span>
-            <span
-              className={`font-mono font-bold ${
-                contrastEvaluation.textOnDeepRatio >= 7.0
-                  ? "text-emerald-400"
-                  : "text-amber-400"
-              }`}
-            >
-              {contrastEvaluation.textOnDeepRatio}:1 (AAA)
-            </span>
-          </div>
-          <div className="rounded-lg bg-dominant-deep/70 p-2">
-            <span className="block text-secondary-muted text-[10px]">Texto / Card</span>
-            <span
-              className={`font-mono font-bold ${
-                contrastEvaluation.textOnCardRatio >= 7.0
-                  ? "text-emerald-400"
-                  : "text-amber-400"
-              }`}
-            >
-              {contrastEvaluation.textOnCardRatio}:1 (AAA)
-            </span>
-          </div>
-          <div className="rounded-lg bg-dominant-deep/70 p-2">
-            <span className="block text-secondary-muted text-[10px]">Leitura / Fundo</span>
-            <span
-              className={`font-mono font-bold ${
-                contrastEvaluation.offwhiteOnDeepRatio >= 7.0
-                  ? "text-emerald-400"
-                  : "text-amber-400"
-              }`}
-            >
-              {contrastEvaluation.offwhiteOnDeepRatio}:1 (AAA)
-            </span>
-          </div>
-          <div className="rounded-lg bg-dominant-deep/70 p-2">
-            <span className="block text-secondary-muted text-[10px]">Atenuado / Card</span>
-            <span
-              className={`font-mono font-bold ${
-                contrastEvaluation.mutedOnCardRatio >= 4.5
-                  ? "text-emerald-400"
-                  : "text-amber-400"
-              }`}
-            >
-              {contrastEvaluation.mutedOnCardRatio}:1 (AA+)
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* ======================================================================= */}
-      {/* SUB-ABAS DO PAINEL: TEMAS & CORES / TIPOGRAFIA / DETALHES DA UI         */}
-      {/* ======================================================================= */}
-      <div className="flex border-b border-secondary-border flex-wrap gap-1">
-        <button
-          type="button"
-          onClick={() => setActiveSubTab("themes_colors")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition ${
-            activeSubTab === "themes_colors"
-              ? "border-accent text-secondary-pure"
-              : "border-transparent text-secondary-muted hover:text-secondary-pure"
-          }`}
-        >
-          <span>🎨</span> Temas & Cores do Sistema (60-30-10)
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveSubTab("fonts")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition ${
-            activeSubTab === "fonts"
-              ? "border-accent text-secondary-pure"
-              : "border-transparent text-secondary-muted hover:text-secondary-pure"
-          }`}
-        >
-          <span>✍️</span> Tipografia & Fontes
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveSubTab("ui_details")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition ${
-            activeSubTab === "ui_details"
-              ? "border-accent text-secondary-pure"
-              : "border-transparent text-secondary-muted hover:text-secondary-pure"
-          }`}
-        >
-          <span>📐</span> Detalhes da UI & Aparência
-        </button>
-      </div>
+      )}
 
       {/* ======================================================================= */}
       {/* SUB-ABA 1: TEMAS & CORES UNIFICADOS                                     */}
@@ -245,45 +123,55 @@ export function ThemeConfigPanel() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-1 bg-dominant-deep p-1 rounded-lg border border-secondary-border text-[11px] self-start sm:self-auto">
+              <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+                <div className="flex items-center gap-1 bg-dominant-deep p-1 rounded-lg border border-secondary-border text-[11px]">
+                  <button
+                    type="button"
+                    onClick={() => setFilterMode("all")}
+                    className={`px-2 py-0.5 rounded transition ${
+                      filterMode === "all"
+                        ? "bg-accent text-white font-bold"
+                        : "text-secondary-muted hover:text-secondary-pure"
+                    }`}
+                  >
+                    Todos
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFilterMode("dark");
+                      if (mode !== "dark") setThemeMode("dark");
+                    }}
+                    className={`px-2 py-0.5 rounded transition ${
+                      filterMode === "dark"
+                        ? "bg-accent text-white font-bold"
+                        : "text-secondary-muted hover:text-secondary-pure"
+                    }`}
+                  >
+                    🌙 Escuro
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFilterMode("light");
+                      if (mode !== "light") setThemeMode("light");
+                    }}
+                    className={`px-2 py-0.5 rounded transition ${
+                      filterMode === "light"
+                        ? "bg-accent text-white font-bold"
+                        : "text-secondary-muted hover:text-secondary-pure"
+                    }`}
+                  >
+                    ☀️ Claro
+                  </button>
+                </div>
+
                 <button
                   type="button"
-                  onClick={() => setFilterMode("all")}
-                  className={`px-2 py-0.5 rounded transition ${
-                    filterMode === "all"
-                      ? "bg-accent text-white font-bold"
-                      : "text-secondary-muted hover:text-secondary-pure"
-                  }`}
+                  onClick={resetTheme}
+                  className="rounded-lg border border-secondary-border bg-dominant-container px-2.5 py-1 text-xs font-semibold text-secondary-offwhite hover:bg-dominant-container/80 hover:text-secondary-pure transition"
                 >
-                  Todos
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFilterMode("dark");
-                    if (mode !== "dark") setThemeMode("dark");
-                  }}
-                  className={`px-2 py-0.5 rounded transition ${
-                    filterMode === "dark"
-                      ? "bg-accent text-white font-bold"
-                      : "text-secondary-muted hover:text-secondary-pure"
-                  }`}
-                >
-                  Escuros
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFilterMode("light");
-                    if (mode !== "light") setThemeMode("light");
-                  }}
-                  className={`px-2 py-0.5 rounded transition ${
-                    filterMode === "light"
-                      ? "bg-accent text-white font-bold"
-                      : "text-secondary-muted hover:text-secondary-pure"
-                  }`}
-                >
-                  Claros
+                  Restaurar Tema Padrão
                 </button>
               </div>
             </div>
@@ -1093,114 +981,6 @@ export function ThemeConfigPanel() {
           </div>
         </div>
       )}
-
-      {/* ======================================================================= */}
-      {/* 4. LIVE PREVIEW INTERATIVO DA INTERFACE                                  */}
-      {/* ======================================================================= */}
-      <div className="rounded-xl border border-secondary-border bg-secondary-card p-5 space-y-3">
-        <div className="flex items-center justify-between">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-accent-hover flex items-center gap-1.5">
-            <span>👁️</span> Live Preview da Interface
-          </h4>
-          <span className="text-[10px] font-mono text-secondary-muted bg-dominant-deep px-2 py-0.5 rounded border border-secondary-border">
-            Aplicação Imediata
-          </span>
-        </div>
-
-        {/* Container Simulado com as Cores e Fontes Ativas */}
-        <div
-          className="rounded-xl border p-5 shadow-2xl transition-all"
-          style={{
-            backgroundColor: theme.colors.dominant.deep,
-            borderColor: theme.colors.dominant.border,
-            fontFamily: theme.fonts.body,
-          }}
-        >
-          {/* Card Elevado Interno */}
-          <div
-            className="rounded-xl border p-4 shadow-lg space-y-3"
-            style={{
-              backgroundColor: theme.colors.secondary.card,
-              borderColor: theme.colors.secondary.border,
-            }}
-          >
-            <div className="flex items-center justify-between">
-              <h3
-                className="text-lg font-bold"
-                style={{
-                  color: theme.colors.secondary.pure,
-                  fontFamily: theme.fonts.heading,
-                }}
-              >
-                As Crônicas de Morkvold
-              </h3>
-              <span
-                className="rounded-md border px-2 py-0.5 text-[10px] font-bold"
-                style={{
-                  backgroundColor: theme.colors.accent.dark,
-                  borderColor: theme.colors.accent.vibrant,
-                  color: theme.colors.secondary.pure,
-                }}
-              >
-                Ativo
-              </span>
-            </div>
-
-            <p
-              className="text-xs line-clamp-2 leading-relaxed"
-              style={{ color: theme.colors.secondary.offwhite }}
-            >
-              Sob o crepúsculo escarlate da torre arcanista, os aventureiros vasculham os manuscritos antigos em busca do selo de contenção abissal.
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-              <input
-                type="text"
-                readOnly
-                value="Grimório: Chave de Azathoth"
-                className="w-full rounded-md border px-3 py-1.5 text-xs transition"
-                style={{
-                  backgroundColor: theme.colors.dominant.deep,
-                  borderColor: theme.colors.secondary.border,
-                  color: theme.colors.secondary.pure,
-                }}
-              />
-              <button
-                type="button"
-                className="w-full rounded-md border px-3 py-1.5 text-xs font-semibold flex items-center justify-center gap-1.5 transition"
-                style={{
-                  backgroundColor: theme.colors.dominant.container,
-                  borderColor: theme.colors.dominant.border,
-                  color: theme.colors.secondary.pure,
-                }}
-              >
-                <span>🔍</span> Inspecionar Artefato
-              </button>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t" style={{ borderColor: theme.colors.dominant.border }}>
-              <span
-                className="text-[11px]"
-                style={{ color: theme.colors.secondary.muted }}
-              >
-                Nível 7 • 4 Jogadores Conectados
-              </span>
-
-              <button
-                type="button"
-                className="rounded-lg px-3 py-1.5 text-xs font-bold transition shadow flex items-center gap-1.5"
-                style={{
-                  backgroundColor: theme.colors.accent.primary,
-                  color: theme.colors.secondary.pure,
-                  fontFamily: theme.fonts.heading,
-                }}
-              >
-                <span>⚔️</span> Rolar Iniciativa
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

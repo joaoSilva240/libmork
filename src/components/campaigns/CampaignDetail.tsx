@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { Boxes, Settings } from "lucide-react";
 import type { Campaign, Establishment, World } from "@/types";
 import { ResizeHandle, Spinner, WindowPortal } from "@/components/ui";
 import { useResizableLayout } from "@/hooks/useResizableLayout";
@@ -17,6 +18,16 @@ import { MasterJukebox } from "./MasterJukebox";
 import { CampaignSettingsModal } from "./CampaignSettingsModal";
 import { useMasterScreenConfig } from "@/hooks/useMasterScreenConfig";
 import { useTheme } from "@/context/ThemeContext";
+import {
+  SHIELD_LEFT_MAX,
+  SHIELD_LEFT_MIN,
+  SHIELD_RIGHT_MAX,
+  SHIELD_RIGHT_MIN,
+  fitShieldColumns,
+  getMaxSideWidth,
+  getShieldGridTemplate,
+  type ShieldSide,
+} from "@/lib/layout/shieldColumns";
 
 export function CampaignDetail() {
   const params = useParams<{ id: string }>();
@@ -54,22 +65,15 @@ export function CampaignDetail() {
   const leftPanel = useResizableLayout({
     storageKey: campaign ? `libmork:campaign-left-panel:${campaign.id}` : undefined,
     initialWidth: 240,
-    minWidth: 180,
-    maxWidth: 420,
+    minWidth: SHIELD_LEFT_MIN,
+    maxWidth: SHIELD_LEFT_MAX,
   });
 
   const rightPanel = useResizableLayout({
     storageKey: campaign ? `libmork:campaign-right-panel:${campaign.id}` : undefined,
     initialWidth: 260,
-    minWidth: 200,
-    maxWidth: 460,
-  });
-
-  const centerPanel = useResizableLayout({
-    storageKey: campaign ? `libmork:campaign-center-panel:${campaign.id}` : undefined,
-    initialWidth: 640,
-    minWidth: 360,
-    maxWidth: 1400,
+    minWidth: SHIELD_RIGHT_MIN,
+    maxWidth: SHIELD_RIGHT_MAX,
   });
 
   const {
@@ -77,6 +81,40 @@ export function CampaignDetail() {
     updateConfig: updateScreenConfig,
     resetConfig: resetScreenConfig,
   } = useMasterScreenConfig();
+
+  const [shieldGridEl, setShieldGridEl] = useState<HTMLDivElement | null>(null);
+  const [shieldGridWidth, setShieldGridWidth] = useState(0);
+
+  useEffect(() => {
+    if (!shieldGridEl) return;
+    const measure = () => setShieldGridWidth(shieldGridEl.clientWidth);
+    measure();
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", measure);
+      return () => window.removeEventListener("resize", measure);
+    }
+    const observer = new ResizeObserver(measure);
+    observer.observe(shieldGridEl);
+    return () => observer.disconnect();
+  }, [shieldGridEl]);
+
+  const shieldLayoutInput = {
+    left: leftPanel.width,
+    right: rightPanel.width,
+    containerWidth: shieldGridWidth,
+    showSessionLog: screenConfig.showSessionLog,
+  };
+  const shieldColumns = fitShieldColumns(shieldLayoutInput);
+
+  const resizeShieldSide = (side: ShieldSide, delta: number) => {
+    if (delta === 0) return;
+    const panel = side === "left" ? leftPanel : rightPanel;
+    const current = shieldColumns[side];
+    const maxWidth = getMaxSideWidth(side, { ...shieldLayoutInput, ...shieldColumns });
+    // Só cresce até o limite que preserva a coluna central; encolher é sempre permitido.
+    const next = delta > 0 ? Math.min(current + delta, Math.max(current, maxWidth)) : current + delta;
+    if (next !== panel.width) panel.setWidth(next);
+  };
 
   const handleCloseMesaPopOut = useCallback(() => {
     setIsMesaPopped(false);
@@ -308,14 +346,25 @@ export function CampaignDetail() {
           </div>
 
           <div className="flex items-center gap-2">
+            {!isMissing && (
+              <button
+                type="button"
+                onClick={() => setShowContentOverlay(true)}
+                className="bg-purple-600 hover:bg-purple-700 text-white rounded px-3 py-1.5 flex items-center gap-1"
+                title="Gerenciar Conteúdo"
+                aria-label="Gerenciar Conteúdo"
+              >
+                <Boxes size={16} />
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setShowSettingsModal(true)}
-              className="flex items-center gap-1.5 rounded-lg border border-secondary-border bg-dominant-container px-3 py-1.5 text-xs font-semibold whitespace-nowrap shrink-0 text-secondary-pure hover:bg-dominant-container/80 hover:border-accent transition shadow"
+              className="bg-purple-600 hover:bg-purple-700 text-white rounded px-3 py-1.5 flex items-center gap-1 shrink-0"
               title="Configurações e Edição da Campanha"
+              aria-label="Configurações e Edição da Campanha"
             >
-              <span>⚙️</span>
-              <span>Configurações</span>
+              <Settings size={16} />
             </button>
           </div>
         </div>
@@ -337,25 +386,21 @@ export function CampaignDetail() {
       )}
 
       <div
-        className={`flex-1 grid grid-cols-1 gap-2.5 overflow-hidden min-h-0 ${
-          isMesaPopped
-            ? "libmork-master-grid-popped"
-            : screenConfig.showSessionLog
-              ? "libmork-master-grid"
-              : "libmork-master-grid-slim"
-        }`}
+        ref={setShieldGridEl}
+        data-testid="shield-grid"
+        className={`flex-1 grid grid-cols-1 gap-2.5 overflow-hidden min-h-0 min-w-0 w-full ${isMesaPopped ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]" : "lg:grid-cols-[var(--libmork-columns)]"}`}
         style={
           isMesaPopped
             ? undefined
             : ({
-                "--w-l": `${leftPanel.width}px`,
-                "--w-c": `${centerPanel.width}px`,
-                "--w-r": `${rightPanel.width}px`,
+                "--w-l": `${shieldColumns.left}px`,
+                "--w-r": `${shieldColumns.right}px`,
+                "--libmork-columns": getShieldGridTemplate(screenConfig.showSessionLog),
               } as CSSProperties)
         }
       >
         {/* ===== Coluna esquerda — Gestão ===== */}
-        <div className="relative space-y-3 overflow-y-auto min-h-0 min-w-0">
+        <div className="relative space-y-3 overflow-y-auto overflow-x-hidden min-h-0 min-w-0">
           {/* Jukebox de Áudio (Issue #60) */}
           {screenConfig.showJukebox && (
             <MasterJukebox
@@ -364,17 +409,6 @@ export function CampaignDetail() {
               userName="Mestre"
               className="rounded-lg border border-gray-800 bg-gray-900 p-3"
             />
-          )}
-
-          {!isMissing && (
-            <div className="rounded-lg border border-secondary-border bg-secondary-card p-3">
-              <button
-                onClick={() => setShowContentOverlay(true)}
-                className="w-full rounded-lg whitespace-nowrap bg-accent px-3 py-2 text-sm font-bold text-white hover:bg-accent-vibrant transition shadow-md"
-              >
-                Gerenciar Conteúdo
-              </button>
-            </div>
           )}
 
           <div
@@ -435,14 +469,13 @@ export function CampaignDetail() {
                               e.stopPropagation();
                               setOverlayWorld(world);
                             }}
-                            className={`rounded-lg border px-2 py-1 text-[11px] font-bold transition-colors shrink-0 ${
-                              isMissing
-                                ? "bg-zinc-800 border-zinc-700 text-zinc-200 hover:bg-zinc-700"
-                                : "bg-accent/20 border-accent/40 text-accent-hover hover:bg-accent/30"
-                            }`}
+                            className="bg-purple-600 hover:bg-purple-700 text-white rounded px-3 py-1.5 flex items-center gap-1 shrink-0"
                             title="Abrir Detalhes do Local (NPCs, Encontros)"
+                            aria-label={
+                              isMissing ? `Ver cena de ${world.name}` : `Ver detalhes de ${world.name}`
+                            }
                           >
-                            {isMissing ? "⚙️ Ver Cena" : "⚙️ Ver Detalhes"}
+                            <Settings size={16} />
                           </button>
                         </div>
                         {selectedWorldId === world.id && (
@@ -559,7 +592,7 @@ export function CampaignDetail() {
           <ResizeHandle
             direction="horizontal"
             position="bottom-right"
-            onResize={(dx) => leftPanel.handleResize(dx, 0)}
+            onResize={(dx) => resizeShieldSide("left", dx)}
             title="Redimensionar coluna de gestão"
             data-testid="resize-left-column"
           />
@@ -575,7 +608,6 @@ export function CampaignDetail() {
               key={`roster-${rosterVersion}`}
               campaignId={campaign.id}
               selectedWorldId={selectedWorldId}
-              onWorldSelected={setSelectedWorldId}
               onTogglePopOut={() => setIsMesaPopped(true)}
               rulesEngine={campaign.rulesEngine}
               showRoster={screenConfig.showRoster}
@@ -585,13 +617,15 @@ export function CampaignDetail() {
               onResetConfig={resetScreenConfig}
             />
 
-            <ResizeHandle
-              direction="horizontal"
-              position="bottom-right"
-              onResize={(dx) => centerPanel.handleResize(dx, 0)}
-              title="Redimensionar coluna da mesa"
-              data-testid="resize-center-column"
-            />
+            {screenConfig.showSessionLog && (
+              <ResizeHandle
+                direction="horizontal"
+                position="bottom-right"
+                onResize={(dx) => resizeShieldSide("right", -dx)}
+                title="Redimensionar coluna da mesa"
+                data-testid="resize-center-column"
+              />
+            )}
           </div>
         )}
 
@@ -608,7 +642,7 @@ export function CampaignDetail() {
               <ResizeHandle
                 direction="horizontal"
                 position="bottom-right"
-                onResize={(dx) => rightPanel.handleResize(-dx, 0)}
+                onResize={(dx) => resizeShieldSide("right", -dx)}
                 title="Redimensionar coluna de logs"
                 data-testid="resize-right-column"
               />
@@ -624,6 +658,7 @@ export function CampaignDetail() {
           onClose={() => {
             setShowContentOverlay(false);
             setRosterVersion((v) => v + 1);
+            void loadWorlds();
           }}
         />
       )}
@@ -666,7 +701,6 @@ export function CampaignDetail() {
             key={`roster-popped-${rosterVersion}`}
             campaignId={campaign.id}
             selectedWorldId={selectedWorldId}
-            onWorldSelected={setSelectedWorldId}
             isPoppedOut={true}
             onTogglePopOut={() => setIsMesaPopped(false)}
             rulesEngine={campaign.rulesEngine}
