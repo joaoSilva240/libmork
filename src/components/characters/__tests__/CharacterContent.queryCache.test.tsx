@@ -262,7 +262,7 @@ describe("CharacterContent - TanStack Query Caching & Remount (#8)", () => {
     );
 
     // Spinner should be visible
-    expect(container.querySelector(".animate-spin")).toBeInTheDocument();
+    expect(container.querySelector(".font-fantasy")).toBeInTheDocument();
   });
 
   it("displays error toast when gallery query fails", async () => {

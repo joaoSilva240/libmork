@@ -53,6 +53,7 @@ export function PlayerDashboard() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [missingHabitants, setMissingHabitants] = useState<MissingHabitant[]>([]);
   const [selectedHabitant, setSelectedHabitant] = useState<MissingHabitant | null>(null);
+  const [settingsSubTab, setSettingsSubTab] = useState<"themes_colors" | "fonts" | "ui_details">("themes_colors");
   const [isLoadingCharacters, setIsLoadingCharacters] = useState(true);
   const [charactersError, setCharactersError] = useState<string | null>(null);
 
@@ -492,15 +493,70 @@ export function PlayerDashboard() {
   }, []);
 
   return (
-    <div className="pt-[calc(5.5rem+env(safe-area-inset-top,0px))] pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
-      <header className="fixed inset-x-0 top-0 z-30 flex items-center justify-between border-x-0 border-t-0 border-b border-secondary-border bg-secondary-card px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top,0px))] shadow-md">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between">
+    <div className={`${activeTab === "settings" ? "pt-[calc(8.25rem+env(safe-area-inset-top,0px))]" : "pt-[calc(5.5rem+env(safe-area-inset-top,0px))]"} pb-[calc(6rem+env(safe-area-inset-bottom,0px))]`}>
+      <header className="fixed inset-x-0 top-0 z-30 border-x-0 border-t-0 border-b border-secondary-border bg-secondary-card shadow-md pt-[calc(1rem+env(safe-area-inset-top,0px))]">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 pb-3">
           <div>
             <h1 className="text-xl font-bold text-secondary-pure">{displayName}</h1>
             <p className="text-xs text-secondary-muted">Gerencie seus heróis e campanhas</p>
           </div>
           <LogoutButton />
         </div>
+
+        {activeTab === "settings" && (
+          <div className="border-t border-secondary-border bg-secondary-card/95 backdrop-blur-md px-4 py-2">
+            <div className="mx-auto max-w-7xl">
+              <nav
+                className="grid grid-cols-3 gap-2"
+                role="tablist"
+                aria-label="Configurações do Tema e Interface"
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={settingsSubTab === "themes_colors"}
+                  onClick={() => setSettingsSubTab("themes_colors")}
+                  className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
+                    settingsSubTab === "themes_colors"
+                      ? "bg-accent text-white shadow-sm ring-1 ring-accent"
+                      : "text-secondary-muted hover:text-secondary-pure hover:bg-dominant-container/50"
+                  }`}
+                >
+                  <span className="text-sm">🎨</span>
+                  <span className="truncate">Temas</span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={settingsSubTab === "fonts"}
+                  onClick={() => setSettingsSubTab("fonts")}
+                  className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
+                    settingsSubTab === "fonts"
+                      ? "bg-accent text-white shadow-sm ring-1 ring-accent"
+                      : "text-secondary-muted hover:text-secondary-pure hover:bg-dominant-container/50"
+                  }`}
+                >
+                  <span className="text-sm">✍️</span>
+                  <span className="truncate">Tipografia</span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={settingsSubTab === "ui_details"}
+                  onClick={() => setSettingsSubTab("ui_details")}
+                  className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
+                    settingsSubTab === "ui_details"
+                      ? "bg-accent text-white shadow-sm ring-1 ring-accent"
+                      : "text-secondary-muted hover:text-secondary-pure hover:bg-dominant-container/50"
+                  }`}
+                >
+                  <span className="text-sm">📐</span>
+                  <span className="truncate">Detalhes</span>
+                </button>
+              </nav>
+            </div>
+          </div>
+        )}
       </header>
 
       {activeTab === "characters" && (
@@ -838,10 +894,17 @@ export function PlayerDashboard() {
 
         {activeTab === "settings" && (
           <div className="motion-page space-y-6 pb-24">
-            <h2 className="text-lg font-bold text-secondary-pure">Configurações</h2>
-            <ThemeConfigPanel />
-            <MotionSettingsPanel />
-            <Dice3DSettingsPanel />
+            <ThemeConfigPanel
+              activeSubTab={settingsSubTab}
+              onSubTabChange={setSettingsSubTab}
+              hideSubTabsBar={true}
+            />
+            {settingsSubTab === "ui_details" && (
+              <>
+                <MotionSettingsPanel />
+                <Dice3DSettingsPanel />
+              </>
+            )}
           </div>
         )}
 

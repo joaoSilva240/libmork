@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { Library } from "lucide-react";
 import type { Campaign, Establishment, World } from "@/types";
 import { ResizeHandle, Spinner, WindowPortal } from "@/components/ui";
 import { useResizableLayout } from "@/hooks/useResizableLayout";
@@ -345,6 +346,17 @@ export function CampaignDetail() {
           </div>
 
           <div className="flex items-center gap-2">
+            {!isMissing && (
+              <button
+                type="button"
+                onClick={() => setShowContentOverlay(true)}
+                className="flex aspect-square shrink-0 items-center justify-center rounded-lg border border-secondary-border bg-dominant-container py-1.5 text-secondary-pure hover:bg-dominant-container/80 hover:border-accent transition shadow"
+                title="Gerenciar Conteúdo"
+                aria-label="Gerenciar Conteúdo"
+              >
+                <Library size={16} strokeWidth={2.25} />
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setShowSettingsModal(true)}
@@ -397,17 +409,6 @@ export function CampaignDetail() {
               userName="Mestre"
               className="rounded-lg border border-gray-800 bg-gray-900 p-3"
             />
-          )}
-
-          {!isMissing && (
-            <div className="rounded-lg border border-secondary-border bg-secondary-card p-3">
-              <button
-                onClick={() => setShowContentOverlay(true)}
-                className="w-full rounded-lg bg-accent px-3 py-2 text-sm font-bold text-white hover:bg-accent-vibrant transition shadow-md"
-              >
-                Gerenciar Conteúdo
-              </button>
-            </div>
           )}
 
           <div
