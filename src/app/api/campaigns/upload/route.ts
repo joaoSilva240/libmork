@@ -29,9 +29,9 @@ export async function POST(request: NextRequest) {
     const file = formData.get("image");
     const type = formData.get("type");
 
-    if (type !== "cover" && type !== "map") {
+    if (type !== "cover" && type !== "map" && type !== "asset") {
       return NextResponse.json(
-        { success: false, error: "Tipo de imagem inválido. Use 'cover' ou 'map'." },
+        { success: false, error: "Tipo de imagem inválido. Use 'cover', 'map' ou 'asset'." },
         { status: 400 }
       );
     }
@@ -45,13 +45,13 @@ export async function POST(request: NextRequest) {
 
     let filename: string;
     try {
-      filename = await saveImage(file, "campaigns");
+      filename = await saveImage(file, type === "asset" ? "campaigns/assets" : "campaigns");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Erro ao salvar imagem";
       return NextResponse.json({ success: false, error: message }, { status: 400 });
     }
 
-    const url = `/api/uploads/campaigns/${filename}`;
+    const url = `/api/uploads/${type === "asset" ? "campaigns/assets" : "campaigns"}/${filename}`;
 
     return NextResponse.json({
       success: true,

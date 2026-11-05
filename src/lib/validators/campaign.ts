@@ -4,6 +4,7 @@
 
 import { z } from "zod";
 import { RULES_ENGINES } from "@/lib/utils/constants";
+import { initialAssetInputSchema } from "./campaign-asset";
 
 /**
  * Schema de criação de campanha (RF-012, RF-019, RF-053).
@@ -19,6 +20,7 @@ export const createCampaignSchema = z.object({
   theme: z.string().max(50).optional().default("default-dark"),
   initialNpcIds: z.array(z.string().uuid()).optional().default([]),
   initialWorldIds: z.array(z.string().uuid()).optional().default([]),
+  initialAssets: z.array(initialAssetInputSchema).optional(),
 });
 
 export type CreateCampaignInput = z.infer<typeof createCampaignSchema>;

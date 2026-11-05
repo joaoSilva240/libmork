@@ -18,6 +18,7 @@ import {
   index,
   real,
   primaryKey,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
 // =============================================================================
@@ -166,9 +167,34 @@ export const campaigns = pgTable("campaigns", {
   coverImageUrl: text("cover_image_url"),
   worldMapUrl: text("world_map_url"),
   theme: varchar("theme", { length: 50 }).notNull().default("default-dark"),
+  activeAssetId: uuid("active_asset_id").references((): AnyPgColumn => campaignAssets.id, {
+    onDelete: "set null",
+  }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
+
+/**
+ * CAMPAIGN_ASSETS — Assets visuais compartilhados na campanha (Issue #61).
+ * Handouts, mapas, cenas, tokens e ilustrações compartilhados com os jogadores.
+ */
+export const campaignAssets = pgTable(
+  "campaign_assets",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    campaignId: uuid("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 200 }).notNull(),
+    description: text("description"),
+    imageUrl: varchar("image_url", { length: 500 }).notNull(),
+    category: varchar("category", { length: 50 }).notNull().default("handout"),
+    position: integer("position").notNull().default(0),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [index("idx_campaign_assets_campaign").on(table.campaignId)],
+);
 
 /**
  * CAMPAIGN_AUDIO_TRACKS — Tracks de áudio da jukebox por campanha (Issue #60).
@@ -886,6 +912,18 @@ export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
   missingHabitants: many(missingHabitants),
   missingActionLedger: many(missingActionLedger),
   audioTracks: many(campaignAudioTracks),
+  assets: many(campaignAssets),
+  activeAsset: one(campaignAssets, {
+    fields: [campaigns.activeAssetId],
+    references: [campaignAssets.id],
+  }),
+}));
+
+export const campaignAssetsRelations = relations(campaignAssets, ({ one }) => ({
+  campaign: one(campaigns, {
+    fields: [campaignAssets.campaignId],
+    references: [campaigns.id],
+  }),
 }));
 
 export const campaignAudioTracksRelations = relations(campaignAudioTracks, ({ one }) => ({

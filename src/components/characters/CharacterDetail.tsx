@@ -45,6 +45,7 @@ import { DuelInviteModal } from "@/components/combat/DuelInviteModal";
 import { DuelIncomingInviteModal } from "@/components/combat/DuelIncomingInviteModal";
 import { DuelArenaModal } from "@/components/combat/DuelArenaModal";
 import { MarketplaceOverlay } from "@/components/characters/MarketplaceOverlay";
+import { PlayerAssetOverlay } from "@/components/campaigns/PlayerAssetOverlay";
 import type { CombatSessionState } from "@/lib/engine";
 import type { DuelSessionState } from "@/lib/engine/duel";
 import { createDuelSession, startDuelSession } from "@/lib/engine/duel";
@@ -1438,6 +1439,9 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
 
       {/* Toast Container para notificações de descanso e ações */}
       <ToastContainer toasts={toasts} onRemove={removeToast} />
+
+      {/* Handout / Asset Compartilhado pelo Mestre (Issue #61) */}
+      <PlayerAssetOverlay />
     </div>
   );
 }

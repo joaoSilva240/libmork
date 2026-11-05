@@ -33,6 +33,17 @@ export function CampaignForm() {
   const coverInputRef = useRef<HTMLInputElement>(null);
   const mapInputRef = useRef<HTMLInputElement>(null);
 
+  // Estados de Assets e Handouts Iniciais (Issue #61)
+  const [initialAssets, setInitialAssets] = useState<
+    Array<{ name: string; description?: string; imageUrl: string; category: string }>
+  >([]);
+  const [newAssetName, setNewAssetName] = useState("");
+  const [newAssetCategory, setNewAssetCategory] = useState("handout");
+  const [newAssetDescription, setNewAssetDescription] = useState("");
+  const [newAssetImageUrl, setNewAssetImageUrl] = useState("");
+  const [isUploadingAsset, setIsUploadingAsset] = useState(false);
+  const assetInputRef = useRef<HTMLInputElement>(null);
+
   // Estados de Envio
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +58,62 @@ export function CampaignForm() {
     setSelectedWorldIds((prev) =>
       prev.includes(worldId) ? prev.filter((id) => id !== worldId) : [...prev, worldId]
     );
+  };
+
+  const handleAssetFileUpload = async (file: File) => {
+    setUploadError(null);
+    setIsUploadingAsset(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      formData.append("type", "asset");
+
+      const response = await fetch("/api/campaigns/upload", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        setUploadError(data.error || "Erro ao enviar imagem de asset");
+        return;
+      }
+      setNewAssetImageUrl(data.data.url);
+    } catch {
+      setUploadError("Erro de conexão ao enviar imagem.");
+    } finally {
+      setIsUploadingAsset(false);
+      if (assetInputRef.current) assetInputRef.current.value = "";
+    }
+  };
+
+  const handleAddInitialAsset = () => {
+    if (!newAssetName.trim()) {
+      setUploadError("Informe o nome do asset/handout.");
+      return;
+    }
+    if (!newAssetImageUrl.trim()) {
+      setUploadError("Informe a URL ou faça upload da imagem do asset.");
+      return;
+    }
+    setInitialAssets((prev) => [
+      ...prev,
+      {
+        name: newAssetName.trim(),
+        category: newAssetCategory,
+        description: newAssetDescription.trim() || undefined,
+        imageUrl: newAssetImageUrl.trim(),
+      },
+    ]);
+    setNewAssetName("");
+    setNewAssetDescription("");
+    setNewAssetImageUrl("");
+    setUploadError(null);
+  };
+
+  const handleRemoveInitialAsset = (index: number) => {
+    setInitialAssets((prev) => prev.filter((_, idx) => idx !== index));
   };
 
   const handleFileUpload = async (
@@ -114,6 +181,7 @@ export function CampaignForm() {
           theme: selectedTheme,
           initialNpcIds: selectedNpcIds,
           initialWorldIds: selectedWorldIds,
+          initialAssets: initialAssets.length > 0 ? initialAssets : undefined,
         }),
       });
 
@@ -693,6 +761,157 @@ export function CampaignForm() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Bloco de Assets e Handouts Iniciais (Issue #61) */}
+            <div className="rounded-2xl border border-gray-800/80 bg-gray-900/60 p-5 shadow-lg backdrop-blur-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
+                    <span>📜</span> Assets e Handouts da Campanha (Opcional)
+                  </h2>
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    Pré-carregue ilustrações, mapas e documentos para compartilhar durante as sessões.
+                  </p>
+                </div>
+                {initialAssets.length > 0 && (
+                  <span className="rounded-full bg-purple-950 border border-purple-700/60 px-2.5 py-0.5 text-xs font-bold text-purple-300">
+                    {initialAssets.length}
+                  </span>
+                )}
+              </div>
+
+              {/* Formulário para novo asset */}
+              <div className="rounded-xl border border-gray-800 bg-gray-950/70 p-3.5 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-gray-300 mb-1">
+                      Nome do Asset *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Carta Antiga, Mapa do Covil"
+                      value={newAssetName}
+                      onChange={(e) => setNewAssetName(e.target.value)}
+                      className="w-full rounded-lg border border-gray-800 bg-gray-900 px-2.5 py-1.5 text-xs text-white outline-none focus:border-purple-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-gray-300 mb-1">
+                      Categoria
+                    </label>
+                    <select
+                      value={newAssetCategory}
+                      onChange={(e) => setNewAssetCategory(e.target.value)}
+                      className="w-full rounded-lg border border-gray-800 bg-gray-900 px-2.5 py-1.5 text-xs text-white outline-none focus:border-purple-500"
+                    >
+                      <option value="handout">📜 Handout</option>
+                      <option value="map">🗺️ Mapa</option>
+                      <option value="illustration">🎨 Ilustração</option>
+                      <option value="scene">🎬 Cena</option>
+                      <option value="token">🪙 Token</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-gray-300 mb-1">
+                    Descrição (Opcional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Nota visível aos jogadores ao compartilhar..."
+                    value={newAssetDescription}
+                    onChange={(e) => setNewAssetDescription(e.target.value)}
+                    className="w-full rounded-lg border border-gray-800 bg-gray-900 px-2.5 py-1.5 text-xs text-white outline-none focus:border-purple-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-gray-300 mb-1">
+                    Imagem (URL ou Upload)
+                  </label>
+                  <input
+                    ref={assetInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleAssetFileUpload(file);
+                    }}
+                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="url"
+                      placeholder="https://exemplo.com/imagem.jpg"
+                      value={newAssetImageUrl}
+                      onChange={(e) => setNewAssetImageUrl(e.target.value)}
+                      className="flex-1 rounded-lg border border-gray-800 bg-gray-900 px-2.5 py-1.5 text-xs text-white font-mono outline-none focus:border-purple-500"
+                    />
+                    <button
+                      type="button"
+                      disabled={isUploadingAsset}
+                      onClick={() => assetInputRef.current?.click()}
+                      className="rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 px-3 py-1.5 text-xs font-semibold text-white transition shrink-0 disabled:opacity-50"
+                    >
+                      {isUploadingAsset ? "Enviando..." : "📁 Upload"}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-1 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleAddInitialAsset}
+                    className="rounded-lg bg-purple-600 hover:bg-purple-500 px-3 py-1.5 text-xs font-bold text-white transition shadow flex items-center gap-1"
+                  >
+                    <span>＋</span>
+                    <span>Adicionar à Lista</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Lista dos Assets Adicionados */}
+              {initialAssets.length > 0 && (
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {initialAssets.map((asset, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between gap-3 rounded-lg border border-gray-800 bg-gray-950/80 p-2 text-xs"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="h-9 w-9 shrink-0 overflow-hidden rounded border border-gray-800 bg-gray-900">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={asset.imageUrl}
+                            alt={asset.name}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-white truncate max-w-[170px]">
+                            {asset.name}
+                          </p>
+                          <span className="text-[10px] text-gray-400 capitalize">
+                            {asset.category}
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveInitialAsset(index)}
+                        title="Remover asset da lista"
+                        className="rounded p-1 text-gray-500 hover:bg-gray-800 hover:text-red-400 transition"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Live Preview em Tempo Real */}

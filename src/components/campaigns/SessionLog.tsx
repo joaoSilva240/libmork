@@ -1,17 +1,28 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CampaignLog } from "@/types";
 import { ResizeHandle, Spinner } from "@/components/ui";
-import { useSocket } from "@/context/SocketContext";
+import { useSocket, type RollDataPayload } from "@/context/SocketContext";
 import { useResizableLayout } from "@/hooks/useResizableLayout";
 
 type SessionLogProps = {
   campaignId: string;
+  showDiceRolls?: boolean;
 };
 
-export function SessionLog({ campaignId }: SessionLogProps) {
+type StreamItem =
+  | { kind: "log"; at: number; log: CampaignLog }
+  | { kind: "roll"; at: number; roll: RollDataPayload };
+
+const timeOf = (value: string) => {
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? 0 : time;
+};
+
+export function SessionLog({ campaignId, showDiceRolls = true }: SessionLogProps) {
   const [logs, setLogs] = useState<CampaignLog[]>([]);
+  const [liveRolls, setLiveRolls] = useState<RollDataPayload[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rollInputs, setRollInputs] = useState<Record<string, string>>({});
@@ -21,6 +32,7 @@ export function SessionLog({ campaignId }: SessionLogProps) {
     subscribeCampaignLogCreated,
     subscribeCampaignLogUpdated,
     broadcastCampaignLogUpdate,
+    subscribeDiceRoll,
     isConnected,
   } = useSocket();
 
@@ -90,6 +102,33 @@ export function SessionLog({ campaignId }: SessionLogProps) {
     }
     wasConnectedRef.current = isConnected;
   }, [isConnected, loadLogs]);
+
+  // Rolagens ao vivo do Socket entram na mesma linha do tempo do log
+  useEffect(() => {
+    if (!showDiceRolls) return;
+
+    const unsubscribeRoll = subscribeDiceRoll((roll) => {
+      if (roll.campaignId !== campaignId) return;
+      const stamped = { ...roll, timestamp: roll.timestamp ?? new Date().toISOString() };
+      setLiveRolls((prev) => [stamped, ...prev].slice(0, 100));
+    });
+
+    return () => unsubscribeRoll();
+  }, [campaignId, showDiceRolls, subscribeDiceRoll]);
+
+  const stream = useMemo<StreamItem[]>(() => {
+    const items: StreamItem[] = logs.map((log) => ({
+      kind: "log",
+      at: timeOf(String(log.createdAt)),
+      log,
+    }));
+    if (showDiceRolls) {
+      liveRolls.forEach((roll) =>
+        items.push({ kind: "roll", at: timeOf(roll.timestamp ?? ""), roll })
+      );
+    }
+    return items.sort((a, b) => b.at - a.at);
+  }, [logs, liveRolls, showDiceRolls]);
 
   const submitRollResult = async (logId: string) => {
     const raw = rollInputs[logId];
@@ -188,59 +227,99 @@ export function SessionLog({ campaignId }: SessionLogProps) {
       </div>
 
       <div className="max-h-[70vh] flex-1 space-y-1.5 overflow-y-auto p-2">
-        {isLoading && logs.length === 0 ? (
+        {isLoading && stream.length === 0 ? (
           <div className="flex items-center justify-center min-h-[150px]">
             <Spinner size="md" />
           </div>
-        ) : logs.length === 0 ? (
+        ) : stream.length === 0 ? (
           <p className="text-sm text-gray-500">
             Nenhum evento ainda. Rolagens, dano e XP aparecerão aqui.
           </p>
         ) : (
-          logs.map((log) => (
-            <div key={log.id} className="rounded-lg border border-gray-800 bg-gray-950 p-1.5">
-              <div className="flex items-start justify-between gap-2">
-                <p className={`text-sm ${toneFor(log.action)}`}>
-                  {log.actorName && log.actorType !== "system" ? (
-                    <span className="font-semibold">{log.actorName}: </span>
-                  ) : null}
-                  {log.description ?? log.action}
-                </p>
-                <span className="shrink-0 text-[10px] text-gray-600">
-                  {formatTime(log.createdAt as unknown as string)}
-                </span>
-              </div>
-
-              {log.action === "roll_request" && (
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <input
-                    type="number"
-                    placeholder="Resultado do dado"
-                    value={rollInputs[log.id] ?? ""}
-                    onChange={(e) =>
-                      setRollInputs((prev) => ({ ...prev, [log.id]: e.target.value }))
-                    }
-                    disabled={submittingId === log.id}
-                    className="min-w-0 flex-1 rounded-lg border border-gray-700 bg-gray-900 px-2 py-1 text-sm text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                  />
-                  <button
-                    onClick={() => submitRollResult(log.id)}
-                    disabled={submittingId === log.id}
-                    className="rounded-lg shrink-0 whitespace-nowrap bg-amber-600 px-2 py-1 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
-                  >
-                    {submittingId === log.id ? "..." : "Registrar resultado"}
-                  </button>
-                </div>
-              )}
-
-              {log.action === "roll_result" &&
-                typeof (log.payload as { result?: number }).result === "number" && (
-                  <p className="mt-1 text-sm font-bold text-amber-300">
-                    Resultado: {(log.payload as { result: number }).result}
+          stream.map((item, idx) =>
+            item.kind === "roll" ? (
+              <div
+                key={`roll-${idx}`}
+                data-testid="session-log-roll"
+                className="rounded-lg border border-purple-900/40 bg-gray-950 p-1.5"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm text-purple-200">
+                    <span className="font-semibold">{item.roll.actorName}: </span>
+                    <span className="uppercase text-[10px] text-purple-300">{item.roll.rollType}</span>
+                    <span className="ml-1 text-gray-400">{item.roll.formula}</span>
+                    {item.roll.isManual && (
+                      <span className="ml-1 text-[10px] font-semibold text-amber-400">[Físico]</span>
+                    )}
                   </p>
+                  <span className="shrink-0 text-[10px] text-gray-600">
+                    {formatTime(item.roll.timestamp ?? "")}
+                  </span>
+                </div>
+                <div className="mt-1 flex items-center justify-between gap-2">
+                  <span className="flex min-w-0 items-center gap-1.5 text-[10px] text-gray-500">
+                    <span className="flex shrink-0 items-center gap-1 rounded bg-purple-950/70 px-1 text-purple-300">
+                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-purple-500" />
+                      ao vivo
+                    </span>
+                    {item.roll.diceDetail && (
+                      <span className="truncate">{item.roll.diceDetail}</span>
+                    )}
+                  </span>
+                  <span className="rounded border border-emerald-800 bg-emerald-950 px-1.5 text-xs font-black text-emerald-400">
+                    {item.roll.result}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div
+                key={item.log.id}
+                data-testid="session-log-entry"
+                className="rounded-lg border border-gray-800 bg-gray-950 p-1.5"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className={`text-sm ${toneFor(item.log.action)}`}>
+                    {item.log.actorName && item.log.actorType !== "system" ? (
+                      <span className="font-semibold">{item.log.actorName}: </span>
+                    ) : null}
+                    {item.log.description ?? item.log.action}
+                  </p>
+                  <span className="shrink-0 text-[10px] text-gray-600">
+                    {formatTime(item.log.createdAt as unknown as string)}
+                  </span>
+                </div>
+
+                {item.log.action === "roll_request" && (
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <input
+                      type="number"
+                      placeholder="Resultado do dado"
+                      value={rollInputs[item.log.id] ?? ""}
+                      onChange={(e) =>
+                        setRollInputs((prev) => ({ ...prev, [item.log.id]: e.target.value }))
+                      }
+                      disabled={submittingId === item.log.id}
+                      className="min-w-0 flex-1 rounded-lg border border-gray-700 bg-gray-900 px-2 py-1 text-sm text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                    />
+                    <button
+                      onClick={() => submitRollResult(item.log.id)}
+                      disabled={submittingId === item.log.id}
+                      className="rounded-lg shrink-0 whitespace-nowrap bg-amber-600 px-2 py-1 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
+                    >
+                      {submittingId === item.log.id ? "..." : "Registrar resultado"}
+                    </button>
+                  </div>
                 )}
-            </div>
-          ))
+
+                {item.log.action === "roll_result" &&
+                  typeof (item.log.payload as { result?: number }).result === "number" && (
+                    <p className="mt-1 text-sm font-bold text-amber-300">
+                      Resultado: {(item.log.payload as { result: number }).result}
+                    </p>
+                  )}
+              </div>
+            )
+          )
         )}
       </div>
 
