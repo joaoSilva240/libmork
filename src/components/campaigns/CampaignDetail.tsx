@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Library } from "lucide-react";
+import { Boxes, Settings } from "lucide-react";
 import type { Campaign, Establishment, World } from "@/types";
 import { ResizeHandle, Spinner, WindowPortal } from "@/components/ui";
 import { useResizableLayout } from "@/hooks/useResizableLayout";
@@ -350,21 +350,21 @@ export function CampaignDetail() {
               <button
                 type="button"
                 onClick={() => setShowContentOverlay(true)}
-                className="flex aspect-square shrink-0 items-center justify-center rounded-lg border border-secondary-border bg-dominant-container py-1.5 text-secondary-pure hover:bg-dominant-container/80 hover:border-accent transition shadow"
+                className="bg-purple-600 hover:bg-purple-700 text-white rounded px-3 py-1.5 flex items-center gap-1"
                 title="Gerenciar Conteúdo"
                 aria-label="Gerenciar Conteúdo"
               >
-                <Library size={16} strokeWidth={2.25} />
+                <Boxes size={16} />
               </button>
             )}
             <button
               type="button"
               onClick={() => setShowSettingsModal(true)}
-              className="flex items-center gap-1.5 rounded-lg border border-secondary-border bg-dominant-container px-3 py-1.5 text-xs font-semibold text-secondary-pure hover:bg-dominant-container/80 hover:border-accent transition shadow"
+              className="bg-purple-600 hover:bg-purple-700 text-white rounded px-3 py-1.5 flex items-center gap-1"
               title="Configurações e Edição da Campanha"
+              aria-label="Configurações e Edição da Campanha"
             >
-              <span>⚙️</span>
-              <span>Configurações</span>
+              <Settings size={16} />
             </button>
           </div>
         </div>
@@ -469,14 +469,13 @@ export function CampaignDetail() {
                               e.stopPropagation();
                               setOverlayWorld(world);
                             }}
-                            className={`rounded-lg border px-2 py-1 text-[11px] font-bold transition-colors shrink-0 ${
-                              isMissing
-                                ? "bg-zinc-800 border-zinc-700 text-zinc-200 hover:bg-zinc-700"
-                                : "bg-accent/20 border-accent/40 text-accent-hover hover:bg-accent/30"
-                            }`}
+                            className="bg-purple-600 hover:bg-purple-700 text-white rounded px-3 py-1.5 flex items-center gap-1 shrink-0"
                             title="Abrir Detalhes do Local (NPCs, Encontros)"
+                            aria-label={
+                              isMissing ? `Ver cena de ${world.name}` : `Ver detalhes de ${world.name}`
+                            }
                           >
-                            {isMissing ? "⚙️ Ver Cena" : "⚙️ Ver Detalhes"}
+                            <Settings size={16} />
                           </button>
                         </div>
                         {selectedWorldId === world.id && (
@@ -609,7 +608,6 @@ export function CampaignDetail() {
               key={`roster-${rosterVersion}`}
               campaignId={campaign.id}
               selectedWorldId={selectedWorldId}
-              onWorldSelected={setSelectedWorldId}
               onTogglePopOut={() => setIsMesaPopped(true)}
               rulesEngine={campaign.rulesEngine}
               showRoster={screenConfig.showRoster}
@@ -660,6 +658,7 @@ export function CampaignDetail() {
           onClose={() => {
             setShowContentOverlay(false);
             setRosterVersion((v) => v + 1);
+            void loadWorlds();
           }}
         />
       )}
@@ -702,7 +701,6 @@ export function CampaignDetail() {
             key={`roster-popped-${rosterVersion}`}
             campaignId={campaign.id}
             selectedWorldId={selectedWorldId}
-            onWorldSelected={setSelectedWorldId}
             isPoppedOut={true}
             onTogglePopOut={() => setIsMesaPopped(false)}
             rulesEngine={campaign.rulesEngine}
