@@ -13,6 +13,23 @@ type WindowPortalProps = {
   children: ReactNode;
 };
 
+const THEME_ROOT_ATTRIBUTES = ["class", "style", "data-theme", "data-theme-mode"] as const;
+
+// applyTheme() grava as variáveis de tema inline no <html> da janela de origem, que o documento do popup não herda.
+function syncRootTheme(targetDocument: Document): void {
+  const source = document.documentElement;
+  const target = targetDocument.documentElement;
+
+  for (const attribute of THEME_ROOT_ATTRIBUTES) {
+    const value = source.getAttribute(attribute);
+    if (value === null) {
+      target.removeAttribute(attribute);
+    } else {
+      target.setAttribute(attribute, value);
+    }
+  }
+}
+
 export function WindowPortal({
   isOpen,
   onClose,
@@ -58,9 +75,15 @@ export function WindowPortal({
     externalWindow.document.head.replaceChildren(
       ...Array.from(document.head.querySelectorAll("style, link[rel=stylesheet]")).map((node) => node.cloneNode(true)),
     );
+    syncRootTheme(externalWindow.document);
+    const themeObserver = new MutationObserver(() => syncRootTheme(externalWindow.document));
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: [...THEME_ROOT_ATTRIBUTES],
+    });
     const root = externalWindow.document.createElement("div");
     root.id = "portal-root";
-    root.className = "h-screen w-screen bg-gray-950 text-white overflow-hidden";
+    root.className = "h-screen w-screen bg-dominant-deep text-secondary-pure overflow-hidden";
     externalWindow.document.body.replaceChildren(root);
     rootRef.current = root;
     setPortalRoot(root);
@@ -74,6 +97,7 @@ export function WindowPortal({
 
     return () => {
       window.clearInterval(timer);
+      themeObserver.disconnect();
       externalWindow.removeEventListener("beforeunload", handleClose);
       externalWindow.removeEventListener("pagehide", handleClose);
       if (!externalWindow.closed) externalWindow.close();
