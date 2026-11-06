@@ -117,6 +117,36 @@ async function verifyDatabase() {
       throw new Error('Coluna missing_habitants.campaign_id NÃO encontrada!');
     }
 
+    // 9. Verificação da tabela campaign_assets e coluna campaigns.active_asset_id
+    console.log('\n9. Verificando campaign_assets e campaigns.active_asset_id:');
+    const activeAssetIdMeta = await client.query(`
+      SELECT column_name, data_type, is_nullable
+      FROM information_schema.columns
+      WHERE table_name = 'campaigns' AND column_name = 'active_asset_id';
+    `);
+    if (activeAssetIdMeta.rows.length > 0) {
+      console.log(`✓ Coluna campaigns.active_asset_id presente: tipo=${activeAssetIdMeta.rows[0].data_type}, nullable=${activeAssetIdMeta.rows[0].is_nullable}`);
+    } else {
+      throw new Error('Coluna campaigns.active_asset_id NÃO encontrada!');
+    }
+
+    const campaignAssetsTableMeta = await client.query(`
+      SELECT table_name
+      FROM information_schema.tables
+      WHERE table_name = 'campaign_assets';
+    `);
+    if (campaignAssetsTableMeta.rows.length > 0) {
+      console.log('✓ Tabela campaign_assets presente no banco.');
+    } else {
+      throw new Error('Tabela campaign_assets NÃO encontrada!');
+    }
+
+    const campaignAssetsSelect = await client.query(`SELECT id, campaign_id, name, image_url, category, position FROM campaign_assets LIMIT 1;`);
+    console.log(`✓ Select em campaign_assets funcionou! Registros: ${campaignAssetsSelect.rowCount}`);
+
+    const campaignSelectWithActiveAsset = await client.query(`SELECT id, name, active_asset_id FROM campaigns LIMIT 1;`);
+    console.log(`✓ Select em campaigns com active_asset_id funcionou! Registros: ${campaignSelectWithActiveAsset.rowCount}`);
+
     console.log('\n=== TODAS AS VERIFICAÇÕES PASSARAM COM SUCESSO! ===');
   } catch (error) {
     console.error('✗ Erro na verificação do banco:', error);

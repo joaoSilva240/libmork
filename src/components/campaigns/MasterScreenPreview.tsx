@@ -70,11 +70,6 @@ export function MasterScreenPreview({
         >
           <div className="flex items-center justify-between border-b border-secondary-border/50 pb-1 text-[10px]">
             <span className="font-bold text-secondary-pure">Mesa</span>
-            {showDiceRolls && (
-              <span className="rounded bg-accent/20 px-1 text-[9px] font-bold text-accent-hover">
-                🎲 Rolagens
-              </span>
-            )}
           </div>
 
           <div
@@ -99,6 +94,11 @@ export function MasterScreenPreview({
             className="flex flex-col items-center justify-center rounded-md border border-secondary-border bg-secondary-card px-1 text-center text-[10px] text-secondary-muted transition-all duration-300"
           >
             <span className="font-bold text-accent-hover mb-1">Logs</span>
+            {showDiceRolls && (
+              <span className="rounded bg-accent/20 px-1 text-[9px] font-bold text-accent-hover">
+                🎲 Rolagens ao vivo
+              </span>
+            )}
           </div>
         )}
       </div>

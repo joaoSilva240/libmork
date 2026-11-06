@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { io, Socket } from "socket.io-client";
-import type { CampaignLog } from "@/types";
+import type { CampaignLog, CampaignAsset } from "@/types";
 import type {
   AudioTrackAddPayload,
   AudioTrackPlayPayload,
@@ -206,6 +206,14 @@ interface SocketContextValue {
     callback: (payload: AudioTrackPlaylistPayload) => void,
   ) => () => void;
   subscribeAudioTrackState: (callback: (payload: AudioTrackStatePayload) => void) => () => void;
+
+  // Assets (Issue #61)
+  activeAsset: CampaignAsset | null;
+  activateCampaignAsset: (payload: { campaignId: string; asset: CampaignAsset }) => void;
+  deactivateCampaignAsset: (payload: { campaignId: string }) => void;
+  subscribeCampaignAssetActivated: (handler: (asset: CampaignAsset) => void) => () => void;
+  subscribeCampaignAssetDeactivated: (handler: () => void) => () => void;
+  subscribeCampaignAssetState: (handler: (asset: CampaignAsset | null) => void) => () => void;
 }
 
 const SocketContext = createContext<SocketContextValue | undefined>(undefined);
@@ -214,6 +222,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [presenceList, setPresenceList] = useState<PresenceUser[]>([]);
+  const [activeAsset, setActiveAsset] = useState<CampaignAsset | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const statusSubscribersRef = useRef<Set<(payload: ActorStatusPayload) => void>>(new Set());
   const rollSubscribersRef = useRef<Set<(roll: RollDataPayload) => void>>(new Set());
@@ -258,6 +267,9 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   const audioTrackStateSubscribersRef = useRef<Set<(payload: AudioTrackStatePayload) => void>>(
     new Set(),
   );
+  const assetActivatedSubscribersRef = useRef<Set<(asset: CampaignAsset) => void>>(new Set());
+  const assetDeactivatedSubscribersRef = useRef<Set<() => void>>(new Set());
+  const assetStateSubscribersRef = useRef<Set<(asset: CampaignAsset | null) => void>>(new Set());
 
   useEffect(() => {
     // Inicializa a conexão Socket.IO na mesma origem
@@ -362,6 +374,31 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       audioTrackStateSubscribersRef.current.forEach((handler) => handler(payload));
     });
 
+    socketInstance.on(
+      "campaign:asset-activated",
+      (payload: { campaignId: string; asset: CampaignAsset }) => {
+        setActiveAsset(payload.asset);
+        assetActivatedSubscribersRef.current.forEach((handler) => handler(payload.asset));
+      },
+    );
+
+    socketInstance.on(
+      "campaign:asset-deactivated",
+      (payload: { campaignId: string }) => {
+        setActiveAsset(null);
+        assetDeactivatedSubscribersRef.current.forEach((handler) => handler());
+      },
+    );
+
+    socketInstance.on(
+      "campaign:asset-state",
+      (payload: { campaignId: string; asset: CampaignAsset | null }) => {
+        const asset = payload.asset || null;
+        setActiveAsset(asset);
+        assetStateSubscribersRef.current.forEach((handler) => handler(asset));
+      },
+    );
+
     return () => {
       socketInstance.disconnect();
       socketRef.current = null;
@@ -385,6 +422,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
   const leaveCampaign = useCallback(
     (campaignId: string) => {
+      setActiveAsset(null);
       const currentSocket = socketRef.current || socket;
       if (currentSocket) {
         currentSocket.emit("leave-campaign", { campaignId });
@@ -903,6 +941,55 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     [socket],
   );
 
+  // ============================= Assets (Issue #61) =============================
+
+  const activateCampaignAsset = useCallback(
+    (payload: { campaignId: string; asset: CampaignAsset }) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("campaign:asset-activate", payload);
+      }
+    },
+    [socket],
+  );
+
+  const deactivateCampaignAsset = useCallback(
+    (payload: { campaignId: string }) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("campaign:asset-deactivate", payload);
+      }
+    },
+    [socket],
+  );
+
+  const subscribeCampaignAssetActivated = useCallback(
+    (handler: (asset: CampaignAsset) => void) => {
+      assetActivatedSubscribersRef.current.add(handler);
+      return () => {
+        assetActivatedSubscribersRef.current.delete(handler);
+      };
+    },
+    [],
+  );
+
+  const subscribeCampaignAssetDeactivated = useCallback((handler: () => void) => {
+    assetDeactivatedSubscribersRef.current.add(handler);
+    return () => {
+      assetDeactivatedSubscribersRef.current.delete(handler);
+    };
+  }, []);
+
+  const subscribeCampaignAssetState = useCallback(
+    (handler: (asset: CampaignAsset | null) => void) => {
+      assetStateSubscribersRef.current.add(handler);
+      return () => {
+        assetStateSubscribersRef.current.delete(handler);
+      };
+    },
+    [],
+  );
+
   return (
     <SocketContext.Provider
       value={{
@@ -955,6 +1042,12 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         subscribeAudioTrackRemove,
         subscribeAudioTrackPlaylist,
         subscribeAudioTrackState,
+        activeAsset,
+        activateCampaignAsset,
+        deactivateCampaignAsset,
+        subscribeCampaignAssetActivated,
+        subscribeCampaignAssetDeactivated,
+        subscribeCampaignAssetState,
       }}
     >
       {children}

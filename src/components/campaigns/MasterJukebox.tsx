@@ -254,7 +254,7 @@ export function MasterJukebox({
         {activeCount > 0 && (
           <button
             onClick={stopAll}
-            className="text-xs bg-red-950 hover:bg-red-900 text-red-300 border border-red-800 rounded px-2 py-0.5 flex items-center gap-1 transition-colors"
+            className="shrink-0 whitespace-nowrap text-xs bg-red-950 hover:bg-red-900 text-red-300 border border-red-800 rounded px-2 py-0.5 flex items-center gap-1 transition-colors"
             title="Parar todas as faixas em execução"
             aria-label="Parar Todos"
           >
@@ -274,11 +274,11 @@ export function MasterJukebox({
             setUrlInput(e.target.value);
             setError(null);
           }}
-          className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-white text-sm focus:outline-none focus:border-purple-500"
+          className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-white text-sm focus:outline-none focus:border-purple-500 min-w-0"
         />
         <button
           onClick={handleAdd}
-          className="bg-purple-600 hover:bg-purple-700 text-white rounded px-3 py-1.5 flex items-center gap-1"
+          className="shrink-0 bg-purple-600 hover:bg-purple-700 text-white rounded px-3 py-1.5 flex items-center gap-1"
           aria-label="Adicionar"
         >
           <Plus size={16} />
@@ -303,7 +303,7 @@ export function MasterJukebox({
           />
           <button
             onClick={handleCreatePlaylist}
-            className="bg-purple-600 hover:bg-purple-700 text-white rounded px-2.5 py-1 font-medium transition-colors whitespace-nowrap"
+            className="shrink-0 bg-purple-600 hover:bg-purple-700 text-white rounded px-2.5 py-1 font-medium transition-colors whitespace-nowrap"
             aria-label="Criar Playlist"
           >
             Criar Playlist
@@ -313,7 +313,7 @@ export function MasterJukebox({
               setSelectedTrackIds(new Set());
               setPlaylistNameInput("");
             }}
-            className="bg-gray-800 hover:bg-gray-700 text-gray-300 rounded px-2 py-1 transition-colors whitespace-nowrap"
+            className="shrink-0 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded px-2 py-1 transition-colors whitespace-nowrap"
             aria-label="Cancelar seleção"
           >
             Cancelar
@@ -391,7 +391,7 @@ export function MasterJukebox({
 
                     <button
                       onClick={() => ungroupPlaylist(playlistId)}
-                      className="text-gray-400 hover:text-red-400 p-0.5 rounded transition-colors flex items-center gap-1 text-[11px]"
+                      className="shrink-0 text-gray-400 hover:text-red-400 p-0.5 rounded transition-colors flex items-center gap-1 text-[11px]"
                       title="Desfazer playlist e separar faixas"
                       aria-label="Desfazer Playlist"
                     >

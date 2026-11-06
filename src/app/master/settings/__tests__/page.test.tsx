@@ -32,6 +32,15 @@ describe("MasterSettingsPage (/master/settings)", () => {
     expect(screen.getByText("Logs")).toBeInTheDocument();
   });
 
+  it("renderiza a tablist com flex-wrap (nenhuma aba some em tela estreita)", () => {
+    render(<MasterSettingsPage />);
+
+    const tablist = screen.getByRole("tablist");
+    expect(tablist.className).toContain("flex-wrap");
+    expect(tablist.className).not.toContain("overflow-x-auto");
+    expect(tablist.className).not.toContain("scrollbar-hide");
+  });
+
   it("persists toggles globally to localStorage", () => {
     render(<MasterSettingsPage />);
 

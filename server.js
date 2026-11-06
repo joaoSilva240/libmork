@@ -45,6 +45,10 @@ findAvailablePort(initialPort)
     // campaignId -> { tracks: Map<trackId, AudioTrack>, playingTrackIds: Set<string>, loopTrackIds: Set<string>, playingAts: Map<trackId, number> }
     const campaignAudioStates = new Map();
 
+    // Assets da Campanha — Estado em memória de asset ativo por campanha (Issue #61)
+    // campaignId -> CampaignAsset | null
+    const campaignActiveAssets = new Map();
+
     function getOrCreateAudioState(campaignId) {
       if (!campaignAudioStates.has(campaignId)) {
         campaignAudioStates.set(campaignId, {
@@ -98,6 +102,7 @@ findAvailablePort(initialPort)
           socket.data.campaignId = campaignId;
           socket.data.user = user;
           socket.data.actorId = actorId;
+          socket.data.role = role || "player";
 
           if (!campaignPresence.has(campaignId)) {
             campaignPresence.set(campaignId, new Map());
@@ -132,6 +137,14 @@ findAvailablePort(initialPort)
                   ? Array.from(audioState.playingAts.values())[0]
                   : null,
               loopTrackIds: Array.from(audioState.loopTrackIds),
+            });
+          }
+
+          // Envia estado de asset ativo para late-joiners se houver (Issue #61)
+          if (campaignActiveAssets.has(campaignId) && campaignActiveAssets.get(campaignId)) {
+            socket.emit("campaign:asset-state", {
+              campaignId,
+              asset: campaignActiveAssets.get(campaignId),
             });
           }
         });
@@ -328,6 +341,19 @@ findAvailablePort(initialPort)
             }
           }
           io.to(`campaign:${payload.campaignId}`).emit("audio:track-playlist", payload);
+        });
+
+        // Assets da Campanha — Issue #61
+        socket.on("campaign:asset-activate", (payload) => {
+          if (!payload || !payload.campaignId || !payload.asset) return;
+          campaignActiveAssets.set(payload.campaignId, payload.asset);
+          io.to(`campaign:${payload.campaignId}`).emit("campaign:asset-activated", payload);
+        });
+
+        socket.on("campaign:asset-deactivate", (payload) => {
+          if (!payload || !payload.campaignId) return;
+          campaignActiveAssets.delete(payload.campaignId);
+          io.to(`campaign:${payload.campaignId}`).emit("campaign:asset-deactivated", payload);
         });
 
         // Sair explicitamente de uma campanha

@@ -252,6 +252,35 @@ async function runMigrations() {
     `);
     console.log('✓ MISSING tables, indexes and nullable campaign_id ensured.');
 
+    console.log('\n--- 12. Applying campaign_assets and active_asset_id migration ---');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "campaign_assets" (
+        "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+        "campaign_id" uuid NOT NULL REFERENCES "campaigns"("id") ON DELETE CASCADE,
+        "name" varchar(200) NOT NULL,
+        "description" text,
+        "image_url" varchar(500) NOT NULL,
+        "category" varchar(50) DEFAULT 'handout' NOT NULL,
+        "position" integer DEFAULT 0 NOT NULL,
+        "created_at" timestamp DEFAULT now() NOT NULL,
+        "updated_at" timestamp DEFAULT now() NOT NULL
+      );
+
+      CREATE INDEX IF NOT EXISTS "idx_campaign_assets_campaign" ON "campaign_assets" ("campaign_id");
+
+      ALTER TABLE "campaigns" ADD COLUMN IF NOT EXISTS "active_asset_id" uuid;
+
+      DO $$ BEGIN
+        ALTER TABLE "campaigns"
+          ADD CONSTRAINT "campaigns_active_asset_id_campaign_assets_id_fk"
+          FOREIGN KEY ("active_asset_id") REFERENCES "public"."campaign_assets"("id")
+          ON DELETE SET NULL ON UPDATE NO ACTION;
+      EXCEPTION
+        WHEN duplicate_object THEN null;
+      END $$;
+    `);
+    console.log('✓ Table campaign_assets and campaigns.active_asset_id ensured.');
+
     console.log('\nAll migrations executed successfully!');
   } catch (error) {
     console.error('Migration error:', error);

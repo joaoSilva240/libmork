@@ -402,7 +402,7 @@ export function MissingSessionLog({ campaignId, className = "" }: MissingSession
     >
       {/* Cabeçalho de Dossiê */}
       <div className="border-b border-zinc-800/90 bg-zinc-950/90 p-2.5 shrink-0">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-rose-600 animate-pulse" />
@@ -439,7 +439,7 @@ export function MissingSessionLog({ campaignId, className = "" }: MissingSession
         </div>
 
         {/* Filtros em abas compactas */}
-        <div className="mt-2 flex items-center gap-1 overflow-x-auto text-[10px] scrollbar-hide">
+        <div className="mt-2 flex flex-wrap items-center gap-1 text-[10px]">
           <button
             type="button"
             onClick={() => setFilterType("all")}

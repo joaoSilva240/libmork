@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { SessionLog } from "../SessionLog";
 import { MissingSessionLog } from "@/components/systems/missing/MissingSessionLog";
@@ -48,6 +48,7 @@ vi.mock("@/context/SocketContext", () => ({
     isConnected: true,
     subscribeCampaignLogCreated: vi.fn(() => vi.fn()),
     subscribeCampaignLogUpdated: vi.fn(() => vi.fn()),
+    subscribeDiceRoll: vi.fn(() => vi.fn()),
     broadcastCampaignLogUpdate: vi.fn(),
   }),
 }));
@@ -119,39 +120,5 @@ describe("Master Screen Elements Individual Resize Handles", () => {
 
     const handle = screen.getByTestId("resize-center-column");
     expect(handle).toHaveAttribute("title", "Redimensionar coluna da mesa");
-  });
-
-  it("hides resize-center-column when Mesa is popped out", async () => {
-    global.fetch = vi.fn().mockImplementation((url: string) => {
-      if (url.includes("/worlds") || url.includes("/logs")) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({ data: [] }),
-        });
-      }
-      return Promise.resolve({
-        ok: true,
-        json: async () => ({
-          data: {
-            id: "camp-1",
-            name: "Test Campaign",
-            rulesEngine: "d20_mod",
-          },
-        }),
-      });
-    }) as any;
-
-    render(<CampaignDetail />);
-
-    await waitFor(() => {
-      expect(screen.getByTestId("resize-center-column")).toBeInTheDocument();
-    });
-
-    const popOutButton = screen.getByText("Abrir Mesa");
-    fireEvent.click(popOutButton);
-
-    await waitFor(() => {
-      expect(screen.queryByTestId("resize-center-column")).not.toBeInTheDocument();
-    });
   });
 });

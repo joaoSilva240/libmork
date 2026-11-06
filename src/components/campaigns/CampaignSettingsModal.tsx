@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Campaign } from "@/types";
 import { themes, type ThemeName } from "@/lib/theme";
+import { MasterAssetsPanel } from "./MasterAssetsPanel";
 
 type CampaignSettingsModalProps = {
   campaign: Campaign;
@@ -27,6 +28,7 @@ export function CampaignSettingsModal({
   const [difficultyModifier, setDifficultyModifier] = useState<number>(
     campaign.difficultyModifierShadowPoints || 0
   );
+  const [activeTab, setActiveTab] = useState<"geral" | "assets">("geral");
 
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -105,13 +107,50 @@ export function CampaignSettingsModal({
           </button>
         </div>
 
-        {/* Corpo do formulário com scroll */}
-        <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-5 space-y-5">
-          {error && (
-            <div className="rounded-lg border border-red-800 bg-red-950/40 p-3 text-xs text-red-300">
-              {error}
-            </div>
-          )}
+        {/* Abas de Navegação */}
+        <div className="flex items-center border-b border-secondary-border bg-dominant-deep/70 px-5 gap-4">
+          <button
+            type="button"
+            onClick={() => setActiveTab("geral")}
+            className={`py-2.5 text-xs font-bold border-b-2 transition flex items-center gap-1.5 ${
+              activeTab === "geral"
+                ? "border-accent text-accent-vibrant"
+                : "border-transparent text-secondary-muted hover:text-secondary-pure"
+            }`}
+          >
+            <span>⚙️</span>
+            <span>Geral</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("assets")}
+            className={`py-2.5 text-xs font-bold border-b-2 transition flex items-center gap-1.5 ${
+              activeTab === "assets"
+                ? "border-accent text-accent-vibrant"
+                : "border-transparent text-secondary-muted hover:text-secondary-pure"
+            }`}
+          >
+            <span>🖼️</span>
+            <span>Assets & Handouts</span>
+          </button>
+        </div>
+
+        {activeTab === "assets" ? (
+          <div className="flex-1 overflow-y-auto p-5">
+            <MasterAssetsPanel
+              campaignId={campaign.id}
+              initialActiveAssetId={campaign.activeAssetId}
+              isCompact={false}
+            />
+          </div>
+        ) : (
+          /* Corpo do formulário com scroll */
+          <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-5 space-y-5">
+            {error && (
+              <div className="rounded-lg border border-red-800 bg-red-950/40 p-3 text-xs text-red-300">
+                {error}
+              </div>
+            )}
 
           {/* Nome da Campanha */}
           <div className="space-y-1.5">
@@ -322,6 +361,7 @@ export function CampaignSettingsModal({
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   );

@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { campaigns, npcCampaigns, worlds } from "@/lib/db/schema";
+import { campaigns, npcCampaigns, worlds, campaignAssets } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { createCampaignSchema } from "@/lib/validators/campaign";
 import { eq, inArray } from "drizzle-orm";
@@ -84,6 +84,7 @@ export async function POST(request: NextRequest) {
       theme,
       initialNpcIds,
       initialWorldIds,
+      initialAssets,
     } = validation.data;
 
     const [newCampaign] = await db
@@ -115,6 +116,19 @@ export async function POST(request: NextRequest) {
         .update(worlds)
         .set({ campaignId: newCampaign.id })
         .where(inArray(worlds.id, initialWorldIds));
+    }
+
+    if (initialAssets && initialAssets.length > 0) {
+      await db.insert(campaignAssets).values(
+        initialAssets.map((asset, idx) => ({
+          campaignId: newCampaign.id,
+          name: asset.name,
+          description: asset.description ?? null,
+          imageUrl: asset.imageUrl,
+          category: asset.category ?? "handout",
+          position: asset.position ?? idx,
+        }))
+      );
     }
 
     return NextResponse.json(

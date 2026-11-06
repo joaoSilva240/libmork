@@ -18,6 +18,7 @@ import { WealthManager, type WealthData } from "@/components/player/WealthManage
 import { generateUUID } from "@/lib/utils/uuid";
 import { useSocket } from "@/context/SocketContext";
 import { JukeboxAudioBridge } from "@/components/audio/JukeboxAudioBridge";
+import { PlayerAssetOverlay } from "@/components/campaigns/PlayerAssetOverlay";
 import { ThemeConfigPanel } from "@/components/theme/ThemeConfigPanel";
 import { useTheme } from "@/context/ThemeContext";
 
@@ -1696,6 +1697,9 @@ export function PlayerDashboard() {
             />
           </div>
         )}
+
+        {/* Handout / Asset Compartilhado pelo Mestre (Issue #61) */}
+        <PlayerAssetOverlay />
       </div>
     </div>
   );

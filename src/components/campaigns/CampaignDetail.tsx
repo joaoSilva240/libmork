@@ -15,6 +15,7 @@ import { MissingSessionLog } from "@/components/systems/missing/MissingSessionLo
 import { ContentOverlay } from "@/components/campaigns/ContentOverlay";
 import { WorldOverlay } from "@/components/campaigns/WorldOverlay";
 import { MasterJukebox } from "./MasterJukebox";
+import { MasterAssetsPanel } from "./MasterAssetsPanel";
 import { CampaignSettingsModal } from "./CampaignSettingsModal";
 import { useMasterScreenConfig } from "@/hooks/useMasterScreenConfig";
 import { useTheme } from "@/context/ThemeContext";
@@ -360,7 +361,7 @@ export function CampaignDetail() {
             <button
               type="button"
               onClick={() => setShowSettingsModal(true)}
-              className="bg-purple-600 hover:bg-purple-700 text-white rounded px-3 py-1.5 flex items-center gap-1"
+              className="bg-purple-600 hover:bg-purple-700 text-white rounded px-3 py-1.5 flex items-center gap-1 shrink-0"
               title="Configurações e Edição da Campanha"
               aria-label="Configurações e Edição da Campanha"
             >
@@ -410,6 +411,14 @@ export function CampaignDetail() {
               className="rounded-lg border border-gray-800 bg-gray-900 p-3"
             />
           )}
+
+          {/* Painel de Assets & Handouts em Tempo Real (Issue #61) */}
+          <MasterAssetsPanel
+            campaignId={campaign.id}
+            initialActiveAssetId={campaign.activeAssetId}
+            className="rounded-lg border border-secondary-border bg-secondary-card p-3"
+            isCompact={true}
+          />
 
           <div
             className={`relative rounded-lg border p-3 overflow-y-auto ${
@@ -555,7 +564,7 @@ export function CampaignDetail() {
                                 <button
                                   type="button"
                                   onClick={() => handleToggleEstablishment(est)}
-                                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold transition-all cursor-pointer ${
+                                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                                     est.isOpen
                                       ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 hover:bg-emerald-900"
                                       : "bg-gray-800 text-gray-400 border border-gray-700 hover:text-white"
@@ -613,7 +622,6 @@ export function CampaignDetail() {
               showRoster={screenConfig.showRoster}
               showCanvas={screenConfig.showCanvas}
               showMap={screenConfig.showMap}
-              showDiceRolls={screenConfig.showDiceRolls}
               onResetConfig={resetScreenConfig}
             />
 
@@ -633,7 +641,10 @@ export function CampaignDetail() {
         {screenConfig.showSessionLog && (
           <div className="relative flex flex-col h-full max-h-full min-h-0 min-w-0 overflow-hidden">
             {!isMissing ? (
-              <SessionLog campaignId={campaign.id} />
+              <SessionLog
+                campaignId={campaign.id}
+                showDiceRolls={screenConfig.showDiceRolls}
+              />
             ) : (
               <MissingSessionLog campaignId={campaign.id} />
             )}
@@ -707,7 +718,6 @@ export function CampaignDetail() {
             showRoster={screenConfig.showRoster}
             showCanvas={screenConfig.showCanvas}
             showMap={screenConfig.showMap}
-            showDiceRolls={screenConfig.showDiceRolls}
             onResetConfig={resetScreenConfig}
           />
         </div>
