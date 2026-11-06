@@ -256,7 +256,7 @@ describe("SessionLog - Realtime and Acceptance Criteria (Issue #13)", () => {
       });
 
       expect(screen.getByText("Rolagem realizada")).toBeInTheDocument();
-      expect(screen.getByText("Resultado: 19")).toBeInTheDocument();
+      expect(screen.getByTestId("die-value")).toHaveTextContent("19");
       expect(screen.queryByRole("button", { name: /Registrar resultado/i })).not.toBeInTheDocument();
     });
   });
