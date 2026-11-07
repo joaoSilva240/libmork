@@ -3,9 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Droplet, Droplets, HeartCrack, HeartPulse, Shield, User } from "lucide-react";
 import type { CampaignLog } from "@/types";
-import { ResizeHandle, Spinner } from "@/components/ui";
+import { Spinner } from "@/components/ui";
 import { useSocket, type RollDataPayload } from "@/context/SocketContext";
-import { useResizableLayout } from "@/hooks/useResizableLayout";
 
 type SessionLogProps = {
   campaignId: string;
@@ -232,13 +231,6 @@ export function SessionLog({ campaignId, showDiceRolls = true }: SessionLogProps
   } = useSocket();
 
   const wasConnectedRef = useRef(isConnected);
-
-  const sessionLogPanel = useResizableLayout({
-    storageKey: campaignId ? `libmork:session-log:${campaignId}` : undefined,
-    initialHeight: 400,
-    minHeight: 200,
-    maxHeight: 800,
-  });
 
   const loadLogs = useCallback(async () => {
     try {
@@ -556,8 +548,8 @@ export function SessionLog({ campaignId, showDiceRolls = true }: SessionLogProps
 
   return (
     <div
-      className="relative flex flex-col rounded-lg border border-gray-800 bg-gray-900 overflow-hidden"
-      style={{ height: `${sessionLogPanel.height}px` }}
+      className="relative flex h-full min-h-0 flex-1 flex-col rounded-lg border border-gray-800 bg-gray-900 overflow-hidden"
+      data-testid="session-log"
     >
       <div className="shrink-0 border-b border-gray-800">
         <div className="flex items-center justify-between p-2">
@@ -601,7 +593,7 @@ export function SessionLog({ campaignId, showDiceRolls = true }: SessionLogProps
         </div>
       </div>
 
-      <div className="max-h-[70vh] flex-1 space-y-1.5 overflow-y-auto p-2">
+      <div className="max-h-[70vh] space-y-1.5 overflow-y-auto p-2 lg:max-h-none lg:min-h-0 lg:flex-1">
         {isLoading && stream.length === 0 ? (
           <div className="flex items-center justify-center min-h-[150px]">
             <Spinner size="md" />
@@ -622,13 +614,6 @@ export function SessionLog({ campaignId, showDiceRolls = true }: SessionLogProps
       </div>
 
       {error && <div className="border-t border-gray-800 p-2 text-xs text-red-400">{error}</div>}
-
-      <ResizeHandle
-        direction="vertical"
-        onResize={(_, dy) => sessionLogPanel.handleResize(0, dy)}
-        title="Redimensionar log da sessão"
-        data-testid="resize-session-log"
-      />
     </div>
   );
 }

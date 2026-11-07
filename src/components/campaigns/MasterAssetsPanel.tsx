@@ -286,7 +286,7 @@ export function MasterAssetsPanel({
       className={`rounded-xl border border-secondary-border bg-secondary-card p-3 text-secondary-pure ${className}`}
     >
       {/* Cabeçalho do Painel */}
-      <div className="mb-2 flex items-center justify-between gap-2 border-b border-secondary-border/70 pb-2">
+      <div className="mb-2 flex shrink-0 items-center justify-between gap-2 border-b border-secondary-border/70 pb-2">
         <div className="flex min-w-0 items-center gap-1.5">
           <Presentation size={14} className="shrink-0 text-accent" />
           <h3 className="flex min-w-0 items-center gap-1.5 text-xs font-bold text-white">
@@ -318,7 +318,7 @@ export function MasterAssetsPanel({
 
       {/* Mensagem de Erro Geral */}
       {error && (
-        <div className="mb-3 rounded-lg border border-red-800 bg-red-950/40 p-2.5 text-xs text-red-300">
+        <div className="mb-3 shrink-0 rounded-lg border border-red-800 bg-red-950/40 p-2.5 text-xs text-red-300">
           {error}
         </div>
       )}
@@ -342,7 +342,7 @@ export function MasterAssetsPanel({
           </button>
         </div>
       ) : (
-        <div className="max-h-[320px] space-y-1 overflow-y-auto pr-1">
+        <div className="max-h-[320px] space-y-1 overflow-y-auto pr-1 lg:max-h-none lg:min-h-0 lg:flex-1">
           {assets.map((asset) => {
             const isActive = activeAssetId === asset.id;
             const cat = CATEGORIES.find((c) => c.value === asset.category) || {

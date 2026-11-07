@@ -13,8 +13,6 @@ import {
 } from "lucide-react";
 import type { LedgerEvent } from "@/lib/systems/missing/types";
 import { useSocket } from "@/context/SocketContext";
-import { ResizeHandle } from "@/components/ui";
-import { useResizableLayout } from "@/hooks/useResizableLayout";
 
 export interface MissingSessionLogProps {
   campaignId: string;
@@ -32,13 +30,6 @@ export function MissingSessionLog({ campaignId, className = "" }: MissingSession
 
   const { isConnected, subscribeCampaignLogCreated, subscribeCampaignLogUpdated } = useSocket();
   const wasConnectedRef = useRef(isConnected);
-
-  const missingSessionLogPanel = useResizableLayout({
-    storageKey: campaignId ? `libmork:missing-session-log:${campaignId}` : undefined,
-    initialHeight: 400,
-    minHeight: 200,
-    maxHeight: 800,
-  });
 
   const fetchLedger = useCallback(async (isManual = false) => {
     if (isManual) setIsRefreshing(true);
@@ -396,8 +387,7 @@ export function MissingSessionLog({ campaignId, className = "" }: MissingSession
 
   return (
     <div
-      className={`relative flex flex-col overflow-hidden rounded-lg border border-zinc-800 bg-[#0c0d10] font-mono text-zinc-200 shadow-xl ${className}`}
-      style={{ height: `${missingSessionLogPanel.height}px` }}
+      className={`relative flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-zinc-800 bg-[#0c0d10] font-mono text-zinc-200 shadow-xl ${className}`}
       data-testid="missing-session-log"
     >
       {/* Cabeçalho de Dossiê */}
@@ -489,7 +479,7 @@ export function MissingSessionLog({ campaignId, className = "" }: MissingSession
 
       {/* Lista de Registros */}
       <div
-        className="flex-1 min-h-0 space-y-2 overflow-y-auto p-2"
+        className="max-h-[70vh] space-y-2 overflow-y-auto p-2 lg:max-h-none lg:min-h-0 lg:flex-1"
         data-testid="missing-session-log-list"
       >
         {error && (
@@ -525,13 +515,6 @@ export function MissingSessionLog({ campaignId, className = "" }: MissingSession
           ))
         )}
       </div>
-
-      <ResizeHandle
-        direction="vertical"
-        onResize={(_, dy) => missingSessionLogPanel.handleResize(0, dy)}
-        title="Redimensionar boletim de ocorrências"
-        data-testid="resize-missing-session-log"
-      />
     </div>
   );
 }
