@@ -170,6 +170,8 @@ export const campaigns = pgTable("campaigns", {
   activeAssetId: uuid("active_asset_id").references((): AnyPgColumn => campaignAssets.id, {
     onDelete: "set null",
   }),
+  dice3dPlayersEnabled: boolean("dice3d_players_enabled").notNull().default(true),
+  dice3dMasterEnabled: boolean("dice3d_master_enabled").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
