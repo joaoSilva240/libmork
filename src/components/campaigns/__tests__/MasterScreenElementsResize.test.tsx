@@ -59,7 +59,7 @@ describe("Master Screen Elements Individual Resize Handles", () => {
     localStorage.clear();
   });
 
-  it("renders ResizeHandle directly on SessionLog", async () => {
+  it("faz o card do SessionLog preencher a coluna, sem altura fixa nem teto de scroll", async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ data: [] }),
@@ -67,14 +67,18 @@ describe("Master Screen Elements Individual Resize Handles", () => {
 
     render(<SessionLog campaignId="camp-1" />);
 
-    expect(screen.getByTestId("resize-session-log")).toBeInTheDocument();
-    expect(screen.getByTestId("resize-session-log")).toHaveAttribute(
-      "title",
-      "Redimensionar log da sessão"
-    );
+    const card = screen.getByTestId("session-log");
+    expect(card.className).toContain("h-full");
+    expect(card.className).toContain("flex-1");
+    expect(card.style.height).toBe("");
+
+    const scroll = card.querySelector(".overflow-y-auto") as HTMLElement;
+    expect(scroll.className).toContain("lg:flex-1");
+    expect(scroll.className).toContain("lg:max-h-none");
+    expect(screen.queryByTestId("resize-session-log")).not.toBeInTheDocument();
   });
 
-  it("renders ResizeHandle directly on MissingSessionLog (Boletim de Ocorrências)", async () => {
+  it("faz o MissingSessionLog preencher a coluna, sem altura fixa (Boletim de Ocorrências)", async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ success: true, data: [] }),
@@ -82,14 +86,11 @@ describe("Master Screen Elements Individual Resize Handles", () => {
 
     render(<MissingSessionLog campaignId="camp-1" />);
 
-    await waitFor(() => {
-      expect(screen.getByTestId("resize-missing-session-log")).toBeInTheDocument();
-    });
-
-    expect(screen.getByTestId("resize-missing-session-log")).toHaveAttribute(
-      "title",
-      "Redimensionar boletim de ocorrências"
-    );
+    const card = await screen.findByTestId("missing-session-log");
+    expect(card.className).toContain("h-full");
+    expect(card.className).toContain("flex-1");
+    expect(card.style.height).toBe("");
+    expect(screen.queryByTestId("resize-missing-session-log")).not.toBeInTheDocument();
   });
 
   it("renders ResizeHandle for the central Mesa column (resize-center-column)", async () => {

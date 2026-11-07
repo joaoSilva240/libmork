@@ -142,4 +142,20 @@ describe("CampaignDetail — contenção do grid do escudo", () => {
     const grid = await renderGrid();
     await waitFor(() => expect(centerWidth(grid)).toBeGreaterThanOrEqual(SHIELD_CENTER_MIN));
   });
+
+  it("distribui a altura da coluna de gestão em flex, sem altura fixa no painel de mundos", async () => {
+    const grid = await renderGrid();
+    const leftColumn = grid.firstElementChild as HTMLElement;
+
+    expect(leftColumn.className).toContain("flex-col");
+    expect(leftColumn.className).toContain("gap-3");
+    expect(leftColumn.className).toContain("min-h-0");
+
+    const worldsHeading = await screen.findByRole("heading", { name: "Mundos" });
+    const worldsPanel = worldsHeading.parentElement as HTMLElement;
+    expect(worldsPanel.style.height).toBe("");
+    expect(worldsPanel.style.flexBasis).toBe("320px");
+    expect(worldsPanel.className).toContain("lg:flex-1");
+    expect(worldsPanel.className).toContain("lg:min-h-[180px]");
+  });
 });
