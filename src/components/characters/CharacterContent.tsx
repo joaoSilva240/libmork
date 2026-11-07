@@ -735,7 +735,8 @@ export function CharacterContent({
       ? normalizeItemDamageRoll(itemContent, characterAttributeModifiers ?? {})
       : normalizeActionDamage(row.content);
     const damageResult = damageValue !== null ? rollExpression(String(damageValue), 0, { luckModifier }) : null;
-    showDice3D([...(rollResult.rolledDice ?? []), ...(damageResult?.rolledDice ?? [])]);
+    const rolledDice = [...(rollResult.rolledDice ?? []), ...(damageResult?.rolledDice ?? [])];
+    showDice3D(rolledDice);
 
     const hasValidDamage = Boolean(damageResult && !damageResult.missing && damageResult.valid);
     const formula = hasValidDamage
@@ -755,6 +756,8 @@ export function CharacterContent({
       formula,
       result: total,
       diceDetail: detail,
+      senderRole: "player",
+      rolledDice,
     });
 
     onActionResult?.({
@@ -790,6 +793,8 @@ export function CharacterContent({
             formula: rollResult.formula,
             result: rollResult.total,
             diceDetail: rollResult.detail,
+            senderRole: "player",
+            rolledDice: rollResult.rolledDice ?? [],
           });
         }
 
@@ -925,6 +930,8 @@ export function CharacterContent({
         formula: healed.formula,
         result: healAmount,
         diceDetail: `Curou +${healAmount} HP em ${target.name}`,
+        senderRole: "player",
+        rolledDice: healed.rolledDice ?? [],
       });
       onActionResult?.({ title: selectedActionItem.name, formula: healed.formula, result: healAmount, detail: `${healed.detail}; Curou +${healAmount} HP em ${target.name}` });
     } else {
@@ -981,6 +988,8 @@ export function CharacterContent({
         formula: attack.formula,
         result: attack.total,
         diceDetail: `Ataque contra ${target.name}: ${attack.detail}; dano: ${damage.total}`,
+        senderRole: "player",
+        rolledDice: [...(attack.rolledDice ?? []), ...(damage.rolledDice ?? [])],
       });
     }
 

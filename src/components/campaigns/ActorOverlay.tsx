@@ -7,7 +7,7 @@ import { getDefenseValue } from "@/lib/engine/combat";
 import type { CombatSessionState, Combatant } from "@/lib/engine";
 import { TargetSelectionModal } from "@/components/combat/TargetSelectionModal";
 import { spendSpell, spendCombatActions, applyResolvedDamage, applyHealing, rollExpression as rollExpressionFn } from "@/lib/engine";
-import { d20s, showDice3D } from "@/lib/dice3d";
+import { d20s, showDice3D, type Dice3DDie } from "@/lib/dice3d";
 
 export type RosterCondition = {
   junctionId: string;
@@ -370,6 +370,7 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
     try {
       let finalResult = 0;
       let detailText = "";
+      let rolledDice: Dice3DDie[] = [];
       const isManual = rollMode === "manual";
 
       if (isManual) {
@@ -397,11 +398,13 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
           }
           finalResult = sum + mod;
           detailText = `Rolou [${rolls.join(", ")}]${mod !== 0 ? (mod > 0 ? ` + ${mod}` : ` - ${Math.abs(mod)}`) : ""} = ${finalResult}`;
-          showDice3D(rolls.map((value) => ({ sides, value })));
+          rolledDice = rolls.map((value) => ({ sides, value }));
+          showDice3D(rolledDice);
         } else {
           finalResult = Math.floor(Math.random() * 20) + 1;
           detailText = `Rolou [${finalResult}]`;
-          showDice3D(d20s(finalResult));
+          rolledDice = d20s(finalResult);
+          showDice3D(rolledDice);
         }
       }
 
@@ -415,6 +418,8 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
         result: finalResult,
         diceDetail: detailText,
         isManual,
+        senderRole: "master",
+        rolledDice,
       });
 
       // Gravar no backend de logs
@@ -554,6 +559,8 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
         formula: attackExpr,
         result: die,
         diceDetail: `Rolou ${pin.label}: ${attack.detail}`,
+        senderRole: "master",
+        rolledDice: attack.rolledDice ?? [],
       });
       setSuccess(`Rolou ${pin.label}: ${attack.detail}`);
     }
@@ -650,6 +657,8 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
         formula: healed.formula,
         result: healAmount,
         diceDetail: `Curou +${healAmount} HP em ${target.name}`,
+        senderRole: "master",
+        rolledDice: healed.rolledDice ?? [],
       });
 
       setSuccess(`Curou +${healAmount} HP em ${target.name}`);
@@ -718,6 +727,8 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
         formula: attack.formula,
         result: attack.total,
         diceDetail: `Ataque contra ${target.name}: ${attack.detail}; dano: ${damage.total}`,
+        senderRole: "master",
+        rolledDice: [...(attack.rolledDice ?? []), ...(damage.rolledDice ?? [])],
       });
     }
 

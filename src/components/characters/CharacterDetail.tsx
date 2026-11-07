@@ -514,6 +514,7 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
       formula: reaction === "dodge" ? "Esquiva (Estática)" : "Bloqueio (Mitigação)",
       result: damageTaken,
       diceDetail: details,
+      senderRole: "player",
     });
 
     respondDefenseReaction({
@@ -564,6 +565,8 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
         formula: "1d20 + Iniciativa",
         result: finalVal,
         diceDetail: `Rolou ${finalVal} para Iniciativa`,
+        senderRole: "player",
+        rolledDice: d20s(finalVal),
       });
 
       setShowInitiativeModal(false);
@@ -774,6 +777,8 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
         result: total,
         diceDetail: detail,
         isManual: false,
+        senderRole: "player",
+        rolledDice: d20s(rollRes.die),
       });
 
       // Dedução automática de ação de combate se for o turno do personagem (RF-040, RF-062)
@@ -1423,13 +1428,15 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
           inteligencia={character.attributes.inteligencia}
           onRollDeathSave={(_success, _die, _dc, details) => {
             rollDice({
-      campaignId: character.campaignId ?? "",
+              campaignId: character.campaignId ?? "",
               actorId: character.id,
               actorName: character.name,
               rollType: "salvaguarda_morte",
               formula: "1d20 seco",
               result: _die,
               diceDetail: details,
+              senderRole: "player",
+              rolledDice: d20s(_die),
             });
           }}
           onPhoenixRebirth={handlePhoenixRebirth}
