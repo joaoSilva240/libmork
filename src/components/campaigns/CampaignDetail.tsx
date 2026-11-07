@@ -401,14 +401,14 @@ export function CampaignDetail() {
         }
       >
         {/* ===== Coluna esquerda — Gestão ===== */}
-        <div className="relative space-y-3 overflow-y-auto overflow-x-hidden min-h-0 min-w-0">
+        <div className="relative flex flex-col gap-3 overflow-y-auto overflow-x-hidden min-h-0 min-w-0">
           {/* Jukebox de Áudio (Issue #60) */}
           {screenConfig.showJukebox && (
             <MasterJukebox
               campaignId={campaign.id}
               userId={campaign.masterId}
               userName="Mestre"
-              className="rounded-lg border border-gray-800 bg-gray-900 p-3"
+              className="flex flex-col overflow-hidden rounded-lg border border-gray-800 bg-gray-900 p-3 lg:min-h-[160px] lg:flex-1"
             />
           )}
 
@@ -416,15 +416,15 @@ export function CampaignDetail() {
           <MasterAssetsPanel
             campaignId={campaign.id}
             initialActiveAssetId={campaign.activeAssetId}
-            className="rounded-lg border border-secondary-border bg-secondary-card p-3"
+            className="flex flex-col overflow-hidden rounded-lg border border-secondary-border bg-secondary-card p-3 lg:min-h-[140px] lg:flex-1"
             isCompact={true}
           />
 
           <div
-            className={`relative rounded-lg border p-3 overflow-y-auto ${
+            className={`relative rounded-lg border p-3 overflow-y-auto lg:min-h-[180px] lg:flex-1 ${
               isMissing ? "border-zinc-800 bg-[#0e0f12] font-mono" : "border-gray-800 bg-gray-900"
             }`}
-            style={{ height: `${worldsPanel.height}px` }}
+            style={{ flexBasis: `${worldsPanel.height}px` }}
           >
             <h3 className="mb-2 font-semibold text-white">
               {isMissing ? "Cenas / Locais de Investigação" : "Mundos"}
@@ -596,6 +596,7 @@ export function CampaignDetail() {
             campaignId={campaign.id}
             showCharactersNpcs={screenConfig.showCharactersNpcs}
             showPlayers={screenConfig.showPlayers}
+            className="flex flex-col overflow-hidden lg:min-h-[160px] lg:flex-1"
           />
 
           <ResizeHandle
