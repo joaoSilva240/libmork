@@ -8,6 +8,7 @@ vi.mock("@/context/SocketContext", () => ({
     isConnected: true,
     subscribeCampaignLogCreated: () => () => {},
     subscribeCampaignLogUpdated: () => () => {},
+    subscribeDiceRoll: () => () => {},
     broadcastCampaignLogUpdate: vi.fn(),
   }),
 }));
@@ -34,7 +35,7 @@ async function renderWithLogs(logs: CampaignLog[]) {
     Promise.resolve({
       ok: true,
       json: () => Promise.resolve({ data: logs }),
-    } as Response)
+    } as Response),
   );
 
   const utils = render(<SessionLog campaignId={campaignId} />);
@@ -53,9 +54,7 @@ describe("SessionLog — cards do log (Issue #72)", () => {
 
   describe("1. Avatar no canto superior esquerdo", () => {
     it("usa a foto do ator quando o payload traz actorImageUrl", async () => {
-      await renderWithLogs([
-        makeLog({ id: "log-1", payload: { actorImageUrl: "/img/hero.png" } }),
-      ]);
+      await renderWithLogs([makeLog({ id: "log-1", payload: { actorImageUrl: "/img/hero.png" } })]);
 
       const img = screen.getByAltText("Hero") as HTMLImageElement;
       expect(img.src).toContain("/img/hero.png");
@@ -91,7 +90,7 @@ describe("SessionLog — cards do log (Issue #72)", () => {
       const badge = screen.getByTestId("hp-badge");
       expect(badge).toHaveTextContent("-8 HP");
       expect(badge.className).toContain("text-red-300");
-      expect(screen.getByTestId("log-card").className).toContain("border-red-800/80");
+      expect(screen.getByTestId("session-log-entry").className).toContain("border-red-800/80");
     });
 
     it("destaca o gasto de Mana com badge azul", async () => {
@@ -220,11 +219,36 @@ describe("SessionLog — cards do log (Issue #72)", () => {
 
   describe("5. Barra de filtros por categoria", () => {
     const mixedLogs = [
-      makeLog({ id: "log-1", action: "hp_change", description: "Perda de HP", payload: { delta: -4 } }),
-      makeLog({ id: "log-2", action: "mana_change", description: "Gasto de Mana", payload: { delta: -2 } }),
-      makeLog({ id: "log-3", action: "condition_add", description: "Condição aplicada", payload: {} }),
-      makeLog({ id: "log-4", action: "roll_request", description: "Rolagem pedida", payload: { rollExpression: "1d20" } }),
-      makeLog({ id: "log-5", action: "roll_result", description: "Rolagem feita", payload: { rollExpression: "1d20", result: 14 } }),
+      makeLog({
+        id: "log-1",
+        action: "hp_change",
+        description: "Perda de HP",
+        payload: { delta: -4 },
+      }),
+      makeLog({
+        id: "log-2",
+        action: "mana_change",
+        description: "Gasto de Mana",
+        payload: { delta: -2 },
+      }),
+      makeLog({
+        id: "log-3",
+        action: "condition_add",
+        description: "Condição aplicada",
+        payload: {},
+      }),
+      makeLog({
+        id: "log-4",
+        action: "roll_request",
+        description: "Rolagem pedida",
+        payload: { rollExpression: "1d20" },
+      }),
+      makeLog({
+        id: "log-5",
+        action: "roll_result",
+        description: "Rolagem feita",
+        payload: { rollExpression: "1d20", result: 14 },
+      }),
       makeLog({ id: "log-6", action: "xp_gain", description: "XP ganha", payload: {} }),
       makeLog({ id: "log-7", action: "npc_include", description: "NPC incluído", payload: {} }),
     ];
@@ -258,9 +282,7 @@ describe("SessionLog — cards do log (Issue #72)", () => {
     });
 
     it("avisa quando a categoria não tem eventos", async () => {
-      await renderWithLogs([
-        makeLog({ id: "log-1", action: "hp_change", payload: { delta: -1 } }),
-      ]);
+      await renderWithLogs([makeLog({ id: "log-1", action: "hp_change", payload: { delta: -1 } })]);
 
       fireEvent.click(screen.getByTestId("filter-conditions"));
       expect(screen.getByText("Nenhum evento neste filtro.")).toBeInTheDocument();
