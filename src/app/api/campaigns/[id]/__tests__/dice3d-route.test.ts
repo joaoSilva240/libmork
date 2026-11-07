@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 import { PATCH } from "../route";
+import { POST as createCampaign } from "@/app/api/campaigns/route";
 import { GET as getPlayerCampaignDetails } from "@/app/api/player/campaigns/[id]/details/route";
 import { GET as getPlayerCampaigns } from "@/app/api/player/campaigns/route";
 
@@ -20,6 +21,7 @@ vi.mock("@/lib/db", () => ({
   db: {
     select: vi.fn(),
     update: vi.fn(),
+    insert: vi.fn(),
   },
 }));
 
@@ -199,6 +201,47 @@ describe("Dice 3D Toggles API Routes (Issue #74)", () => {
       expect(data.data).toHaveLength(1);
       expect(data.data[0].dice3dPlayersEnabled).toBe(false);
       expect(data.data[0].dice3dMasterEnabled).toBe(true);
+    });
+  });
+
+  describe("POST /api/campaigns with Dice 3D Toggles overrides", () => {
+    it("persists dice3dPlayersEnabled and dice3dMasterEnabled overrides when creating a campaign", async () => {
+      (requireAuth as any).mockResolvedValue({
+        user: { id: "user-master", email: "master@test.com" },
+      });
+
+      let insertedValues: any = null;
+      (db.insert as any).mockReturnValue({
+        values: vi.fn((vals: any) => {
+          insertedValues = vals;
+          return {
+            returning: vi.fn().mockResolvedValue([
+              {
+                id: "camp-new-1",
+                ...vals,
+              },
+            ]),
+          };
+        }),
+      });
+
+      const request = new NextRequest("http://localhost:3000/api/campaigns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Campanha Custom 3D",
+          dice3dPlayersEnabled: false,
+          dice3dMasterEnabled: false,
+        }),
+      });
+
+      const response = await createCampaign(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(201);
+      expect(data.success).toBe(true);
+      expect(insertedValues.dice3dPlayersEnabled).toBe(false);
+      expect(insertedValues.dice3dMasterEnabled).toBe(false);
     });
   });
 });

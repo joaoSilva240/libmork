@@ -170,7 +170,7 @@ findAvailablePort(initialPort)
 
         // Configurações de Dados 3D da Campanha (Issue #74)
         socket.on("campaign:dice3d-settings-update", (payload) => {
-          if (!payload || !payload.campaignId) return;
+          if (!payload || !payload.campaignId || !socket.rooms.has("campaign:" + payload.campaignId)) return;
           io.to(`campaign:${payload.campaignId}`).emit("campaign:dice3d-settings-updated", payload);
         });
 

@@ -90,6 +90,7 @@ export function CharacterDetail() {
     respondDefenseReaction,
     updateCombatState,
     updateDuelState,
+    setCampaignDice3DSettings,
   } = useSocket();
 
   const [character, setCharacter] = useState<Character | null>(null);
@@ -271,6 +272,36 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
     const quantity = item.junction?.quantity || 1;
     return sum + (parseFloat(weight) || 0) * quantity;
   }, 0);
+
+  // Sincronizar configurações de dados 3D da campanha associada (Issue #74)
+  useEffect(() => {
+    if (!character?.campaignId) return;
+
+    const campObj = (character as unknown as { campaign?: { dice3dPlayersEnabled?: boolean; dice3dMasterEnabled?: boolean } }).campaign;
+    if (campObj && (campObj.dice3dPlayersEnabled !== undefined || campObj.dice3dMasterEnabled !== undefined)) {
+      setCampaignDice3DSettings?.(character.campaignId, {
+        dice3dPlayersEnabled: campObj.dice3dPlayersEnabled ?? true,
+        dice3dMasterEnabled: campObj.dice3dMasterEnabled ?? true,
+      });
+    }
+
+    let isMounted = true;
+    fetch(`/api/player/campaigns/${character.campaignId}/details`, { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (isMounted && data && data.success && data.data) {
+          setCampaignDice3DSettings?.(character.campaignId!, {
+            dice3dPlayersEnabled: data.data.dice3dPlayersEnabled ?? true,
+            dice3dMasterEnabled: data.data.dice3dMasterEnabled ?? true,
+          });
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, [character?.campaignId, setCampaignDice3DSettings]);
 
   useEffect(() => {
     if (!character?.id) return;
