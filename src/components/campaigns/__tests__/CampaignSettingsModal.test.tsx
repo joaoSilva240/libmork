@@ -70,7 +70,7 @@ describe("CampaignSettingsModal Component", () => {
     const nameInput = screen.getByDisplayValue("A Maldição de Strahd");
     fireEvent.change(nameInput, { target: { value: "Strahd Redux" } });
 
-    const pvpCheckbox = screen.getByRole("checkbox");
+    const pvpCheckbox = screen.getByRole("checkbox", { name: /Combate entre Jogadores/i });
     fireEvent.click(pvpCheckbox);
 
     const submitBtn = screen.getByRole("button", { name: "Salvar Alterações" });
