@@ -21,13 +21,7 @@ export function CampaignSettingsModal({
   onDelete,
   isDeleting = false,
 }: CampaignSettingsModalProps) {
-  let socketContext: ReturnType<typeof useSocket> | null = null;
-  try {
-    socketContext = useSocket();
-  } catch {
-    socketContext = null;
-  }
-  const broadcastCampaignDice3DSettings = socketContext?.broadcastCampaignDice3DSettings;
+  const { broadcastCampaignDice3DSettings } = useSocket();
 
   const [name, setName] = useState(campaign.name);
   const [description, setDescription] = useState(campaign.description || "");

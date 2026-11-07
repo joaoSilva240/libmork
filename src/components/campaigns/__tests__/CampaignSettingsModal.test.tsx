@@ -3,6 +3,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CampaignSettingsModal } from "../CampaignSettingsModal";
 import type { Campaign } from "@/types";
 
+vi.mock("@/context/SocketContext", () => ({
+  useSocket: () => ({
+    broadcastCampaignDice3DSettings: vi.fn(),
+    setCampaignDice3DSettings: vi.fn(),
+  }),
+}));
+
 describe("CampaignSettingsModal Component", () => {
   const mockCampaign: Campaign = {
     id: "camp-123",
