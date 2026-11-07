@@ -90,9 +90,7 @@ describe("CampaignRulesEngine UI Components", () => {
       // Verifica presença do card de MISSING
       expect(screen.getByText("MISSING — Edição ZERO")).toBeInTheDocument();
       expect(
-        screen.getByText(
-          "Horror analógico com dados d6, registro pautado e ameaças de cena.",
-        ),
+        screen.getByText("Horror analógico com dados d6, registro pautado e ameaças de cena."),
       ).toBeInTheDocument();
 
       // Inicialmente, com d20_mod, PvP e Modificador de Sombra estão visíveis
@@ -105,9 +103,7 @@ describe("CampaignRulesEngine UI Components", () => {
       fireEvent.click(screen.getByText("MISSING — Edição ZERO"));
 
       // Agora PvP e Sombra devem ser ocultados
-      expect(
-        screen.queryByText(/Combate entre Jogadores \(PvP\)/i),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText(/Combate entre Jogadores \(PvP\)/i)).not.toBeInTheDocument();
       expect(
         screen.queryByText(/Modificador de Dificuldade por Pontos de Sombra/i),
       ).not.toBeInTheDocument();
@@ -156,7 +152,7 @@ describe("CampaignRulesEngine UI Components", () => {
       };
 
       global.fetch = vi.fn().mockImplementation((url: string) => {
-        if (url.includes("/worlds")) {
+        if (url.includes("/worlds") || url.includes("/ledger")) {
           return Promise.resolve({
             ok: true,
             json: async () => ({ data: [] }),
