@@ -1,5 +1,5 @@
-import { CharacterDetail } from "@/components/characters/CharacterDetail";
+import { CharacterHub } from "@/components/characters/CharacterHub";
 
-export default function CharacterDetailPage() {
-  return <CharacterDetail />;
+export default function CharacterHubPage() {
+  return <CharacterHub />;
 }

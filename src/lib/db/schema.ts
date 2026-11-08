@@ -123,6 +123,7 @@ export const characters = pgTable(
     activeHeritages: jsonb("active_heritages").$type<string[]>().notNull().default([]),
     name: varchar("name", { length: 100 }).notNull(),
     imageUrl: varchar("image_url", { length: 500 }),
+    description: text("description"),
     hitPointsMax: integer("hit_points_max").notNull().default(15),
     hitPointsCurrent: integer("hit_points_current").notNull().default(15),
     manaPointsMax: integer("mana_points_max").notNull().default(5),
@@ -694,6 +695,7 @@ export const publicShareLinks = pgTable(
       .notNull()
       .references(() => characters.id, { onDelete: "cascade" }),
     token: varchar("token", { length: 255 }).notNull().unique(),
+    kind: varchar("kind", { length: 10 }).notNull().default("view"), // view | acquire
     revoked: boolean("revoked").notNull().default(false),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },

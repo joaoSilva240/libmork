@@ -879,10 +879,10 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
       {/* Top Header Mobile Bar */}
       <header className="sticky top-0 z-40 flex items-center justify-between border-b border-gray-800/80 bg-gray-900/90 px-4 py-3 backdrop-blur-md">
         <Link
-          href="/player"
+          href={`/player/characters/${params.id}`}
           className="flex items-center gap-2 text-sm font-bold text-gray-200 hover:text-white"
-          title="Voltar para a Frente do Jogador"
-          aria-label="Voltar para a Frente do Jogador"
+          title="Voltar para o hub do personagem"
+          aria-label="Voltar para o hub do personagem"
         >
           <ArrowLeftIcon className="h-5 w-5 text-purple-400" />
           <span>Libmork — Jogador</span>
