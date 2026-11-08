@@ -4,6 +4,8 @@ import {
   useMasterScreenConfig,
   DEFAULT_MASTER_SCREEN_CONFIG,
   sanitizeMasterScreenConfig,
+  DEFAULT_SHIELD_LEFT_ORDER,
+  DEFAULT_SHIELD_RIGHT_ORDER,
   masterScreenConfigKey,
 } from "../useMasterScreenConfig";
 
@@ -28,6 +30,9 @@ describe("useMasterScreenConfig hook", () => {
       showDiceRolls: true,
       showCharactersNpcs: false,
       showPlayers: true,
+      showAssets: true,
+      leftColumnOrder: DEFAULT_SHIELD_LEFT_ORDER,
+      rightColumnOrder: DEFAULT_SHIELD_RIGHT_ORDER,
       aiApiKey: "sk-test",
       aiApiEndpoint: "https://api.openai.com/v1",
       aiModel: "gpt-4o-mini",
@@ -90,6 +95,9 @@ describe("useMasterScreenConfig hook", () => {
     expect(result.current.config.showDiceRolls).toBe(true);
     expect(result.current.config.showCharactersNpcs).toBe(true);
     expect(result.current.config.showPlayers).toBe(true);
+    expect(result.current.config.showAssets).toBe(true);
+    expect(result.current.config.leftColumnOrder).toEqual(DEFAULT_SHIELD_LEFT_ORDER);
+    expect(result.current.config.rightColumnOrder).toEqual(DEFAULT_SHIELD_RIGHT_ORDER);
     expect(result.current.config.aiApiKey).toBe("");
     expect(result.current.config.aiApiEndpoint).toBe("");
     expect(result.current.config.aiModel).toBe("");
@@ -141,6 +149,9 @@ describe("sanitizeMasterScreenConfig", () => {
       showDiceRolls: true,
       showCharactersNpcs: true,
       showPlayers: true,
+      showAssets: true,
+      leftColumnOrder: DEFAULT_SHIELD_LEFT_ORDER,
+      rightColumnOrder: DEFAULT_SHIELD_RIGHT_ORDER,
       aiApiKey: "",
       aiApiEndpoint: "",
       aiModel: "",
@@ -153,3 +164,70 @@ describe("sanitizeMasterScreenConfig", () => {
     expect(result.showSessionLog).toBe(true);
   });
 });
+
+describe("useMasterScreenConfig - Module Ordering & Assets Visibility (Issue #75)", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("returns default configuration with showAssets=true and default column orders", () => {
+    const { result } = renderHook(() => useMasterScreenConfig());
+
+    expect(result.current.config.showAssets).toBe(true);
+    expect(result.current.config.leftColumnOrder).toEqual(DEFAULT_SHIELD_LEFT_ORDER);
+    expect(result.current.config.rightColumnOrder).toEqual(DEFAULT_SHIELD_RIGHT_ORDER);
+  });
+
+  it("sanitizes legacy localStorage data missing order and showAssets", () => {
+    const legacyConfig = {
+      showRoster: true,
+      showSessionLog: true,
+      showCanvas: true,
+      showMap: true,
+      showJukebox: false,
+    };
+
+    const sanitized = sanitizeMasterScreenConfig(legacyConfig);
+    expect(sanitized.showAssets).toBe(true);
+    expect(sanitized.leftColumnOrder).toEqual(DEFAULT_SHIELD_LEFT_ORDER);
+    expect(sanitized.rightColumnOrder).toEqual(DEFAULT_SHIELD_RIGHT_ORDER);
+  });
+
+  it("recovers missing modules and removes duplicate modules during sanitization", () => {
+    const corruptedConfig = {
+      leftColumnOrder: ["jukebox", "jukebox"],
+      rightColumnOrder: ["sessionLog"],
+    };
+
+    const sanitized = sanitizeMasterScreenConfig(corruptedConfig);
+    const allModules = [...sanitized.leftColumnOrder, ...sanitized.rightColumnOrder];
+
+    expect(new Set(allModules).size).toBe(6);
+    expect(allModules).toContain("worlds");
+    expect(allModules).toContain("assets");
+    expect(allModules).toContain("jukebox");
+    expect(allModules).toContain("charactersNpcs");
+    expect(allModules).toContain("players");
+    expect(allModules).toContain("sessionLog");
+  });
+
+  it("persists column order and showAssets updates to localStorage", () => {
+    const { result } = renderHook(() => useMasterScreenConfig());
+
+    act(() => {
+      result.current.updateConfig({
+        showAssets: false,
+        leftColumnOrder: ["worlds"],
+        rightColumnOrder: ["jukebox", "assets", "charactersNpcs", "players", "sessionLog"],
+      });
+    });
+
+    expect(result.current.config.showAssets).toBe(false);
+    expect(result.current.config.leftColumnOrder).toEqual(["worlds"]);
+
+    const stored = JSON.parse(localStorage.getItem(masterScreenConfigKey) || "{}");
+    expect(stored.showAssets).toBe(false);
+    expect(stored.leftColumnOrder).toEqual(["worlds"]);
+  });
+});
+
