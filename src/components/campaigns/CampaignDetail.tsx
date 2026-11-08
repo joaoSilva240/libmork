@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Boxes, Settings } from "lucide-react";
@@ -17,7 +17,7 @@ import { WorldOverlay } from "@/components/campaigns/WorldOverlay";
 import { MasterJukebox } from "./MasterJukebox";
 import { MasterAssetsPanel } from "./MasterAssetsPanel";
 import { CampaignSettingsModal } from "./CampaignSettingsModal";
-import { useMasterScreenConfig } from "@/hooks/useMasterScreenConfig";
+import { useMasterScreenConfig, type ShieldModuleId } from "@/hooks/useMasterScreenConfig";
 import { useTheme } from "@/context/ThemeContext";
 import {
   SHIELD_LEFT_MAX,
@@ -99,11 +99,34 @@ export function CampaignDetail() {
     return () => observer.disconnect();
   }, [shieldGridEl]);
 
+  // A coluna direita existe quando QUALQUER módulo ordenado nela está visível.
+  // Não depende apenas de showSessionLog: Jukebox/Assets/etc. podem ser movidos
+  // para a direita e o log pode estar oculto (Issue #75).
+  const isModuleVisible = (moduleId: ShieldModuleId): boolean => {
+    switch (moduleId) {
+      case "sessionLog":
+        return screenConfig.showSessionLog;
+      case "jukebox":
+        return screenConfig.showJukebox;
+      case "assets":
+        return screenConfig.showAssets;
+      case "worlds":
+        return screenConfig.showMap;
+      case "charactersNpcs":
+        return screenConfig.showCharactersNpcs;
+      case "players":
+        return screenConfig.showPlayers;
+      default:
+        return false;
+    }
+  };
+  const hasRightColumn = screenConfig.rightColumnOrder.some(isModuleVisible);
+
   const shieldLayoutInput = {
     left: leftPanel.width,
     right: rightPanel.width,
     containerWidth: shieldGridWidth,
-    showSessionLog: screenConfig.showSessionLog,
+    showSessionLog: hasRightColumn,
   };
   const shieldColumns = fitShieldColumns(shieldLayoutInput);
 
@@ -303,137 +326,35 @@ export function CampaignDetail() {
 
   const isMissing = campaign.rulesEngine === "missing_zero";
 
-  return (
-    <div className="flex flex-col h-full overflow-hidden">
-      {/* Header Hero com Imagem de Capa e Gradiente */}
-      <div
-        className={`relative overflow-hidden mb-2 rounded-xl border px-4 py-2.5 shrink-0 shadow-lg ${
-          isMissing
-            ? "border-zinc-800 bg-[#0d0e12] font-mono shadow-rose-950/20"
-            : "border-gray-800/80 bg-gray-900"
-        }`}
-        style={
-          campaign.coverImageUrl
-            ? {
-                backgroundImage: `url(${campaign.coverImageUrl})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }
-            : undefined
-        }
-      >
-        {campaign.coverImageUrl && (
-          <div className="absolute inset-0 bg-gradient-to-r from-gray-950 via-gray-950/85 to-gray-950/60 pointer-events-none" />
-        )}
+  // Renderiza dinamicamente cada módulo do escudo conforme a ordenação/visibilidade
+  // configurada (Issue #75). Mantém props, classes e handles existentes.
+  const renderModule = (moduleId: ShieldModuleId) => {
+    switch (moduleId) {
+      case "jukebox":
+        if (!screenConfig.showJukebox) return null;
+        return (
+          <MasterJukebox
+            campaignId={campaign.id}
+            userId={campaign.masterId}
+            userName="Mestre"
+            className="flex flex-col overflow-hidden rounded-lg border border-gray-800 bg-gray-900 p-3 lg:min-h-[160px] lg:flex-1"
+          />
+        );
 
-        <div className="relative z-10 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <Link
-              href="/master"
-              className={`text-xs font-semibold transition-colors drop-shadow ${
-                isMissing
-                  ? "text-rose-400 hover:text-rose-300"
-                  : "text-accent-hover hover:text-accent"
-              }`}
-            >
-              ← Voltar
-            </Link>
-            <div
-              className={`h-4 w-[1px] shrink-0 ${isMissing ? "bg-zinc-700" : "bg-dominant-border"}`}
-            />
-            <h1 className="text-base font-bold text-secondary-pure truncate drop-shadow-md">
-              {campaign.name}
-            </h1>
-            {campaign.worldMapUrl && (
-              <span className="shrink-0 rounded-full bg-emerald-950/90 border border-emerald-700/60 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 drop-shadow">
-                🗺️ Mapa Mundi
-              </span>
-            )}
-            {isMissing ? (
-              <span className="shrink-0 rounded bg-rose-950/90 border border-rose-800 px-2 py-0.5 text-[10px] text-rose-300 font-bold uppercase tracking-wider font-mono">
-                <span>MISSING — Edição ZERO</span> {/* ARQUIVO CONFIDENCIAL */}
-              </span>
-            ) : (
-              <span className="hidden sm:inline-flex rounded bg-accent/20 border border-accent/40 px-2 py-0.5 text-[10px] text-accent-hover font-medium">
-                {campaign.rulesEngine === "dual_d20_sum" ? "2d20 somado" : "d20 + mod"}
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            {!isMissing && (
-              <button
-                type="button"
-                onClick={() => setShowContentOverlay(true)}
-                className="bg-purple-600 hover:bg-purple-700 text-white rounded px-3 py-1.5 flex items-center gap-1"
-                title="Gerenciar Conteúdo"
-                aria-label="Gerenciar Conteúdo"
-              >
-                <Boxes size={16} />
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setShowSettingsModal(true)}
-              className="bg-purple-600 hover:bg-purple-700 text-white rounded px-3 py-1.5 flex items-center gap-1 shrink-0"
-              title="Configurações e Edição da Campanha"
-              aria-label="Configurações e Edição da Campanha"
-            >
-              <Settings size={16} />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {popupBlockedWarning && (
-        <div className="mb-2 flex items-center justify-between rounded-lg border border-amber-600/50 bg-amber-950/40 px-3 py-2 text-xs text-amber-200">
-          <span>
-            O navegador bloqueou a abertura da janela da Mesa. Permita pop-ups para este site para
-            usar esta função.
-          </span>
-          <button
-            onClick={() => setPopupBlockedWarning(false)}
-            className="ml-2 font-bold text-amber-400 hover:underline"
-          >
-            Fechar
-          </button>
-        </div>
-      )}
-
-      <div
-        ref={setShieldGridEl}
-        data-testid="shield-grid"
-        className={`flex-1 grid grid-cols-1 gap-2.5 overflow-hidden min-h-0 min-w-0 w-full ${isMesaPopped ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]" : "lg:grid-cols-[var(--libmork-columns)]"}`}
-        style={
-          isMesaPopped
-            ? undefined
-            : ({
-                "--w-l": `${shieldColumns.left}px`,
-                "--w-r": `${shieldColumns.right}px`,
-                "--libmork-columns": getShieldGridTemplate(screenConfig.showSessionLog),
-              } as CSSProperties)
-        }
-      >
-        {/* ===== Coluna esquerda — Gestão ===== */}
-        <div className="relative flex flex-col gap-3 overflow-y-auto overflow-x-hidden min-h-0 min-w-0">
-          {/* Jukebox de Áudio (Issue #60) */}
-          {screenConfig.showJukebox && (
-            <MasterJukebox
-              campaignId={campaign.id}
-              userId={campaign.masterId}
-              userName="Mestre"
-              className="flex flex-col overflow-hidden rounded-lg border border-gray-800 bg-gray-900 p-3 lg:min-h-[160px] lg:flex-1"
-            />
-          )}
-
-          {/* Painel de Assets & Handouts em Tempo Real (Issue #61) */}
+      case "assets":
+        if (!screenConfig.showAssets) return null;
+        return (
           <MasterAssetsPanel
             campaignId={campaign.id}
             initialActiveAssetId={campaign.activeAssetId}
             className="flex flex-col overflow-hidden rounded-lg border border-secondary-border bg-secondary-card p-3 lg:min-h-[140px] lg:flex-1"
             isCompact={true}
           />
+        );
 
+      case "worlds": {
+        if (!screenConfig.showMap) return null;
+        return (
           <div
             className={`relative rounded-lg border p-3 overflow-y-auto lg:min-h-[180px] lg:flex-1 ${
               isMissing ? "border-zinc-800 bg-[#0e0f12] font-mono" : "border-gray-800 bg-gray-900"
@@ -604,14 +525,172 @@ export function CampaignDetail() {
               data-testid="resize-worlds-panel"
             />
           </div>
+        );
+      }
 
+      case "charactersNpcs":
+        if (!screenConfig.showCharactersNpcs) return null;
+        return (
           <CampaignInvites
-            key={`invites-${rosterVersion}`}
+            key={`invites-npcs-${rosterVersion}`}
             campaignId={campaign.id}
-            showCharactersNpcs={screenConfig.showCharactersNpcs}
-            showPlayers={screenConfig.showPlayers}
+            showCharactersNpcs={true}
+            showPlayers={false}
             className="flex flex-col overflow-hidden lg:min-h-[160px] lg:flex-1"
           />
+        );
+
+      case "players":
+        if (!screenConfig.showPlayers) return null;
+        return (
+          <CampaignInvites
+            key={`invites-players-${rosterVersion}`}
+            campaignId={campaign.id}
+            showCharactersNpcs={false}
+            showPlayers={true}
+            className="flex flex-col overflow-hidden lg:min-h-[160px] lg:flex-1"
+          />
+        );
+
+      case "sessionLog":
+        if (!screenConfig.showSessionLog) return null;
+        return (
+          <div className="flex-1 min-h-[220px]">
+            {!isMissing ? (
+              <SessionLog
+                campaignId={campaign.id}
+                showDiceRolls={screenConfig.showDiceRolls}
+              />
+            ) : (
+              <MissingSessionLog campaignId={campaign.id} />
+            )}
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Header Hero com Imagem de Capa e Gradiente */}
+      <div
+        className={`relative overflow-hidden mb-2 rounded-xl border px-4 py-2.5 shrink-0 shadow-lg ${
+          isMissing
+            ? "border-zinc-800 bg-[#0d0e12] font-mono shadow-rose-950/20"
+            : "border-gray-800/80 bg-gray-900"
+        }`}
+        style={
+          campaign.coverImageUrl
+            ? {
+                backgroundImage: `url(${campaign.coverImageUrl})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }
+            : undefined
+        }
+      >
+        {campaign.coverImageUrl && (
+          <div className="absolute inset-0 bg-gradient-to-r from-gray-950 via-gray-950/85 to-gray-950/60 pointer-events-none" />
+        )}
+
+        <div className="relative z-10 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <Link
+              href="/master"
+              className={`text-xs font-semibold transition-colors drop-shadow ${
+                isMissing
+                  ? "text-rose-400 hover:text-rose-300"
+                  : "text-accent-hover hover:text-accent"
+              }`}
+            >
+              ← Voltar
+            </Link>
+            <div
+              className={`h-4 w-[1px] shrink-0 ${isMissing ? "bg-zinc-700" : "bg-dominant-border"}`}
+            />
+            <h1 className="text-base font-bold text-secondary-pure truncate drop-shadow-md">
+              {campaign.name}
+            </h1>
+            {campaign.worldMapUrl && (
+              <span className="shrink-0 rounded-full bg-emerald-950/90 border border-emerald-700/60 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 drop-shadow">
+                🗺️ Mapa Mundi
+              </span>
+            )}
+            {isMissing ? (
+              <span className="shrink-0 rounded bg-rose-950/90 border border-rose-800 px-2 py-0.5 text-[10px] text-rose-300 font-bold uppercase tracking-wider font-mono">
+                <span>MISSING — Edição ZERO</span> {/* ARQUIVO CONFIDENCIAL */}
+              </span>
+            ) : (
+              <span className="hidden sm:inline-flex rounded bg-accent/20 border border-accent/40 px-2 py-0.5 text-[10px] text-accent-hover font-medium">
+                {campaign.rulesEngine === "dual_d20_sum" ? "2d20 somado" : "d20 + mod"}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {!isMissing && (
+              <button
+                type="button"
+                onClick={() => setShowContentOverlay(true)}
+                className="bg-purple-600 hover:bg-purple-700 text-white rounded px-3 py-1.5 flex items-center gap-1"
+                title="Gerenciar Conteúdo"
+                aria-label="Gerenciar Conteúdo"
+              >
+                <Boxes size={16} />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setShowSettingsModal(true)}
+              className="bg-purple-600 hover:bg-purple-700 text-white rounded px-3 py-1.5 flex items-center gap-1 shrink-0"
+              title="Configurações e Edição da Campanha"
+              aria-label="Configurações e Edição da Campanha"
+            >
+              <Settings size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {popupBlockedWarning && (
+        <div className="mb-2 flex items-center justify-between rounded-lg border border-amber-600/50 bg-amber-950/40 px-3 py-2 text-xs text-amber-200">
+          <span>
+            O navegador bloqueou a abertura da janela da Mesa. Permita pop-ups para este site para
+            usar esta função.
+          </span>
+          <button
+            onClick={() => setPopupBlockedWarning(false)}
+            className="ml-2 font-bold text-amber-400 hover:underline"
+          >
+            Fechar
+          </button>
+        </div>
+      )}
+
+      <div
+        ref={setShieldGridEl}
+        data-testid="shield-grid"
+        className={`flex-1 grid grid-cols-1 gap-2.5 overflow-hidden min-h-0 min-w-0 w-full ${isMesaPopped ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]" : "lg:grid-cols-[var(--libmork-columns)]"}`}
+        style={
+          isMesaPopped
+            ? undefined
+            : ({
+                "--w-l": `${shieldColumns.left}px`,
+                "--w-r": `${shieldColumns.right}px`,
+                "--libmork-columns": getShieldGridTemplate(hasRightColumn),
+              } as CSSProperties)
+        }
+      >
+        {/* ===== Coluna esquerda — módulos ordenados dinamicamente ===== */}
+        <div
+          data-testid="shield-left-column"
+          className="relative flex flex-col gap-3 overflow-y-auto min-h-0 h-full min-w-0"
+        >
+          {screenConfig.leftColumnOrder.map((modId) => (
+            <Fragment key={`left-${modId}`}>{renderModule(modId)}</Fragment>
+          ))}
 
           <ResizeHandle
             direction="horizontal"
@@ -640,7 +719,7 @@ export function CampaignDetail() {
               onResetConfig={resetScreenConfig}
             />
 
-            {screenConfig.showSessionLog && (
+            {hasRightColumn && (
               <ResizeHandle
                 direction="horizontal"
                 position="bottom-right"
@@ -652,17 +731,15 @@ export function CampaignDetail() {
           </div>
         )}
 
-        {/* ===== Coluna direita — Log da sessão ===== */}
-        {screenConfig.showSessionLog && (
-          <div className="relative flex flex-col h-full max-h-full min-h-0 min-w-0 overflow-hidden">
-            {!isMissing ? (
-              <SessionLog
-                campaignId={campaign.id}
-                showDiceRolls={screenConfig.showDiceRolls}
-              />
-            ) : (
-              <MissingSessionLog campaignId={campaign.id} />
-            )}
+        {/* ===== Coluna direita — módulos ordenados dinamicamente ===== */}
+        {hasRightColumn && (
+          <div
+            data-testid="shield-right-column"
+            className="relative flex flex-col gap-3 overflow-y-auto min-h-0 h-full min-w-0"
+          >
+            {screenConfig.rightColumnOrder.map((modId) => (
+              <Fragment key={`right-${modId}`}>{renderModule(modId)}</Fragment>
+            ))}
 
             {!isMesaPopped && (
               <ResizeHandle

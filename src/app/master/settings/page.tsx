@@ -118,6 +118,9 @@ export default function MasterSettingsPage() {
               showDiceRolls={config.showDiceRolls}
               showCharactersNpcs={config.showCharactersNpcs}
               showPlayers={config.showPlayers}
+              showAssets={config.showAssets}
+              leftColumnOrder={config.leftColumnOrder}
+              rightColumnOrder={config.rightColumnOrder}
             />
           </div>
         </div>
