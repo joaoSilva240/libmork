@@ -836,28 +836,33 @@ export function MasterRoster({
                   ⚔️ Iniciar Encontro (Combate)
                 </button>
 
-                {/* Botão recolher/expandir movido para cá */}
-                <button
-                  onClick={toggleCarousel}
-                  className="flex items-center gap-1 rounded-lg border border-gray-700 bg-gray-800 px-2.5 py-1.5 text-xs font-semibold text-gray-300 hover:bg-gray-700 transition-colors"
-                  title={isCarouselCollapsed ? "Expandir carrossel" : "Recolher carrossel"}
-                >
-                  {isCarouselCollapsed ? (
-                    <>
-                      <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                      </svg>
-                      <span>Expandir</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                      <span>Recolher</span>
-                    </>
-                  )}
-                </button>
+                {/* Botão recolher/expandir movido para cá.
+                    Nas cenas a matriz tem precedência: quando "visible" força o
+                    carrossel, o colapso é ineficaz — não renderiza o toggle
+                    (ferramenta exclusiva do estado Livre). */}
+                {sceneMods.carousel !== "visible" && (
+                  <button
+                    onClick={toggleCarousel}
+                    className="flex items-center gap-1 rounded-lg border border-gray-700 bg-gray-800 px-2.5 py-1.5 text-xs font-semibold text-gray-300 hover:bg-gray-700 transition-colors"
+                    title={isCarouselCollapsed ? "Expandir carrossel" : "Recolher carrossel"}
+                  >
+                    {isCarouselCollapsed ? (
+                      <>
+                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                        </svg>
+                        <span>Expandir</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                        <span>Recolher</span>
+                      </>
+                    )}
+                  </button>
+                )}
               </>
             )}
           </div>

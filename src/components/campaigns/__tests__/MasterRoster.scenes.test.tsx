@@ -164,6 +164,11 @@ describe("MasterRoster — matriz de visibilidade por cena (Fase 2)", () => {
   });
 
   it("caso 5: missing_zero ignora a matriz (tudo como hoje com activeScene=combat)", async () => {
+    // Colapso salvo: sob a matriz "combat" o carrossel seria forçado visível;
+    // como missing neutraliza a matriz, o colapso (comportamento de hoje) vence.
+    // Se `isMissing ? NEUTRAL_MODULES : …` fosse apagado, o painel reapareceria.
+    localStorage.setItem("carousel-collapsed-test-camp", "true");
+
     render(
       <MasterRoster
         campaignId="test-camp"
@@ -177,9 +182,76 @@ describe("MasterRoster — matriz de visibilidade por cena (Fase 2)", () => {
       expect(screen.getByText("[ REGISTRO CIVIL // HABITANTES DA REGIÃO ]")).toBeInTheDocument();
     });
 
-    // Barra do Missing no lugar da barra de combate d20, carrossel visível (neutro)
+    // Barra do Missing no lugar da barra de combate d20
     expect(screen.queryByText(/Iniciar Encontro/)).toBeNull();
+    // Neutro → colapso salvo vence (a matriz "visible" de combat NÃO se aplica)
+    expect(screen.queryByTestId("resize-carousel-panel")).toBeNull();
+    expect(screen.queryByTestId("mock-character-carousel")).toBeNull();
+  });
+
+  it("caso 5b: missing_zero com cena de matriz hidden (stealth) mantém a barra de Registro Civil", async () => {
+    render(
+      <MasterRoster
+        campaignId="test-camp"
+        selectedWorldId="world-1"
+        rulesEngine="missing_zero"
+        activeScene="stealth"
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("mock-infinite-canvas")).toBeInTheDocument();
+    });
+
+    // Matriz de stealth (combatBar/carousel hidden) NÃO se aplica a missing:
+    // barra do Registro Civil presente e carrossel visível como hoje.
+    // Se `isMissing ? NEUTRAL_MODULES : …` fosse apagado, a barra sumiria.
+    expect(screen.getByText("[ REGISTRO CIVIL // HABITANTES DA REGIÃO ]")).toBeInTheDocument();
     expect(screen.getByTestId("resize-carousel-panel")).toBeInTheDocument();
     expect(screen.getByTestId("mock-character-carousel")).toBeInTheDocument();
+  });
+
+  it("caso 6: combat com colapso salvo força o carrossel e omite o toggle de colapso", async () => {
+    localStorage.setItem("carousel-collapsed-test-camp", "true");
+
+    render(
+      <MasterRoster
+        campaignId="test-camp"
+        selectedWorldId="world-1"
+        activeScene="combat"
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("resize-carousel-panel")).toBeInTheDocument();
+    });
+
+    // Com o colapso salvo, sem a correção o botão toggle do ramo de combate
+    // seria renderizado com o rótulo "Expandir" (estado dessincronizado do
+    // carrossel forçado). Com "visible" forçado pela matriz, nenhum toggle.
+    expect(screen.queryByText("Recolher")).toBeNull();
+    expect(screen.queryByText("Expandir")).toBeNull();
+    // A preferência salva continua intacta
+    expect(localStorage.getItem("carousel-collapsed-test-camp")).toBe("true");
+  });
+
+  it("caso 7: estado Livre (null) mantém o toggle de colapso presente como hoje", async () => {
+    localStorage.setItem("carousel-collapsed-test-camp", "true");
+
+    render(
+      <MasterRoster
+        campaignId="test-camp"
+        selectedWorldId="world-1"
+        activeScene={null}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/Nenhum combate ativo/)).toBeInTheDocument();
+    });
+
+    // Neutro + colapso salvo → carrossel escondido e o botão "Expandir" presente
+    expect(screen.queryByTestId("resize-carousel-panel")).toBeNull();
+    expect(screen.getByText("Expandir")).toBeInTheDocument();
   });
 });
