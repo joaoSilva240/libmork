@@ -23,6 +23,8 @@ vi.mock("@/context/SocketContext", () => ({
     presenceList: [],
     joinCampaign: mockJoinCampaign,
     leaveCampaign: mockLeaveCampaign,
+    sendSessionApply: vi.fn(),
+    subscribeSessionPublished: vi.fn(() => vi.fn()),
     setCampaignDice3DSettings: mockSetCampaignDice3DSettings,
     broadcastCampaignDice3DSettings: vi.fn(),
     updateActorStatus: vi.fn(),

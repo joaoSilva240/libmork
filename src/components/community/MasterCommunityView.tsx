@@ -2,9 +2,10 @@
 
 import React, { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Globe2, MessageSquare } from "lucide-react";
+import { Globe2, MessageSquare, CalendarDays } from "lucide-react";
 import CommunityFeed from "./CommunityFeed";
 import { CampaignChat } from "@/components/chat/CampaignChat";
+import { MasterSessionCalendar } from "@/components/sessions/MasterSessionCalendar";
 
 type MasterCommunityViewProps = {
   currentUser: {
@@ -18,7 +19,7 @@ type MasterCommunityViewProps = {
 export function MasterCommunityView({ currentUser }: MasterCommunityViewProps) {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") === "chat" ? "chat" : "feed";
-  const [activeTab, setActiveTab] = useState<"feed" | "chat">(initialTab);
+  const [activeTab, setActiveTab] = useState<"feed" | "chat" | "calendar">(initialTab);
   const dmGroupId = searchParams.get("dm") ?? undefined;
 
   return (
@@ -52,12 +53,28 @@ export function MasterCommunityView({ currentUser }: MasterCommunityViewProps) {
           <MessageSquare className="h-4 w-4" />
           Grupos de Campanha
         </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("calendar")}
+          data-testid="tab-master-calendar"
+          className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-colors cursor-pointer ${
+            activeTab === "calendar"
+              ? "bg-accent text-white"
+              : "text-secondary-muted hover:text-secondary-pure hover:bg-dominant-container"
+          }`}
+        >
+          <CalendarDays className="h-4 w-4" />
+          Calendário
+        </button>
       </div>
 
       {/* Conteúdo da Aba */}
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden p-3 md:p-4">
         {activeTab === "feed" ? (
           <CommunityFeed currentUser={currentUser} />
+        ) : activeTab === "calendar" ? (
+          <MasterSessionCalendar />
         ) : (
           <CampaignChat
             currentUser={{
