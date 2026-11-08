@@ -13,7 +13,12 @@ export async function GET(_request: Request, { params }: RouteContext) {
     if (!session) return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     const { id } = await params;
     const [membership] = await db
-      .select({ id: campaigns.id, activeAssetId: campaigns.activeAssetId })
+      .select({
+        id: campaigns.id,
+        activeAssetId: campaigns.activeAssetId,
+        dice3dPlayersEnabled: campaigns.dice3dPlayersEnabled,
+        dice3dMasterEnabled: campaigns.dice3dMasterEnabled,
+      })
       .from(campaignInvites)
       .innerJoin(campaigns, eq(campaignInvites.campaignId, campaigns.id))
       .where(
@@ -26,11 +31,20 @@ export async function GET(_request: Request, { params }: RouteContext) {
       .limit(1);
 
     let activeAssetId: string | null = null;
+    let dice3dPlayersEnabled = true;
+    let dice3dMasterEnabled = true;
     if (membership) {
       activeAssetId = membership.activeAssetId ?? null;
+      dice3dPlayersEnabled = membership.dice3dPlayersEnabled;
+      dice3dMasterEnabled = membership.dice3dMasterEnabled;
     } else {
       const [campaignAsMaster] = await db
-        .select({ id: campaigns.id, activeAssetId: campaigns.activeAssetId })
+        .select({
+          id: campaigns.id,
+          activeAssetId: campaigns.activeAssetId,
+          dice3dPlayersEnabled: campaigns.dice3dPlayersEnabled,
+          dice3dMasterEnabled: campaigns.dice3dMasterEnabled,
+        })
         .from(campaigns)
         .where(and(eq(campaigns.id, id), eq(campaigns.masterId, session.user.id)))
         .limit(1);
@@ -39,6 +53,8 @@ export async function GET(_request: Request, { params }: RouteContext) {
         return NextResponse.json({ success: false, error: "Campanha não encontrada" }, { status: 404 });
       }
       activeAssetId = campaignAsMaster.activeAssetId ?? null;
+      dice3dPlayersEnabled = campaignAsMaster.dice3dPlayersEnabled;
+      dice3dMasterEnabled = campaignAsMaster.dice3dMasterEnabled;
     }
 
     let activeAsset: typeof campaignAssets.$inferSelect | null = null;
@@ -61,6 +77,8 @@ export async function GET(_request: Request, { params }: RouteContext) {
       data: {
         activeAssetId,
         activeAsset,
+        dice3dPlayersEnabled,
+        dice3dMasterEnabled,
         worlds: campaignWorlds,
         establishments: campaignEstablishments.map((item) => ({ ...item, reputationLevel: item.trustLevel })),
         npcs: campaignNpcs,

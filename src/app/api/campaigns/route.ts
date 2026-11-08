@@ -94,6 +94,8 @@ export async function POST(request: NextRequest) {
         coverImageUrl,
         worldMapUrl,
         theme: theme || "default-dark",
+        dice3dPlayersEnabled: validation.data.dice3dPlayersEnabled,
+        dice3dMasterEnabled: validation.data.dice3dMasterEnabled,
       })
       .returning();
 

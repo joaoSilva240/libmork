@@ -33,7 +33,7 @@ import {
 export function CampaignDetail() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { socket } = useSocket();
+  const { socket, setCampaignDice3DSettings } = useSocket();
   const { applyCampaignThemeOverride, clearCampaignThemeOverride } = useTheme();
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [worlds, setWorlds] = useState<World[]>([]);
@@ -187,6 +187,20 @@ export function CampaignDetail() {
       clearCampaignThemeOverride();
     };
   }, [campaign?.theme, applyCampaignThemeOverride, clearCampaignThemeOverride]);
+
+  useEffect(() => {
+    if (campaign && setCampaignDice3DSettings) {
+      setCampaignDice3DSettings(campaign.id, {
+        dice3dPlayersEnabled: campaign.dice3dPlayersEnabled ?? true,
+        dice3dMasterEnabled: campaign.dice3dMasterEnabled ?? true,
+      });
+    }
+  }, [
+    campaign?.id,
+    campaign?.dice3dPlayersEnabled,
+    campaign?.dice3dMasterEnabled,
+    setCampaignDice3DSettings,
+  ]);
 
   useEffect(() => {
     if (!selectedWorldId) {

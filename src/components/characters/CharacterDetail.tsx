@@ -90,6 +90,7 @@ export function CharacterDetail() {
     respondDefenseReaction,
     updateCombatState,
     updateDuelState,
+    setCampaignDice3DSettings,
   } = useSocket();
 
   const [character, setCharacter] = useState<Character | null>(null);
@@ -271,6 +272,36 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
     const quantity = item.junction?.quantity || 1;
     return sum + (parseFloat(weight) || 0) * quantity;
   }, 0);
+
+  // Sincronizar configurações de dados 3D da campanha associada (Issue #74)
+  useEffect(() => {
+    if (!character?.campaignId) return;
+
+    const campObj = (character as unknown as { campaign?: { dice3dPlayersEnabled?: boolean; dice3dMasterEnabled?: boolean } }).campaign;
+    if (campObj && (campObj.dice3dPlayersEnabled !== undefined || campObj.dice3dMasterEnabled !== undefined)) {
+      setCampaignDice3DSettings?.(character.campaignId, {
+        dice3dPlayersEnabled: campObj.dice3dPlayersEnabled ?? true,
+        dice3dMasterEnabled: campObj.dice3dMasterEnabled ?? true,
+      });
+    }
+
+    let isMounted = true;
+    fetch(`/api/player/campaigns/${character.campaignId}/details`, { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (isMounted && data && data.success && data.data) {
+          setCampaignDice3DSettings?.(character.campaignId!, {
+            dice3dPlayersEnabled: data.data.dice3dPlayersEnabled ?? true,
+            dice3dMasterEnabled: data.data.dice3dMasterEnabled ?? true,
+          });
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, [character?.campaignId, setCampaignDice3DSettings]);
 
   useEffect(() => {
     if (!character?.id) return;
@@ -514,6 +545,7 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
       formula: reaction === "dodge" ? "Esquiva (Estática)" : "Bloqueio (Mitigação)",
       result: damageTaken,
       diceDetail: details,
+      senderRole: "player",
     });
 
     respondDefenseReaction({
@@ -564,6 +596,8 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
         formula: "1d20 + Iniciativa",
         result: finalVal,
         diceDetail: `Rolou ${finalVal} para Iniciativa`,
+        senderRole: "player",
+        rolledDice: d20s(finalVal),
       });
 
       setShowInitiativeModal(false);
@@ -774,6 +808,8 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
         result: total,
         diceDetail: detail,
         isManual: false,
+        senderRole: "player",
+        rolledDice: d20s(rollRes.die),
       });
 
       // Dedução automática de ação de combate se for o turno do personagem (RF-040, RF-062)
@@ -1423,13 +1459,15 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
           inteligencia={character.attributes.inteligencia}
           onRollDeathSave={(_success, _die, _dc, details) => {
             rollDice({
-      campaignId: character.campaignId ?? "",
+              campaignId: character.campaignId ?? "",
               actorId: character.id,
               actorName: character.name,
               rollType: "salvaguarda_morte",
               formula: "1d20 seco",
               result: _die,
               diceDetail: details,
+              senderRole: "player",
+              rolledDice: d20s(_die),
             });
           }}
           onPhoenixRebirth={handlePhoenixRebirth}
