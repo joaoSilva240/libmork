@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { io, Socket } from "socket.io-client";
+import { showDice3D, type Dice3DDie } from "@/lib/dice3d";
 import type { CampaignLog, CampaignAsset } from "@/types";
 import type {
   AudioTrackAddPayload,
@@ -55,6 +56,9 @@ export interface RollDataPayload {
   details?: string;
   actionId?: string;
   timestamp?: string;
+  senderRole?: "master" | "player";
+  senderSocketId?: string;
+  rolledDice?: Dice3DDie[];
 }
 
 import type { CombatSessionState, PendingDefenseReaction } from "@/lib/engine";
@@ -215,6 +219,17 @@ interface SocketContextValue {
   subscribeCampaignAssetDeactivated: (handler: () => void) => () => void;
   subscribeCampaignAssetState: (handler: (asset: CampaignAsset | null) => void) => () => void;
 
+  // Configurações de Dados 3D (Issue #74)
+  setCampaignDice3DSettings: (
+    campaignId: string,
+    settings: { dice3dPlayersEnabled: boolean; dice3dMasterEnabled: boolean },
+  ) => void;
+  broadcastCampaignDice3DSettings: (payload: {
+    campaignId: string;
+    dice3dPlayersEnabled: boolean;
+    dice3dMasterEnabled: boolean;
+  }) => void;
+
   // Chat de Campanha (Issue #62)
   joinChatGroup: (groupId: string) => void;
   leaveChatGroup: (groupId: string) => void;
@@ -237,6 +252,10 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   const [isConnected, setIsConnected] = useState(false);
   const [presenceList, setPresenceList] = useState<PresenceUser[]>([]);
   const [activeAsset, setActiveAsset] = useState<CampaignAsset | null>(null);
+  const currentRoleRef = useRef<"master" | "player">("player");
+  const campaignDice3DRef = useRef<
+    Map<string, { dice3dPlayersEnabled: boolean; dice3dMasterEnabled: boolean }>
+  >(new Map());
   const socketRef = useRef<Socket | null>(null);
   const statusSubscribersRef = useRef<Set<(payload: ActorStatusPayload) => void>>(new Set());
   const rollSubscribersRef = useRef<Set<(roll: RollDataPayload) => void>>(new Set());
@@ -323,7 +342,41 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
     socketInstance.on("dice-rolled", (rollData: RollDataPayload) => {
       rollSubscribersRef.current.forEach((handler) => handler(rollData));
+
+      // Issue #74: Remote 3D Dice rendering
+      if (
+        rollData.rolledDice &&
+        rollData.rolledDice.length > 0 &&
+        rollData.senderSocketId !== socketInstance.id
+      ) {
+        const settings = campaignDice3DRef.current.get(rollData.campaignId) ?? {
+          dice3dPlayersEnabled: true,
+          dice3dMasterEnabled: true,
+        };
+        const myRole = currentRoleRef.current;
+        const senderRole = rollData.senderRole ?? "player";
+
+        if (myRole === "master" && senderRole === "player" && settings.dice3dPlayersEnabled) {
+          showDice3D(rollData.rolledDice);
+        } else if (myRole === "player" && senderRole === "master" && settings.dice3dMasterEnabled) {
+          showDice3D(rollData.rolledDice);
+        }
+      }
     });
+
+    socketInstance.on(
+      "campaign:dice3d-settings-updated",
+      (payload: {
+        campaignId: string;
+        dice3dPlayersEnabled: boolean;
+        dice3dMasterEnabled: boolean;
+      }) => {
+        campaignDice3DRef.current.set(payload.campaignId, {
+          dice3dPlayersEnabled: payload.dice3dPlayersEnabled,
+          dice3dMasterEnabled: payload.dice3dMasterEnabled,
+        });
+      },
+    );
 
     socketInstance.on("combat-state-updated", (state: CombatSessionState) => {
       combatSubscribersRef.current.forEach((handler) => handler(state));
@@ -423,6 +476,9 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       actorId?: string;
       role?: "master" | "player";
     }) => {
+      if (data.role) {
+        currentRoleRef.current = data.role;
+      }
       const currentSocket = socketRef.current || socket;
       if (currentSocket) {
         currentSocket.emit("join-campaign", data);
@@ -458,8 +514,37 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       if (currentSocket) {
         currentSocket.emit("roll-dice", {
           ...rollPayload,
+          senderRole: rollPayload.senderRole ?? currentRoleRef.current,
           timestamp: rollPayload.timestamp || new Date().toISOString(),
         });
+      }
+    },
+    [socket],
+  );
+
+  const setCampaignDice3DSettings = useCallback(
+    (
+      campaignId: string,
+      settings: { dice3dPlayersEnabled: boolean; dice3dMasterEnabled: boolean },
+    ) => {
+      campaignDice3DRef.current.set(campaignId, settings);
+    },
+    [],
+  );
+
+  const broadcastCampaignDice3DSettings = useCallback(
+    (payload: {
+      campaignId: string;
+      dice3dPlayersEnabled: boolean;
+      dice3dMasterEnabled: boolean;
+    }) => {
+      campaignDice3DRef.current.set(payload.campaignId, {
+        dice3dPlayersEnabled: payload.dice3dPlayersEnabled,
+        dice3dMasterEnabled: payload.dice3dMasterEnabled,
+      });
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("campaign:dice3d-settings-update", payload);
       }
     },
     [socket],
@@ -1208,6 +1293,8 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         subscribeCampaignAssetActivated,
         subscribeCampaignAssetDeactivated,
         subscribeCampaignAssetState,
+        setCampaignDice3DSettings,
+        broadcastCampaignDice3DSettings,
         joinChatGroup,
         leaveChatGroup,
         sendChatMessage,

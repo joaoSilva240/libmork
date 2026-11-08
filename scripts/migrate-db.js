@@ -281,6 +281,13 @@ async function runMigrations() {
     `);
     console.log('✓ Table campaign_assets and campaigns.active_asset_id ensured.');
 
+    console.log('\n--- 13. Applying campaign dice3d toggles migration (Issue #74) ---');
+    await client.query(`
+      ALTER TABLE "campaigns" ADD COLUMN IF NOT EXISTS "dice3d_players_enabled" boolean DEFAULT true NOT NULL;
+      ALTER TABLE "campaigns" ADD COLUMN IF NOT EXISTS "dice3d_master_enabled" boolean DEFAULT true NOT NULL;
+    `);
+    console.log('✓ Columns campaigns.dice3d_players_enabled and campaigns.dice3d_master_enabled ensured.');
+
     console.log('\nAll migrations executed successfully!');
   } catch (error) {
     console.error('Migration error:', error);

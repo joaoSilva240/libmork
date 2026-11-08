@@ -67,6 +67,8 @@ export async function GET() {
         coverImageUrl: campaigns.coverImageUrl,
         worldMapUrl: campaigns.worldMapUrl,
         theme: campaigns.theme,
+        dice3dPlayersEnabled: campaigns.dice3dPlayersEnabled,
+        dice3dMasterEnabled: campaigns.dice3dMasterEnabled,
         masterId: users.id,
         masterDisplayName: users.displayName,
         masterEmail: users.email,
@@ -196,6 +198,8 @@ export async function GET() {
         coverImageUrl: camp.coverImageUrl,
         worldMapUrl: camp.worldMapUrl,
         theme: camp.theme,
+        dice3dPlayersEnabled: camp.dice3dPlayersEnabled,
+        dice3dMasterEnabled: camp.dice3dMasterEnabled,
         master: {
           id: camp.masterId,
           displayName: camp.masterDisplayName,

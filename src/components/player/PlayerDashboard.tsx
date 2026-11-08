@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import type { Character, PlayerCampaign } from "@/types";
+import type { Character, PlayerCampaign, PlayerCampaignDetails } from "@/types";
 import type { MissingHabitant, EquipmentStatus } from "@/lib/systems/missing/types";
 import { CharacterCard } from "@/components/characters/CharacterCard";
 import { MissingHabitantCard } from "@/components/systems/missing/MissingHabitantCard";
@@ -50,7 +50,7 @@ function getReputationDots(reputationLevel: number): number {
 }
 
 export function PlayerDashboard() {
-  const { joinCampaign, leaveCampaign } = useSocket();
+  const { joinCampaign, leaveCampaign, setCampaignDice3DSettings } = useSocket();
   const [activeTab, setActiveTab] = useState<
     "characters" | "campaigns" | "community" | "wealth" | "settings"
   >("characters");
@@ -75,11 +75,7 @@ export function PlayerDashboard() {
   const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(true);
   const [campaignsError, setCampaignsError] = useState<string | null>(null);
   const [campaignDetailsTab, setCampaignDetailsTab] = useState<"resumo" | "mundo">("resumo");
-  const [campaignDetails, setCampaignDetails] = useState<{
-    worlds: any[];
-    establishments: any[];
-    npcs: any[];
-  } | null>(null);
+  const [campaignDetails, setCampaignDetails] = useState<PlayerCampaignDetails | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
   // Estado de Tesouraria / Wealth
@@ -158,6 +154,12 @@ export function PlayerDashboard() {
       const data = await response.json();
       const updatedCampaigns: PlayerCampaign[] = data.data || [];
       setCampaigns(updatedCampaigns);
+      updatedCampaigns.forEach((camp) => {
+        setCampaignDice3DSettings?.(camp.id, {
+          dice3dPlayersEnabled: camp.dice3dPlayersEnabled ?? true,
+          dice3dMasterEnabled: camp.dice3dMasterEnabled ?? true,
+        });
+      });
       setSelectedCampaign((prevSelected) => {
         if (!prevSelected) return null;
         return updatedCampaigns.find((c) => c.id === prevSelected.id) || null;
@@ -230,6 +232,10 @@ export function PlayerDashboard() {
       .then((data) => {
         if (isMounted && data && data.success) {
           setCampaignDetails(data.data);
+          setCampaignDice3DSettings?.(selectedCampaign.id, {
+            dice3dPlayersEnabled: data.data.dice3dPlayersEnabled ?? true,
+            dice3dMasterEnabled: data.data.dice3dMasterEnabled ?? true,
+          });
         }
       })
       .catch(() => {})

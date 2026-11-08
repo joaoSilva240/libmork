@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import type { Character, Skill, Spell } from "@/types";
 import { Spinner } from "@/components/ui";
 import { useSocket, DICE_ROLL_LOADING_DELAY } from "@/context/SocketContext";
-import { d20s, showDice3D } from "@/lib/dice3d";
+import { d20s, showDice3D, type Dice3DDie } from "@/lib/dice3d";
 
 type CombatSheetProps = {
   characterId: string;
@@ -69,7 +69,7 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
   const currentCampaignId = character.campaignId ?? "";
 
   // Helper function to roll dice with 3-second delay
-  const rollWithLoading = (rollType: string, formula: string, result: number, detail: string) => {
+  const rollWithLoading = (rollType: string, formula: string, result: number, detail: string, rolledDice?: Dice3DDie[]) => {
     if (!currentCampaignId) return;
     setIsRollingDice(true);
     setTimeout(() => {
@@ -81,6 +81,8 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
         formula,
         result,
         diceDetail: detail,
+        senderRole: "player",
+        rolledDice,
       });
       setIsRollingDice(false);
     }, DICE_ROLL_LOADING_DELAY);
@@ -235,6 +237,8 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
                         formula: "1d20 + Força",
                         result: total,
                         diceDetail: `Rolou [${d20}] + ${character.attributes.forca} = ${total}`,
+                        senderRole: "player",
+                        rolledDice: d20s(d20),
                       });
                       setIsRollingDice(false);
                     }, DICE_ROLL_LOADING_DELAY);
@@ -272,6 +276,8 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
                         formula: "1d20 + Destreza",
                         result: total,
                         diceDetail: `Rolou [${d20}] + ${character.attributes.destreza} = ${total}`,
+                        senderRole: "player",
+                        rolledDice: d20s(d20),
                       });
                       setIsRollingDice(false);
                     }, DICE_ROLL_LOADING_DELAY);
@@ -310,6 +316,7 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
                         const match = rollExpr.trim().match(/^(\d+)d(\d+)(?:\s*([+-])\s*(\d+))?$/i);
                         let result = 0;
                         let detail = rollExpr;
+                        let rolledDice: Dice3DDie[] = [];
                         if (match) {
                           const count = parseInt(match[1], 10);
                           const sides = parseInt(match[2], 10);
@@ -324,11 +331,13 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
                           }
                           result = sum + mod;
                           detail = `Rolou [${rolls.join(", ")}]${mod !== 0 ? (mod > 0 ? ` + ${mod}` : ` - ${Math.abs(mod)}`) : ""} = ${result}`;
-                          showDice3D(rolls.map((value) => ({ sides, value })));
+                          rolledDice = rolls.map((value) => ({ sides, value }));
+                          showDice3D(rolledDice);
                         } else {
                           result = Math.floor(Math.random() * 20) + 1;
                           detail = `Rolou [${result}]`;
-                          showDice3D(d20s(result));
+                          rolledDice = d20s(result);
+                          showDice3D(rolledDice);
                         }
                         setTimeout(() => {
                           rollDice({
@@ -339,6 +348,8 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
                             formula: rollExpr,
                             result,
                             diceDetail: detail,
+                            senderRole: "player",
+                            rolledDice,
                           });
                           setIsRollingDice(false);
                         }, DICE_ROLL_LOADING_DELAY);
@@ -386,6 +397,8 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
                             formula: "1d20",
                             result: d20,
                             diceDetail: `Magia ${sp.name}: [${d20}]`,
+                            senderRole: "player",
+                            rolledDice: d20s(d20),
                           });
                           setIsRollingDice(false);
                         }, DICE_ROLL_LOADING_DELAY);

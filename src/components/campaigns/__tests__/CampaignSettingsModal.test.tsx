@@ -3,6 +3,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CampaignSettingsModal } from "../CampaignSettingsModal";
 import type { Campaign } from "@/types";
 
+vi.mock("@/context/SocketContext", () => ({
+  useSocket: () => ({
+    broadcastCampaignDice3DSettings: vi.fn(),
+    setCampaignDice3DSettings: vi.fn(),
+  }),
+}));
+
 describe("CampaignSettingsModal Component", () => {
   const mockCampaign: Campaign = {
     id: "camp-123",
@@ -70,7 +77,7 @@ describe("CampaignSettingsModal Component", () => {
     const nameInput = screen.getByDisplayValue("A Maldição de Strahd");
     fireEvent.change(nameInput, { target: { value: "Strahd Redux" } });
 
-    const pvpCheckbox = screen.getByRole("checkbox");
+    const pvpCheckbox = screen.getByRole("checkbox", { name: /Combate entre Jogadores/i });
     fireEvent.click(pvpCheckbox);
 
     const submitBtn = screen.getByRole("button", { name: "Salvar Alterações" });

@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Campaign } from "@/types";
 import { themes, type ThemeName } from "@/lib/theme";
 import { MasterAssetsPanel } from "./MasterAssetsPanel";
+import { useSocket } from "@/context/SocketContext";
 
 type CampaignSettingsModalProps = {
   campaign: Campaign;
@@ -20,6 +21,8 @@ export function CampaignSettingsModal({
   onDelete,
   isDeleting = false,
 }: CampaignSettingsModalProps) {
+  const { broadcastCampaignDice3DSettings } = useSocket();
+
   const [name, setName] = useState(campaign.name);
   const [description, setDescription] = useState(campaign.description || "");
   const [theme, setTheme] = useState<string>(campaign.theme || "default-dark");
@@ -27,6 +30,12 @@ export function CampaignSettingsModal({
   const [pvpEnabled, setPvpEnabled] = useState(campaign.pvpEnabled);
   const [difficultyModifier, setDifficultyModifier] = useState<number>(
     campaign.difficultyModifierShadowPoints || 0
+  );
+  const [dice3dPlayersEnabled, setDice3dPlayersEnabled] = useState(
+    campaign.dice3dPlayersEnabled ?? true
+  );
+  const [dice3dMasterEnabled, setDice3dMasterEnabled] = useState(
+    campaign.dice3dMasterEnabled ?? true
   );
   const [activeTab, setActiveTab] = useState<"geral" | "assets">("geral");
 
@@ -56,6 +65,8 @@ export function CampaignSettingsModal({
           coverImageUrl: coverImageUrl.trim() || null,
           pvpEnabled,
           difficultyModifierShadowPoints: Number(difficultyModifier) || 0,
+          dice3dPlayersEnabled,
+          dice3dMasterEnabled,
         }),
       });
 
@@ -65,6 +76,12 @@ export function CampaignSettingsModal({
         setError(data.error || "Erro ao salvar alterações da campanha");
         return;
       }
+
+      broadcastCampaignDice3DSettings?.({
+        campaignId: campaign.id,
+        dice3dPlayersEnabled,
+        dice3dMasterEnabled,
+      });
 
       onSaved(data.data as Campaign);
       onClose();
@@ -292,6 +309,44 @@ export function CampaignSettingsModal({
                 className="mt-2 w-24 rounded border border-secondary-border bg-secondary-card px-2.5 py-1 text-xs text-secondary-pure font-mono outline-none focus:ring-1 focus:ring-accent"
               />
             </div>
+
+            {/* Toggle Dados 3D Jogadores */}
+            <label className="flex items-center justify-between p-3 rounded-lg border border-secondary-border bg-dominant-deep cursor-pointer group">
+              <div>
+                <span className="text-xs font-bold text-secondary-pure group-hover:text-accent-hover transition block">
+                  Dados 3d nas rolagens dos jogadores
+                </span>
+                <span className="text-[11px] text-secondary-muted block mt-0.5">
+                  Quando ligado, as rolagens dos jogadores aparecem em 3d para o mestre.
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                data-testid="toggle-dice3d-players"
+                checked={dice3dPlayersEnabled}
+                onChange={(e) => setDice3dPlayersEnabled(e.target.checked)}
+                className="h-4 w-4 rounded border-secondary-border bg-secondary-card text-accent focus:ring-2 focus:ring-accent cursor-pointer ml-3 shrink-0"
+              />
+            </label>
+
+            {/* Toggle Dados 3D Mestre */}
+            <label className="flex items-center justify-between p-3 rounded-lg border border-secondary-border bg-dominant-deep cursor-pointer group">
+              <div>
+                <span className="text-xs font-bold text-secondary-pure group-hover:text-accent-hover transition block">
+                  Dados 3d nas rolagens do mestre
+                </span>
+                <span className="text-[11px] text-secondary-muted block mt-0.5">
+                  Quando ligado, a rolagem do mestre aparece em 3d para o jogador.
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                data-testid="toggle-dice3d-master"
+                checked={dice3dMasterEnabled}
+                onChange={(e) => setDice3dMasterEnabled(e.target.checked)}
+                className="h-4 w-4 rounded border-secondary-border bg-secondary-card text-accent focus:ring-2 focus:ring-accent cursor-pointer ml-3 shrink-0"
+              />
+            </label>
           </div>
 
           {/* Zona de Perigo / Excluir Campanha */}
