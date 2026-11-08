@@ -356,6 +356,42 @@ findAvailablePort(initialPort)
           io.to(`campaign:${payload.campaignId}`).emit("campaign:asset-deactivated", payload);
         });
 
+        // Chat de Campanha em Tempo Real (Issue #62)
+        socket.on("chat:join-group", ({ groupId }) => {
+          if (!groupId) return;
+          socket.join(`chat:${groupId}`);
+        });
+
+        socket.on("chat:leave-group", ({ groupId }) => {
+          if (!groupId) return;
+          socket.leave(`chat:${groupId}`);
+        });
+
+        socket.on("chat:send-message", (payload) => {
+          if (!payload || !payload.groupId) return;
+          io.to(`chat:${payload.groupId}`).emit("chat:new-message", payload);
+        });
+
+        socket.on("chat:poll-vote", (payload) => {
+          if (!payload || !payload.groupId) return;
+          io.to(`chat:${payload.groupId}`).emit("chat:poll-updated", payload);
+        });
+
+        socket.on("chat:poll-close", (payload) => {
+          if (!payload || !payload.groupId) return;
+          io.to(`chat:${payload.groupId}`).emit("chat:poll-closed", payload);
+        });
+
+        socket.on("chat:member-updated", (payload) => {
+          if (!payload || !payload.groupId) return;
+          io.to(`chat:${payload.groupId}`).emit("chat:member-updated", payload);
+        });
+
+        socket.on("chat:member-removed", (payload) => {
+          if (!payload || !payload.groupId) return;
+          io.to(`chat:${payload.groupId}`).emit("chat:member-removed", payload);
+        });
+
         // Sair explicitamente de uma campanha
         socket.on("leave-campaign", ({ campaignId }) => {
           if (!campaignId) return;

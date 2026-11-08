@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { CalendarDays, Dices, Globe2, Pencil, Shield, Sparkles, Sword, UserRound } from "lucide-react";
 import CommunityCard, { CommunityPost } from "./CommunityCard";
 import PostDetailModal from "./PostDetailModal";
@@ -56,9 +57,31 @@ export default function MasterProfile({
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [selectedPost, setSelectedPost] = useState<CommunityPost | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [isStartingDm, setIsStartingDm] = useState(false);
+  const router = useRouter();
 
   // Determina se o perfil pertence ao usuário logado
   const isOwnProfile = Boolean(currentUserId && currentUserId === userId);
+
+  // Abre (ou cria) a DM com o dono do perfil e navega para o chat
+  const handleStartDm = async () => {
+    if (!currentUserId || isStartingDm) return;
+    setIsStartingDm(true);
+    try {
+      const res = await fetch("/api/chat/dm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (res.ok && data.data?.id) {
+        router.push(`/master/community?tab=chat&dm=${data.data.id}`);
+      }
+    } finally {
+      setIsStartingDm(false);
+    }
+  };
 
   // Carrega os dados do perfil se não vierem via SSR
   useEffect(() => {
@@ -236,9 +259,19 @@ export default function MasterProfile({
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-gray-100">
               {masterDisplayName}
             </h1>
-            <p className="text-xs font-medium text-gray-500">
-              @{userHandle}
-            </p>
+            {!isOwnProfile && currentUserId ? (
+              <button
+                type="button"
+                onClick={() => void handleStartDm()}
+                disabled={isStartingDm}
+                data-testid="start-dm-button"
+                className="text-xs font-medium text-accent hover:text-accent-hover hover:underline transition-colors cursor-pointer disabled:opacity-50"
+              >
+                @{userHandle}
+              </button>
+            ) : (
+              <p className="text-xs font-medium text-gray-500">@{userHandle}</p>
+            )}
             {profile.masterBio ? (
               <p className="mt-2 text-sm leading-relaxed text-gray-300 max-w-3xl whitespace-pre-line">
                 {profile.masterBio}
