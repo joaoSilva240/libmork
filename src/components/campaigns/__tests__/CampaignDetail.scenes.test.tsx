@@ -81,9 +81,8 @@ describe("CampaignDetail — barra de cenas (issue #86, Fase 1)", () => {
 
   it("campanha missing_zero não renderiza a SceneBar", async () => {
     campaignPayload = { ...campaignPayload, rulesEngine: "missing_zero" };
-    const { container } = render(<CampaignDetail />);
-    await waitFor(() => expect(container).toBeTruthy());
-    await new Promise((r) => setTimeout(r, 50));
+    render(<CampaignDetail />);
+    await waitFor(() => screen.getByTestId("shield-header"));
     expect(screen.queryByTestId("scene-bar")).not.toBeInTheDocument();
   });
 });
