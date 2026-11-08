@@ -22,6 +22,12 @@ export function SceneBar({ activeScene, onSceneChange, disabled = false, classNa
       data-testid="scene-bar"
       className={`flex items-center gap-1.5 rounded-lg border border-gray-800 bg-gray-950/70 px-2 py-1 ${className}`}
     >
+      <span
+        data-testid="scene-mode-label"
+        className="mr-1 whitespace-nowrap text-[10px] uppercase tracking-wider text-gray-400"
+      >
+        {activeScene ? `Cena: ${SCENES[activeScene].label}` : "Cena: Livre"}
+      </span>
       {SCENE_ORDER.map((value) => {
         const scene = SCENES[value];
         const Icon = scene.icon;
@@ -46,12 +52,6 @@ export function SceneBar({ activeScene, onSceneChange, disabled = false, classNa
           </button>
         );
       })}
-      <span
-        data-testid="scene-mode-label"
-        className="ml-1 whitespace-nowrap text-[10px] uppercase tracking-wider text-gray-400"
-      >
-        {activeScene ? `Cena: ${SCENES[activeScene].label}` : "Cena: Livre"}
-      </span>
     </div>
   );
 }
