@@ -11,7 +11,14 @@ import { LogoutButton } from "@/components/auth/LogoutButton";
 import { Spinner, Button } from "@/components/ui";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { ToastContainer } from "@/components/ui/Toast";
-import { CampaignsFilledIcon, CharactersFilledIcon, SettingsFilledIcon, TreasuryIcon } from "@/components/ui/Icons";
+import {
+  CampaignsFilledIcon,
+  CharactersFilledIcon,
+  SettingsFilledIcon,
+  TreasuryIcon,
+} from "@/components/ui/Icons";
+import { MessageSquare } from "lucide-react";
+import { CampaignChat } from "@/components/chat/CampaignChat";
 import { Dice3DSettingsPanel } from "@/components/dice/Dice3DSettingsPanel";
 import { MotionSettingsPanel } from "@/components/motion/MotionSettingsPanel";
 import { WealthManager, type WealthData } from "@/components/player/WealthManager";
@@ -44,7 +51,9 @@ function getReputationDots(reputationLevel: number): number {
 
 export function PlayerDashboard() {
   const { joinCampaign, leaveCampaign } = useSocket();
-  const [activeTab, setActiveTab] = useState<"characters" | "campaigns" | "wealth" | "settings">("characters");
+  const [activeTab, setActiveTab] = useState<
+    "characters" | "campaigns" | "community" | "wealth" | "settings"
+  >("characters");
   const [viewMode, setViewMode] = useState<"gallery" | "list">("gallery");
   const [displayName, setDisplayName] = useState("Jogador");
   const [userId, setUserId] = useState<string>("player-id");
@@ -54,7 +63,9 @@ export function PlayerDashboard() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [missingHabitants, setMissingHabitants] = useState<MissingHabitant[]>([]);
   const [selectedHabitant, setSelectedHabitant] = useState<MissingHabitant | null>(null);
-  const [settingsSubTab, setSettingsSubTab] = useState<"themes_colors" | "fonts" | "ui_details">("themes_colors");
+  const [settingsSubTab, setSettingsSubTab] = useState<"themes_colors" | "fonts" | "ui_details">(
+    "themes_colors",
+  );
   const [isLoadingCharacters, setIsLoadingCharacters] = useState(true);
   const [charactersError, setCharactersError] = useState<string | null>(null);
 
@@ -494,7 +505,9 @@ export function PlayerDashboard() {
   }, []);
 
   return (
-    <div className={`${activeTab === "settings" ? "pt-[calc(8.25rem+env(safe-area-inset-top,0px))]" : "pt-[calc(5.5rem+env(safe-area-inset-top,0px))]"} pb-[calc(6rem+env(safe-area-inset-bottom,0px))]`}>
+    <div
+      className={`${activeTab === "settings" ? "pt-[calc(8.25rem+env(safe-area-inset-top,0px))]" : "pt-[calc(5.5rem+env(safe-area-inset-top,0px))]"} pb-[calc(6rem+env(safe-area-inset-bottom,0px))]`}
+    >
       <header className="fixed inset-x-0 top-0 z-30 border-x-0 border-t-0 border-b border-secondary-border bg-secondary-card shadow-md pt-[calc(1rem+env(safe-area-inset-top,0px))]">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 pb-3">
           <div>
@@ -880,6 +893,13 @@ export function PlayerDashboard() {
           </div>
         )}
 
+        {/* Conteúdo da Aba: Comunidade / Chat de Campanhas */}
+        {activeTab === "community" && (
+          <div className="motion-page h-[calc(100vh-13rem)] pb-12">
+            <CampaignChat currentUser={{ id: userId, displayName: userName }} />
+          </div>
+        )}
+
         {/* Conteúdo da Aba 3: Tesouraria (Wealth) */}
         {activeTab === "wealth" && (
           <div className="motion-page">
@@ -927,6 +947,11 @@ export function PlayerDashboard() {
               id: "campaigns",
               label: "Campanhas",
               icon: <CampaignsFilledIcon className="h-6 w-6" />,
+            },
+            {
+              id: "community",
+              label: "Comunidade",
+              icon: <MessageSquare className="h-6 w-6" />,
             },
             {
               id: "wealth",
@@ -1421,7 +1446,9 @@ export function PlayerDashboard() {
                                                               d={`M ${start.x} ${start.y} A ${radius} ${radius} 0 0 1 ${end.x} ${end.y}`}
                                                               fill="none"
                                                               stroke={
-                                                                isActive ? "var(--accent-vibrant, #c084fc)" : "var(--secondary-border, #374151)"
+                                                                isActive
+                                                                  ? "var(--accent-vibrant, #c084fc)"
+                                                                  : "var(--secondary-border, #374151)"
                                                               }
                                                               strokeWidth="2"
                                                               strokeLinecap="round"

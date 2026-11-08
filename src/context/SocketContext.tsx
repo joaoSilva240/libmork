@@ -214,6 +214,20 @@ interface SocketContextValue {
   subscribeCampaignAssetActivated: (handler: (asset: CampaignAsset) => void) => () => void;
   subscribeCampaignAssetDeactivated: (handler: () => void) => () => void;
   subscribeCampaignAssetState: (handler: (asset: CampaignAsset | null) => void) => () => void;
+
+  // Chat de Campanha (Issue #62)
+  joinChatGroup: (groupId: string) => void;
+  leaveChatGroup: (groupId: string) => void;
+  sendChatMessage: (payload: Record<string, unknown>) => void;
+  sendChatPollVote: (payload: Record<string, unknown>) => void;
+  sendChatPollClose: (payload: Record<string, unknown>) => void;
+  subscribeChatMessage: (callback: (payload: Record<string, unknown>) => void) => () => void;
+  subscribeChatPollUpdated: (callback: (payload: Record<string, unknown>) => void) => () => void;
+  subscribeChatPollClosed: (callback: (payload: Record<string, unknown>) => void) => () => void;
+  sendChatMemberUpdated: (payload: Record<string, unknown>) => void;
+  sendChatMemberRemoved: (payload: Record<string, unknown>) => void;
+  subscribeChatMemberUpdated: (callback: (payload: Record<string, unknown>) => void) => () => void;
+  subscribeChatMemberRemoved: (callback: (payload: Record<string, unknown>) => void) => () => void;
 }
 
 const SocketContext = createContext<SocketContextValue | undefined>(undefined);
@@ -382,13 +396,10 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       },
     );
 
-    socketInstance.on(
-      "campaign:asset-deactivated",
-      (payload: { campaignId: string }) => {
-        setActiveAsset(null);
-        assetDeactivatedSubscribersRef.current.forEach((handler) => handler());
-      },
-    );
+    socketInstance.on("campaign:asset-deactivated", (payload: { campaignId: string }) => {
+      setActiveAsset(null);
+      assetDeactivatedSubscribersRef.current.forEach((handler) => handler());
+    });
 
     socketInstance.on(
       "campaign:asset-state",
@@ -963,15 +974,12 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     [socket],
   );
 
-  const subscribeCampaignAssetActivated = useCallback(
-    (handler: (asset: CampaignAsset) => void) => {
-      assetActivatedSubscribersRef.current.add(handler);
-      return () => {
-        assetActivatedSubscribersRef.current.delete(handler);
-      };
-    },
-    [],
-  );
+  const subscribeCampaignAssetActivated = useCallback((handler: (asset: CampaignAsset) => void) => {
+    assetActivatedSubscribersRef.current.add(handler);
+    return () => {
+      assetActivatedSubscribersRef.current.delete(handler);
+    };
+  }, []);
 
   const subscribeCampaignAssetDeactivated = useCallback((handler: () => void) => {
     assetDeactivatedSubscribersRef.current.add(handler);
@@ -988,6 +996,158 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       };
     },
     [],
+  );
+
+  // ============================= Chat (Issue #62) =============================
+
+  const joinChatGroup = useCallback(
+    (groupId: string) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("chat:join-group", { groupId });
+      }
+    },
+    [socket],
+  );
+
+  const leaveChatGroup = useCallback(
+    (groupId: string) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("chat:leave-group", { groupId });
+      }
+    },
+    [socket],
+  );
+
+  const sendChatMessage = useCallback(
+    (payload: Record<string, unknown>) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("chat:send-message", payload);
+      }
+    },
+    [socket],
+  );
+
+  const sendChatPollVote = useCallback(
+    (payload: Record<string, unknown>) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("chat:poll-vote", payload);
+      }
+    },
+    [socket],
+  );
+
+  const sendChatPollClose = useCallback(
+    (payload: Record<string, unknown>) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("chat:poll-close", payload);
+      }
+    },
+    [socket],
+  );
+
+  const subscribeChatMessage = useCallback(
+    (callback: (payload: Record<string, unknown>) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on("chat:new-message", callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off("chat:new-message", callback);
+        }
+      };
+    },
+    [socket],
+  );
+
+  const subscribeChatPollUpdated = useCallback(
+    (callback: (payload: Record<string, unknown>) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on("chat:poll-updated", callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off("chat:poll-updated", callback);
+        }
+      };
+    },
+    [socket],
+  );
+
+  const subscribeChatPollClosed = useCallback(
+    (callback: (payload: Record<string, unknown>) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on("chat:poll-closed", callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off("chat:poll-closed", callback);
+        }
+      };
+    },
+    [socket],
+  );
+
+  const sendChatMemberUpdated = useCallback(
+    (payload: Record<string, unknown>) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("chat:member-updated", payload);
+      }
+    },
+    [socket],
+  );
+
+  const sendChatMemberRemoved = useCallback(
+    (payload: Record<string, unknown>) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("chat:member-removed", payload);
+      }
+    },
+    [socket],
+  );
+
+  const subscribeChatMemberUpdated = useCallback(
+    (callback: (payload: Record<string, unknown>) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on("chat:member-updated", callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off("chat:member-updated", callback);
+        }
+      };
+    },
+    [socket],
+  );
+
+  const subscribeChatMemberRemoved = useCallback(
+    (callback: (payload: Record<string, unknown>) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on("chat:member-removed", callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off("chat:member-removed", callback);
+        }
+      };
+    },
+    [socket],
   );
 
   return (
@@ -1048,6 +1208,18 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         subscribeCampaignAssetActivated,
         subscribeCampaignAssetDeactivated,
         subscribeCampaignAssetState,
+        joinChatGroup,
+        leaveChatGroup,
+        sendChatMessage,
+        sendChatPollVote,
+        sendChatPollClose,
+        subscribeChatMessage,
+        subscribeChatPollUpdated,
+        subscribeChatPollClosed,
+        sendChatMemberUpdated,
+        sendChatMemberRemoved,
+        subscribeChatMemberUpdated,
+        subscribeChatMemberRemoved,
       }}
     >
       {children}

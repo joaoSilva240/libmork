@@ -2,6 +2,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import MasterProfile, { MasterProfileData } from "../MasterProfile";
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+}));
+
 const mockProfile: MasterProfileData = {
   id: "user-123",
   displayName: "mestre_gandalf",

@@ -113,6 +113,22 @@ export function getContentCampaignColumn(type: ContentType) {
 }
 
 /**
+ * Nome do campo de name da tabela de conteúdo.
+ */
+export function getContentNameColumn(type: ContentType) {
+  switch (type) {
+    case "skills":
+      return skills.name;
+    case "spells":
+      return spells.name;
+    case "items":
+      return items.name;
+    case "conditions":
+      return conditions.name;
+  }
+}
+
+/**
  * Monta os valores de inserção da junção a partir do payload validado (Zod).
  * O shape é garantido pelo validador; tipagem relaxada de propósito.
  */
