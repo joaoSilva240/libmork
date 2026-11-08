@@ -170,6 +170,8 @@ export const campaigns = pgTable("campaigns", {
   activeAssetId: uuid("active_asset_id").references((): AnyPgColumn => campaignAssets.id, {
     onDelete: "set null",
   }),
+  oneShot: boolean("one_shot"),
+  maxPlayers: integer("max_players"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -1547,6 +1549,98 @@ export const campaignChatPollVotesRelations = relations(campaignChatPollVotes, (
   user: one(users, {
     fields: [campaignChatPollVotes.userId],
     references: [users.id],
+  }),
+}));
+
+// =============================================================================
+// SESSÕES AGENDADAS E CANDIDATURAS (Issue #63)
+// =============================================================================
+
+/**
+ * CAMPAIGN_SESSIONS — Sessão agendada pelo mestre (Issue #63).
+ * proposedStart/proposedEnd delimitam o período proposto (inclusivo);
+ * scheduledAt é a data/hora final batida pelo mestre.
+ */
+export const campaignSessions = pgTable(
+  "campaign_sessions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    campaignId: uuid("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" }),
+    masterId: uuid("master_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    description: text("description").notNull(),
+    proposedStart: timestamp("proposed_start", { withTimezone: true }).notNull(),
+    proposedEnd: timestamp("proposed_end", { withTimezone: true }).notNull(),
+    scheduledAt: timestamp("scheduled_at", { withTimezone: true }),
+    durationMinutes: integer("duration_minutes").notNull().default(240),
+    xpReward: integer("xp_reward"),
+    sessionType: varchar("session_type", { length: 20 }).notNull(), // "one_shot" | "continuing"
+    maxSlots: integer("max_slots").notNull(),
+    status: varchar("status", { length: 20 }).notNull().default("proposed"), // proposed | confirmed | cancelled
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_sessions_campaign_status").on(table.campaignId, table.status),
+    index("idx_sessions_feed").on(table.status, table.proposedStart),
+    index("idx_sessions_master").on(table.masterId),
+  ],
+);
+
+/**
+ * SESSION_CANDIDATES — Candidatura de jogador a uma sessão com disponibilidade.
+ */
+export const sessionCandidates = pgTable(
+  "session_candidates",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => campaignSessions.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    characterId: uuid("character_id").references(() => characters.id, { onDelete: "set null" }),
+    availableDays: jsonb("available_days").notNull().default([]), // string[] 'yyyy-MM-dd'
+    preferredStart: varchar("preferred_start", { length: 5 }), // 'HH:mm'
+    preferredEnd: varchar("preferred_end", { length: 5 }), // 'HH:mm'
+    allDay: boolean("all_day").notNull().default(true),
+    status: varchar("status", { length: 20 }).notNull().default("interested"), // interested | accepted | rejected
+    appliedAt: timestamp("applied_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_candidates_session_user").on(table.sessionId, table.userId),
+    index("idx_candidates_user_status").on(table.userId, table.status),
+  ],
+);
+
+export const campaignSessionsRelations = relations(campaignSessions, ({ one, many }) => ({
+  campaign: one(campaigns, {
+    fields: [campaignSessions.campaignId],
+    references: [campaigns.id],
+  }),
+  master: one(users, {
+    fields: [campaignSessions.masterId],
+    references: [users.id],
+  }),
+  candidates: many(sessionCandidates),
+}));
+
+export const sessionCandidatesRelations = relations(sessionCandidates, ({ one }) => ({
+  session: one(campaignSessions, {
+    fields: [sessionCandidates.sessionId],
+    references: [campaignSessions.id],
+  }),
+  user: one(users, {
+    fields: [sessionCandidates.userId],
+    references: [users.id],
+  }),
+  character: one(characters, {
+    fields: [sessionCandidates.characterId],
+    references: [characters.id],
   }),
 }));
 

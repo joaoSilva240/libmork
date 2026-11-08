@@ -22,6 +22,8 @@ vi.mock("@/context/SocketContext", () => ({
     presenceList: [],
     joinCampaign: mockJoinCampaign,
     leaveCampaign: mockLeaveCampaign,
+    sendSessionApply: vi.fn(),
+    subscribeSessionPublished: vi.fn(() => vi.fn()),
     updateActorStatus: vi.fn(),
     rollDice: vi.fn(),
     updateCombatState: vi.fn(),

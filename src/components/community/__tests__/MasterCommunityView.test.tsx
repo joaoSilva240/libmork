@@ -22,6 +22,10 @@ vi.mock("@/components/chat/CampaignChat", () => ({
   },
 }));
 
+vi.mock("@/components/sessions/MasterSessionCalendar", () => ({
+  MasterSessionCalendar: () => <div data-testid="mock-master-calendar">Calendário Mock</div>,
+}));
+
 describe("MasterCommunityView (Issue #62)", () => {
   const currentUser = {
     id: "user-1",
@@ -77,5 +81,16 @@ describe("MasterCommunityView (Issue #62)", () => {
 
     const lastProps = campaignChatProps[campaignChatProps.length - 1];
     expect(lastProps.initialGroupId).toBeUndefined();
+  });
+
+  it("renderiza a aba Calendário e mostra MasterSessionCalendar ao clicá-la (Task 11)", () => {
+    render(<MasterCommunityView currentUser={currentUser} />);
+
+    expect(screen.getByTestId("tab-master-calendar")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("tab-master-calendar"));
+
+    expect(screen.getByTestId("mock-master-calendar")).toBeInTheDocument();
+    expect(screen.queryByTestId("mock-community-feed")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("mock-campaign-chat")).not.toBeInTheDocument();
   });
 });

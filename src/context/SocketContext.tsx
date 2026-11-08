@@ -228,6 +228,15 @@ interface SocketContextValue {
   sendChatMemberRemoved: (payload: Record<string, unknown>) => void;
   subscribeChatMemberUpdated: (callback: (payload: Record<string, unknown>) => void) => () => void;
   subscribeChatMemberRemoved: (callback: (payload: Record<string, unknown>) => void) => () => void;
+  // Sessões Agendadas (Issue #63)
+  sendSessionPublish: (payload: Record<string, unknown>) => void;
+  sendSessionApply: (payload: Record<string, unknown>) => void;
+  sendSessionConfirm: (payload: Record<string, unknown>) => void;
+  sendSessionCancel: (payload: Record<string, unknown>) => void;
+  subscribeSessionPublished: (callback: (payload: Record<string, unknown>) => void) => () => void;
+  subscribeSessionApplied: (callback: (payload: Record<string, unknown>) => void) => () => void;
+  subscribeSessionConfirmed: (callback: (payload: Record<string, unknown>) => void) => () => void;
+  subscribeSessionCancelled: (callback: (payload: Record<string, unknown>) => void) => () => void;
 }
 
 const SocketContext = createContext<SocketContextValue | undefined>(undefined);
@@ -1150,6 +1159,112 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     [socket],
   );
 
+  // ============================= Sessões (Issue #63) =============================
+
+  const sendSessionPublish = useCallback(
+    (payload: Record<string, unknown>) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("session:publish", payload);
+      }
+    },
+    [socket],
+  );
+
+  const sendSessionApply = useCallback(
+    (payload: Record<string, unknown>) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("session:apply", payload);
+      }
+    },
+    [socket],
+  );
+
+  const sendSessionConfirm = useCallback(
+    (payload: Record<string, unknown>) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("session:confirm", payload);
+      }
+    },
+    [socket],
+  );
+
+  const sendSessionCancel = useCallback(
+    (payload: Record<string, unknown>) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("session:cancel", payload);
+      }
+    },
+    [socket],
+  );
+
+  const subscribeSessionPublished = useCallback(
+    (callback: (payload: Record<string, unknown>) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on("session:published", callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off("session:published", callback);
+        }
+      };
+    },
+    [socket],
+  );
+
+  const subscribeSessionApplied = useCallback(
+    (callback: (payload: Record<string, unknown>) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on("session:applied", callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off("session:applied", callback);
+        }
+      };
+    },
+    [socket],
+  );
+
+  const subscribeSessionConfirmed = useCallback(
+    (callback: (payload: Record<string, unknown>) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on("session:confirmed", callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off("session:confirmed", callback);
+        }
+      };
+    },
+    [socket],
+  );
+
+  const subscribeSessionCancelled = useCallback(
+    (callback: (payload: Record<string, unknown>) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on("session:cancelled", callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off("session:cancelled", callback);
+        }
+      };
+    },
+    [socket],
+  );
+
   return (
     <SocketContext.Provider
       value={{
@@ -1220,6 +1335,14 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         sendChatMemberRemoved,
         subscribeChatMemberUpdated,
         subscribeChatMemberRemoved,
+        sendSessionPublish,
+        sendSessionApply,
+        sendSessionConfirm,
+        sendSessionCancel,
+        subscribeSessionPublished,
+        subscribeSessionApplied,
+        subscribeSessionConfirmed,
+        subscribeSessionCancelled,
       }}
     >
       {children}

@@ -392,6 +392,27 @@ findAvailablePort(initialPort)
           io.to(`chat:${payload.groupId}`).emit("chat:member-removed", payload);
         });
 
+        // Sessões agendadas em tempo real (Issue #63)
+        socket.on("session:publish", (payload) => {
+          if (!payload || !payload.campaignId) return;
+          io.to(`campaign:${payload.campaignId}`).emit("session:published", payload);
+        });
+
+        socket.on("session:apply", (payload) => {
+          if (!payload || !payload.campaignId) return;
+          io.to(`campaign:${payload.campaignId}`).emit("session:applied", payload);
+        });
+
+        socket.on("session:confirm", (payload) => {
+          if (!payload || !payload.campaignId) return;
+          io.to(`campaign:${payload.campaignId}`).emit("session:confirmed", payload);
+        });
+
+        socket.on("session:cancel", (payload) => {
+          if (!payload || !payload.campaignId) return;
+          io.to(`campaign:${payload.campaignId}`).emit("session:cancelled", payload);
+        });
+
         // Sair explicitamente de uma campanha
         socket.on("leave-campaign", ({ campaignId }) => {
           if (!campaignId) return;
