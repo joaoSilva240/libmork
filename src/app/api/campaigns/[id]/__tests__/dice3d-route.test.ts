@@ -5,6 +5,10 @@ import { POST as createCampaign } from "@/app/api/campaigns/route";
 import { GET as getPlayerCampaignDetails } from "@/app/api/player/campaigns/[id]/details/route";
 import { GET as getPlayerCampaigns } from "@/app/api/player/campaigns/route";
 
+vi.mock("@/lib/server/chat-service", () => ({
+  ensureCampaignChatGroup: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock("@/lib/auth/session", () => ({
   requireAuth: vi.fn(),
 }));

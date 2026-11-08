@@ -21,6 +21,7 @@ type LogInput = {
   actorType: "character" | "npc" | "system";
   actorId: string | null;
   actorName: string | null;
+  actorImageUrl?: string | null;
   action: string;
   description: string | null;
   payload?: Record<string, unknown>;
@@ -49,7 +50,10 @@ async function writeLog(campaignId: string, userId: string, log: LogInput) {
       actorName: log.actorName,
       action: log.action,
       description: log.description,
-      payload: log.payload ?? {},
+      payload: {
+        actorImageUrl: log.actorImageUrl ?? null,
+        ...(log.payload ?? {}),
+      },
     })
     .returning();
 
@@ -116,6 +120,7 @@ export async function applyCharacterUpdate(
         actorType: "character",
         actorId: characterId,
         actorName: character.name,
+        actorImageUrl: character.imageUrl,
         action: "hp_change",
         description: `HP de ${character.name}: ${from} → ${next.hitPointsCurrent} (${input.hpDelta >= 0 ? "+" : ""}${input.hpDelta})${input.reason ? ` — ${input.reason}` : ""}`,
         payload: { from, to: next.hitPointsCurrent, delta: input.hpDelta },
@@ -135,6 +140,7 @@ export async function applyCharacterUpdate(
         actorType: "character",
         actorId: characterId,
         actorName: character.name,
+        actorImageUrl: character.imageUrl,
         action: "mana_change",
         description: `Mana de ${character.name}: ${from} → ${next.manaPointsCurrent} (${input.manaDelta >= 0 ? "+" : ""}${input.manaDelta})${input.reason ? ` — ${input.reason}` : ""}`,
         payload: { from, to: next.manaPointsCurrent, delta: input.manaDelta },
@@ -151,6 +157,7 @@ export async function applyCharacterUpdate(
         actorType: "character",
         actorId: characterId,
         actorName: character.name,
+        actorImageUrl: character.imageUrl,
         action: "hp_change",
         description: `HP de ${character.name}: ${from} → ${next.hitPointsCurrent}${input.reason ? ` — ${input.reason}` : ""}`,
         payload: { from, to: next.hitPointsCurrent },
@@ -167,6 +174,7 @@ export async function applyCharacterUpdate(
         actorType: "character",
         actorId: characterId,
         actorName: character.name,
+        actorImageUrl: character.imageUrl,
         action: "mana_change",
         description: `Mana de ${character.name}: ${from} → ${next.manaPointsCurrent}${input.reason ? ` — ${input.reason}` : ""}`,
         payload: { from, to: next.manaPointsCurrent },
@@ -185,6 +193,7 @@ export async function applyCharacterUpdate(
         actorType: "character",
         actorId: characterId,
         actorName: character.name,
+        actorImageUrl: character.imageUrl,
         action: "xp_gain",
         description: `${character.name} ganhou ${input.xpDelta} XP (agora ${xp}/100)${input.reason ? ` — ${input.reason}` : ""}`,
         payload: { amount: input.xpDelta, xp, level },
@@ -196,6 +205,7 @@ export async function applyCharacterUpdate(
           actorType: "character",
           actorId: characterId,
           actorName: character.name,
+          actorImageUrl: character.imageUrl,
           action: "level_up",
           description: `${character.name} subiu para o nível ${level}!`,
           payload: { level },
@@ -213,6 +223,7 @@ export async function applyCharacterUpdate(
         actorType: "character",
         actorId: characterId,
         actorName: character.name,
+        actorImageUrl: character.imageUrl,
         action: "level_change",
         description: `Nível de ${character.name}: ${from} → ${input.level}`,
         payload: { from, to: input.level },
@@ -250,9 +261,10 @@ export async function applyCharacterUpdate(
             actorType: "character",
             actorId: characterId,
             actorName: character.name,
+            actorImageUrl: character.imageUrl,
             action: "condition_add",
             description: `Condição "${condition.name}" aplicada em ${character.name}`,
-            payload: { conditionId: condition.id },
+            payload: { conditionId: condition.id, conditionName: condition.name },
           })
         );
       }
@@ -280,9 +292,10 @@ export async function applyCharacterUpdate(
           actorType: "character",
           actorId: characterId,
           actorName: character.name,
+          actorImageUrl: character.imageUrl,
           action: "condition_remove",
           description: `Condição "${condition.name}" removida de ${character.name}`,
-          payload: { conditionId: condition.id },
+          payload: { conditionId: condition.id, conditionName: condition.name },
         })
       );
     }
@@ -336,6 +349,7 @@ export async function applyNpcUpdate(
         actorType: "npc",
         actorId: npcId,
         actorName: npc.name,
+        actorImageUrl: npc.imageUrl,
         action: "hp_change",
         description: `HP de ${npc.name}: ${from} → ${next.hitPoints} (${input.hpDelta >= 0 ? "+" : ""}${input.hpDelta})${input.reason ? ` — ${input.reason}` : ""}`,
         payload: { from, to: next.hitPoints, delta: input.hpDelta },
@@ -352,6 +366,7 @@ export async function applyNpcUpdate(
         actorType: "npc",
         actorId: npcId,
         actorName: npc.name,
+        actorImageUrl: npc.imageUrl,
         action: "mana_change",
         description: `Mana de ${npc.name}: ${from} → ${next.manaPoints} (${input.manaDelta >= 0 ? "+" : ""}${input.manaDelta})${input.reason ? ` — ${input.reason}` : ""}`,
         payload: { from, to: next.manaPoints, delta: input.manaDelta },
@@ -368,6 +383,7 @@ export async function applyNpcUpdate(
         actorType: "npc",
         actorId: npcId,
         actorName: npc.name,
+        actorImageUrl: npc.imageUrl,
         action: "hp_change",
         description: `HP de ${npc.name}: ${from} → ${next.hitPoints}${input.reason ? ` — ${input.reason}` : ""}`,
         payload: { from, to: next.hitPoints },
@@ -384,6 +400,7 @@ export async function applyNpcUpdate(
         actorType: "npc",
         actorId: npcId,
         actorName: npc.name,
+        actorImageUrl: npc.imageUrl,
         action: "mana_change",
         description: `Mana de ${npc.name}: ${from} → ${next.manaPoints}${input.reason ? ` — ${input.reason}` : ""}`,
         payload: { from, to: next.manaPoints },
@@ -402,6 +419,7 @@ export async function applyNpcUpdate(
         actorType: "npc",
         actorId: npcId,
         actorName: npc.name,
+        actorImageUrl: npc.imageUrl,
         action: "xp_gain",
         description: `${npc.name} ganhou ${input.xpDelta} XP (agora ${xp}/100)${input.reason ? ` — ${input.reason}` : ""}`,
         payload: { amount: input.xpDelta, xp, level },
@@ -413,6 +431,7 @@ export async function applyNpcUpdate(
           actorType: "npc",
           actorId: npcId,
           actorName: npc.name,
+          actorImageUrl: npc.imageUrl,
           action: "level_up",
           description: `${npc.name} subiu para o nível ${level}!`,
           payload: { level },
@@ -430,6 +449,7 @@ export async function applyNpcUpdate(
         actorType: "npc",
         actorId: npcId,
         actorName: npc.name,
+        actorImageUrl: npc.imageUrl,
         action: "level_change",
         description: `Nível de ${npc.name}: ${from} → ${input.level}`,
         payload: { from, to: input.level },
@@ -448,6 +468,23 @@ export async function applyNpcUpdate(
 }
 
 /**
+ * Resolve a imagem do ator para o avatar registrado no log.
+ */
+async function resolveActorImageUrl(
+  actorType: "character" | "npc",
+  actorId: string
+): Promise<string | null> {
+  const table = actorType === "character" ? characters : npcs;
+  const [row] = await db
+    .select({ imageUrl: table.imageUrl })
+    .from(table)
+    .where(eq(table.id, actorId))
+    .limit(1);
+
+  return row?.imageUrl ?? null;
+}
+
+/**
  * Cria uma requisição de rolagem no log da campanha (RF-041).
  */
 export async function createRollRequest(
@@ -461,10 +498,13 @@ export async function createRollRequest(
     reason?: string;
   }
 ) {
+  const actorImageUrl = await resolveActorImageUrl(input.actorType, input.actorId);
+
   return writeLog(campaignId, userId, {
     actorType: input.actorType,
     actorId: input.actorId,
     actorName: input.actorName,
+    actorImageUrl,
     action: "roll_request",
     description: `${input.actorName} deve rolar ${input.rollExpression}${input.reason ? ` (${input.reason})` : ""}`,
     payload: { rollExpression: input.rollExpression, reason: input.reason ?? null, result: null },

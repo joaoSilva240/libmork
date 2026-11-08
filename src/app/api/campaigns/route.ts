@@ -9,6 +9,7 @@ import { requireAuth } from "@/lib/auth/session";
 import { createCampaignSchema } from "@/lib/validators/campaign";
 import { eq, inArray } from "drizzle-orm";
 import { logger } from "@/lib/logger";
+import { ensureCampaignChatGroup } from "@/lib/server/chat-service";
 
 /**
  * GET /api/campaigns
@@ -19,10 +20,7 @@ export async function GET() {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const userCampaigns = await db
@@ -39,7 +37,7 @@ export async function GET() {
     logger.error({ err: error }, "Erro ao listar campanhas");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -53,10 +51,7 @@ export async function POST(request: NextRequest) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -69,7 +64,7 @@ export async function POST(request: NextRequest) {
           error: "Dados inválidos",
           errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -109,7 +104,7 @@ export async function POST(request: NextRequest) {
         initialNpcIds.map((npcId) => ({
           campaignId: newCampaign.id,
           npcId,
-        }))
+        })),
       );
     }
 
@@ -129,8 +124,15 @@ export async function POST(request: NextRequest) {
           imageUrl: asset.imageUrl,
           category: asset.category ?? "handout",
           position: asset.position ?? idx,
-        }))
+        })),
       );
+    }
+
+    // Cria e vincula automaticamente o grupo de chat da campanha (Issue #62)
+    try {
+      await ensureCampaignChatGroup(newCampaign.id);
+    } catch (chatErr) {
+      logger.warn({ err: chatErr }, "Falha ao criar grupo de chat automático da campanha");
     }
 
     return NextResponse.json(
@@ -138,13 +140,13 @@ export async function POST(request: NextRequest) {
         success: true,
         data: newCampaign,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     logger.error({ err: error }, "Erro ao criar campanha");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
