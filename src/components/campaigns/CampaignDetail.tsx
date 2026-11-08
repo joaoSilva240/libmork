@@ -19,6 +19,9 @@ import { MasterAssetsPanel } from "./MasterAssetsPanel";
 import { CampaignSettingsModal } from "./CampaignSettingsModal";
 import { useMasterScreenConfig } from "@/hooks/useMasterScreenConfig";
 import { useTheme } from "@/context/ThemeContext";
+import { SceneBar } from "./SceneBar";
+import { useCampaignScene } from "@/hooks/useCampaignScene";
+import { SCENES } from "@/lib/scenes/sceneConfig";
 import {
   SHIELD_LEFT_MAX,
   SHIELD_LEFT_MIN,
@@ -82,6 +85,12 @@ export function CampaignDetail() {
     updateConfig: updateScreenConfig,
     resetConfig: resetScreenConfig,
   } = useMasterScreenConfig();
+
+  const { activeScene, isSaving, setScene } = useCampaignScene({
+    campaignId: campaign?.id ?? null,
+    initialScene: campaign?.activeScene,
+    socket,
+  });
 
   const [shieldGridEl, setShieldGridEl] = useState<HTMLDivElement | null>(null);
   const [shieldGridWidth, setShieldGridWidth] = useState(0);
@@ -293,11 +302,12 @@ export function CampaignDetail() {
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header Hero com Imagem de Capa e Gradiente */}
       <div
+        data-testid="shield-header"
         className={`relative overflow-hidden mb-2 rounded-xl border px-4 py-2.5 shrink-0 shadow-lg ${
           isMissing
             ? "border-zinc-800 bg-[#0d0e12] font-mono shadow-rose-950/20"
             : "border-gray-800/80 bg-gray-900"
-        }`}
+        } ${activeScene && !isMissing ? `ring-1 ${SCENES[activeScene].accentClasses}` : ""}`}
         style={
           campaign.coverImageUrl
             ? {
@@ -347,6 +357,13 @@ export function CampaignDetail() {
           </div>
 
           <div className="flex items-center gap-2">
+            {!isMissing && (
+              <SceneBar
+                activeScene={activeScene}
+                onSceneChange={(next) => void setScene(next)}
+                disabled={isSaving}
+              />
+            )}
             {!isMissing && (
               <button
                 type="button"
