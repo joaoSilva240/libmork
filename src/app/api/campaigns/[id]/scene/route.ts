@@ -12,7 +12,7 @@ import { requireAuth } from "@/lib/auth/session";
 import { getCampaignAsMaster } from "@/lib/auth/campaign-access";
 import { eq } from "drizzle-orm";
 import { logger } from "@/lib/logger";
-import { isSceneValue, SCENES, type ActiveScene, type SceneType } from "@/lib/scenes/sceneConfig";
+import { isSceneValue, SCENES, type ActiveScene } from "@/lib/scenes/sceneConfig";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
