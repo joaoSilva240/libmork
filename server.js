@@ -243,6 +243,12 @@ findAvailablePort(initialPort)
           io.to(`campaign:${payload.campaignId}`).emit("establishment-status-updated", payload);
         });
 
+        // Mudança de cena do escudo do mestre (Issue #86 — Fase 1)
+        socket.on("scene-changed", (payload) => {
+          if (!payload || !payload.campaignId) return;
+          io.to(`campaign:${payload.campaignId}`).emit("scene-changed", payload);
+        });
+
         socket.on("create-campaign-log", (payload) => {
           if (!payload || !payload.campaignId || !payload.log) return;
           io.to(`campaign:${payload.campaignId}`).emit("campaign-log-created", payload);
