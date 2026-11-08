@@ -43,27 +43,35 @@ export function CampaignInvites({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!showCharactersNpcs && !showPlayers) return;
+
     let cancelled = false;
 
     const loadData = async () => {
       try {
         const [invitesRes, rosterRes] = await Promise.all([
-          fetch(`/api/campaigns/${campaignId}/invites`),
-          fetch(`/api/campaigns/${campaignId}/roster`),
+          showPlayers
+            ? fetch(`/api/campaigns/${campaignId}/invites`)
+            : Promise.resolve(null),
+          showCharactersNpcs
+            ? fetch(`/api/campaigns/${campaignId}/roster`)
+            : Promise.resolve(null),
         ]);
 
-        const invitesData = await invitesRes.json();
-        const rosterData = await rosterRes.json();
+        const invitesData = invitesRes ? await invitesRes.json() : null;
+        const rosterData = rosterRes ? await rosterRes.json() : null;
 
         if (cancelled) return;
 
-        if (invitesRes.ok && invitesData.data) {
-          setPlayers(invitesData.data);
-        } else if (!invitesRes.ok) {
-          setError(invitesData.error || "Erro ao carregar jogadores");
+        if (invitesRes && invitesData) {
+          if (invitesRes.ok && invitesData.data) {
+            setPlayers(invitesData.data);
+          } else if (!invitesRes.ok) {
+            setError(invitesData.error || "Erro ao carregar jogadores");
+          }
         }
 
-        if (rosterRes.ok && rosterData.data) {
+        if (rosterRes && rosterData && rosterRes.ok && rosterData.data) {
           const playersList: RosterPlayer[] = rosterData.data.players || [];
           const npcsList: Npc[] = rosterData.data.npcs || [];
 
@@ -111,34 +119,45 @@ export function CampaignInvites({
 
     void loadData();
 
-    const unsubscribeInviteCreated = subscribeCampaignInviteCreated((payload) => {
-      if (payload.campaignId !== campaignId) return;
-      setPlayers((prev) =>
-        prev.map((player) =>
-          player.id === payload.invite.userId
-            ? { ...player, isInvited: true, inviteId: payload.invite.id }
-            : player
-        )
-      );
-    });
+    let unsubscribeInviteCreated: (() => void) | undefined;
+    let unsubscribeInviteRevoked: (() => void) | undefined;
 
-    const unsubscribeInviteRevoked = subscribeCampaignInviteRevoked((payload) => {
-      if (payload.campaignId !== campaignId) return;
-      setPlayers((prev) =>
-        prev.map((player) =>
-          player.id === payload.userId || player.inviteId === payload.inviteId
-            ? { ...player, isInvited: false, inviteId: null }
-            : player
-        )
-      );
-    });
+    if (showPlayers) {
+      unsubscribeInviteCreated = subscribeCampaignInviteCreated((payload) => {
+        if (payload.campaignId !== campaignId) return;
+        setPlayers((prev) =>
+          prev.map((player) =>
+            player.id === payload.invite.userId
+              ? { ...player, isInvited: true, inviteId: payload.invite.id }
+              : player
+          )
+        );
+      });
+
+      unsubscribeInviteRevoked = subscribeCampaignInviteRevoked((payload) => {
+        if (payload.campaignId !== campaignId) return;
+        setPlayers((prev) =>
+          prev.map((player) =>
+            player.id === payload.userId || player.inviteId === payload.inviteId
+              ? { ...player, isInvited: false, inviteId: null }
+              : player
+          )
+        );
+      });
+    }
 
     return () => {
       cancelled = true;
-      unsubscribeInviteCreated();
-      unsubscribeInviteRevoked();
+      unsubscribeInviteCreated?.();
+      unsubscribeInviteRevoked?.();
     };
-  }, [campaignId, subscribeCampaignInviteCreated, subscribeCampaignInviteRevoked]);
+  }, [
+    campaignId,
+    showPlayers,
+    showCharactersNpcs,
+    subscribeCampaignInviteCreated,
+    subscribeCampaignInviteRevoked,
+  ]);
 
   const handleInvite = async (userId: string) => {
     setError(null);
