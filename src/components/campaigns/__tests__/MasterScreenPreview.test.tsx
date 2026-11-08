@@ -116,3 +116,43 @@ describe("MasterScreenPreview Component", () => {
     expect(transitionElements.length).toBeGreaterThan(0);
   });
 });
+
+describe("MasterScreenPreview Component (Issue #75)", () => {
+  it("renders modules in their configured columns", () => {
+    render(
+      <MasterScreenPreview
+        showRoster={true}
+        showSessionLog={true}
+        showCanvas={true}
+        showMap={true}
+        showJukebox={true}
+        showAssets={true}
+        leftColumnOrder={["worlds"]}
+        rightColumnOrder={["sessionLog", "jukebox"]}
+      />
+    );
+
+    const leftCol = screen.getByTestId("preview-left-col");
+    const rightCol = screen.getByTestId("preview-right-col");
+
+    expect(leftCol).toHaveTextContent(/Mundos/i);
+    expect(rightCol).toHaveTextContent(/Jukebox/i);
+    expect(rightCol).toHaveTextContent(/Logs/i);
+  });
+
+  it("hides assets when showAssets is false", () => {
+    render(
+      <MasterScreenPreview
+        showRoster={true}
+        showSessionLog={true}
+        showCanvas={true}
+        showMap={true}
+        showAssets={false}
+        leftColumnOrder={["assets"]}
+        rightColumnOrder={["sessionLog"]}
+      />
+    );
+
+    expect(screen.queryByText(/Assets/i)).not.toBeInTheDocument();
+  });
+});
