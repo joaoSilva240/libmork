@@ -346,14 +346,19 @@ export function MasterScreenConfigPanel({ config, onUpdate, onReset }: MasterScr
         </label>
 
         <label className="flex items-center justify-between gap-2 text-xs cursor-pointer group p-1.5 rounded hover:bg-dominant-deep/50 transition">
-          <span className="text-secondary-offwhite group-hover:text-secondary-pure transition-colors">
-            Assets e Handouts
+          <span className="flex flex-col gap-0.5">
+            <span className="text-secondary-offwhite group-hover:text-secondary-pure transition-colors">
+              Assets e Handouts
+            </span>
+            <span className="text-[11px] text-secondary-muted">
+              Exibe o painel de handouts, mapas e cenas visuais compartilháveis.
+            </span>
           </span>
           <input
             type="checkbox"
             checked={config.showAssets}
             onChange={(e) => onUpdate({ showAssets: e.target.checked })}
-            className="h-4 w-4 rounded border-secondary-border bg-dominant-deep text-accent focus:ring-2 focus:ring-accent cursor-pointer"
+            className="h-4 w-4 shrink-0 rounded border-secondary-border bg-dominant-deep text-accent focus:ring-2 focus:ring-accent cursor-pointer"
           />
         </label>
       </div>
