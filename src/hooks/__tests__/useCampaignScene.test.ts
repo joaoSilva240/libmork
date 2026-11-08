@@ -1,8 +1,15 @@
-import { renderHook, act, waitFor } from "@testing-library/react";
+import { renderHook, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { useCampaignScene } from "../useCampaignScene";
+import { useCampaignScene, type UseCampaignSceneOptions } from "../useCampaignScene";
 
-function makeFakeSocket() {
+type MinimalSocket = NonNullable<UseCampaignSceneOptions["socket"]>;
+
+type FakeSocket = MinimalSocket & {
+  fire(event: string, payload: unknown): void;
+  handlerCount(event: string): number;
+};
+
+function makeFakeSocket(): FakeSocket {
   const handlers: Record<string, Array<(payload: unknown) => void>> = {};
   return {
     on: vi.fn((event: string, handler: (payload: unknown) => void) => {
@@ -18,7 +25,7 @@ function makeFakeSocket() {
     handlerCount(event: string) {
       return (handlers[event] || []).length;
     },
-  };
+  } as unknown as FakeSocket;
 }
 
 describe("useCampaignScene (issue #86, Fase 1)", () => {
