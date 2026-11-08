@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoutButton } from "@/components/auth/LogoutButton";
@@ -10,11 +10,13 @@ const STORAGE_KEY = "libmork-master-sidebar-collapsed";
 
 export function MasterSidebar() {
   const pathname = usePathname();
-  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored !== null ? stored === "true" : false;
-  });
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Restaurado pós-hidratação para não divergir do HTML renderizado no servidor
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsCollapsed(localStorage.getItem(STORAGE_KEY) === "true");
+  }, []);
 
   const toggleCollapse = () => {
     setIsCollapsed((prev) => {

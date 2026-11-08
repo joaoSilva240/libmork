@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import type { Character, PlayerCampaign, PlayerCampaignDetails } from "@/types";
 import type { MissingHabitant, EquipmentStatus } from "@/lib/systems/missing/types";
 import { CharacterCard } from "@/components/characters/CharacterCard";
@@ -17,8 +18,9 @@ import {
   SettingsFilledIcon,
   TreasuryIcon,
 } from "@/components/ui/Icons";
-import { MessageSquare } from "lucide-react";
-import { CampaignChat } from "@/components/chat/CampaignChat";
+import { MessageSquare, Dices, CalendarDays } from "lucide-react";
+import { PlayerCommunityHub } from "@/components/sessions/PlayerCommunityHub";
+import { SessionInviteFeed } from "@/components/sessions/SessionInviteFeed";
 import { Dice3DSettingsPanel } from "@/components/dice/Dice3DSettingsPanel";
 import { MotionSettingsPanel } from "@/components/motion/MotionSettingsPanel";
 import { WealthManager, type WealthData } from "@/components/player/WealthManager";
@@ -50,10 +52,19 @@ function getReputationDots(reputationLevel: number): number {
 }
 
 export function PlayerDashboard() {
-  const { joinCampaign, leaveCampaign, setCampaignDice3DSettings } = useSocket();
+  const {
+    joinCampaign,
+    leaveCampaign,
+    sendSessionApply,
+    subscribeSessionPublished,
+    setCampaignDice3DSettings,
+  } = useSocket();
   const [activeTab, setActiveTab] = useState<
     "characters" | "campaigns" | "community" | "wealth" | "settings"
   >("characters");
+  const [campaignsView, setCampaignsView] = useState<"campanhas" | "sessoes">("campanhas");
+  const [hasNewInvites, setHasNewInvites] = useState(false);
+  const [communityFullscreen, setCommunityFullscreen] = useState(false);
   const [viewMode, setViewMode] = useState<"gallery" | "list">("gallery");
   const [displayName, setDisplayName] = useState("Jogador");
   const [userId, setUserId] = useState<string>("player-id");
@@ -96,6 +107,52 @@ export function PlayerDashboard() {
   >([]);
   const addToast = (message: string, type: "error" | "success" | "info" | "warning" = "info") => {
     setToasts((prev) => [...prev, { id: generateUUID(), message, type }]);
+  };
+
+  // Deep-link: /player?tab=<aba>&campaign=<id>
+  const searchParams = useSearchParams();
+  const deepLinkAppliedRef = useRef(false);
+
+  useEffect(() => {
+    const tabParam = searchParams?.get("tab");
+    if (
+      tabParam === "characters" ||
+      tabParam === "campaigns" ||
+      tabParam === "community" ||
+      tabParam === "wealth" ||
+      tabParam === "settings"
+    ) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setActiveTab(tabParam);
+    }
+    // Aplicado apenas uma vez na montagem
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (deepLinkAppliedRef.current) return;
+    const campaignParam = searchParams?.get("campaign");
+    if (!campaignParam || campaigns.length === 0) return;
+    const found = campaigns.find((c) => c.id === campaignParam);
+    if (!found) return;
+    deepLinkAppliedRef.current = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setActiveTab("campaigns");
+    setSelectedCampaign(found);
+  }, [campaigns, searchParams]);
+
+  useEffect(() => {
+    const offPublished = subscribeSessionPublished(() => {
+      setHasNewInvites(true);
+    });
+    return () => {
+      offPublished();
+    };
+  }, [subscribeSessionPublished]);
+
+  const handleSessionApplied = (campaignId: string, sessionId: string) => {
+    sendSessionApply({ campaignId, sessionId });
+    addToast("Candidatura enviada!", "success");
   };
 
   const loadCharacters = async () => {
@@ -510,10 +567,17 @@ export function PlayerDashboard() {
     return () => window.removeEventListener("keydown", handleEscape);
   }, []);
 
+  const isCommunityFullscreen = activeTab === "community" && communityFullscreen;
+
   return (
     <div
-      className={`${activeTab === "settings" ? "pt-[calc(8.25rem+env(safe-area-inset-top,0px))]" : "pt-[calc(5.5rem+env(safe-area-inset-top,0px))]"} pb-[calc(6rem+env(safe-area-inset-bottom,0px))]`}
+      className={
+        isCommunityFullscreen
+          ? ""
+          : `${activeTab === "settings" ? "pt-[calc(8.25rem+env(safe-area-inset-top,0px))]" : "pt-[calc(5.5rem+env(safe-area-inset-top,0px))]"} pb-[calc(6rem+env(safe-area-inset-bottom,0px))]`
+      }
     >
+      {!isCommunityFullscreen && (
       <header className="fixed inset-x-0 top-0 z-30 border-x-0 border-t-0 border-b border-secondary-border bg-secondary-card shadow-md pt-[calc(1rem+env(safe-area-inset-top,0px))]">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 pb-3">
           <div>
@@ -578,6 +642,7 @@ export function PlayerDashboard() {
           </div>
         )}
       </header>
+      )}
 
       {activeTab === "characters" && (
         <Link
@@ -716,6 +781,49 @@ export function PlayerDashboard() {
         {/* Conteúdo da Aba 2: Campanhas */}
         {activeTab === "campaigns" && (
           <div className="motion-page">
+            <div className="mb-4 flex items-center gap-2" role="tablist" aria-label="Campanhas e sessões">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={campaignsView === "campanhas"}
+                data-testid="campaigns-view-campanhas"
+                onClick={() => setCampaignsView("campanhas")}
+                className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  campaignsView === "campanhas"
+                    ? "bg-accent text-white shadow-sm ring-1 ring-accent"
+                    : "text-secondary-muted hover:text-secondary-pure hover:bg-dominant-container/50"
+                }`}
+              >
+                <Dices className="h-4 w-4" />
+                Minhas Campanhas
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={campaignsView === "sessoes"}
+                data-testid="campaigns-view-sessions"
+                onClick={() => {
+                  setCampaignsView("sessoes");
+                  setHasNewInvites(false);
+                }}
+                className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  campaignsView === "sessoes"
+                    ? "bg-accent text-white shadow-sm ring-1 ring-accent"
+                    : "text-secondary-muted hover:text-secondary-pure hover:bg-dominant-container/50"
+                }`}
+              >
+                <CalendarDays className="h-4 w-4" />
+                Sessões
+                {hasNewInvites && campaignsView !== "sessoes" && (
+                  <span className="h-2 w-2 rounded-full bg-accent-vibrant" />
+                )}
+              </button>
+            </div>
+
+            {campaignsView === "sessoes" ? (
+              <SessionInviteFeed currentUserId={userId} onApplied={handleSessionApplied} />
+            ) : (
+            <>
             {isLoadingCampaigns ? (
               <div className="flex min-h-[300px] items-center justify-center py-12">
                 <Spinner size="lg" />
@@ -896,13 +1004,23 @@ export function PlayerDashboard() {
                 ))}
               </div>
             )}
+            </>
+            )}
           </div>
         )}
 
-        {/* Conteúdo da Aba: Comunidade / Chat de Campanhas */}
+        {/* Conteúdo da Aba: Comunidade / Chat / Calendário */}
         {activeTab === "community" && (
-          <div className="motion-page h-[calc(100vh-13rem)] pb-12">
-            <CampaignChat currentUser={{ id: userId, displayName: userName }} />
+          <div
+            className={`motion-page -mx-4 ${
+              isCommunityFullscreen ? "h-[100dvh]" : "h-[calc(100vh-11.5rem)]"
+            }`}
+          >
+            <PlayerCommunityHub
+              currentUser={{ id: userId, displayName: userName }}
+              isFullscreen={communityFullscreen}
+              onToggleFullscreen={() => setCommunityFullscreen((v) => !v)}
+            />
           </div>
         )}
 
@@ -940,6 +1058,7 @@ export function PlayerDashboard() {
           onRemove={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))}
         />
 
+        {!isCommunityFullscreen && (
         <BottomNav
           activeId={activeTab}
           onChange={(id) => setActiveTab(id as typeof activeTab)}
@@ -971,6 +1090,7 @@ export function PlayerDashboard() {
             },
           ]}
         />
+        )}
 
         {/* Overlay de Detalhes da Campanha */}
         {selectedCampaign !== null &&
