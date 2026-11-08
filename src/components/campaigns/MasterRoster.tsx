@@ -17,6 +17,7 @@ import { useResizableLayout } from "@/hooks/useResizableLayout";
 import { ExternalLink, Minimize2 } from "lucide-react";
 import { MissingHabitantSheet } from "@/components/systems/missing/MissingHabitantSheet";
 import type { MissingHabitant, EquipmentStatus } from "@/lib/systems/missing/types";
+import { NEUTRAL_MODULES, modulesForScene, type ActiveScene } from "@/lib/scenes/sceneConfig";
 
 const CombatTrackerModal = dynamic(() => import("@/components/combat/CombatTrackerModal").then(m => ({ default: m.CombatTrackerModal })), {
   ssr: false,
@@ -43,6 +44,7 @@ type MasterRosterProps = {
   showCanvas?: boolean;
   showMap?: boolean;
   onResetConfig?: () => void;
+  activeScene?: ActiveScene;
 };
 
 export function MasterRoster({
@@ -55,8 +57,13 @@ export function MasterRoster({
   showCanvas = true,
   showMap = true,
   onResetConfig,
+  activeScene,
 }: MasterRosterProps) {
   const isMissing = rulesEngine === "missing_zero";
+  // Missing ignora a matriz; cena undefined/null = neutro (comportamento atual).
+  const sceneMods = isMissing
+    ? NEUTRAL_MODULES
+    : modulesForScene(activeScene ?? null);
   const { isConnected, presenceList, joinCampaign, subscribeActorStatus, subscribeCombatState } = useSocket();
   const [roster, setRoster] = useState<RosterData>({ players: [], npcs: [] });
   const [worlds, setWorlds] = useState<World[]>([]);
@@ -732,7 +739,7 @@ export function MasterRoster({
       </div>
 
       {/* Barra de Ações sobre o Carrossel (Combate/Encontros ou Registro Civil) */}
-      {showRoster && (isMissing ? (
+      {showRoster && sceneMods.combatBar !== "hidden" && (isMissing ? (
         <div className="mb-1 flex items-center justify-between rounded-t-lg bg-[#111215] px-3 py-2 border border-b-0 border-zinc-800 text-xs flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <span className="font-mono text-[11px] font-bold text-zinc-400 tracking-wider">
@@ -782,6 +789,11 @@ export function MasterRoster({
               </div>
             ) : (
               <span className="text-gray-400">Nenhum combate ativo</span>
+            )}
+            {activeScene === "combat" && !selectedWorldId && (
+              <span data-testid="scene-combat-world-hint" className="text-[11px] text-amber-300">
+                Selecione um mundo para iniciar o encontro
+              </span>
             )}
           </div>
 
@@ -853,7 +865,9 @@ export function MasterRoster({
       ))}
 
       {/* Carrossel de personagens fixo na parte inferior */}
-      {showRoster && !isCarouselCollapsed && (
+      {showRoster &&
+        sceneMods.carousel !== "hidden" &&
+        (sceneMods.carousel === "visible" || !isCarouselCollapsed) && (
         <div
           onDragOver={(e) => {
             e.preventDefault();
