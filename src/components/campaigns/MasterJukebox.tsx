@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import {
   Plus,
   Play,
@@ -55,11 +55,13 @@ export function MasterJukebox({
   const [urlInput, setUrlInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [sceneOverride, setSceneOverride] = useState<"all" | "geral" | SceneType | null>(null);
+  const [prevActiveScene, setPrevActiveScene] = useState<ActiveScene>(activeScene);
   const [addScene, setAddScene] = useState<"" | SceneType>("");
 
-  useEffect(() => {
+  if (prevActiveScene !== activeScene) {
+    setPrevActiveScene(activeScene);
     setSceneOverride(null);
-  }, [activeScene]);
+  }
   const [volumeLocal, setVolumeLocal] = useState<Record<string, number>>({});
   const [progress, setProgress] = useState<Record<string, { current: number; duration: number }>>(
     {},
