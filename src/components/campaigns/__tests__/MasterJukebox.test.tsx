@@ -53,6 +53,7 @@ describe("MasterJukebox", () => {
       toggleLoop: mockToggleLoop,
       createPlaylist: mockCreatePlaylist,
       ungroupPlaylist: mockUngroupPlaylist,
+      setTrackScene: vi.fn(),
       ...overrides,
     };
   }
