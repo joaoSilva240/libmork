@@ -75,17 +75,17 @@ export function CreatePollModal({ isOpen, onClose, onSubmit }: CreatePollModalPr
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      className="max-w-md bg-secondary-card border border-secondary-border rounded-xl"
+      className="mx-auto max-w-lg overflow-hidden bg-secondary-card border border-secondary-border rounded-2xl shadow-2xl"
     >
       <form onSubmit={handleSubmit} className="flex flex-col h-full">
-        <Modal.Header className="flex items-center justify-between border-b border-secondary-border p-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/20 text-accent">
+        <Modal.Header className="flex items-center justify-between border-b border-secondary-border bg-dominant-deep/50 px-5 py-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent/15 border border-accent/30 text-accent">
               <BarChart2 className="h-4 w-4" />
             </div>
             <h3 className="text-base font-bold text-secondary-pure">Nova Enquete da Campanha</h3>
           </div>
-          <Modal.CloseButton />
+          <Modal.CloseButton className="rounded-lg p-1.5 text-secondary-muted hover:text-secondary-pure hover:bg-secondary-input transition-colors cursor-pointer" />
         </Modal.Header>
 
         <Modal.Body className="flex flex-col gap-4 p-4 overflow-y-auto max-h-[70vh]">
