@@ -202,13 +202,36 @@ describe("useMasterScreenConfig - Module Ordering & Assets Visibility (Issue #75
     const sanitized = sanitizeMasterScreenConfig(corruptedConfig);
     const allModules = [...sanitized.leftColumnOrder, ...sanitized.rightColumnOrder];
 
-    expect(new Set(allModules).size).toBe(6);
-    expect(allModules).toContain("worlds");
-    expect(allModules).toContain("assets");
-    expect(allModules).toContain("jukebox");
-    expect(allModules).toContain("charactersNpcs");
-    expect(allModules).toContain("players");
+    // Blocos consolidados da issue #89: módulos legados migram para mediaPanel.
+    expect(new Set(allModules).size).toBe(3);
+    expect(allModules).toContain("mediaPanel");
+    expect(allModules).toContain("actorsPanel");
     expect(allModules).toContain("sessionLog");
+  });
+
+  it("migrates legacy module ids into consolidated blocks preserving order (issue #89)", () => {
+    const legacyConfig = {
+      leftColumnOrder: ["assets", "worlds", "jukebox", "charactersNpcs", "players"],
+      rightColumnOrder: ["sessionLog"],
+    };
+
+    const sanitized = sanitizeMasterScreenConfig(legacyConfig);
+    expect(sanitized.leftColumnOrder).toEqual(["mediaPanel", "actorsPanel"]);
+    expect(sanitized.rightColumnOrder).toEqual(["sessionLog"]);
+  });
+
+  it("migrates blocks placed in different columns keeping the first column occurrence", () => {
+    const legacyConfig = {
+      leftColumnOrder: ["worlds"],
+      rightColumnOrder: ["jukebox", "assets", "charactersNpcs", "players", "sessionLog"],
+    };
+
+    const sanitized = sanitizeMasterScreenConfig(legacyConfig);
+    // Mundos migram para mediaPanel na esquerda; o jukebox/assets da direita
+    // colapsa no bloco já existente — actorsPanel permanece na coluna direita
+    // onde seus módulos estavam.
+    expect(sanitized.leftColumnOrder).toEqual(["mediaPanel"]);
+    expect(sanitized.rightColumnOrder).toEqual(["actorsPanel", "sessionLog"]);
   });
 
   it("persists column order and showAssets updates to localStorage", () => {
@@ -217,17 +240,17 @@ describe("useMasterScreenConfig - Module Ordering & Assets Visibility (Issue #75
     act(() => {
       result.current.updateConfig({
         showAssets: false,
-        leftColumnOrder: ["worlds"],
-        rightColumnOrder: ["jukebox", "assets", "charactersNpcs", "players", "sessionLog"],
+        leftColumnOrder: ["actorsPanel"],
+        rightColumnOrder: ["mediaPanel", "sessionLog"],
       });
     });
 
     expect(result.current.config.showAssets).toBe(false);
-    expect(result.current.config.leftColumnOrder).toEqual(["worlds"]);
+    expect(result.current.config.leftColumnOrder).toEqual(["actorsPanel"]);
 
     const stored = JSON.parse(localStorage.getItem(masterScreenConfigKey) || "{}");
     expect(stored.showAssets).toBe(false);
-    expect(stored.leftColumnOrder).toEqual(["worlds"]);
+    expect(stored.leftColumnOrder).toEqual(["actorsPanel"]);
   });
 });
 

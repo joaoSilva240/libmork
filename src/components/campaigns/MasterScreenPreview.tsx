@@ -27,6 +27,8 @@ type PreviewModuleMeta = {
 };
 
 const MODULE_META: Record<ShieldModuleId, PreviewModuleMeta> = {
+  mediaPanel: { label: "Mídia (Mundos/Assets/Jukebox)", icon: MapPin },
+  actorsPanel: { label: "Participantes (Personagens/Jogadores)", icon: Users },
   worlds: { label: "Mundos", icon: MapPin },
   assets: { label: "Assets", icon: Image },
   jukebox: { label: "Jukebox", icon: Music, accent: true },
@@ -52,6 +54,8 @@ export function MasterScreenPreview({
   // Flag de visibilidade que controla cada módulo. "worlds" é exibido quando o
   // Mapa Tático está ativo (showMap), conforme a especificação da issue #75.
   const visibility: Record<ShieldModuleId, boolean> = {
+    mediaPanel: showMap || showAssets || showJukebox,
+    actorsPanel: showCharactersNpcs || showPlayers,
     worlds: showMap,
     assets: showAssets,
     jukebox: showJukebox,
