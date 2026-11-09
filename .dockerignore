@@ -2,6 +2,8 @@
 .husky
 node_modules
 .next
+dist-electron
+release
 *.log
 .env
 .env.local
