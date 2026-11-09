@@ -49,12 +49,12 @@ export function CreateDocumentModal({
       setProvider(
         LIBRARY_PROVIDERS.includes(editingDocument.provider as LibraryProvider)
           ? (editingDocument.provider as LibraryProvider)
-          : "external"
+          : "external",
       );
       setCategory(
         LIBRARY_CATEGORIES.includes(editingDocument.category as LibraryCategory)
           ? (editingDocument.category as LibraryCategory)
-          : "livro-base"
+          : "livro-base",
       );
       setTagsStr((editingDocument.tags || []).join(", "));
       setIsPublic(editingDocument.isPublic ?? true);
@@ -96,9 +96,10 @@ export function CreateDocumentModal({
     };
 
     try {
-      const endpoint = isEditing && editingDocument
-        ? `/api/library/documents/${editingDocument.id}`
-        : "/api/library/documents";
+      const endpoint =
+        isEditing && editingDocument
+          ? `/api/library/documents/${editingDocument.id}`
+          : "/api/library/documents";
       const method = isEditing ? "PATCH" : "POST";
 
       const res = await fetch(endpoint, {
@@ -177,9 +178,7 @@ export function CreateDocumentModal({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-300">
-                Categoria *
-              </label>
+              <label className="mb-1 block text-xs font-semibold text-gray-300">Categoria *</label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as LibraryCategory)}
@@ -225,8 +224,8 @@ export function CreateDocumentModal({
                 provider === "smb"
                   ? "Ex: livros/core-rules.pdf ou smb://servidor/pasta/livro.pdf"
                   : provider === "gdrive"
-                  ? "Ex: https://drive.google.com/file/d/.../view"
-                  : "Ex: https://meusite.com/documento.pdf"
+                    ? "Ex: https://drive.google.com/file/d/.../view"
+                    : "Ex: https://meusite.com/documento.pdf"
               }
             />
             <p className="mt-1 text-[11px] text-gray-500">
@@ -287,12 +286,7 @@ export function CreateDocumentModal({
           </div>
 
           <div className="flex justify-end gap-2 pt-3 border-t border-gray-800">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={onClose}
-              disabled={isLoading}
-            >
+            <Button type="button" variant="secondary" onClick={onClose} disabled={isLoading}>
               Cancelar
             </Button>
             <Button type="submit" variant="primary" isLoading={isLoading}>

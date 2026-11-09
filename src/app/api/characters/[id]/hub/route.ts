@@ -18,10 +18,7 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -35,7 +32,7 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
     logger.error({ err: error }, "Erro ao carregar hub do personagem");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -31,10 +31,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -44,7 +41,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     if (!campaign) {
       return NextResponse.json(
         { success: false, error: "Campanha não encontrada" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -90,8 +87,8 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       .where(
         and(
           eq(characterCampaigns.campaignId, id),
-          eq(characterCampaigns.approvalStatus, "approved")
-        )
+          eq(characterCampaigns.approvalStatus, "approved"),
+        ),
       );
 
     const players = links.length
@@ -101,8 +98,8 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
           .where(
             inArray(
               characters.id,
-              links.map((link) => link.characterId)
-            )
+              links.map((link) => link.characterId),
+            ),
           )
       : [];
 
@@ -120,8 +117,8 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
           .where(
             inArray(
               characterConditions.characterId,
-              players.map((player) => player.id)
-            )
+              players.map((player) => player.id),
+            ),
           )
       : [];
 
@@ -154,7 +151,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     logger.error({ err: error }, "Erro ao carregar roster");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

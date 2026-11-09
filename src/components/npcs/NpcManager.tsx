@@ -253,7 +253,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
           level: Number(formData.level),
           xpReward: Number(formData.xpReward),
           attributes: Object.fromEntries(
-            ATTRIBUTES.map((attr) => [attr, Number(formData.attributes[attr]) || 0])
+            ATTRIBUTES.map((attr) => [attr, Number(formData.attributes[attr]) || 0]),
           ),
         }),
         credentials: "include",
@@ -350,7 +350,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
           level: Number(editForm.level),
           xpReward: Number(editForm.xpReward),
           attributes: Object.fromEntries(
-            ATTRIBUTES.map((attr) => [attr, Number(editForm.attributes[attr]) || 0])
+            ATTRIBUTES.map((attr) => [attr, Number(editForm.attributes[attr]) || 0]),
           ),
         }),
         credentials: "include",
@@ -422,7 +422,9 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
 
   const loadPins = async (npcId: string) => {
     try {
-      const response = await fetch(`/api/worlds/${worldId}/npcs/${npcId}/pins`, { credentials: "include" });
+      const response = await fetch(`/api/worlds/${worldId}/npcs/${npcId}/pins`, {
+        credentials: "include",
+      });
       const data = await response.json();
 
       if (!response.ok) {
@@ -593,13 +595,10 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
   const handleDeletePin = async (npcId: string, pinId: string) => {
     setError(null);
     try {
-      const response = await fetch(
-        `/api/worlds/${worldId}/npcs/${npcId}/pins/${pinId}`,
-        { 
-          method: "DELETE",
-          credentials: "include"
-        }
-      );
+      const response = await fetch(`/api/worlds/${worldId}/npcs/${npcId}/pins/${pinId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
 
       const data = await response.json();
 
@@ -630,7 +629,8 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
         <div>
           <h3 className="text-sm font-bold text-purple-200">Importar Inimigo / NPC Existente</h3>
           <p className="text-xs text-purple-300">
-            Adicione NPCs já criados na biblioteca para este mundo com suporte a múltiplas instâncias independentes.
+            Adicione NPCs já criados na biblioteca para este mundo com suporte a múltiplas
+            instâncias independentes.
           </p>
         </div>
         <button
@@ -689,7 +689,11 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                         <div className="h-9 w-9 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-xs font-bold overflow-hidden">
                           {npcItem.imageUrl ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
-                            <img src={npcItem.imageUrl} alt={npcItem.name} className="h-full w-full object-cover" />
+                            <img
+                              src={npcItem.imageUrl}
+                              alt={npcItem.name}
+                              className="h-full w-full object-cover"
+                            />
                           ) : (
                             npcItem.name.charAt(0)
                           )}
@@ -697,7 +701,8 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                         <div>
                           <div className="text-xs font-bold">{npcItem.name}</div>
                           <div className="text-[10px] text-gray-400">
-                            {npcItem.npcType === "enemy" ? "Inimigo" : "Comum"} • HP: {npcItem.hitPointsMax} • Nível {npcItem.level}
+                            {npcItem.npcType === "enemy" ? "Inimigo" : "Comum"} • HP:{" "}
+                            {npcItem.hitPointsMax} • Nível {npcItem.level}
                           </div>
                         </div>
                       </div>
@@ -710,7 +715,10 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
               </div>
             </div>
 
-            <form onSubmit={handleImportFromLibrary} className="space-y-4 pt-2 border-t border-gray-800">
+            <form
+              onSubmit={handleImportFromLibrary}
+              className="space-y-4 pt-2 border-t border-gray-800"
+            >
               <div>
                 <label className="block text-xs font-semibold text-gray-300 mb-1">
                   Quantidade de Instâncias (Status 100% Independentes)
@@ -724,7 +732,8 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                   className="w-full rounded-xl border border-gray-800 bg-gray-900 p-2.5 text-xs text-white"
                 />
                 <p className="text-[11px] text-gray-400 mt-1">
-                  Ex: Se selecionar 3, criará 3 instâncias independentes (ex: Goblin #1, Goblin #2, Goblin #3) na sua campanha.
+                  Ex: Se selecionar 3, criará 3 instâncias independentes (ex: Goblin #1, Goblin #2,
+                  Goblin #3) na sua campanha.
                 </p>
               </div>
 
@@ -767,9 +776,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
               <label className="mb-1 block text-sm font-medium text-gray-300">Tipo</label>
               <select
                 value={formData.npcType}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, npcType: e.target.value }))
-                }
+                onChange={(e) => setFormData((prev) => ({ ...prev, npcType: e.target.value }))}
                 disabled={isCreating}
                 className="w-full rounded-lg border border-gray-700 bg-gray-950 px-4 py-2 text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent"
               >
@@ -814,7 +821,9 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                 type="number"
                 min={0}
                 value={formData.manaPointsMax}
-                onChange={(e) => setFormData((prev) => ({ ...prev, manaPointsMax: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, manaPointsMax: e.target.value }))
+                }
                 disabled={isCreating}
                 className="bg-gray-950 text-white"
               />
@@ -943,15 +952,13 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                         <span>XP +{npc.xpReward}</span>
                       </div>
                       <div className="mt-1 text-xs text-gray-500">
-                        {ATTRIBUTES.map(
-                          (attr) => {
-                            const val = npc.attributes[attr] ?? 8;
-                            const mod = getModifier(val);
-                            return ` ${attr.charAt(0).toUpperCase()}: ${val} (${
-                              mod >= 0 ? "+" : ""
-                            }${mod})`;
-                          }
-                        ).join(" · ")}
+                        {ATTRIBUTES.map((attr) => {
+                          const val = npc.attributes[attr] ?? 8;
+                          const mod = getModifier(val);
+                          return ` ${attr.charAt(0).toUpperCase()}: ${val} (${
+                            mod >= 0 ? "+" : ""
+                          }${mod})`;
+                        }).join(" · ")}
                       </div>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-1">
@@ -963,9 +970,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                         📋 Duplicar Instância
                       </button>
                       <button
-                        onClick={() =>
-                          editForm ? setEditForm(null) : startEditing(npc)
-                        }
+                        onClick={() => (editForm ? setEditForm(null) : startEditing(npc))}
                         className="text-xs text-purple-400 hover:text-purple-300"
                       >
                         {editForm ? "cancelar edição" : "Editar ficha"}
@@ -991,7 +996,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                             value={editForm.name}
                             onChange={(e) =>
                               setEditForm((prev) =>
-                                prev ? { ...prev, name: e.target.value } : prev
+                                prev ? { ...prev, name: e.target.value } : prev,
                               )
                             }
                             required
@@ -1007,7 +1012,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                               value={editForm.hitPoints}
                               onChange={(e) =>
                                 setEditForm((prev) =>
-                                  prev ? { ...prev, hitPoints: e.target.value } : prev
+                                  prev ? { ...prev, hitPoints: e.target.value } : prev,
                                 )
                               }
                               disabled={isSavingEdit}
@@ -1021,7 +1026,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                               value={editForm.hitPointsMax}
                               onChange={(e) =>
                                 setEditForm((prev) =>
-                                  prev ? { ...prev, hitPointsMax: e.target.value } : prev
+                                  prev ? { ...prev, hitPointsMax: e.target.value } : prev,
                                 )
                               }
                               disabled={isSavingEdit}
@@ -1035,7 +1040,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                               value={editForm.manaPoints}
                               onChange={(e) =>
                                 setEditForm((prev) =>
-                                  prev ? { ...prev, manaPoints: e.target.value } : prev
+                                  prev ? { ...prev, manaPoints: e.target.value } : prev,
                                 )
                               }
                               disabled={isSavingEdit}
@@ -1049,7 +1054,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                               value={editForm.manaPointsMax}
                               onChange={(e) =>
                                 setEditForm((prev) =>
-                                  prev ? { ...prev, manaPointsMax: e.target.value } : prev
+                                  prev ? { ...prev, manaPointsMax: e.target.value } : prev,
                                 )
                               }
                               disabled={isSavingEdit}
@@ -1063,7 +1068,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                               value={editForm.level}
                               onChange={(e) =>
                                 setEditForm((prev) =>
-                                  prev ? { ...prev, level: e.target.value } : prev
+                                  prev ? { ...prev, level: e.target.value } : prev,
                                 )
                               }
                               disabled={isSavingEdit}
@@ -1077,7 +1082,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                               value={editForm.xpReward}
                               onChange={(e) =>
                                 setEditForm((prev) =>
-                                  prev ? { ...prev, xpReward: e.target.value } : prev
+                                  prev ? { ...prev, xpReward: e.target.value } : prev,
                                 )
                               }
                               disabled={isSavingEdit}
@@ -1104,7 +1109,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                                             [attr]: e.target.value,
                                           },
                                         }
-                                      : prev
+                                      : prev,
                                   )
                                 }
                                 disabled={isSavingEdit}
@@ -1164,7 +1169,8 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                                   {pin.damageExpression && ` · Dano: ${pin.damageExpression}`}
                                   {pin.damageType && ` (${pin.damageType})`}
                                   {pin.criticalRange != null && ` · Crítico ${pin.criticalRange}`}
-                                  {!pin.attackExpression && pin.rollExpression &&
+                                  {!pin.attackExpression &&
+                                    pin.rollExpression &&
                                     `Rolagem: ${pin.rollExpression}`}
                                   {pin.manaCost !== null && pin.manaCost !== undefined && (
                                     <span> · {pin.manaCost} mana</span>
@@ -1223,7 +1229,8 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                                         label: prev.label || selected.name,
                                         attackExpression: selected.attackExpression ?? "",
                                         damageExpression: selected.damageExpression ?? "",
-                                        damageType: (selected.damageType as typeof prev.damageType) ?? "",
+                                        damageType:
+                                          (selected.damageType as typeof prev.damageType) ?? "",
                                         criticalRange: selected.criticalRange
                                           ? String(selected.criticalRange)
                                           : "",
@@ -1240,7 +1247,8 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                               <option value="">Ataque da Biblioteca (opcional)</option>
                               {attackOptions.map((option) => (
                                 <option key={option.id} value={option.id}>
-                                  {option.name} — {option.attackExpression ?? "?"} → {option.damageExpression ?? "?"}
+                                  {option.name} — {option.attackExpression ?? "?"} →{" "}
+                                  {option.damageExpression ?? "?"}
                                 </option>
                               ))}
                             </select>
@@ -1300,10 +1308,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                                 setPinForm((prev) => ({
                                   ...prev,
                                   damageType: e.target.value as
-                                    | ""
-                                    | "cortante"
-                                    | "contundente"
-                                    | "perfurante",
+                                    "" | "cortante" | "contundente" | "perfurante",
                                 }))
                               }
                               disabled={isPinBusy}
@@ -1360,14 +1365,13 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                             className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                           >
                             <option value="">Selecione</option>
-                            {(pinForm.pinType === "skill"
-                              ? skillOptions
-                              : spellOptions
-                            ).map((option) => (
-                              <option key={option.id} value={option.id}>
-                                {option.name}
-                              </option>
-                            ))}
+                            {(pinForm.pinType === "skill" ? skillOptions : spellOptions).map(
+                              (option) => (
+                                <option key={option.id} value={option.id}>
+                                  {option.name}
+                                </option>
+                              ),
+                            )}
                           </select>
                         )}
 

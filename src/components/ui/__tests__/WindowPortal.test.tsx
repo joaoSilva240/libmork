@@ -11,7 +11,9 @@ describe("WindowPortal", () => {
     externalWindow = {
       document: externalDocument,
       closed: false,
-      close: vi.fn(() => { externalWindow.closed = true; }),
+      close: vi.fn(() => {
+        externalWindow.closed = true;
+      }),
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
     } as unknown as Window & { closed: boolean };
@@ -27,7 +29,11 @@ describe("WindowPortal", () => {
   });
 
   it("renders children in the external portal node", async () => {
-    render(<WindowPortal isOpen onClose={vi.fn()}>Conteúdo da Mesa</WindowPortal>);
+    render(
+      <WindowPortal isOpen onClose={vi.fn()}>
+        Conteúdo da Mesa
+      </WindowPortal>,
+    );
     await act(async () => {});
     expect(externalDocument.querySelector("#portal-root")).toBeTruthy();
     expect(externalDocument.body.textContent).toContain("Conteúdo da Mesa");
@@ -36,29 +42,55 @@ describe("WindowPortal", () => {
   it("calls onBlocked when the popup is blocked", () => {
     const onBlocked = vi.fn();
     vi.spyOn(window, "open").mockReturnValue(null);
-    render(<WindowPortal isOpen onClose={vi.fn()} onBlocked={onBlocked}>Mesa</WindowPortal>);
+    render(
+      <WindowPortal isOpen onClose={vi.fn()} onBlocked={onBlocked}>
+        Mesa
+      </WindowPortal>,
+    );
     expect(onBlocked).toHaveBeenCalledOnce();
   });
 
   it("closes the external window when isOpen changes", () => {
     const onClose = vi.fn();
-    const { rerender } = render(<WindowPortal isOpen onClose={onClose}>Mesa</WindowPortal>);
-    rerender(<WindowPortal isOpen={false} onClose={onClose}>Mesa</WindowPortal>);
+    const { rerender } = render(
+      <WindowPortal isOpen onClose={onClose}>
+        Mesa
+      </WindowPortal>,
+    );
+    rerender(
+      <WindowPortal isOpen={false} onClose={onClose}>
+        Mesa
+      </WindowPortal>,
+    );
     expect(externalWindow.close).toHaveBeenCalledOnce();
   });
 
   it("calls onClose when the external window emits beforeunload", () => {
     const onClose = vi.fn();
-    render(<WindowPortal isOpen onClose={onClose}>Mesa</WindowPortal>);
+    render(
+      <WindowPortal isOpen onClose={onClose}>
+        Mesa
+      </WindowPortal>,
+    );
     const addEventListener = externalWindow.addEventListener as ReturnType<typeof vi.fn>;
-    const handler = addEventListener.mock.calls.find(([event]) => event === "beforeunload")?.[1] as () => void;
+    const handler = addEventListener.mock.calls.find(
+      ([event]) => event === "beforeunload",
+    )?.[1] as () => void;
     handler();
     expect(onClose).toHaveBeenCalledOnce();
   });
 
   it("does not close or recreate the window when re-rendered with a new onClose reference", () => {
-    const { rerender } = render(<WindowPortal isOpen onClose={() => {}}>Conteúdo</WindowPortal>);
-    rerender(<WindowPortal isOpen onClose={() => {}}>Conteúdo atualizado</WindowPortal>);
+    const { rerender } = render(
+      <WindowPortal isOpen onClose={() => {}}>
+        Conteúdo
+      </WindowPortal>,
+    );
+    rerender(
+      <WindowPortal isOpen onClose={() => {}}>
+        Conteúdo atualizado
+      </WindowPortal>,
+    );
     expect(externalWindow.close).toHaveBeenCalledTimes(0);
     expect(window.open).toHaveBeenCalledOnce();
   });
@@ -69,7 +101,11 @@ describe("WindowPortal", () => {
     document.documentElement.classList.add("__variable_fake-font");
     document.documentElement.style.setProperty("--dominant-deep", "rgb(1, 2, 3)");
 
-    render(<WindowPortal isOpen onClose={vi.fn()}>Mesa</WindowPortal>);
+    render(
+      <WindowPortal isOpen onClose={vi.fn()}>
+        Mesa
+      </WindowPortal>,
+    );
     await act(async () => {});
 
     const externalRoot = externalDocument.documentElement;
@@ -80,7 +116,11 @@ describe("WindowPortal", () => {
   });
 
   it("keeps the external window theme in sync when the opener theme changes", async () => {
-    render(<WindowPortal isOpen onClose={vi.fn()}>Mesa</WindowPortal>);
+    render(
+      <WindowPortal isOpen onClose={vi.fn()}>
+        Mesa
+      </WindowPortal>,
+    );
     await act(async () => {});
 
     await act(async () => {

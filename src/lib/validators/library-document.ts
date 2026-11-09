@@ -74,22 +74,14 @@ export const createLibraryDocumentSchema = z.object({
   }),
   tags: z.array(z.string()).optional().nullable(),
   isPublic: z.boolean().optional().default(true),
-  campaignId: z
-    .string()
-    .uuid("campaignId deve ser um UUID válido")
-    .optional()
-    .nullable(),
+  campaignId: z.string().uuid("campaignId deve ser um UUID válido").optional().nullable(),
 });
 
-export type CreateLibraryDocumentInput = z.infer<
-  typeof createLibraryDocumentSchema
->;
+export type CreateLibraryDocumentInput = z.infer<typeof createLibraryDocumentSchema>;
 
 /**
  * Schema de atualização de LibraryDocument
  */
 export const updateLibraryDocumentSchema = createLibraryDocumentSchema.partial();
 
-export type UpdateLibraryDocumentInput = z.infer<
-  typeof updateLibraryDocumentSchema
->;
+export type UpdateLibraryDocumentInput = z.infer<typeof updateLibraryDocumentSchema>;

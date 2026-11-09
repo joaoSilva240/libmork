@@ -142,7 +142,9 @@ describe("CharacterDetail - RestPopover Integration", () => {
 
     // Toast de sucesso deve ser exibido
     await waitFor(() => {
-      expect(screen.getByText(/Descanso Confortável: recuperados \+12 HP e \+7 MP/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Descanso Confortável: recuperados \+12 HP e \+7 MP/i),
+      ).toBeInTheDocument();
     });
 
     // Verifica que updateActorStatus do socket foi chamado
@@ -152,7 +154,7 @@ describe("CharacterDetail - RestPopover Integration", () => {
         actorId: "char-rest-test-123",
         currentHp: 17,
         currentMana: 9,
-      })
+      }),
     );
   });
 
@@ -197,7 +199,7 @@ describe("CharacterDetail - RestPopover Integration", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Você já está com a vida e a mana totalmente recuperadas!")
+        screen.getByText("Você já está com a vida e a mana totalmente recuperadas!"),
       ).toBeInTheDocument();
     });
   });
@@ -243,9 +245,7 @@ describe("CharacterDetail - RestPopover Integration", () => {
     fireEvent.click(comfortableOption);
 
     await waitFor(() => {
-      expect(
-        screen.getByText("Falha ao salvar descanso. Tente novamente.")
-      ).toBeInTheDocument();
+      expect(screen.getByText("Falha ao salvar descanso. Tente novamente.")).toBeInTheDocument();
     });
   });
 });

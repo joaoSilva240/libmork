@@ -42,7 +42,7 @@ export function WindowPortal({
   const windowRef = useRef<Window | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [portalRoot, setPortalRoot] = useState<HTMLDivElement | null>(null);
-  
+
   const onCloseRef = useRef(onClose);
   const onBlockedRef = useRef(onBlocked);
 
@@ -73,7 +73,9 @@ export function WindowPortal({
     windowRef.current = externalWindow;
     externalWindow.document.title = title;
     externalWindow.document.head.replaceChildren(
-      ...Array.from(document.head.querySelectorAll("style, link[rel=stylesheet]")).map((node) => node.cloneNode(true)),
+      ...Array.from(document.head.querySelectorAll("style, link[rel=stylesheet]")).map((node) =>
+        node.cloneNode(true),
+      ),
     );
     syncRootTheme(externalWindow.document);
     const themeObserver = new MutationObserver(() => syncRootTheme(externalWindow.document));

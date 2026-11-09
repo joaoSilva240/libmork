@@ -51,7 +51,7 @@ export function getNinerouterConfig(): NinerouterConfig {
   const url = (process.env.NINEROUTER_URL?.trim() || FALLBACK_TAILSCALE_URL).replace(/\/$/, "");
   // Ensure /v1 suffix? keep as-is but normalize.
   const model = (process.env.NINEROUTER_MODEL?.trim() || "ollama/gpt-oss:120b").trim();
-  const key = (process.env.NINEROUTER_KEY?.trim() || "");
+  const key = process.env.NINEROUTER_KEY?.trim() || "";
   return {
     url,
     model,
@@ -66,7 +66,7 @@ export function getNinerouterConfig(): NinerouterConfig {
 export async function queryNinerouter(
   systemPrompt: string,
   userPrompt: string,
-  options?: { responseFormatJson?: boolean }
+  options?: { responseFormatJson?: boolean },
 ): Promise<string> {
   const cfg = getNinerouterConfig();
   const headers: Record<string, string> = {
@@ -96,7 +96,7 @@ export async function queryNinerouter(
       headers,
       body: JSON.stringify(bodyObj),
     },
-    NINE_TIMEOUT_MS
+    NINE_TIMEOUT_MS,
   );
 
   if (!response.ok) {
@@ -134,7 +134,8 @@ export function extractErrorCode(error: unknown): string {
   }
   if (error instanceof Error) {
     // Node undici usa error.cause
-    const cause = (error as unknown as { cause?: unknown }).cause as Record<string, unknown> | undefined;
+    const cause = (error as unknown as { cause?: unknown }).cause as
+      Record<string, unknown> | undefined;
     if (cause) {
       const code = (cause as { code?: string }).code;
       if (typeof code === "string" && code) return code;
@@ -145,7 +146,9 @@ export function extractErrorCode(error: unknown): string {
       }
       // sometimes cause is Error with message containing code
       if (cause instanceof Error && cause.message) {
-        const m = cause.message.match(/([A-Z_]+_TIMEOUT|[A-Z_]+_REFUSED|[A-Z_]+UNREACH|[A-Z_]+NOTFOUND)/);
+        const m = cause.message.match(
+          /([A-Z_]+_TIMEOUT|[A-Z_]+_REFUSED|[A-Z_]+UNREACH|[A-Z_]+NOTFOUND)/,
+        );
         if (m) return m[1];
       }
     }
@@ -210,7 +213,7 @@ export function createTranslationError(
   code: TranslationErrorCode,
   status: number,
   message: string,
-  extras?: { details?: string; causeCode?: string }
+  extras?: { details?: string; causeCode?: string },
 ): TranslationError {
   const err = new Error(message) as TranslationError;
   err.code = code;
@@ -241,7 +244,7 @@ export function getStatusForCode(code: TranslationErrorCode): number {
 export async function fetchWithTimeout(
   url: string,
   init: RequestInit,
-  timeoutMs: number
+  timeoutMs: number,
 ): Promise<Response> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -263,8 +266,14 @@ export async function fetchWithTimeout(
 export async function fetchNinerouterWithFallback(
   path: string, // e.g. "/chat/completions" or "/models"
   init: RequestInit,
-  timeoutMs: number
-): Promise<{ response: Response; usedFallback: boolean; attemptedUrl: string; fallbackAttempted: boolean; fallbackErrorCode?: string }> {
+  timeoutMs: number,
+): Promise<{
+  response: Response;
+  usedFallback: boolean;
+  attemptedUrl: string;
+  fallbackAttempted: boolean;
+  fallbackErrorCode?: string;
+}> {
   const { url: primaryUrl } = getNinerouterConfig();
   const primaryFull = `${primaryUrl.replace(/\/$/, "")}${path}`;
   const altBase = getAlternativeUrl(primaryUrl);
@@ -281,51 +290,52 @@ export async function fetchNinerouterWithFallback(
       // ignore
     }
     if (!signal) {
-      // fallback manual
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), timeoutMs);
-      signal = ctrl.signal;
-      // ensure cleanup happens via finally in caller
-      // We'll just fetch and clear via inner logic
-      // For simplicity, not tracking t; the outer catch will handle
-      // Use direct fetch with signal; timeout will abort via ctrl.
-      // Need to clear after fetch — handle below.
-      // For now, just use ctrl signal and rely on fetch timeout handling
-      // (t will fire). We'll clear via setTimeout not ideal but okay.
-      // Instead we handle via fetchWithTimeout helper:
-      return fetchWithTimeout(fullUrl, { ...init, signal }, timeoutMs);
+      return fetchWithTimeout(fullUrl, init, timeoutMs);
     }
     return fetch(fullUrl, { ...init, signal });
   };
 
-  let lastError: unknown = null;
-  let fallbackAttempted = false;
-
   try {
     const res = await tryFetch(primaryFull);
-    return { response: res, usedFallback: false, attemptedUrl: primaryFull, fallbackAttempted: false };
+    return {
+      response: res,
+      usedFallback: false,
+      attemptedUrl: primaryFull,
+      fallbackAttempted: false,
+    };
   } catch (e) {
-    lastError = e;
     const code = extractErrorCode(e);
     const isNetwork = isNetworkErrorCode(code);
     // Se é erro de rede e temos fallback, tenta fallback automaticamente
     if (isNetwork && altFull) {
-      fallbackAttempted = true;
-      logger.warn({ 
-        primaryFull, 
-        code, 
-        altFull 
-      }, 'ninerouter fallback host.docker.internal — primary failed, trying alternative');
+      logger.warn(
+        {
+          primaryFull,
+          code,
+          altFull,
+        },
+        "ninerouter fallback host.docker.internal — primary failed, trying alternative",
+      );
       try {
         const res2 = await tryFetch(altFull);
-        return { response: res2, usedFallback: true, attemptedUrl: altFull, fallbackAttempted: true };
+        return {
+          response: res2,
+          usedFallback: true,
+          attemptedUrl: altFull,
+          fallbackAttempted: true,
+        };
       } catch (e2) {
         const code2 = extractErrorCode(e2);
         // Propaga erro com fallback info
         const wrapped = e2 as Error & { fallbackErrorCode?: string };
         (wrapped as unknown as Record<string, unknown>).fallbackErrorCode = code2;
         // Lança erro que indica falha em ambos
-        throw Object.assign(e2 as object, { causeCode: code, attemptedUrl: primaryFull, fallbackUrl: altFull, fallbackErrorCode: code2 });
+        throw Object.assign(e2 as object, {
+          causeCode: code,
+          attemptedUrl: primaryFull,
+          fallbackUrl: altFull,
+          fallbackErrorCode: code2,
+        });
       }
     }
     // Sem fallback ou não-network, propaga
@@ -337,7 +347,7 @@ export async function fetchNinerouterWithFallback(
 export async function fetchNinerouterWithRetry(
   path: string,
   init: RequestInit,
-  timeoutMs: number = NINE_TIMEOUT_MS
+  timeoutMs: number = NINE_TIMEOUT_MS,
 ): Promise<Response> {
   let attempt = 0;
   let lastErr: unknown = null;
@@ -374,14 +384,17 @@ export type ProbeResult = {
 };
 
 export async function probeNinerouterModels(timeoutMs = 5000): Promise<ProbeResult> {
-  const { url, hasKey } = getNinerouterConfig();
+  const cfg = getNinerouterConfig();
+  const { url } = cfg;
   const start = Date.now();
   const headers: Record<string, string> = {};
-  // /models é público em muitos, mas se tem key usa Bearer
-  const cfg = getNinerouterConfig();
   if (cfg.hasKey) headers["Authorization"] = `Bearer ${cfg.key}`;
   try {
-    const { response, usedFallback, attemptedUrl } = await fetchNinerouterWithFallback("/models", { method: "GET", headers }, timeoutMs);
+    const { response, usedFallback, attemptedUrl } = await fetchNinerouterWithFallback(
+      "/models",
+      { method: "GET", headers },
+      timeoutMs,
+    );
     const latencyMs = Date.now() - start;
     return {
       ok: response.ok,
@@ -398,7 +411,9 @@ export async function probeNinerouterModels(timeoutMs = 5000): Promise<ProbeResu
     const msg = e instanceof Error ? e.message : String(e);
     // Try to get attemptedUrl from error augmentation
     const attemptedUrl = (e as { attemptedUrl?: string })?.attemptedUrl || `${url}/models`;
-    const fallbackAttempted = (e as { fallbackErrorCode?: string })?.fallbackErrorCode ? true : false;
+    const fallbackAttempted = (e as { fallbackErrorCode?: string })?.fallbackErrorCode
+      ? true
+      : false;
     return {
       ok: false,
       status: null,
@@ -411,7 +426,9 @@ export async function probeNinerouterModels(timeoutMs = 5000): Promise<ProbeResu
   }
 }
 
-export async function probeNinerouterChat(timeoutMs = 8000): Promise<ProbeResult & { responseSnippet?: string }> {
+export async function probeNinerouterChat(
+  timeoutMs = 8000,
+): Promise<ProbeResult & { responseSnippet?: string }> {
   const cfg = getNinerouterConfig();
   const start = Date.now();
   const body = JSON.stringify({
@@ -427,7 +444,7 @@ export async function probeNinerouterChat(timeoutMs = 8000): Promise<ProbeResult
     const { response, usedFallback, attemptedUrl } = await fetchNinerouterWithFallback(
       "/chat/completions",
       { method: "POST", headers, body },
-      timeoutMs
+      timeoutMs,
     );
     const latencyMs = Date.now() - start;
     let snippet: string | undefined;
@@ -456,7 +473,8 @@ export async function probeNinerouterChat(timeoutMs = 8000): Promise<ProbeResult
     const latencyMs = Date.now() - start;
     const code = extractErrorCode(e) || (e as { causeCode?: string })?.causeCode || "UNKNOWN";
     const msg = e instanceof Error ? e.message : String(e);
-    const attemptedUrl = (e as { attemptedUrl?: string })?.attemptedUrl || `${cfg.url}/chat/completions`;
+    const attemptedUrl =
+      (e as { attemptedUrl?: string })?.attemptedUrl || `${cfg.url}/chat/completions`;
     return {
       ok: false,
       status: null,
@@ -469,17 +487,30 @@ export async function probeNinerouterChat(timeoutMs = 8000): Promise<ProbeResult
   }
 }
 
-export function suggestFixForProbe(modelsProbe: ProbeResult, chatProbe: ProbeResult, cfg: NinerouterConfig): string | null {
+export function suggestFixForProbe(
+  modelsProbe: ProbeResult,
+  chatProbe: ProbeResult,
+  cfg: NinerouterConfig,
+): string | null {
   const code = modelsProbe.errorCode || chatProbe.errorCode || "";
-  const isUnreachable = ["ENETUNREACH", "ECONNREFUSED", "ETIMEDOUT", "UND_ERR_CONNECT_TIMEOUT", "ENOTFOUND", "EAI_AGAIN", "ABORT_TIMEOUT"].includes(code);
+  const isUnreachable = [
+    "ENETUNREACH",
+    "ECONNREFUSED",
+    "ETIMEDOUT",
+    "UND_ERR_CONNECT_TIMEOUT",
+    "ENOTFOUND",
+    "EAI_AGAIN",
+    "ABORT_TIMEOUT",
+  ].includes(code);
   const isTailscale = isTailscaleCgnatUrl(cfg.url);
   if (isUnreachable && isTailscale) {
-    return "NINEROUTER_URL usa IP Tailscale CGNAT (100.64/10) inalcançável do container bridge padrão. Soluções: (A) Expor 9Router via URL pública (Tailscale Funnel: `tailscale funnel 20128` ou Cloudflare Tunnel) e configurar NINEROUTER_URL=https://.../v1; (B) Usar sidecar Tailscale (docker-compose.override.tailscale.yml); (C) Se 9Router está no mesmo host, fallback automático para host.docker.internal já tenta, mas requer extra_hosts: [\"host.docker.internal:host-gateway\"]. Ver docs/deploy-zimaos.md";
+    return 'NINEROUTER_URL usa IP Tailscale CGNAT (100.64/10) inalcançável do container bridge padrão. Soluções: (A) Expor 9Router via URL pública (Tailscale Funnel: `tailscale funnel 20128` ou Cloudflare Tunnel) e configurar NINEROUTER_URL=https://.../v1; (B) Usar sidecar Tailscale (docker-compose.override.tailscale.yml); (C) Se 9Router está no mesmo host, fallback automático para host.docker.internal já tenta, mas requer extra_hosts: ["host.docker.internal:host-gateway"]. Ver docs/deploy-zimaos.md';
   }
   if (isUnreachable) {
     return "9Router inalcançável. Verifique NINEROUTER_URL, firewall, se o serviço está ouvindo em 0.0.0.0:20128 e se o container tem rota (extra_hosts host.docker.internal).";
   }
-  if (code?.startsWith("HTTP_401") || code === "HTTP_401") return "Autenticação falhou (401). Verifique NINEROUTER_KEY.";
+  if (code?.startsWith("HTTP_401") || code === "HTTP_401")
+    return "Autenticação falhou (401). Verifique NINEROUTER_KEY.";
   if (code?.startsWith("HTTP_429")) return "Rate limit (429). Aguarde ou troque modelo/chave.";
   return null;
 }

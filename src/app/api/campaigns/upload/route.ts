@@ -19,10 +19,7 @@ export async function POST(request: NextRequest) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const formData = await request.formData();
@@ -32,14 +29,14 @@ export async function POST(request: NextRequest) {
     if (type !== "cover" && type !== "map" && type !== "asset") {
       return NextResponse.json(
         { success: false, error: "Tipo de imagem inválido. Use 'cover', 'map' ou 'asset'." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!(file instanceof File)) {
       return NextResponse.json(
         { success: false, error: "Arquivo de imagem não enviado (campo 'image')" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -64,7 +61,7 @@ export async function POST(request: NextRequest) {
     logger.error({ err: error }, "Erro ao fazer upload de imagem da campanha");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

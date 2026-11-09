@@ -40,7 +40,7 @@ describe("CampaignSettingsModal 3D Dice Toggles (Issue #74)", () => {
         onClose={vi.fn()}
         onSaved={vi.fn()}
         onDelete={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText("Dados 3d nas rolagens dos jogadores")).toBeInTheDocument();
@@ -74,7 +74,7 @@ describe("CampaignSettingsModal 3D Dice Toggles (Issue #74)", () => {
         onClose={vi.fn()}
         onSaved={handleSaved}
         onDelete={vi.fn()}
-      />
+      />,
     );
 
     const playersToggle = screen.getByTestId("toggle-dice3d-players");
@@ -89,7 +89,7 @@ describe("CampaignSettingsModal 3D Dice Toggles (Issue #74)", () => {
         expect.objectContaining({
           method: "PATCH",
           body: expect.stringContaining('"dice3dPlayersEnabled":false'),
-        })
+        }),
       );
     });
 

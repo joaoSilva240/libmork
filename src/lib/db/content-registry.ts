@@ -17,133 +17,86 @@ import {
 } from "@/lib/db/schema";
 import type { ContentType } from "@/lib/validators/content";
 
+const CONTENT_TABLES = {
+  skills,
+  spells,
+  items,
+  conditions,
+  attacks,
+} as const;
+
+const JUNCTION_TABLES = {
+  skills: characterSkills,
+  spells: characterSpells,
+  items: characterItems,
+  conditions: characterConditions,
+} as const;
+
+const JUNCTION_CONTENT_COLUMNS = {
+  skills: characterSkills.skillId,
+  spells: characterSpells.spellId,
+  items: characterItems.itemId,
+  conditions: characterConditions.conditionId,
+} as const;
+
+const ATTACKS_JUNCTION_ERROR = "Ataques não possuem junção com fichas de personagem";
+
 /**
  * Tabela de conteúdo (biblioteca) por tipo.
  */
 export function getContentTable(type: ContentType) {
-  switch (type) {
-    case "skills":
-      return skills;
-    case "spells":
-      return spells;
-    case "items":
-      return items;
-    case "conditions":
-      return conditions;
-    case "attacks":
-      return attacks;
-  }
+  return CONTENT_TABLES[type];
 }
 
 /**
  * Tabela de junção ficha↔conteúdo por tipo.
  */
 export function getJunctionTable(type: ContentType) {
-  switch (type) {
-    case "skills":
-      return characterSkills;
-    case "spells":
-      return characterSpells;
-    case "items":
-      return characterItems;
-    case "conditions":
-      return characterConditions;
-    case "attacks":
-      // Ataques não têm junção ficha↔conteúdo (vinculados via npc_pins).
-      throw new Error("Ataques não possuem junção com fichas de personagem");
+  if (type === "attacks") {
+    throw new Error(ATTACKS_JUNCTION_ERROR);
   }
+  return JUNCTION_TABLES[type];
 }
 
 /**
  * Coluna de FK do conteúdo na tabela de junção.
  */
 export function getJunctionContentColumn(type: ContentType) {
-  switch (type) {
-    case "skills":
-      return characterSkills.skillId;
-    case "spells":
-      return characterSpells.spellId;
-    case "items":
-      return characterItems.itemId;
-    case "conditions":
-      return characterConditions.conditionId;
-    case "attacks":
-      // Ataques não têm junção ficha↔conteúdo (vinculados via npc_pins).
-      throw new Error("Ataques não possuem junção com fichas de personagem");
+  if (type === "attacks") {
+    throw new Error(ATTACKS_JUNCTION_ERROR);
   }
+  return JUNCTION_CONTENT_COLUMNS[type];
 }
 
 /**
  * Coluna de FK do personagem na tabela de junção.
  */
 export function getJunctionCharacterColumn(type: ContentType) {
-  switch (type) {
-    case "skills":
-      return characterSkills.characterId;
-    case "spells":
-      return characterSpells.characterId;
-    case "items":
-      return characterItems.characterId;
-    case "conditions":
-      return characterConditions.characterId;
-    case "attacks":
-      // Ataques não têm junção ficha↔conteúdo (vinculados via npc_pins).
-      throw new Error("Ataques não possuem junção com fichas de personagem");
+  if (type === "attacks") {
+    throw new Error(ATTACKS_JUNCTION_ERROR);
   }
+  return JUNCTION_TABLES[type].characterId;
 }
 
 /**
  * Nome do campo de id do conteúdo na tabela de conteúdo.
  */
 export function getContentIdColumn(type: ContentType) {
-  switch (type) {
-    case "skills":
-      return skills.id;
-    case "spells":
-      return spells.id;
-    case "items":
-      return items.id;
-    case "conditions":
-      return conditions.id;
-    case "attacks":
-      return attacks.id;
-  }
+  return CONTENT_TABLES[type].id;
 }
 
 /**
  * Nome do campo de campaign_id da tabela de conteúdo.
  */
 export function getContentCampaignColumn(type: ContentType) {
-  switch (type) {
-    case "skills":
-      return skills.campaignId;
-    case "spells":
-      return spells.campaignId;
-    case "items":
-      return items.campaignId;
-    case "conditions":
-      return conditions.campaignId;
-    case "attacks":
-      return attacks.campaignId;
-  }
+  return CONTENT_TABLES[type].campaignId;
 }
 
 /**
  * Nome do campo de name da tabela de conteúdo.
  */
 export function getContentNameColumn(type: ContentType) {
-  switch (type) {
-    case "skills":
-      return skills.name;
-    case "spells":
-      return spells.name;
-    case "items":
-      return items.name;
-    case "conditions":
-      return conditions.name;
-    case "attacks":
-      return attacks.name;
-  }
+  return CONTENT_TABLES[type].name;
 }
 
 /**
@@ -153,7 +106,7 @@ export function getContentNameColumn(type: ContentType) {
 export function buildJunctionValues(
   type: ContentType,
   characterId: string,
-  data: Record<string, unknown>
+  data: Record<string, unknown>,
 ): Record<string, unknown> {
   const contentId = data.contentId as string;
   switch (type) {
@@ -172,7 +125,11 @@ export function buildJunctionValues(
       return base;
     }
     case "conditions":
-      return { characterId, conditionId: contentId, permanent: (data.permanent as boolean) ?? false };
+      return {
+        characterId,
+        conditionId: contentId,
+        permanent: (data.permanent as boolean) ?? false,
+      };
     case "attacks":
       throw new Error("Ataques não possuem junção com fichas de personagem");
   }
@@ -183,7 +140,7 @@ export function buildJunctionValues(
  */
 export function buildJunctionPatch(
   type: ContentType,
-  data: Record<string, unknown>
+  data: Record<string, unknown>,
 ): Record<string, unknown> {
   switch (type) {
     case "skills":

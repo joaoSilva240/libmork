@@ -36,35 +36,32 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!session) {
       return NextResponse.json(
         { success: false, error: "Não autenticado", code: "unauthenticated" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     if (session.user.role !== "master") {
       return NextResponse.json(
         { success: false, error: "Apenas mestres podem traduzir raças", code: "forbidden" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     const { id } = await params;
     raceIdForLog = id;
 
-    const [existingRace] = await db
-      .select()
-      .from(rpgRaces)
-      .where(eq(rpgRaces.id, id))
-      .limit(1);
+    const [existingRace] = await db.select().from(rpgRaces).where(eq(rpgRaces.id, id)).limit(1);
 
     if (!existingRace) {
       return NextResponse.json(
         { success: false, error: "Raça não encontrada", code: "not_found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     const traits = (existingRace.traits as Array<{ name: string; description?: string }>) || [];
-    const heritages = (existingRace.heritages as Array<{ name: string; description?: string }>) || [];
+    const heritages =
+      (existingRace.heritages as Array<{ name: string; description?: string }>) || [];
     const languages = (existingRace.languages as string[]) || [];
 
     const payloadToTranslate = {
@@ -82,7 +79,11 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       })),
     };
 
-    const translated = await translateContentWithLLM("race", payloadToTranslate, RACE_SYSTEM_PROMPT);
+    const translated = await translateContentWithLLM(
+      "race",
+      payloadToTranslate,
+      RACE_SYSTEM_PROMPT,
+    );
 
     let finalName = existingRace.name;
     let finalDescription = existingRace.description;
@@ -101,20 +102,25 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       finalSize = translated.size;
     }
     if (Array.isArray(translated.languages)) {
-      finalLanguages = (translated.languages as unknown[])
-        .filter((l): l is string => typeof l === "string" && Boolean(l));
+      finalLanguages = (translated.languages as unknown[]).filter(
+        (l): l is string => typeof l === "string" && Boolean(l),
+      );
     }
     if (Array.isArray(translated.traits)) {
-      finalTraits = (translated.traits as Array<{ name?: string; description?: string }>).map((t, idx) => ({
-        name: t.name || traits[idx]?.name || "Traço Racial",
-        description: t.description ?? traits[idx]?.description ?? "",
-      }));
+      finalTraits = (translated.traits as Array<{ name?: string; description?: string }>).map(
+        (t, idx) => ({
+          name: t.name || traits[idx]?.name || "Traço Racial",
+          description: t.description ?? traits[idx]?.description ?? "",
+        }),
+      );
     }
     if (Array.isArray(translated.heritages)) {
-      finalHeritages = (translated.heritages as Array<{ name?: string; description?: string }>).map((h, idx) => ({
-        name: h.name || heritages[idx]?.name || "Herança",
-        description: h.description ?? heritages[idx]?.description ?? "",
-      }));
+      finalHeritages = (translated.heritages as Array<{ name?: string; description?: string }>).map(
+        (h, idx) => ({
+          name: h.name || heritages[idx]?.name || "Herança",
+          description: h.description ?? heritages[idx]?.description ?? "",
+        }),
+      );
     }
 
     const [updatedRace] = await db
@@ -143,14 +149,17 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const durationMs = Date.now() - start;
     const err = error as { code?: string; status?: number; message?: string; causeCode?: string };
     const rawCode = err?.code ?? extractErrorCode(error);
-    const isTranslationCode = typeof rawCode === "string" && rawCode.startsWith("translation_provider_");
-    const mappedCode: TranslationErrorCode = isTranslationCode ? (rawCode as TranslationErrorCode) : "translation_provider_unreachable";
+    const isTranslationCode =
+      typeof rawCode === "string" && rawCode.startsWith("translation_provider_");
+    const mappedCode: TranslationErrorCode = isTranslationCode
+      ? (rawCode as TranslationErrorCode)
+      : "translation_provider_unreachable";
 
     const status = isTranslationCode ? getStatusForCode(mappedCode) : 502;
     const details = (err?.message || "").slice(0, 500);
 
     logger.error(
-      `[translateRace] raceId=${raceIdForLog} durationMs=${durationMs} error.code=${mappedCode} status=${status} details=${details.slice(0, 200)}`
+      `[translateRace] raceId=${raceIdForLog} durationMs=${durationMs} error.code=${mappedCode} status=${status} details=${details.slice(0, 200)}`,
     );
 
     return NextResponse.json(
@@ -160,7 +169,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         code: mappedCode,
         details: details.slice(0, 500),
       },
-      { status }
+      { status },
     );
   }
 }

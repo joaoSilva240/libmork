@@ -55,8 +55,12 @@ describe("Kavita OPDS Parser", () => {
     const entry1 = feed.entries[0];
 
     expect(entry1.coverUrl).toBe("http://100.122.171.83:5150/api/opds/abc123key/series/101/cover");
-    expect(entry1.thumbnailUrl).toBe("http://100.122.171.83:5150/api/opds/abc123key/series/101/thumbnail");
-    expect(entry1.acquisitionUrl).toBe("http://100.122.171.83:5150/api/opds/abc123key/series/101/volume/1/chapter/1/download/Feretory.pdf");
+    expect(entry1.thumbnailUrl).toBe(
+      "http://100.122.171.83:5150/api/opds/abc123key/series/101/thumbnail",
+    );
+    expect(entry1.acquisitionUrl).toBe(
+      "http://100.122.171.83:5150/api/opds/abc123key/series/101/volume/1/chapter/1/download/Feretory.pdf",
+    );
   });
 
   it("extrai títulos, autores, formato e decodifica entidades XML", () => {
@@ -87,7 +91,9 @@ describe("Kavita OPDS Parser", () => {
     const feed = parseOpdsXml(feedWithWebReader, "http://100.122.171.83:5150");
     const entry = feed.entries[0];
 
-    expect(entry.webReaderUrl).toBe("http://100.122.171.83:5150/library/4/series/56/pdf/358?incognitoMode=false");
+    expect(entry.webReaderUrl).toBe(
+      "http://100.122.171.83:5150/library/4/series/56/pdf/358?incognitoMode=false",
+    );
     expect(entry.acquisitionUrl).toBeUndefined();
   });
 
@@ -107,7 +113,11 @@ describe("Kavita OPDS Parser", () => {
 
     expect(entry.subFeedUrls).toBeDefined();
     expect(entry.subFeedUrls).toHaveLength(2);
-    expect(entry.subFeedUrls).toContain("http://100.122.171.83:5150/api/opds/key/series/200/volume/1");
-    expect(entry.subFeedUrls).toContain("http://100.122.171.83:5150/api/opds/key/series/200/volume/2");
+    expect(entry.subFeedUrls).toContain(
+      "http://100.122.171.83:5150/api/opds/key/series/200/volume/1",
+    );
+    expect(entry.subFeedUrls).toContain(
+      "http://100.122.171.83:5150/api/opds/key/series/200/volume/2",
+    );
   });
 });

@@ -23,11 +23,7 @@ vi.mock("@/components/sessions/PlayerCommunityHub", () => ({
   PlayerCommunityHub: ({ onToggleFullscreen }: { onToggleFullscreen?: () => void }) => (
     <div data-testid="mock-community-hub">
       {onToggleFullscreen && (
-        <button
-          type="button"
-          data-testid="mock-fullscreen-toggle"
-          onClick={onToggleFullscreen}
-        >
+        <button type="button" data-testid="mock-fullscreen-toggle" onClick={onToggleFullscreen}>
           fullscreen
         </button>
       )}

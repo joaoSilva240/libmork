@@ -81,7 +81,7 @@ describe("ShieldTabContainer (issue #89)", () => {
           assets: { visible: false },
           jukebox: { visible: false },
         })}
-      />
+      />,
     );
 
     expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
@@ -92,10 +92,7 @@ describe("ShieldTabContainer (issue #89)", () => {
     localStorage.setItem(PERSIST_KEY, "worlds");
 
     render(
-      <ShieldTabContainer
-        persistKey={PERSIST_KEY}
-        tabs={tabs({ worlds: { visible: false } })}
-      />
+      <ShieldTabContainer persistKey={PERSIST_KEY} tabs={tabs({ worlds: { visible: false } })} />,
     );
 
     await waitFor(() => {
@@ -115,7 +112,10 @@ describe("ShieldTabContainer (issue #89)", () => {
 
   it("renders content directly without header when only one tab is visible", () => {
     render(
-      <ShieldTabContainer persistKey={PERSIST_KEY} tabs={tabs({ assets: { visible: false }, jukebox: { visible: false } })} />
+      <ShieldTabContainer
+        persistKey={PERSIST_KEY}
+        tabs={tabs({ assets: { visible: false }, jukebox: { visible: false } })}
+      />,
     );
 
     expect(screen.queryByRole("tablist")).not.toBeInTheDocument();

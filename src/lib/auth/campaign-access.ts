@@ -12,11 +12,7 @@ import { eq, and } from "drizzle-orm";
  * Retorna a campanha se o usuário for o mestre dela; senão, null.
  */
 export async function getCampaignAsMaster(campaignId: string, userId: string) {
-  const [campaign] = await db
-    .select()
-    .from(campaigns)
-    .where(eq(campaigns.id, campaignId))
-    .limit(1);
+  const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, campaignId)).limit(1);
 
   if (!campaign || campaign.masterId !== userId) {
     return null;
@@ -65,20 +61,13 @@ export async function canManageNpc(npcId: string, userId: string): Promise<boole
  * Verifica se um NPC pertence a uma campanha (via mundo ou via inclusão
  * de biblioteca). Usado para liberar mutações no Escudo do Mestre.
  */
-export async function isNpcInCampaign(
-  npcId: string,
-  campaignId: string
-): Promise<boolean> {
+export async function isNpcInCampaign(npcId: string, campaignId: string): Promise<boolean> {
   const [npc] = await db.select().from(npcs).where(eq(npcs.id, npcId)).limit(1);
 
   if (!npc) return false;
 
   if (npc.worldId) {
-    const [world] = await db
-      .select()
-      .from(worlds)
-      .where(eq(worlds.id, npc.worldId))
-      .limit(1);
+    const [world] = await db.select().from(worlds).where(eq(worlds.id, npc.worldId)).limit(1);
     return !!world && world.campaignId === campaignId;
   }
 

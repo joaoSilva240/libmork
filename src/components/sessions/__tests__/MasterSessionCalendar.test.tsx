@@ -105,11 +105,7 @@ vi.mock("../SessionDetailDrawer", () => ({
       >
         confirmar
       </button>
-      <button
-        type="button"
-        data-testid="mock-cancel-fired"
-        onClick={() => onCancelled(session.id)}
-      >
+      <button type="button" data-testid="mock-cancel-fired" onClick={() => onCancelled(session.id)}>
         cancelar
       </button>
     </div>

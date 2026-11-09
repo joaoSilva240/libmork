@@ -99,7 +99,10 @@ export function ShadowPointsModal({
             <span className="text-purple-200 font-bold text-sm">{userShadowPoints}</span>
           </div>
           <p className="text-purple-400/90 text-[11px] leading-relaxed">
-            Gastar 1 Ponto concede <strong className="text-amber-300">+2 em um teste</strong> por 3 campanhas, mas aumenta a <strong className="text-red-400">Dificuldade Global dos Inimigos (+1)</strong> na campanha atual!
+            Gastar 1 Ponto concede <strong className="text-amber-300">+2 em um teste</strong> por 3
+            campanhas, mas aumenta a{" "}
+            <strong className="text-red-400">Dificuldade Global dos Inimigos (+1)</strong> na
+            campanha atual!
           </p>
         </div>
 
@@ -170,7 +173,11 @@ export function ShadowPointsModal({
             ) : (
               <input
                 type="text"
-                placeholder={bonusType === "skill" ? "Ex: Atletismo, Percepção..." : "Ex: Bola de Fogo, Cura..."}
+                placeholder={
+                  bonusType === "skill"
+                    ? "Ex: Atletismo, Percepção..."
+                    : "Ex: Bola de Fogo, Cura..."
+                }
                 value={targetCustom}
                 onChange={(e) => setTargetCustom(e.target.value)}
                 className="w-full rounded-xl border border-gray-800 bg-gray-900 p-2.5 text-xs text-gray-100 placeholder-gray-500 focus:border-purple-500 focus:outline-none"

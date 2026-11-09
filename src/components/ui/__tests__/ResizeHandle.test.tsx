@@ -32,7 +32,14 @@ describe("ResizeHandle", () => {
   });
 
   it("respects title, className, and data-testid", () => {
-    render(<ResizeHandle onResize={vi.fn()} title="Resize panel" className="custom" data-testid="resize" />);
+    render(
+      <ResizeHandle
+        onResize={vi.fn()}
+        title="Resize panel"
+        className="custom"
+        data-testid="resize"
+      />,
+    );
     const handle = screen.getByTestId("resize");
     expect(handle).toHaveAttribute("title", "Resize panel");
     expect(handle).toHaveAttribute("aria-label", "Resize panel");

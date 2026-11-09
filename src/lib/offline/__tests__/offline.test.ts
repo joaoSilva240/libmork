@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 
 describe("Offline Storage & Sync Engine", () => {
   it("should define offline database structure", () => {

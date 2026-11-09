@@ -48,7 +48,10 @@ const MODULE_META: Record<
 
 // Flag de visibilidade que controla cada módulo no escudo. "worlds" é exibido
 // quando o Mapa Tático está ativo (showMap), conforme a especificação da issue #75.
-const MODULE_VISIBILITY: Record<ShieldModuleId, VisibilityFlag | "consolidated-media" | "consolidated-actors"> = {
+const MODULE_VISIBILITY: Record<
+  ShieldModuleId,
+  VisibilityFlag | "consolidated-media" | "consolidated-actors"
+> = {
   mediaPanel: "consolidated-media",
   actorsPanel: "consolidated-actors",
   worlds: "showMap",
@@ -59,7 +62,11 @@ const MODULE_VISIBILITY: Record<ShieldModuleId, VisibilityFlag | "consolidated-m
   sessionLog: "showSessionLog",
 };
 
-export function MasterScreenConfigPanel({ config, onUpdate, onReset }: MasterScreenConfigPanelProps) {
+export function MasterScreenConfigPanel({
+  config,
+  onUpdate,
+  onReset,
+}: MasterScreenConfigPanelProps) {
   const [draggedModule, setDraggedModule] = useState<ShieldModuleId | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<ColumnSide | null>(null);
 
@@ -124,7 +131,7 @@ export function MasterScreenConfigPanel({ config, onUpdate, onReset }: MasterScr
     moduleId: ShieldModuleId,
     index: number,
     col: ColumnSide,
-    total: number
+    total: number,
   ) => {
     const meta = MODULE_META[moduleId];
     const Icon = meta.icon;
@@ -243,7 +250,9 @@ export function MasterScreenConfigPanel({ config, onUpdate, onReset }: MasterScr
         >
           {order.map((moduleId, index) => renderModuleCard(moduleId, index, col, order.length))}
           {order.length === 0 && (
-            <p className="text-[10px] text-secondary-muted text-center py-2">Solte um módulo aqui</p>
+            <p className="text-[10px] text-secondary-muted text-center py-2">
+              Solte um módulo aqui
+            </p>
           )}
         </div>
       </div>

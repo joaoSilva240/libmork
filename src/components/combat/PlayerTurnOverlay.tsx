@@ -15,7 +15,7 @@ export function PlayerTurnOverlay({ combatState, characterId }: PlayerTurnOverla
 
   // Verifica se o personagem participa deste combate
   const myCombatant = combatState.combatants.find(
-    (c) => c.id === characterId || c.characterId === characterId
+    (c) => c.id === characterId || c.characterId === characterId,
   );
 
   if (!myCombatant) {
@@ -54,8 +54,8 @@ export function PlayerTurnOverlay({ combatState, characterId }: PlayerTurnOverla
                       isCurrent
                         ? "border-purple-400 ring-4 ring-purple-500/50 animate-pulse"
                         : isMe
-                        ? "border-amber-400 ring-2 ring-amber-500/30"
-                        : "border-gray-800 bg-gray-900"
+                          ? "border-amber-400 ring-2 ring-amber-500/30"
+                          : "border-gray-800 bg-gray-900"
                     }`}
                   />
                 ) : (
@@ -64,8 +64,8 @@ export function PlayerTurnOverlay({ combatState, characterId }: PlayerTurnOverla
                       isCurrent
                         ? "bg-purple-700 border-purple-400 ring-4 ring-purple-500/50 animate-pulse"
                         : isMe
-                        ? "bg-amber-700 border-amber-400 ring-2 ring-amber-500/30"
-                        : "bg-gray-800 border-gray-700"
+                          ? "bg-amber-700 border-amber-400 ring-2 ring-amber-500/30"
+                          : "bg-gray-800 border-gray-700"
                     }`}
                   >
                     {c.name.charAt(0).toUpperCase()}
@@ -104,7 +104,8 @@ export function PlayerTurnOverlay({ combatState, characterId }: PlayerTurnOverla
               Ações
             </span>
             <span className="text-sm font-black text-purple-400">
-              {actionsLeft}<span className="text-xs font-bold text-gray-500">/3</span>
+              {actionsLeft}
+              <span className="text-xs font-bold text-gray-500">/3</span>
             </span>
           </div>
 

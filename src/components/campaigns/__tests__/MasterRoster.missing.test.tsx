@@ -119,13 +119,7 @@ describe("MasterRoster Component (MISSING Rules Engine)", () => {
   });
 
   it("renderiza cabeçalho de dossiê, vistas analógicas e oculta widgets medievais de combate", async () => {
-    render(
-      <MasterRoster
-        campaignId="c1"
-        selectedWorldId="w1"
-        rulesEngine="missing_zero"
-      />
-    );
+    render(<MasterRoster campaignId="c1" selectedWorldId="w1" rulesEngine="missing_zero" />);
 
     // Header analógico
     await waitFor(() => {
@@ -148,13 +142,7 @@ describe("MasterRoster Component (MISSING Rules Engine)", () => {
   });
 
   it("abre a ficha completa MissingHabitantSheet ao selecionar o habitante no carrossel", async () => {
-    render(
-      <MasterRoster
-        campaignId="c1"
-        selectedWorldId="w1"
-        rulesEngine="missing_zero"
-      />
-    );
+    render(<MasterRoster campaignId="c1" selectedWorldId="w1" rulesEngine="missing_zero" />);
 
     await waitFor(() => {
       expect(screen.getByText("Agente Silva")).toBeInTheDocument();

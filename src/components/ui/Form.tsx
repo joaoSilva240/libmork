@@ -1,11 +1,11 @@
-import { FormHTMLAttributes, ReactNode } from 'react';
+import { FormHTMLAttributes, ReactNode } from "react";
 
 interface FormProps extends FormHTMLAttributes<HTMLFormElement> {
   children: ReactNode;
   error?: string;
 }
 
-export function Form({ children, error, className = '', ...props }: FormProps) {
+export function Form({ children, error, className = "", ...props }: FormProps) {
   return (
     <form className={`space-y-4 ${className}`} {...props}>
       {error && (

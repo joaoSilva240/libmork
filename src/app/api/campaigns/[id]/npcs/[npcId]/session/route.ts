@@ -6,10 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/session";
-import {
-  getCampaignAsMaster,
-  isNpcInCampaign,
-} from "@/lib/auth/campaign-access";
+import { getCampaignAsMaster, isNpcInCampaign } from "@/lib/auth/campaign-access";
 import { updateActorSchema } from "@/lib/validators/session";
 import { applyNpcUpdate } from "@/lib/server/session-actions";
 import { logger } from "@/lib/logger";
@@ -24,10 +21,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id, npcId } = await params;
@@ -37,7 +31,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     if (!campaign) {
       return NextResponse.json(
         { success: false, error: "Campanha não encontrada" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -46,7 +40,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     if (!belongs) {
       return NextResponse.json(
         { success: false, error: "NPC não pertence a esta campanha" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -60,7 +54,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
           error: "Dados inválidos",
           errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -79,7 +73,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     logger.error({ err: error }, "Erro ao atualizar NPC da campanha");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

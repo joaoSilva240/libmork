@@ -22,10 +22,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -39,7 +36,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!character) {
       return NextResponse.json(
         { success: false, error: "Personagem não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -49,7 +46,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!(file instanceof File)) {
       return NextResponse.json(
         { success: false, error: "Arquivo de imagem não enviado (campo 'image')" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -74,10 +71,10 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       data: updatedCharacter,
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao enviar imagem');
+    logger.error({ err: error }, "Erro ao enviar imagem");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

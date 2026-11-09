@@ -100,7 +100,9 @@ export function ShieldTabContainer({
         data-testid={`shield-tab-container-${persistKey.split(":").pop()}`}
         className={`flex flex-col overflow-hidden rounded-lg border border-gray-800 bg-gray-900 ${minHClass} lg:flex-1 ${className}`}
       >
-        <div className={`flex min-h-0 flex-1 flex-col ${activeTab === visibleTabs[0].id ? "" : "hidden"}`}>
+        <div
+          className={`flex min-h-0 flex-1 flex-col ${activeTab === visibleTabs[0].id ? "" : "hidden"}`}
+        >
           {visibleTabs[0].content}
         </div>
       </div>

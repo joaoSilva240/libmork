@@ -21,9 +21,15 @@ export function useRacesQuery() {
   });
 }
 
-export function useContentByTypeQuery(type: "skills"): ReturnType<typeof useQuery<ApiListResponse<Skill>>>;
-export function useContentByTypeQuery(type: "spells"): ReturnType<typeof useQuery<ApiListResponse<Spell>>>;
-export function useContentByTypeQuery<T = unknown>(type: string): ReturnType<typeof useQuery<ApiListResponse<T>>>;
+export function useContentByTypeQuery(
+  type: "skills",
+): ReturnType<typeof useQuery<ApiListResponse<Skill>>>;
+export function useContentByTypeQuery(
+  type: "spells",
+): ReturnType<typeof useQuery<ApiListResponse<Spell>>>;
+export function useContentByTypeQuery<T = unknown>(
+  type: string,
+): ReturnType<typeof useQuery<ApiListResponse<T>>>;
 export function useContentByTypeQuery(type: string) {
   return useQuery({
     queryKey: queryKeys.content.byType(type),

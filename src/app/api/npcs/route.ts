@@ -22,27 +22,20 @@ export async function GET() {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
-    const result = await db
-      .select()
-      .from(npcs)
-      .where(isNull(npcs.worldId))
-      .orderBy(npcs.name);
+    const result = await db.select().from(npcs).where(isNull(npcs.worldId)).orderBy(npcs.name);
 
     return NextResponse.json({
       success: true,
       data: result,
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao listar NPCs da biblioteca');
+    logger.error({ err: error }, "Erro ao listar NPCs da biblioteca");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -56,16 +49,13 @@ export async function POST(request: NextRequest) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     if (session.user.role !== "master") {
       return NextResponse.json(
         { success: false, error: "Apenas mestres podem criar NPCs na biblioteca" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -79,7 +69,7 @@ export async function POST(request: NextRequest) {
           error: "Dados inválidos",
           errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -99,13 +89,13 @@ export async function POST(request: NextRequest) {
         success: true,
         data: newNpc,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao criar NPC de biblioteca');
+    logger.error({ err: error }, "Erro ao criar NPC de biblioteca");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

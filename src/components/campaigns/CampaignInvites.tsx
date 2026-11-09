@@ -50,12 +50,8 @@ export function CampaignInvites({
     const loadData = async () => {
       try {
         const [invitesRes, rosterRes] = await Promise.all([
-          showPlayers
-            ? fetch(`/api/campaigns/${campaignId}/invites`)
-            : Promise.resolve(null),
-          showCharactersNpcs
-            ? fetch(`/api/campaigns/${campaignId}/roster`)
-            : Promise.resolve(null),
+          showPlayers ? fetch(`/api/campaigns/${campaignId}/invites`) : Promise.resolve(null),
+          showCharactersNpcs ? fetch(`/api/campaigns/${campaignId}/roster`) : Promise.resolve(null),
         ]);
 
         const invitesData = invitesRes ? await invitesRes.json() : null;
@@ -129,8 +125,8 @@ export function CampaignInvites({
           prev.map((player) =>
             player.id === payload.invite.userId
               ? { ...player, isInvited: true, inviteId: payload.invite.id }
-              : player
-          )
+              : player,
+          ),
         );
       });
 
@@ -140,8 +136,8 @@ export function CampaignInvites({
           prev.map((player) =>
             player.id === payload.userId || player.inviteId === payload.inviteId
               ? { ...player, isInvited: false, inviteId: null }
-              : player
-          )
+              : player,
+          ),
         );
       });
     }
@@ -178,10 +174,8 @@ export function CampaignInvites({
 
       setPlayers((prev) =>
         prev.map((player) =>
-          player.id === userId
-            ? { ...player, isInvited: true, inviteId: data.data.id }
-            : player
-        )
+          player.id === userId ? { ...player, isInvited: true, inviteId: data.data.id } : player,
+        ),
       );
 
       notifyCampaignInviteCreated({
@@ -207,10 +201,9 @@ export function CampaignInvites({
     setError(null);
     setActionLoadingId(player.id);
     try {
-      const response = await fetch(
-        `/api/campaigns/${campaignId}/invites/${targetId}`,
-        { method: "DELETE" }
-      );
+      const response = await fetch(`/api/campaigns/${campaignId}/invites/${targetId}`, {
+        method: "DELETE",
+      });
 
       const data = await response.json();
 
@@ -220,11 +213,7 @@ export function CampaignInvites({
       }
 
       setPlayers((prev) =>
-        prev.map((p) =>
-          p.id === player.id
-            ? { ...p, isInvited: false, inviteId: null }
-            : p
-        )
+        prev.map((p) => (p.id === player.id ? { ...p, isInvited: false, inviteId: null } : p)),
       );
 
       notifyCampaignInviteRevoked({
@@ -244,13 +233,13 @@ export function CampaignInvites({
   };
 
   const filteredActors = actors.filter((actor) =>
-    actor.name.toLowerCase().includes(actorSearchQuery.toLowerCase())
+    actor.name.toLowerCase().includes(actorSearchQuery.toLowerCase()),
   );
 
   const filteredPlayers = players.filter(
     (player) =>
       player.displayName.toLowerCase().includes(playerSearchQuery.toLowerCase()) ||
-      player.email.toLowerCase().includes(playerSearchQuery.toLowerCase())
+      player.email.toLowerCase().includes(playerSearchQuery.toLowerCase()),
   );
 
   if (!showCharactersNpcs && !showPlayers) {
@@ -258,159 +247,167 @@ export function CampaignInvites({
   }
 
   return (
-    <div className={`flex flex-col gap-3 rounded-lg border border-gray-800 bg-gray-900 p-3 ${className}`}>
+    <div
+      className={`flex flex-col gap-3 rounded-lg border border-gray-800 bg-gray-900 p-3 ${className}`}
+    >
       {/* Seção Personagens e NPCs com Barra de Pesquisa */}
       {showCharactersNpcs && (
         <div className="flex flex-col lg:min-h-0 lg:flex-1">
-        <div className="mb-1.5 flex shrink-0 items-center justify-between">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400">
-            Personagens e NPCs ({actors.length})
-          </h3>
-        </div>
-
-        <div className="mb-2 shrink-0">
-          <input
-            type="text"
-            placeholder="Pesquisar personagem ou NPC..."
-            value={actorSearchQuery}
-            onChange={(e) => setActorSearchQuery(e.target.value)}
-            className="w-full rounded border border-gray-800 bg-gray-950 px-2 py-1 text-xs text-white placeholder-gray-500 focus:border-transparent focus:ring-1 focus:ring-purple-600"
-          />
-        </div>
-
-        {isLoading ? (
-          <p className="text-xs text-gray-500">Carregando personagens...</p>
-        ) : filteredActors.length === 0 ? (
-          <p className="text-xs text-gray-500">
-            {actorSearchQuery ? "Nenhum personagem encontrado." : "Nenhum personagem ou NPC cadastrado."}
-          </p>
-        ) : (
-          <div className="max-h-36 space-y-1.5 overflow-y-auto pr-0.5 lg:max-h-none lg:min-h-0 lg:flex-1">
-            {filteredActors.map((actor) => (
-              <div
-                key={`${actor.kind}-${actor.id}`}
-                draggable
-                onDragStart={(e) => handleDragStartActor(e, actor)}
-                className="group flex cursor-grab items-center justify-between rounded-lg border border-gray-800 bg-gray-950 p-2 transition-colors hover:border-purple-600 hover:bg-gray-900 active:cursor-grabbing"
-                title="Arraste para o carrossel na Mesa para ativar no combate"
-              >
-                <div className="flex items-center gap-2 overflow-hidden">
-                  <span className="text-gray-500 group-hover:text-purple-400">⠿</span>
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-semibold text-white">{actor.name}</p>
-                    <p className="text-[10px] text-gray-400">Nível {actor.level}</p>
-                  </div>
-                </div>
-                <span
-                  className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold ${
-                    actor.kind === "character"
-                      ? "bg-purple-900/50 text-purple-300 border border-purple-800/50"
-                      : actor.npcType === "enemy"
-                      ? "bg-red-900/50 text-red-300 border border-red-800/50"
-                      : "bg-gray-800 text-gray-300"
-                  }`}
-                >
-                  {actor.kind === "character"
-                    ? "Jogador"
-                    : actor.npcType === "enemy"
-                    ? "Inimigo"
-                    : "NPC"}
-                </span>
-              </div>
-            ))}
+          <div className="mb-1.5 flex shrink-0 items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400">
+              Personagens e NPCs ({actors.length})
+            </h3>
           </div>
-        )}
-      </div>
+
+          <div className="mb-2 shrink-0">
+            <input
+              type="text"
+              placeholder="Pesquisar personagem ou NPC..."
+              value={actorSearchQuery}
+              onChange={(e) => setActorSearchQuery(e.target.value)}
+              className="w-full rounded border border-gray-800 bg-gray-950 px-2 py-1 text-xs text-white placeholder-gray-500 focus:border-transparent focus:ring-1 focus:ring-purple-600"
+            />
+          </div>
+
+          {isLoading ? (
+            <p className="text-xs text-gray-500">Carregando personagens...</p>
+          ) : filteredActors.length === 0 ? (
+            <p className="text-xs text-gray-500">
+              {actorSearchQuery
+                ? "Nenhum personagem encontrado."
+                : "Nenhum personagem ou NPC cadastrado."}
+            </p>
+          ) : (
+            <div className="max-h-36 space-y-1.5 overflow-y-auto pr-0.5 lg:max-h-none lg:min-h-0 lg:flex-1">
+              {filteredActors.map((actor) => (
+                <div
+                  key={`${actor.kind}-${actor.id}`}
+                  draggable
+                  onDragStart={(e) => handleDragStartActor(e, actor)}
+                  className="group flex cursor-grab items-center justify-between rounded-lg border border-gray-800 bg-gray-950 p-2 transition-colors hover:border-purple-600 hover:bg-gray-900 active:cursor-grabbing"
+                  title="Arraste para o carrossel na Mesa para ativar no combate"
+                >
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <span className="text-gray-500 group-hover:text-purple-400">⠿</span>
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-semibold text-white">{actor.name}</p>
+                      <p className="text-[10px] text-gray-400">Nível {actor.level}</p>
+                    </div>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+                      actor.kind === "character"
+                        ? "bg-purple-900/50 text-purple-300 border border-purple-800/50"
+                        : actor.npcType === "enemy"
+                          ? "bg-red-900/50 text-red-300 border border-red-800/50"
+                          : "bg-gray-800 text-gray-300"
+                    }`}
+                  >
+                    {actor.kind === "character"
+                      ? "Jogador"
+                      : actor.npcType === "enemy"
+                        ? "Inimigo"
+                        : "NPC"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       {/* Seção Convidar Jogadores Direto */}
       {showPlayers && (
-        <div className={`flex flex-col lg:min-h-0 lg:flex-1 ${showCharactersNpcs ? "border-t border-gray-800 pt-3" : ""}`}>
-        <div className="mb-1.5 flex shrink-0 items-center justify-between">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400">
-            Jogadores ({players.filter((p) => p.isInvited).length}/{players.length})
-          </h3>
-        </div>
-
-        <div className="mb-2 shrink-0">
-          <input
-            type="text"
-            placeholder="Buscar jogador por nome ou email..."
-            value={playerSearchQuery}
-            onChange={(e) => setPlayerSearchQuery(e.target.value)}
-            className="w-full rounded border border-gray-800 bg-gray-950 px-2 py-1 text-xs text-white placeholder-gray-500 focus:border-transparent focus:ring-1 focus:ring-purple-600"
-          />
-        </div>
-
-        {error && (
-          <div className="mb-2 rounded-lg border border-red-800 bg-red-900/30 p-2 text-xs text-red-300">
-            {error}
+        <div
+          className={`flex flex-col lg:min-h-0 lg:flex-1 ${showCharactersNpcs ? "border-t border-gray-800 pt-3" : ""}`}
+        >
+          <div className="mb-1.5 flex shrink-0 items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400">
+              Jogadores ({players.filter((p) => p.isInvited).length}/{players.length})
+            </h3>
           </div>
-        )}
 
-        {isLoading ? (
-          <p className="text-xs text-gray-500">Carregando jogadores...</p>
-        ) : filteredPlayers.length === 0 ? (
-          <p className="text-xs text-gray-500">
-            {playerSearchQuery ? "Nenhum jogador encontrado." : "Nenhum jogador cadastrado no sistema."}
-          </p>
-        ) : (
-          <div className="max-h-48 space-y-1.5 overflow-y-auto pr-0.5 lg:max-h-none lg:min-h-0 lg:flex-1">
-            {filteredPlayers.map((player) => {
-              const isActionLoading = actionLoadingId === player.id;
-              return (
-                <div
-                  key={player.id}
-                  className="flex items-center justify-between gap-2 rounded-lg border border-gray-800 bg-gray-950 p-2"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <p className="truncate text-xs font-semibold text-white">
-                        {player.displayName}
-                      </p>
-                      {player.isInvited && (
-                        <span className="shrink-0 rounded border border-emerald-800/60 bg-emerald-950/80 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-400">
-                          Convidado
-                        </span>
+          <div className="mb-2 shrink-0">
+            <input
+              type="text"
+              placeholder="Buscar jogador por nome ou email..."
+              value={playerSearchQuery}
+              onChange={(e) => setPlayerSearchQuery(e.target.value)}
+              className="w-full rounded border border-gray-800 bg-gray-950 px-2 py-1 text-xs text-white placeholder-gray-500 focus:border-transparent focus:ring-1 focus:ring-purple-600"
+            />
+          </div>
+
+          {error && (
+            <div className="mb-2 rounded-lg border border-red-800 bg-red-900/30 p-2 text-xs text-red-300">
+              {error}
+            </div>
+          )}
+
+          {isLoading ? (
+            <p className="text-xs text-gray-500">Carregando jogadores...</p>
+          ) : filteredPlayers.length === 0 ? (
+            <p className="text-xs text-gray-500">
+              {playerSearchQuery
+                ? "Nenhum jogador encontrado."
+                : "Nenhum jogador cadastrado no sistema."}
+            </p>
+          ) : (
+            <div className="max-h-48 space-y-1.5 overflow-y-auto pr-0.5 lg:max-h-none lg:min-h-0 lg:flex-1">
+              {filteredPlayers.map((player) => {
+                const isActionLoading = actionLoadingId === player.id;
+                return (
+                  <div
+                    key={player.id}
+                    className="flex items-center justify-between gap-2 rounded-lg border border-gray-800 bg-gray-950 p-2"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <p className="truncate text-xs font-semibold text-white">
+                          {player.displayName}
+                        </p>
+                        {player.isInvited && (
+                          <span className="shrink-0 rounded border border-emerald-800/60 bg-emerald-950/80 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-400">
+                            Convidado
+                          </span>
+                        )}
+                      </div>
+                      <p className="truncate text-[10px] text-gray-400">{player.email}</p>
+                      {player.activeCharactersCount > 0 && (
+                        <p className="text-[10px] text-purple-400 font-medium">
+                          {player.activeCharactersCount}{" "}
+                          {player.activeCharactersCount === 1
+                            ? "personagem ativo"
+                            : "personagens ativos"}
+                        </p>
                       )}
                     </div>
-                    <p className="truncate text-[10px] text-gray-400">{player.email}</p>
-                    {player.activeCharactersCount > 0 && (
-                      <p className="text-[10px] text-purple-400 font-medium">
-                        {player.activeCharactersCount}{" "}
-                        {player.activeCharactersCount === 1
-                          ? "personagem ativo"
-                          : "personagens ativos"}
-                      </p>
-                    )}
-                  </div>
 
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    {player.isInvited ? (
-                      <button
-                        onClick={() => handleUninvite(player)}
-                        disabled={isActionLoading}
-                        className="rounded px-2 py-1 text-[11px] font-medium text-red-400 hover:bg-red-950/40 hover:text-red-300 disabled:opacity-50 transition-colors"
-                        title="Remover convite"
-                      >
-                        {isActionLoading ? "..." : "Remover"}
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleInvite(player.id)}
-                        disabled={isActionLoading}
-                        className="rounded bg-purple-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-purple-500 disabled:opacity-50 transition-colors"
-                      >
-                        {isActionLoading ? "..." : "+ Convidar"}
-                      </button>
-                    )}
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      {player.isInvited ? (
+                        <button
+                          onClick={() => handleUninvite(player)}
+                          disabled={isActionLoading}
+                          className="rounded px-2 py-1 text-[11px] font-medium text-red-400 hover:bg-red-950/40 hover:text-red-300 disabled:opacity-50 transition-colors"
+                          title="Remover convite"
+                        >
+                          {isActionLoading ? "..." : "Remover"}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleInvite(player.id)}
+                          disabled={isActionLoading}
+                          className="rounded bg-purple-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-purple-500 disabled:opacity-50 transition-colors"
+                        >
+                          {isActionLoading ? "..." : "+ Convidar"}
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

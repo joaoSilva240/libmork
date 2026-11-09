@@ -74,7 +74,7 @@ describe("CampaignDetail Dynamic Column Module Placement (Issue #75)", () => {
         showSessionLog: true,
         leftColumnOrder: ["actorsPanel"],
         rightColumnOrder: ["mediaPanel", "sessionLog"],
-      })
+      }),
     );
 
     render(<CampaignDetail />);
@@ -102,7 +102,7 @@ describe("CampaignDetail Dynamic Column Module Placement (Issue #75)", () => {
         showJukebox: false,
         leftColumnOrder: ["mediaPanel"],
         rightColumnOrder: ["sessionLog"],
-      })
+      }),
     );
 
     render(<CampaignDetail />);
@@ -123,7 +123,7 @@ describe("CampaignDetail Dynamic Column Module Placement (Issue #75)", () => {
         showSessionLog: true,
         leftColumnOrder: ["actorsPanel"],
         rightColumnOrder: ["mediaPanel", "sessionLog"],
-      })
+      }),
     );
 
     render(<CampaignDetail />);

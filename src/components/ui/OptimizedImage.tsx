@@ -2,7 +2,10 @@
 
 import React, { useState } from "react";
 
-export interface OptimizedImageProps extends Omit<React.ImgHTMLAttributes<HTMLImageElement>, "src"> {
+export interface OptimizedImageProps extends Omit<
+  React.ImgHTMLAttributes<HTMLImageElement>,
+  "src"
+> {
   src?: string | null;
   alt: string;
   fallbackSrc?: string;

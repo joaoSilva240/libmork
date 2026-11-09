@@ -29,9 +29,7 @@ const CSRF_METHODS = ["POST", "PUT", "PATCH", "DELETE"];
 export function isCsrfMutation(method: string, url: string): boolean {
   if (!CSRF_METHODS.includes(method.toUpperCase())) return false;
   // Apenas rotas same-origin de API
-  const path = url.startsWith("http")
-    ? new URL(url, window.location.origin).pathname
-    : url;
+  const path = url.startsWith("http") ? new URL(url, window.location.origin).pathname : url;
   if (!path.startsWith("/api/")) return false;
   // Rotas públicas isentas
   const exempt = [
@@ -49,10 +47,7 @@ export function isCsrfMutation(method: string, url: string): boolean {
  * Wrapper de fetch que injeta x-csrf-token automaticamente em mutações.
  * Use em código novo; o patch global (Parte 2) cobre o código existente.
  */
-export async function apiFetch(
-  input: RequestInfo | URL,
-  init?: RequestInit
-): Promise<Response> {
+export async function apiFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   const method = (init?.method || "GET").toUpperCase();
   const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
 

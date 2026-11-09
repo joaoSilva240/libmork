@@ -66,20 +66,14 @@ export function WorldImageUpload({
   return (
     <div className={`space-y-1.5 ${className}`}>
       {displayLabel && (
-        <span className="block text-xs font-medium text-secondary-muted">
-          {displayLabel}
-        </span>
+        <span className="block text-xs font-medium text-secondary-muted">{displayLabel}</span>
       )}
 
       <div className="flex items-center gap-3">
         {currentImageUrl ? (
           <div className="relative h-12 w-20 overflow-hidden rounded border border-secondary-border bg-dominant-dark shadow-sm">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={currentImageUrl}
-              alt={displayLabel}
-              className="h-full w-full object-cover"
-            />
+            <img src={currentImageUrl} alt={displayLabel} className="h-full w-full object-cover" />
           </div>
         ) : (
           <div className="flex h-12 w-20 items-center justify-center rounded border border-dashed border-secondary-border bg-dominant-dark text-[10px] text-secondary-muted">
@@ -104,12 +98,10 @@ export function WorldImageUpload({
             {isUploading
               ? "Enviando..."
               : currentImageUrl
-              ? `Trocar ${type === "cover" ? "Capa" : "Mapa"}`
-              : `Upload ${type === "cover" ? "Capa" : "Mapa"}`}
+                ? `Trocar ${type === "cover" ? "Capa" : "Mapa"}`
+                : `Upload ${type === "cover" ? "Capa" : "Mapa"}`}
           </button>
-          <p className="mt-0.5 text-[10px] text-secondary-muted">
-            JPG, PNG ou WEBP · máx. 5MB
-          </p>
+          <p className="mt-0.5 text-[10px] text-secondary-muted">JPG, PNG ou WEBP · máx. 5MB</p>
         </div>
       </div>
       {error && <p className="text-xs text-red-400">{error}</p>}

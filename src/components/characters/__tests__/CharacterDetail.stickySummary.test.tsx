@@ -121,7 +121,7 @@ describe("CharacterDetail - Sticky Character Summary (Issue #11)", () => {
     expect(summaryCard).toHaveTextContent("14 / 28"); // Vida
     expect(summaryCard).toHaveTextContent("6 / 12"); // Mana
     expect(summaryCard).toHaveTextContent("50 / 100 XP"); // Progresso XP (250 % 100 = 50)
-    
+
     // Foto do personagem
     const avatar = screen.getByAltText("Thorin Oakenshield");
     expect(summaryCard).toContainElement(avatar);
@@ -136,7 +136,7 @@ describe("CharacterDetail - Sticky Character Summary (Issue #11)", () => {
 
     const summaryCard = screen.getByTestId("character-status-summary");
     const attributesHeading = screen.getByText("Atributos Principais");
-    
+
     expect(attributesHeading).toBeInTheDocument();
     // Atributos não estão contidos no card de resumo (ficam abaixo dele na árvore)
     expect(summaryCard).not.toContainElement(attributesHeading);

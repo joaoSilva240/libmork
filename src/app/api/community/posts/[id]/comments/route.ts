@@ -9,10 +9,7 @@ const commentSchema = z.object({
   content: z.string().trim().min(1, "O comentário não pode ser vazio"),
 });
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: postId } = await params;
 
@@ -57,16 +54,16 @@ export async function GET(
   } catch (error) {
     console.error("Erro ao buscar comentários do post:", error);
     return NextResponse.json(
-      { error: "Erro ao buscar comentários. Verifique se as tabelas da comunidade foram criadas no banco de dados." },
-      { status: 500 }
+      {
+        error:
+          "Erro ao buscar comentários. Verifique se as tabelas da comunidade foram criadas no banco de dados.",
+      },
+      { status: 500 },
     );
   }
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await requireAuth();
     if (!session) {
@@ -97,7 +94,7 @@ export async function POST(
     if (!validation.success) {
       return NextResponse.json(
         { error: "Dados inválidos", details: validation.error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -118,13 +115,16 @@ export async function POST(
           displayName: session.user.displayName,
         },
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("Erro ao adicionar comentário:", error);
     return NextResponse.json(
-      { error: "Erro ao adicionar comentário. Verifique se as tabelas da comunidade foram criadas no banco de dados." },
-      { status: 500 }
+      {
+        error:
+          "Erro ao adicionar comentário. Verifique se as tabelas da comunidade foram criadas no banco de dados.",
+      },
+      { status: 500 },
     );
   }
 }

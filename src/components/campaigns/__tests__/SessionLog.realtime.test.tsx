@@ -55,7 +55,7 @@ const createMockLog = (
   id: string,
   description: string,
   action = "action_test",
-  payload: Record<string, unknown> = {}
+  payload: Record<string, unknown> = {},
 ): CampaignLog => ({
   id,
   campaignId,
@@ -92,7 +92,7 @@ describe("SessionLog - Realtime and Acceptance Criteria (Issue #13)", () => {
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve({ data: initialLogs }),
-        } as Response)
+        } as Response),
       );
       global.fetch = fetchSpy;
 
@@ -106,7 +106,7 @@ describe("SessionLog - Realtime and Acceptance Criteria (Issue #13)", () => {
       expect(fetchSpy).toHaveBeenCalledTimes(1);
       expect(fetchSpy).toHaveBeenCalledWith(
         `/api/campaigns/${campaignId}/logs?limit=100`,
-        expect.objectContaining({ credentials: "include" })
+        expect.objectContaining({ credentials: "include" }),
       );
 
       // Avança 4 segundos (intervalo anterior de polling)
@@ -130,7 +130,7 @@ describe("SessionLog - Realtime and Acceptance Criteria (Issue #13)", () => {
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve({ data: initialLogs }),
-        } as Response)
+        } as Response),
       );
 
       render(<SessionLog campaignId={campaignId} />);
@@ -158,7 +158,7 @@ describe("SessionLog - Realtime and Acceptance Criteria (Issue #13)", () => {
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve({ data: initialLogs }),
-        } as Response)
+        } as Response),
       );
 
       render(<SessionLog campaignId={campaignId} />);
@@ -185,14 +185,14 @@ describe("SessionLog - Realtime and Acceptance Criteria (Issue #13)", () => {
     it("limite de 100 registros é mantido ao inserir novos logs em tempo real", async () => {
       // 100 logs iniciais
       const hundredLogs: CampaignLog[] = Array.from({ length: 100 }, (_, i) =>
-        createMockLog(`init-log-${i}`, `Log número ${i}`)
+        createMockLog(`init-log-${i}`, `Log número ${i}`),
       );
 
       global.fetch = vi.fn().mockImplementation(() =>
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve({ data: hundredLogs }),
-        } as Response)
+        } as Response),
       );
 
       render(<SessionLog campaignId={campaignId} />);
@@ -218,17 +218,13 @@ describe("SessionLog - Realtime and Acceptance Criteria (Issue #13)", () => {
 
   describe("3. Atualização em Tempo Real (campaign-log-updated)", () => {
     it("ao disparar o callback de subscribeCampaignLogUpdated com um resultado de rolagem preenchido, o log existente é atualizado em tempo real", async () => {
-      const pendingRollLog = createMockLog(
-        "roll-log-1",
-        "Rolagem pendente",
-        "roll_request"
-      );
+      const pendingRollLog = createMockLog("roll-log-1", "Rolagem pendente", "roll_request");
 
       global.fetch = vi.fn().mockImplementation(() =>
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve({ data: [pendingRollLog] }),
-        } as Response)
+        } as Response),
       );
 
       render(<SessionLog campaignId={campaignId} />);
@@ -241,12 +237,9 @@ describe("SessionLog - Realtime and Acceptance Criteria (Issue #13)", () => {
       expect(updatedHandler).not.toBeNull();
 
       // Dispara atualização em tempo real mudando para roll_result com payload preenchido
-      const updatedRollLog = createMockLog(
-        "roll-log-1",
-        "Rolagem realizada",
-        "roll_result",
-        { result: 19 }
-      );
+      const updatedRollLog = createMockLog("roll-log-1", "Rolagem realizada", "roll_result", {
+        result: 19,
+      });
 
       act(() => {
         updatedHandler!({
@@ -257,7 +250,9 @@ describe("SessionLog - Realtime and Acceptance Criteria (Issue #13)", () => {
 
       expect(screen.getByText("Rolagem realizada")).toBeInTheDocument();
       expect(screen.getByTestId("die-value")).toHaveTextContent("19");
-      expect(screen.queryByRole("button", { name: /Registrar resultado/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: /Registrar resultado/i }),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -270,7 +265,7 @@ describe("SessionLog - Realtime and Acceptance Criteria (Issue #13)", () => {
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve({ data: [createMockLog("log-1", "Log inicial")] }),
-        } as Response)
+        } as Response),
       );
       global.fetch = fetchSpy;
 
@@ -304,7 +299,7 @@ describe("SessionLog - Realtime and Acceptance Criteria (Issue #13)", () => {
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve({ data: logs }),
-        } as Response)
+        } as Response),
       );
     };
 

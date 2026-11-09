@@ -55,12 +55,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     }
 
     const body = await request.json();
-    const updated = await updateHabitant(
-      habitant.campaignId || null,
-      id,
-      session.user.id,
-      body,
-    );
+    const updated = await updateHabitant(habitant.campaignId || null, id, session.user.id, body);
 
     return NextResponse.json({ success: true, data: updated });
   } catch (error) {

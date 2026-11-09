@@ -6,7 +6,7 @@ import { getSession } from "@/lib/auth/session";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ worldId: string; estId: string }> }
+  { params }: { params: Promise<{ worldId: string; estId: string }> },
 ) {
   try {
     const { estId } = await params;
@@ -25,10 +25,11 @@ export async function GET(
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ worldId: string; estId: string }> }
+  { params }: { params: Promise<{ worldId: string; estId: string }> },
 ) {
   try {
-    const session = await getSession(); const user = session?.user;
+    const session = await getSession();
+    const user = session?.user;
     if (!user) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
     const { estId } = await params;

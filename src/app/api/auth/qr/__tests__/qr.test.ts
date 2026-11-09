@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createQrSession, getQrSession, authorizeQrSession, consumeQrSession } from "@/lib/auth/qr-session";
+import {
+  createQrSession,
+  getQrSession,
+  authorizeQrSession,
+  consumeQrSession,
+} from "@/lib/auth/qr-session";
 
 const mockRedisMap = new Map<string, unknown>();
 

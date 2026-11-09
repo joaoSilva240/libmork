@@ -13,9 +13,7 @@ describe("PdfViewerModal & resolvePdfEmbedUrl", () => {
       provider: "smb",
     };
     const { embedUrl } = resolvePdfEmbedUrl(smbDoc);
-    expect(embedUrl).toBe(
-      "/api/library/documents/stream?file=livros%2Fdnd-5e.pdf"
-    );
+    expect(embedUrl).toBe("/api/library/documents/stream?file=livros%2Fdnd-5e.pdf");
   });
 
   it("converte SMB URL com protocolo smb:// para endpoint de stream", () => {
@@ -25,7 +23,7 @@ describe("PdfViewerModal & resolvePdfEmbedUrl", () => {
     };
     const { embedUrl } = resolvePdfEmbedUrl(smbDoc);
     expect(embedUrl).toBe(
-      "/api/library/documents/stream?file=smb%3A%2F%2Fstorage%2Flivros%2Fdnd-5e.pdf"
+      "/api/library/documents/stream?file=smb%3A%2F%2Fstorage%2Flivros%2Fdnd-5e.pdf",
     );
   });
 
@@ -35,9 +33,7 @@ describe("PdfViewerModal & resolvePdfEmbedUrl", () => {
       provider: "gdrive",
     };
     const { embedUrl } = resolvePdfEmbedUrl(gdriveDoc);
-    expect(embedUrl).toBe(
-      "https://drive.google.com/file/d/123456789abc/preview"
-    );
+    expect(embedUrl).toBe("https://drive.google.com/file/d/123456789abc/preview");
   });
 
   it("converte link do Google Drive com parâmetro id= para /preview", () => {
@@ -46,9 +42,7 @@ describe("PdfViewerModal & resolvePdfEmbedUrl", () => {
       provider: "gdrive",
     };
     const { embedUrl } = resolvePdfEmbedUrl(gdriveDoc);
-    expect(embedUrl).toBe(
-      "https://drive.google.com/file/d/123456789abc/preview"
-    );
+    expect(embedUrl).toBe("https://drive.google.com/file/d/123456789abc/preview");
   });
 
   it("renderiza o modal de visualização e fallback 'Abrir original'", () => {
@@ -61,16 +55,13 @@ describe("PdfViewerModal & resolvePdfEmbedUrl", () => {
         url="https://drive.google.com/file/d/123/view"
         provider="gdrive"
         externalUrl="https://drive.google.com/file/d/123/view"
-      />
+      />,
     );
 
     expect(screen.getByText("Livro de Regras")).toBeInTheDocument();
     expect(screen.getByTitle("Abrir arquivo em nova aba")).toBeInTheDocument();
     const iframe = screen.getByTitle("Livro de Regras");
-    expect(iframe).toHaveAttribute(
-      "src",
-      "https://drive.google.com/file/d/123/preview"
-    );
+    expect(iframe).toHaveAttribute("src", "https://drive.google.com/file/d/123/preview");
 
     fireEvent.click(screen.getByLabelText("Fechar visualizador"));
     expect(onClose).toHaveBeenCalled();
@@ -109,7 +100,7 @@ describe("PdfViewerModal & resolvePdfEmbedUrl", () => {
     };
     const resAcq = resolvePdfEmbedUrl(docWithAcq);
     expect(resAcq.embedUrl).toBe(
-      `/api/library/kavita/proxy?url=${encodeURIComponent("http://kavita/acq.pdf")}&type=pdf`
+      `/api/library/kavita/proxy?url=${encodeURIComponent("http://kavita/acq.pdf")}&type=pdf`,
     );
   });
 
@@ -138,7 +129,7 @@ describe("PdfViewerModal & resolvePdfEmbedUrl", () => {
         pdfProxyUrl={webReaderDoc.pdfProxyUrl}
         acquisitionUrl={webReaderDoc.acquisitionUrl}
         webReaderUrl={webReaderDoc.webReaderUrl}
-      />
+      />,
     );
 
     // Não deve existir iframe no DOM
@@ -154,7 +145,7 @@ describe("PdfViewerModal & resolvePdfEmbedUrl", () => {
         onClose={vi.fn()}
         title="Documento Sem URL"
         provider="external"
-      />
+      />,
     );
 
     // Iframe não deve existir ou não deve ter src vazio
@@ -195,13 +186,7 @@ describe("CreateDocumentModal", () => {
       }),
     } as any);
 
-    render(
-      <CreateDocumentModal
-        isOpen={true}
-        onClose={mockClose}
-        onSuccess={mockSuccess}
-      />
-    );
+    render(<CreateDocumentModal isOpen={true} onClose={mockClose} onSuccess={mockSuccess} />);
 
     fireEvent.change(screen.getByPlaceholderText(/Ex: Tormenta20/i), {
       target: { value: "Novo Livro" },
@@ -217,7 +202,7 @@ describe("CreateDocumentModal", () => {
         "/api/library/documents",
         expect.objectContaining({
           method: "POST",
-        })
+        }),
       );
       expect(mockSuccess).toHaveBeenCalled();
       expect(mockClose).toHaveBeenCalled();
@@ -328,7 +313,9 @@ describe("LibraryDocuments Component", () => {
       expect(screen.getByRole("heading", { name: "Tome" })).toBeInTheDocument();
 
       // Painel inline substitui a barra de busca e lista
-      expect(screen.queryByPlaceholderText("Buscar regras, livros, manuais...")).not.toBeInTheDocument();
+      expect(
+        screen.queryByPlaceholderText("Buscar regras, livros, manuais..."),
+      ).not.toBeInTheDocument();
       expect(screen.queryByText("Manual Oficial Libmork")).not.toBeInTheDocument();
 
       // Iframe inline carregado com o URL esperado e dimensões de desktop
@@ -374,9 +361,12 @@ describe("LibraryDocuments Component", () => {
       id: "kavita-101",
       title: "Mörk Borg Cult Feretory",
       description: "Zine de regras apocalípticas",
-      coverUrl: "/api/library/kavita/proxy?url=http%3A%2F%2F100.122.171.83%3A5150%2Fcover.jpg&type=image",
-      externalUrl: "/api/library/kavita/proxy?url=http%3A%2F%2F100.122.171.83%3A5150%2Fapi%2Fopds%2Fkey%2Fdownload.pdf&type=pdf",
-      pdfProxyUrl: "/api/library/kavita/proxy?url=http%3A%2F%2F100.122.171.83%3A5150%2Fapi%2Fopds%2Fkey%2Fdownload.pdf&type=pdf",
+      coverUrl:
+        "/api/library/kavita/proxy?url=http%3A%2F%2F100.122.171.83%3A5150%2Fcover.jpg&type=image",
+      externalUrl:
+        "/api/library/kavita/proxy?url=http%3A%2F%2F100.122.171.83%3A5150%2Fapi%2Fopds%2Fkey%2Fdownload.pdf&type=pdf",
+      pdfProxyUrl:
+        "/api/library/kavita/proxy?url=http%3A%2F%2F100.122.171.83%3A5150%2Fapi%2Fopds%2Fkey%2Fdownload.pdf&type=pdf",
       acquisitionUrl: "http://100.122.171.83:5150/api/opds/key/download.pdf",
       provider: "kavita",
       category: "livro-base",
@@ -431,7 +421,9 @@ describe("LibraryDocuments Component", () => {
     const src = iframe.getAttribute("src") || "";
     expect(src).toContain("/api/library/kavita/proxy");
     expect(src).toContain("url=");
-    expect(src).toContain(encodeURIComponent("http://100.122.171.83:5150/api/opds/key/download.pdf"));
+    expect(src).toContain(
+      encodeURIComponent("http://100.122.171.83:5150/api/opds/key/download.pdf"),
+    );
   });
 
   it("renderiza poster Kavita mesmo quando externalUrl vem apenas com link bruto de aquisição e monta proxy com url codificado", async () => {
@@ -491,13 +483,14 @@ describe("LibraryDocuments Component", () => {
     const iframe = screen.getByTitle("Cy_Borg Rulebook");
     const src = iframe.getAttribute("src") || "";
     expect(src).toBe(
-      `/api/library/kavita/proxy?url=${encodeURIComponent("http://100.122.171.83:5150/api/opds/key/cyborg.pdf")}&type=pdf`
+      `/api/library/kavita/proxy?url=${encodeURIComponent("http://100.122.171.83:5150/api/opds/key/cyborg.pdf")}&type=pdf`,
     );
   });
 
   it("resolve PdfEmbedUrl apropriado para livros vindos do provedor kavita", () => {
     const kavitaDoc = {
-      externalUrl: "/api/library/kavita/proxy?url=http%3A%2F%2F100.122.171.83%3A5150%2Fapi%2Fopds%2Fdownload.pdf&type=pdf",
+      externalUrl:
+        "/api/library/kavita/proxy?url=http%3A%2F%2F100.122.171.83%3A5150%2Fapi%2Fopds%2Fdownload.pdf&type=pdf",
       provider: "kavita",
     };
     const { embedUrl, isDirectEmbedPossible } = resolvePdfEmbedUrl(kavitaDoc);
@@ -513,7 +506,7 @@ describe("LibraryDocuments Component", () => {
     const { embedUrl, isDirectEmbedPossible } = resolvePdfEmbedUrl(kavitaRemoteDoc);
     expect(isDirectEmbedPossible).toBe(true);
     expect(embedUrl).toBe(
-      `/api/library/kavita/proxy?url=${encodeURIComponent(kavitaRemoteDoc.externalUrl)}&type=pdf`
+      `/api/library/kavita/proxy?url=${encodeURIComponent(kavitaRemoteDoc.externalUrl)}&type=pdf`,
     );
   });
 });

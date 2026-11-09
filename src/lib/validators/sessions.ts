@@ -18,12 +18,7 @@ export const launchSessionSchema = z
     proposedEnd: z.string().datetime({ offset: true, message: "Data final inválida" }),
     xpReward: z.number().int().min(0).max(100000).optional(),
     sessionType: z.enum(["one_shot", "continuing"]).optional(),
-    maxSlots: z
-      .number()
-      .int()
-      .min(1, "Mínimo de 1 vaga")
-      .max(20, "Máximo de 20 vagas")
-      .optional(),
+    maxSlots: z.number().int().min(1, "Mínimo de 1 vaga").max(20, "Máximo de 20 vagas").optional(),
   })
   .refine((v) => new Date(v.proposedEnd) > new Date(v.proposedStart), {
     message: "O fim do período deve ser depois do início",

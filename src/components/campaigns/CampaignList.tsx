@@ -18,7 +18,7 @@ export function CampaignList() {
       try {
         const response = await fetch("/api/campaigns", {
           credentials: "include",
-          signal: controller.signal
+          signal: controller.signal,
         });
         clearTimeout(timeoutId);
 
@@ -26,8 +26,10 @@ export function CampaignList() {
           const data = await response.json().catch(() => ({}));
 
           if (response.status === 401) {
-            await fetch("/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => {});
-            window.location.href = '/login';
+            await fetch("/api/auth/logout", { method: "POST", credentials: "include" }).catch(
+              () => {},
+            );
+            window.location.href = "/login";
             return;
           }
 
@@ -40,7 +42,7 @@ export function CampaignList() {
         setCampaigns(data.data);
       } catch (err: any) {
         clearTimeout(timeoutId);
-        if (err.name === 'AbortError') {
+        if (err.name === "AbortError") {
           setError("Tempo esgotado. Verifique sua conexão.");
         } else {
           setError("Erro de conexão. Tente novamente.");
@@ -87,9 +89,7 @@ export function CampaignList() {
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-2xl font-bold text-secondary-pure">Minhas Campanhas</h2>
         <Link href="/master/campaigns/new">
-          <Button variant="master">
-            + Nova
-          </Button>
+          <Button variant="master">+ Nova</Button>
         </Link>
       </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

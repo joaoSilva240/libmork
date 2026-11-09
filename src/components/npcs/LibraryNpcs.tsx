@@ -89,7 +89,7 @@ function toPayload(form: NpcFormState) {
     xpReward: Number(form.xpReward) || 0,
     classId: form.classId || null,
     attributes: Object.fromEntries(
-      ATTRIBUTES.map((attr) => [attr, Number(form.attributes[attr]) || 0])
+      ATTRIBUTES.map((attr) => [attr, Number(form.attributes[attr]) || 0]),
     ),
   };
 }
@@ -129,14 +129,9 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
     setCurrentPage(1);
   }, [searchNpc]);
 
-  const filteredNpcs = npcs.filter((n) =>
-    n.name.toLowerCase().includes(searchNpc.toLowerCase())
-  );
+  const filteredNpcs = npcs.filter((n) => n.name.toLowerCase().includes(searchNpc.toLowerCase()));
   const totalPages = Math.ceil(filteredNpcs.length / pageSize) || 1;
-  const paginatedNpcs = filteredNpcs.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+  const paginatedNpcs = filteredNpcs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   // Catálogo Completo do D&D 5e (334 Monstros)
   const [showDndCatalogModal, setShowDndCatalogModal] = useState(false);
@@ -165,7 +160,9 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
 
   // Catálogo Completo do Pathfinder 2e
   const [showPf2eCatalogModal, setShowPf2eCatalogModal] = useState(false);
-  const [pf2eCatalogList, setPf2eCatalogList] = useState<Array<{ index: string; name: string; pack: string; path: string }>>([]);
+  const [pf2eCatalogList, setPf2eCatalogList] = useState<
+    Array<{ index: string; name: string; pack: string; path: string }>
+  >([]);
   const [selectedPf2ePaths, setSelectedPf2ePaths] = useState<Set<string>>(new Set());
   const [searchPf2eCatalog, setSearchPf2eCatalog] = useState("");
   const [isLoadingPf2eCatalog, setIsLoadingPf2eCatalog] = useState(false);
@@ -254,7 +251,11 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
   };
 
   const handleImportAllPf2eMonsters = async () => {
-    if (!window.confirm(`Deseja importar TODOS os ${pf2eCatalogList.length} monstros da API Pathfinder 2e para sua biblioteca? Este processo levará alguns segundos.`)) {
+    if (
+      !window.confirm(
+        `Deseja importar TODOS os ${pf2eCatalogList.length} monstros da API Pathfinder 2e para sua biblioteca? Este processo levará alguns segundos.`,
+      )
+    ) {
       return;
     }
     setError(null);
@@ -276,7 +277,9 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
       }
       await loadNpcs();
       setShowPf2eCatalogModal(false);
-      alert(data.message || "Todos os monstros do Pathfinder 2e foram importados para sua biblioteca!");
+      alert(
+        data.message || "Todos os monstros do Pathfinder 2e foram importados para sua biblioteca!",
+      );
     } catch {
       setError("Erro de conexão ao importar da API Pathfinder 2e.");
     } finally {
@@ -315,7 +318,11 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
   };
 
   const handleImportAllDndMonsters = async () => {
-    if (!window.confirm("Deseja importar TODOS os 334 monstros da API D&D 5e para sua biblioteca? Este processo levará alguns segundos.")) {
+    if (
+      !window.confirm(
+        "Deseja importar TODOS os 334 monstros da API D&D 5e para sua biblioteca? Este processo levará alguns segundos.",
+      )
+    ) {
       return;
     }
     setError(null);
@@ -337,7 +344,9 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
       }
       await loadNpcs();
       setShowDndCatalogModal(false);
-      alert(data.message || "Todos os 334 monstros do D&D 5e foram importados para sua biblioteca!");
+      alert(
+        data.message || "Todos os 334 monstros do D&D 5e foram importados para sua biblioteca!",
+      );
     } catch {
       setError("Erro de conexão ao importar da API D&D 5e.");
     } finally {
@@ -406,7 +415,7 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
             campaignsData.data.map((campaign: CampaignOption) => ({
               id: campaign.id,
               name: campaign.name,
-            }))
+            })),
           );
         }
         if (classesResponse.ok) {
@@ -472,9 +481,7 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
         try {
           created = await uploadImage(created.id, createImage);
         } catch (uploadError) {
-          setError(
-            uploadError instanceof Error ? uploadError.message : "Erro ao enviar imagem"
-          );
+          setError(uploadError instanceof Error ? uploadError.message : "Erro ao enviar imagem");
         }
       }
 
@@ -557,9 +564,9 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
   const handleDuplicate = async (npcId: string) => {
     setError(null);
     try {
-      const response = await fetch(`/api/npcs/${npcId}/duplicate`, { 
+      const response = await fetch(`/api/npcs/${npcId}/duplicate`, {
         method: "POST",
-        credentials: "include"
+        credentials: "include",
       });
       const data = await response.json();
 
@@ -581,9 +588,9 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
 
     setError(null);
     try {
-      const response = await fetch(`/api/npcs/${npcId}`, { 
+      const response = await fetch(`/api/npcs/${npcId}`, {
         method: "DELETE",
-        credentials: "include"
+        credentials: "include",
       });
       const data = await response.json();
 
@@ -659,7 +666,7 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
     state: NpcFormState,
     onChange: (next: NpcFormState) => void,
     disabled: boolean,
-    prefix: string
+    prefix: string,
   ) => (
     <>
       <Input
@@ -830,7 +837,10 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
             <span>NPCs Cadastrados</span>
           </h3>
           <div className="text-xs text-gray-400 font-semibold whitespace-nowrap">
-            Total: <span className="text-xs text-purple-400 font-bold bg-purple-950/60 border border-purple-900/60 px-2.5 py-1 rounded-lg">{filteredNpcs.length}</span>
+            Total:{" "}
+            <span className="text-xs text-purple-400 font-bold bg-purple-950/60 border border-purple-900/60 px-2.5 py-1 rounded-lg">
+              {filteredNpcs.length}
+            </span>
           </div>
         </div>
 
@@ -850,7 +860,8 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
           <div className="py-12 text-center text-sm text-gray-400 space-y-2 flex-1">
             <p>Nenhum NPC na biblioteca ainda.</p>
             <p className="text-xs text-gray-500">
-              Clique em <strong>+ Criar Novo NPC</strong> ou use <strong>Catálogo D&D 5e</strong> para alimentar a biblioteca.
+              Clique em <strong>+ Criar Novo NPC</strong> ou use <strong>Catálogo D&D 5e</strong>{" "}
+              para alimentar a biblioteca.
             </p>
           </div>
         ) : (
@@ -858,7 +869,10 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
             <div className="flex-1 overflow-y-auto pr-1">
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
                 {paginatedNpcs.map((npc) => (
-                  <div key={npc.id} className="rounded-xl border border-gray-800 bg-gray-950 p-3.5 hover:border-purple-600/60 hover:shadow-lg transition-all cursor-pointer">
+                  <div
+                    key={npc.id}
+                    className="rounded-xl border border-gray-800 bg-gray-950 p-3.5 hover:border-purple-600/60 hover:shadow-lg transition-all cursor-pointer"
+                  >
                     <div className="flex items-start gap-3">
                       {npc.imageUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -906,13 +920,11 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
                           <span>Recompensa +{npc.xpReward}</span>
                         </div>
                         <div className="mt-1 text-xs text-gray-500">
-                          {ATTRIBUTES.map(
-                            (attr) => {
-                              const val = npc.attributes[attr] ?? 8;
-                              const mod = getModifier(val);
-                              return ` ${attr.charAt(0).toUpperCase()}: ${val} (${mod >= 0 ? "+" : ""}${mod})`;
-                            }
-                          ).join(" · ")}
+                          {ATTRIBUTES.map((attr) => {
+                            const val = npc.attributes[attr] ?? 8;
+                            const mod = getModifier(val);
+                            return ` ${attr.charAt(0).toUpperCase()}: ${val} (${mod >= 0 ? "+" : ""}${mod})`;
+                          }).join(" · ")}
                         </div>
                       </div>
                       <div className="flex shrink-0 flex-col items-end gap-1">
@@ -961,7 +973,11 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
                           >
                             Salvar
                           </Button>
-                          <Button type="button" variant="secondary" onClick={() => setEditingId(null)}>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => setEditingId(null)}
+                          >
                             Fechar
                           </Button>
                         </div>
@@ -1045,305 +1061,316 @@ export function LibraryNpcs({ onRegisterActions }: LibraryNpcsProps = {}) {
         )}
       </div>
 
-        {/* Modal do Catálogo Completo Pathfinder 2e */}
-        {showPf2eCatalogModal && (
+      {/* Modal do Catálogo Completo Pathfinder 2e */}
+      {showPf2eCatalogModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
+          onClick={() => setShowPf2eCatalogModal(false)}
+        >
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
-            onClick={() => setShowPf2eCatalogModal(false)}
+            className="w-full max-w-5xl rounded-3xl border border-purple-800 bg-gray-950 p-6 shadow-2xl space-y-4 text-gray-100 max-h-[90vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
           >
-            <div
-              className="w-full max-w-5xl rounded-3xl border border-purple-800 bg-gray-950 p-6 shadow-2xl space-y-4 text-gray-100 max-h-[90vh] flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">⚔️</span>
-                  <div>
-                    <h3 className="text-lg font-bold text-purple-200">Catálogo Pathfinder 2e ({pf2eCatalogList.length} Monstros)</h3>
-                    <p className="text-xs text-purple-400">
-                      Importe criaturas do Bestiário Pathfinder 2e com atributos, vida, habilidades e magias
-                    </p>
-                  </div>
+            <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">⚔️</span>
+                <div>
+                  <h3 className="text-lg font-bold text-purple-200">
+                    Catálogo Pathfinder 2e ({pf2eCatalogList.length} Monstros)
+                  </h3>
+                  <p className="text-xs text-purple-400">
+                    Importe criaturas do Bestiário Pathfinder 2e com atributos, vida, habilidades e
+                    magias
+                  </p>
                 </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPf2eCatalogModal(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <input
+                type="text"
+                placeholder="Pesquisar criaturas Pathfinder 2e (ex: Goblin, Mephit, Golem, Dragon)..."
+                value={searchPf2eCatalog}
+                onChange={(e) => setSearchPf2eCatalog(e.target.value)}
+                className="w-full rounded-xl border border-gray-800 bg-gray-900 px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none transition"
+              />
+
+              <label className="flex items-center gap-1.5 text-xs text-purple-300 font-semibold cursor-pointer whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  checked={translateWithLLM}
+                  onChange={(e) => setTranslateWithLLM(e.target.checked)}
+                  className="rounded border-gray-800 bg-gray-900 text-purple-600 focus:ring-purple-500"
+                />
+                <span>Traduzir com IA</span>
+              </label>
+
+              <button
+                type="button"
+                onClick={handleImportAllPf2eMonsters}
+                disabled={isImportingPf2e}
+                className="w-full sm:w-auto rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-purple-500 transition whitespace-nowrap shadow-lg shadow-purple-950 disabled:opacity-50"
+              >
+                {isImportingPf2e
+                  ? "Importando..."
+                  : `🔥 Importar Todos (${pf2eCatalogList.length})`}
+              </button>
+            </div>
+
+            {isLoadingPf2eCatalog ? (
+              <div className="flex items-center justify-center min-h-[200px]">
+                <Spinner size="lg" />
+              </div>
+            ) : (
+              <div className="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 pr-1 min-h-[350px]">
+                {pf2eCatalogList
+                  .filter((m) => m.name.toLowerCase().includes(searchPf2eCatalog.toLowerCase()))
+                  .map((m) => {
+                    const isSelected = selectedPf2ePaths.has(m.path);
+
+                    return (
+                      <div
+                        key={m.path}
+                        onClick={() => handleToggleSelectPf2eMonster(m.path)}
+                        className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition ${
+                          isSelected
+                            ? "border-purple-500 bg-purple-950/60 text-white"
+                            : "border-gray-800 bg-gray-900/60 text-gray-300 hover:border-gray-700"
+                        }`}
+                      >
+                        <div className="flex flex-col truncate pr-2">
+                          <span className="text-xs font-bold truncate">{m.name}</span>
+                          <span className="text-[10px] text-gray-400 truncate">{m.pack}</span>
+                        </div>
+                        <div
+                          className={`h-5 w-5 rounded-md border flex items-center justify-center text-xs font-bold shrink-0 ${
+                            isSelected
+                              ? "bg-purple-600 border-purple-400 text-white"
+                              : "border-gray-700 bg-gray-800 text-transparent"
+                          }`}
+                        >
+                          ✓
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+
+            <div className="flex items-center justify-between pt-3 border-t border-gray-800 text-xs">
+              <span className="text-gray-400">
+                {selectedPf2ePaths.size} monstro(s) selecionado(s)
+              </span>
+
+              <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => setShowPf2eCatalogModal(false)}
-                  className="text-gray-400 hover:text-white"
+                  className="rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg"
                 >
-                  ✕
+                  Fechar
                 </button>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                <input
-                  type="text"
-                  placeholder="Pesquisar criaturas Pathfinder 2e (ex: Goblin, Mephit, Golem, Dragon)..."
-                  value={searchPf2eCatalog}
-                  onChange={(e) => setSearchPf2eCatalog(e.target.value)}
-                  className="w-full rounded-xl border border-gray-800 bg-gray-900 px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none transition"
-                />
-
-                <label className="flex items-center gap-1.5 text-xs text-purple-300 font-semibold cursor-pointer whitespace-nowrap">
-                  <input
-                    type="checkbox"
-                    checked={translateWithLLM}
-                    onChange={(e) => setTranslateWithLLM(e.target.checked)}
-                    className="rounded border-gray-800 bg-gray-900 text-purple-600 focus:ring-purple-500"
-                  />
-                  <span>Traduzir com IA</span>
-                </label>
-
                 <button
                   type="button"
-                  onClick={handleImportAllPf2eMonsters}
-                  disabled={isImportingPf2e}
-                  className="w-full sm:w-auto rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-purple-500 transition whitespace-nowrap shadow-lg shadow-purple-950 disabled:opacity-50"
+                  onClick={handleImportSelectedPf2eMonsters}
+                  disabled={selectedPf2ePaths.size === 0 || isImportingPf2e}
+                  className="rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white hover:bg-purple-500 disabled:opacity-50"
                 >
-                  {isImportingPf2e ? "Importando..." : `🔥 Importar Todos (${pf2eCatalogList.length})`}
+                  {isImportingPf2e
+                    ? "Importando..."
+                    : `Importar Selecionados (${selectedPf2ePaths.size})`}
                 </button>
-              </div>
-
-              {isLoadingPf2eCatalog ? (
-                <div className="flex items-center justify-center min-h-[200px]">
-                  <Spinner size="lg" />
-                </div>
-              ) : (
-                <div className="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 pr-1 min-h-[350px]">
-                  {pf2eCatalogList
-                    .filter((m) => m.name.toLowerCase().includes(searchPf2eCatalog.toLowerCase()))
-                    .map((m) => {
-                      const isSelected = selectedPf2ePaths.has(m.path);
-
-                      return (
-                        <div
-                          key={m.path}
-                          onClick={() => handleToggleSelectPf2eMonster(m.path)}
-                          className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition ${
-                            isSelected
-                              ? "border-purple-500 bg-purple-950/60 text-white"
-                              : "border-gray-800 bg-gray-900/60 text-gray-300 hover:border-gray-700"
-                          }`}
-                        >
-                          <div className="flex flex-col truncate pr-2">
-                            <span className="text-xs font-bold truncate">{m.name}</span>
-                            <span className="text-[10px] text-gray-400 truncate">{m.pack}</span>
-                          </div>
-                          <div
-                            className={`h-5 w-5 rounded-md border flex items-center justify-center text-xs font-bold shrink-0 ${
-                              isSelected
-                                ? "bg-purple-600 border-purple-400 text-white"
-                                : "border-gray-700 bg-gray-800 text-transparent"
-                            }`}
-                          >
-                            ✓
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
-              )}
-
-              <div className="flex items-center justify-between pt-3 border-t border-gray-800 text-xs">
-                <span className="text-gray-400">
-                  {selectedPf2ePaths.size} monstro(s) selecionado(s)
-                </span>
-
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowPf2eCatalogModal(false)}
-                    className="rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg"
-                  >
-                    Fechar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleImportSelectedPf2eMonsters}
-                    disabled={selectedPf2ePaths.size === 0 || isImportingPf2e}
-                    className="rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white hover:bg-purple-500 disabled:opacity-50"
-                  >
-                    {isImportingPf2e ? "Importando..." : `Importar Selecionados (${selectedPf2ePaths.size})`}
-                  </button>
-                </div>
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Modal do Catálogo Completo D&D 5e (334 Monstros) */}
-        {showDndCatalogModal && (
+      {/* Modal do Catálogo Completo D&D 5e (334 Monstros) */}
+      {showDndCatalogModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
+          onClick={() => setShowDndCatalogModal(false)}
+        >
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
-            onClick={() => setShowDndCatalogModal(false)}
+            className="w-full max-w-5xl rounded-3xl border border-purple-800 bg-gray-950 p-6 shadow-2xl space-y-4 text-gray-100 max-h-[90vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
           >
-            <div
-              className="w-full max-w-5xl rounded-3xl border border-purple-800 bg-gray-950 p-6 shadow-2xl space-y-4 text-gray-100 max-h-[90vh] flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">🐉</span>
-                  <div>
-                    <h3 className="text-lg font-bold text-purple-200">Catálogo D&D 5e (334 Monstros)</h3>
-                    <p className="text-xs text-purple-400">
-                      Selecione monstros para importar ou alimente todos de uma vez
-                    </p>
-                  </div>
+            <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">🐉</span>
+                <div>
+                  <h3 className="text-lg font-bold text-purple-200">
+                    Catálogo D&D 5e (334 Monstros)
+                  </h3>
+                  <p className="text-xs text-purple-400">
+                    Selecione monstros para importar ou alimente todos de uma vez
+                  </p>
                 </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDndCatalogModal(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <input
+                type="text"
+                placeholder="Pesquisar entre os 334 monstros (ex: Dragon, Goblin, Lich, Beholder)..."
+                value={searchDndCatalog}
+                onChange={(e) => setSearchDndCatalog(e.target.value)}
+                className="w-full rounded-xl border border-gray-800 bg-gray-900 px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none transition"
+              />
+
+              <label className="flex items-center gap-1.5 text-xs text-purple-300 font-semibold cursor-pointer whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  checked={translateDndWithLLM}
+                  onChange={(e) => setTranslateDndWithLLM(e.target.checked)}
+                  className="rounded border-gray-800 bg-gray-900 text-purple-600 focus:ring-purple-500"
+                />
+                <span>Traduzir com IA</span>
+              </label>
+
+              <button
+                type="button"
+                onClick={handleImportAllDndMonsters}
+                disabled={isImportingDnd}
+                className="w-full sm:w-auto rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-purple-500 transition whitespace-nowrap shadow-lg shadow-purple-950 disabled:opacity-50"
+              >
+                {isImportingDnd ? "Importando..." : "🔥 Importar Todos (334)"}
+              </button>
+            </div>
+
+            {isLoadingCatalog ? (
+              <div className="flex items-center justify-center min-h-[200px]">
+                <Spinner size="lg" />
+              </div>
+            ) : (
+              <div className="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 pr-1 min-h-[350px]">
+                {dndCatalogList
+                  .filter((m) => m.name.toLowerCase().includes(searchDndCatalog.toLowerCase()))
+                  .map((m) => {
+                    const isSelected = selectedDndIndexes.has(m.index);
+
+                    return (
+                      <div
+                        key={m.index}
+                        onClick={() => handleToggleSelectDndMonster(m.index)}
+                        className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition ${
+                          isSelected
+                            ? "border-purple-500 bg-purple-950/60 text-white"
+                            : "border-gray-800 bg-gray-900/60 text-gray-300 hover:border-gray-700"
+                        }`}
+                      >
+                        <div className="text-xs font-bold truncate pr-2">{m.name}</div>
+                        <div
+                          className={`h-5 w-5 rounded-md border flex items-center justify-center text-xs font-bold ${
+                            isSelected
+                              ? "bg-purple-600 border-purple-400 text-white"
+                              : "border-gray-700 bg-gray-800 text-transparent"
+                          }`}
+                        >
+                          ✓
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+
+            <div className="flex items-center justify-between pt-3 border-t border-gray-800 text-xs">
+              <span className="text-gray-400">
+                {selectedDndIndexes.size} monstro(s) selecionado(s)
+              </span>
+
+              <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => setShowDndCatalogModal(false)}
-                  className="text-gray-400 hover:text-white"
+                  className="rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg"
                 >
-                  ✕
+                  Fechar
                 </button>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                <input
-                  type="text"
-                  placeholder="Pesquisar entre os 334 monstros (ex: Dragon, Goblin, Lich, Beholder)..."
-                  value={searchDndCatalog}
-                  onChange={(e) => setSearchDndCatalog(e.target.value)}
-                  className="w-full rounded-xl border border-gray-800 bg-gray-900 px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none transition"
-                />
-
-                <label className="flex items-center gap-1.5 text-xs text-purple-300 font-semibold cursor-pointer whitespace-nowrap">
-                  <input
-                    type="checkbox"
-                    checked={translateDndWithLLM}
-                    onChange={(e) => setTranslateDndWithLLM(e.target.checked)}
-                    className="rounded border-gray-800 bg-gray-900 text-purple-600 focus:ring-purple-500"
-                  />
-                  <span>Traduzir com IA</span>
-                </label>
-
                 <button
                   type="button"
-                  onClick={handleImportAllDndMonsters}
-                  disabled={isImportingDnd}
-                  className="w-full sm:w-auto rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-purple-500 transition whitespace-nowrap shadow-lg shadow-purple-950 disabled:opacity-50"
+                  onClick={handleImportSelectedDndMonsters}
+                  disabled={selectedDndIndexes.size === 0 || isImportingDnd}
+                  className="rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white hover:bg-purple-500 disabled:opacity-50"
                 >
-                  {isImportingDnd ? "Importando..." : "🔥 Importar Todos (334)"}
+                  {isImportingDnd
+                    ? "Importando..."
+                    : `Importar Selecionados (${selectedDndIndexes.size})`}
                 </button>
-              </div>
-
-              {isLoadingCatalog ? (
-                <div className="flex items-center justify-center min-h-[200px]">
-                  <Spinner size="lg" />
-                </div>
-              ) : (
-                <div className="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 pr-1 min-h-[350px]">
-                  {dndCatalogList
-                    .filter((m) => m.name.toLowerCase().includes(searchDndCatalog.toLowerCase()))
-                    .map((m) => {
-                      const isSelected = selectedDndIndexes.has(m.index);
-
-                      return (
-                        <div
-                          key={m.index}
-                          onClick={() => handleToggleSelectDndMonster(m.index)}
-                          className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition ${
-                            isSelected
-                              ? "border-purple-500 bg-purple-950/60 text-white"
-                              : "border-gray-800 bg-gray-900/60 text-gray-300 hover:border-gray-700"
-                          }`}
-                        >
-                          <div className="text-xs font-bold truncate pr-2">{m.name}</div>
-                          <div
-                            className={`h-5 w-5 rounded-md border flex items-center justify-center text-xs font-bold ${
-                              isSelected
-                                ? "bg-purple-600 border-purple-400 text-white"
-                                : "border-gray-700 bg-gray-800 text-transparent"
-                            }`}
-                          >
-                            ✓
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
-              )}
-
-              <div className="flex items-center justify-between pt-3 border-t border-gray-800 text-xs">
-                <span className="text-gray-400">
-                  {selectedDndIndexes.size} monstro(s) selecionado(s)
-                </span>
-
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowDndCatalogModal(false)}
-                    className="rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg"
-                  >
-                    Fechar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleImportSelectedDndMonsters}
-                    disabled={selectedDndIndexes.size === 0 || isImportingDnd}
-                    className="rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white hover:bg-purple-500 disabled:opacity-50"
-                  >
-                    {isImportingDnd ? "Importando..." : `Importar Selecionados (${selectedDndIndexes.size})`}
-                  </button>
-                </div>
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Modal / Overlay de Criação de Novo NPC */}
-        {showCreateModal && (
+      {/* Modal / Overlay de Criação de Novo NPC */}
+      {showCreateModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
+          onClick={() => setShowCreateModal(false)}
+        >
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
-            onClick={() => setShowCreateModal(false)}
+            className="w-full max-w-lg rounded-3xl border border-purple-800 bg-gray-950 p-6 shadow-2xl space-y-4 text-gray-100 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
           >
-            <div
-              className="w-full max-w-lg rounded-3xl border border-purple-800 bg-gray-950 p-6 shadow-2xl space-y-4 text-gray-100 max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
-                <h3 className="text-base font-bold text-purple-200">Criar Novo NPC / Monstro</h3>
+            <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
+              <h3 className="text-base font-bold text-purple-200">Criar Novo NPC / Monstro</h3>
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <Form onSubmit={handleCreate} error={undefined}>
+              {renderFormFields(form, setForm, isCreating, "create")}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-300">
+                  Imagem (opcional)
+                </label>
+                <input
+                  ref={createFileRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(e) => setCreateImage(e.target.files?.[0] ?? null)}
+                  disabled={isCreating}
+                  className="block w-full text-sm text-gray-400 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-800 file:px-3 file:py-1.5 file:text-white"
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="text-gray-400 hover:text-white"
+                  className="w-1/2 rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2.5 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg"
                 >
-                  ✕
+                  Cancelar
                 </button>
+                <Button type="submit" variant="master" isLoading={isCreating} className="w-1/2">
+                  Criar NPC
+                </Button>
               </div>
-
-              <Form onSubmit={handleCreate} error={undefined}>
-                {renderFormFields(form, setForm, isCreating, "create")}
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-300">
-                    Imagem (opcional)
-                  </label>
-                  <input
-                    ref={createFileRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={(e) => setCreateImage(e.target.files?.[0] ?? null)}
-                    disabled={isCreating}
-                    className="block w-full text-sm text-gray-400 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-800 file:px-3 file:py-1.5 file:text-white"
-                  />
-                </div>
-                <div className="flex gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateModal(false)}
-                    className="w-1/2 rounded-xl border border-purple-600 bg-purple-950/80 px-4 py-2.5 text-xs font-bold text-purple-200 hover:bg-purple-900 transition shadow-lg"
-                  >
-                    Cancelar
-                  </button>
-                  <Button type="submit" variant="master" isLoading={isCreating} className="w-1/2">
-                    Criar NPC
-                  </Button>
-                </div>
-              </Form>
-            </div>
+            </Form>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+    </div>
   );
 }

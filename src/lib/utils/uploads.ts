@@ -23,7 +23,9 @@ const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024;
  * Diretório raiz de uploads (volume local, D-33).
  */
 export function getUploadsDir(): string {
-  return path.resolve(process.env.UPLOAD_DIR || path.join(process.cwd(), "uploads"));
+  return path.resolve(
+    /*turbopackIgnore: true*/ process.env.UPLOAD_DIR || path.join(process.cwd(), "uploads"),
+  );
 }
 
 /**
@@ -48,9 +50,9 @@ export async function saveImage(file: File, subdir: string): Promise<string> {
   const ext = MIME_EXTENSIONS[file.type];
   const filename = `${crypto.randomBytes(16).toString("hex")}${ext}`;
 
-  const dir = path.join(getUploadsDir(), subdir);
+  const dir = path.join(/*turbopackIgnore: true*/ getUploadsDir(), subdir);
   await mkdir(dir, { recursive: true });
-  await writeFile(path.join(dir, filename), buffer);
+  await writeFile(path.join(/*turbopackIgnore: true*/ dir, filename), buffer);
 
   return filename;
 }

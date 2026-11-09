@@ -89,7 +89,7 @@ describe("NPC Pins API — ataque da Biblioteca Global (issue #90 follow-up)", (
         }),
         headers: { "Content-Type": "application/json" },
       }),
-      ctx
+      ctx,
     );
     const json = await response.json();
 
@@ -114,10 +114,14 @@ describe("NPC Pins API — ataque da Biblioteca Global (issue #90 follow-up)", (
     const response = await POST(
       new NextRequest("http://localhost/api/worlds/w1/npcs/n1/pins", {
         method: "POST",
-        body: JSON.stringify({ pinType: "attack", label: "x", contentId: "22222222-2222-4222-8222-222222222222" }),
+        body: JSON.stringify({
+          pinType: "attack",
+          label: "x",
+          contentId: "22222222-2222-4222-8222-222222222222",
+        }),
         headers: { "Content-Type": "application/json" },
       }),
-      ctx
+      ctx,
     );
 
     expect(response.status).toBe(404);

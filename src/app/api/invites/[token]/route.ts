@@ -21,8 +21,14 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 
     if (!result.invite) {
       return NextResponse.json(
-        { success: false, error: result.error === "campaign-not-found" ? "Campanha não encontrada" : "Convite inválido ou revogado" },
-        { status: 404 }
+        {
+          success: false,
+          error:
+            result.error === "campaign-not-found"
+              ? "Campanha não encontrada"
+              : "Convite inválido ou revogado",
+        },
+        { status: 404 },
       );
     }
 
@@ -31,10 +37,10 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: result.invite,
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao obter convite');
+    logger.error({ err: error }, "Erro ao obter convite");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

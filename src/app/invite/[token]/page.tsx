@@ -21,12 +21,18 @@ export default async function InvitePage({ params }: InvitePageProps) {
   }
 
   if (lookupError || !result) {
-    return <UnavailableInvite message="Não foi possível consultar o convite. Tente novamente mais tarde." />;
+    return (
+      <UnavailableInvite message="Não foi possível consultar o convite. Tente novamente mais tarde." />
+    );
   }
   if (!result.invite) {
     return (
       <UnavailableInvite
-        message={result.error === "campaign-not-found" ? "A campanha deste convite não foi encontrada." : "O convite é inválido ou foi revogado pelo mestre."}
+        message={
+          result.error === "campaign-not-found"
+            ? "A campanha deste convite não foi encontrada."
+            : "O convite é inválido ou foi revogado pelo mestre."
+        }
       />
     );
   }
@@ -39,7 +45,12 @@ function UnavailableInvite({ message }: { message: string }) {
       <div className="w-full max-w-md rounded-lg border border-red-800 bg-red-900/30 p-6 text-center">
         <h1 className="mb-2 text-2xl font-bold text-white">Convite indisponível</h1>
         <p className="text-red-300">{message}</p>
-        <Link href="/login" className="mt-4 inline-block rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700">Ir para o login</Link>
+        <Link
+          href="/login"
+          className="mt-4 inline-block rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700"
+        >
+          Ir para o login
+        </Link>
       </div>
     </div>
   );

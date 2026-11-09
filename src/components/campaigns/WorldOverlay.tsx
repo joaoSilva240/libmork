@@ -16,7 +16,13 @@ type WorldOverlayProps = {
 
 type WorldTab = "npcs" | "encounters" | "establishments";
 
-export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChanged }: WorldOverlayProps) {
+export function WorldOverlay({
+  campaignId,
+  worldId,
+  worldName,
+  onClose,
+  onChanged,
+}: WorldOverlayProps) {
   const { socket } = useSocket();
   const [activeTab, setActiveTab] = useState<WorldTab>("npcs");
   const [npcs, setNpcs] = useState<Npc[]>([]);
@@ -45,7 +51,7 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
     setError(null);
     try {
       const response = await fetch("/api/npcs", {
-        credentials: "include"
+        credentials: "include",
       });
       const data = await response.json();
       if (response.ok && data.data) {
@@ -97,7 +103,7 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
   // Load NPCs and Campaign Included NPCs
   useEffect(() => {
     if (activeTab !== "npcs") return;
-    
+
     const load = async () => {
       setIsLoading(true);
       setError(null);
@@ -132,19 +138,19 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
   // Load Encounters
   useEffect(() => {
     if (activeTab !== "encounters") return;
-    
+
     const load = async () => {
       setIsLoading(true);
       setError(null);
       try {
         let response = await fetch(`/api/campaigns/${campaignId}/worlds/${worldId}/encounters`, {
-          credentials: "include"
+          credentials: "include",
         });
         let data = await response.json();
 
         if (!response.ok) {
           response = await fetch(`/api/worlds/${worldId}`, {
-            credentials: "include"
+            credentials: "include",
           });
           data = await response.json();
           if (response.ok && data.data) {
@@ -175,7 +181,7 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
       setError(null);
       try {
         const response = await fetch(`/api/worlds/${worldId}/establishments`, {
-          credentials: "include"
+          credentials: "include",
         });
         const data = await response.json();
 
@@ -285,13 +291,13 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
       }
 
       const result = await response.json();
-      
+
       // Atualiza lista (apenas um pode estar ativo)
       setEncounters((prev) =>
         prev.map((enc) => ({
           ...enc,
           isActive: enc.id === encounterId ? result.data.isActive : false,
-        }))
+        })),
       );
     } catch {
       setError("Erro de conexão. Tente novamente.");
@@ -315,7 +321,7 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
       }
 
       setEstablishments((prev) =>
-        prev.map((item) => (item.id === est.id ? { ...item, isOpen: nextIsOpen } : item))
+        prev.map((item) => (item.id === est.id ? { ...item, isOpen: nextIsOpen } : item)),
       );
       if (selectedEstablishment?.id === est.id) {
         setSelectedEstablishment((prev) => (prev ? { ...prev, isOpen: nextIsOpen } : null));
@@ -346,7 +352,7 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
       if (res.ok) {
         const data = await res.json();
         setEstablishments((prev) =>
-          prev.map((item) => (item.id === est.id ? { ...item, trustLevel: newTrustLevel } : item))
+          prev.map((item) => (item.id === est.id ? { ...item, trustLevel: newTrustLevel } : item)),
         );
         setSelectedEstablishment((prev) => (prev ? { ...prev, trustLevel: newTrustLevel } : null));
 
@@ -371,7 +377,7 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
     try {
       const res = await fetch(
         `/api/worlds/${worldId}/establishments/${selectedEstablishment.id}/inventory/${itemId}`,
-        { method: "DELETE", credentials: "include" }
+        { method: "DELETE", credentials: "include" },
       );
 
       if (res.ok) {
@@ -385,15 +391,15 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
   };
 
   const filteredNpcs = npcs.filter((npc) =>
-    npc.name.toLowerCase().includes(searchQuery.toLowerCase())
+    npc.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const filteredEncounters = encounters.filter((enc) =>
-    enc.name.toLowerCase().includes(searchQuery.toLowerCase())
+    enc.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const filteredEstablishments = establishments.filter((est) =>
-    est.name.toLowerCase().includes(searchQuery.toLowerCase())
+    est.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -473,8 +479,8 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
               activeTab === "npcs"
                 ? "Pesquisar NPCs..."
                 : activeTab === "encounters"
-                ? "Pesquisar Encontros..."
-                : "Pesquisar Estabelecimentos..."
+                  ? "Pesquisar Encontros..."
+                  : "Pesquisar Estabelecimentos..."
             }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -590,44 +596,44 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
                   ))}
                 </div>
               )
+            ) : filteredEstablishments.length === 0 ? (
+              <p className="text-center text-sm text-gray-500">
+                Nenhum estabelecimento cadastrado.
+              </p>
             ) : (
-              filteredEstablishments.length === 0 ? (
-                <p className="text-center text-sm text-gray-500">Nenhum estabelecimento cadastrado.</p>
-              ) : (
-                <div className="space-y-1">
-                  {filteredEstablishments.map((est) => (
-                    <div
-                      key={est.id}
-                      className={`flex items-center justify-between rounded-lg border p-2 transition-colors ${
-                        selectedEstablishment?.id === est.id
-                          ? "border-purple-600 bg-purple-900/20"
-                          : "border-gray-800 bg-gray-900 hover:border-gray-700"
+              <div className="space-y-1">
+                {filteredEstablishments.map((est) => (
+                  <div
+                    key={est.id}
+                    className={`flex items-center justify-between rounded-lg border p-2 transition-colors ${
+                      selectedEstablishment?.id === est.id
+                        ? "border-purple-600 bg-purple-900/20"
+                        : "border-gray-800 bg-gray-900 hover:border-gray-700"
+                    }`}
+                  >
+                    <button
+                      onClick={() => setSelectedEstablishment(est)}
+                      className="flex flex-1 items-center gap-2 text-left min-w-0"
+                    >
+                      <span className="text-sm font-semibold text-white truncate">{est.name}</span>
+                      <span className="text-xs text-gray-400">
+                        {est.isOpen ? "🟢 Aberto" : "⚪ Fechado"}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleEstablishment(est)}
+                      className={`ml-2 rounded px-2.5 py-1 text-xs font-bold transition-colors ${
+                        est.isOpen
+                          ? "bg-rose-950/80 text-rose-300 border border-rose-800 hover:bg-rose-900"
+                          : "bg-emerald-950/80 text-emerald-300 border border-emerald-800 hover:bg-emerald-900"
                       }`}
                     >
-                      <button
-                        onClick={() => setSelectedEstablishment(est)}
-                        className="flex flex-1 items-center gap-2 text-left min-w-0"
-                      >
-                        <span className="text-sm font-semibold text-white truncate">{est.name}</span>
-                        <span className="text-xs text-gray-400">
-                          {est.isOpen ? "🟢 Aberto" : "⚪ Fechado"}
-                        </span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleToggleEstablishment(est)}
-                        className={`ml-2 rounded px-2.5 py-1 text-xs font-bold transition-colors ${
-                          est.isOpen
-                            ? "bg-rose-950/80 text-rose-300 border border-rose-800 hover:bg-rose-900"
-                            : "bg-emerald-950/80 text-emerald-300 border border-emerald-800 hover:bg-emerald-900"
-                        }`}
-                      >
-                        {est.isOpen ? "Fechar" : "Abrir"}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )
+                      {est.isOpen ? "Fechar" : "Abrir"}
+                    </button>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 
@@ -739,7 +745,9 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
 
                   {/* Seção de Controle de Confiança */}
                   <div className="pt-3 border-t border-gray-800">
-                    <span className="font-semibold text-gray-400 block mb-2 text-xs">Nível de Confiança:</span>
+                    <span className="font-semibold text-gray-400 block mb-2 text-xs">
+                      Nível de Confiança:
+                    </span>
                     <div className="flex items-center justify-between gap-2">
                       <button
                         type="button"
@@ -752,8 +760,8 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
                         {(selectedEstablishment.trustLevel || 0) > 0
                           ? `+${(selectedEstablishment.trustLevel || 0) * 10}% (Desconto)`
                           : (selectedEstablishment.trustLevel || 0) < 0
-                          ? `${(selectedEstablishment.trustLevel || 0) * 10}% (Ágio)`
-                          : "0% (Neutro)"}
+                            ? `${(selectedEstablishment.trustLevel || 0) * 10}% (Ágio)`
+                            : "0% (Neutro)"}
                       </div>
                       <button
                         type="button"
@@ -767,20 +775,35 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
 
                   {/* Seção de Produtos no Estoque */}
                   <div className="pt-3 border-t border-gray-800">
-                    <h4 className="font-semibold text-xs text-white mb-2">📦 Produtos no Estoque ({selectedEstInventory.length})</h4>
+                    <h4 className="font-semibold text-xs text-white mb-2">
+                      📦 Produtos no Estoque ({selectedEstInventory.length})
+                    </h4>
 
                     {selectedEstInventory.length === 0 ? (
-                      <p className="text-xs text-gray-500 italic">Nenhum produto cadastrado ainda.</p>
+                      <p className="text-xs text-gray-500 italic">
+                        Nenhum produto cadastrado ainda.
+                      </p>
                     ) : (
                       <div className="space-y-2 max-h-48 overflow-y-auto">
                         {selectedEstInventory.map((item) => (
-                          <div key={item.id} className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-950 p-2 text-xs">
+                          <div
+                            key={item.id}
+                            className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-950 p-2 text-xs"
+                          >
                             <div className="min-w-0 flex-1">
                               <p className="font-bold text-white truncate">{item.name}</p>
                               <div className="flex items-center gap-2 text-[10px] text-gray-400">
-                                <span className="capitalize">{item.contentType === "items" ? "Item" : item.contentType === "spells" ? "Magia" : "Habilidade"}</span>
+                                <span className="capitalize">
+                                  {item.contentType === "items"
+                                    ? "Item"
+                                    : item.contentType === "spells"
+                                      ? "Magia"
+                                      : "Habilidade"}
+                                </span>
                                 <span>•</span>
-                                <span className="text-amber-400 font-semibold">🪙 {item.priceGold} Ouro</span>
+                                <span className="text-amber-400 font-semibold">
+                                  🪙 {item.priceGold} Ouro
+                                </span>
                                 <span>•</span>
                                 <span>Estoque: {item.stock === -1 ? "∞" : item.stock}</span>
                               </div>
@@ -809,7 +832,9 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
                           : "bg-emerald-950 text-emerald-300 border border-emerald-800 hover:bg-emerald-900"
                       }`}
                     >
-                      {selectedEstablishment.isOpen ? "Fechar Estabelecimento" : "Abrir Estabelecimento"}
+                      {selectedEstablishment.isOpen
+                        ? "Fechar Estabelecimento"
+                        : "Abrir Estabelecimento"}
                     </button>
                   </div>
                 </div>
@@ -856,7 +881,11 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
                     <div className="h-9 w-9 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-xs font-bold overflow-hidden">
                       {npcItem.imageUrl ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
-                        <img src={npcItem.imageUrl} alt={npcItem.name} className="h-full w-full object-cover" />
+                        <img
+                          src={npcItem.imageUrl}
+                          alt={npcItem.name}
+                          className="h-full w-full object-cover"
+                        />
                       ) : (
                         npcItem.name.charAt(0)
                       )}
@@ -864,7 +893,8 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
                     <div>
                       <div className="text-xs font-bold">{npcItem.name}</div>
                       <div className="text-[10px] text-gray-400">
-                        {npcItem.npcType === "enemy" ? "Inimigo" : "Comum"} • HP: {npcItem.hitPointsMax}
+                        {npcItem.npcType === "enemy" ? "Inimigo" : "Comum"} • HP:{" "}
+                        {npcItem.hitPointsMax}
                       </div>
                     </div>
                   </div>
@@ -876,7 +906,10 @@ export function WorldOverlay({ campaignId, worldId, worldName, onClose, onChange
               ))}
             </div>
 
-            <form onSubmit={handleImportFromLibrary} className="space-y-4 pt-2 border-t border-gray-800">
+            <form
+              onSubmit={handleImportFromLibrary}
+              className="space-y-4 pt-2 border-t border-gray-800"
+            >
               <div>
                 <label className="block text-xs font-semibold text-gray-300 mb-1">
                   Quantidade de Instâncias Independente

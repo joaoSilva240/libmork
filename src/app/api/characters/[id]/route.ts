@@ -28,10 +28,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -39,18 +36,13 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const [character] = await db
       .select()
       .from(characters)
-      .where(
-        and(
-          eq(characters.id, id),
-          eq(characters.ownerId, session.user.id)
-        )
-      )
+      .where(and(eq(characters.id, id), eq(characters.ownerId, session.user.id)))
       .limit(1);
 
     if (!character) {
       return NextResponse.json(
         { success: false, error: "Personagem não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -65,10 +57,10 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: { ...character, campaignId: campaignLink?.campaignId ?? null },
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao obter personagem');
+    logger.error({ err: error }, "Erro ao obter personagem");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -82,10 +74,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -94,18 +83,13 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     const [existingCharacter] = await db
       .select()
       .from(characters)
-      .where(
-        and(
-          eq(characters.id, id),
-          eq(characters.ownerId, session.user.id)
-        )
-      )
+      .where(and(eq(characters.id, id), eq(characters.ownerId, session.user.id)))
       .limit(1);
 
     if (!existingCharacter) {
       return NextResponse.json(
         { success: false, error: "Personagem não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -119,7 +103,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
           error: "Dados inválidos",
           errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -131,8 +115,10 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 
     // Recalcula bônus cumulativos sempre que as heranças ou a raça mudam.
     if (validation.data.activeHeritages !== undefined || validation.data.raceId !== undefined) {
-      const activeHeritages = validation.data.activeHeritages ?? existingCharacter.activeHeritages ?? [];
-      const effectiveRaceId = validation.data.raceId !== undefined ? validation.data.raceId : existingCharacter.raceId;
+      const activeHeritages =
+        validation.data.activeHeritages ?? existingCharacter.activeHeritages ?? [];
+      const effectiveRaceId =
+        validation.data.raceId !== undefined ? validation.data.raceId : existingCharacter.raceId;
       const previousHeritages = existingCharacter.activeHeritages ?? [];
 
       if (activeHeritages.length > 0 && !effectiveRaceId) {
@@ -142,20 +128,25 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
         );
       }
 
-      const raceIds = [existingCharacter.raceId, effectiveRaceId].filter((raceId): raceId is string => Boolean(raceId));
-      const races = raceIds.length > 0
-        ? await db
-          .select({ id: rpgRaces.id, heritages: rpgRaces.heritages })
-          .from(rpgRaces)
-          .where(inArray(rpgRaces.id, raceIds))
-        : [];
+      const raceIds = [existingCharacter.raceId, effectiveRaceId].filter(
+        (raceId): raceId is string => Boolean(raceId),
+      );
+      const races =
+        raceIds.length > 0
+          ? await db
+              .select({ id: rpgRaces.id, heritages: rpgRaces.heritages })
+              .from(rpgRaces)
+              .where(inArray(rpgRaces.id, raceIds))
+          : [];
       const racesById = new Map(races.map((race) => [race.id, race]));
 
       let previousBonuses = { hitPointsBonus: 0, attributeBonuses: {} };
       let nextBonuses = { hitPointsBonus: 0, attributeBonuses: {} };
       try {
         if (previousHeritages.length > 0) {
-          const previousRace = existingCharacter.raceId ? racesById.get(existingCharacter.raceId) : undefined;
+          const previousRace = existingCharacter.raceId
+            ? racesById.get(existingCharacter.raceId)
+            : undefined;
           if (!previousRace) throw new Error("Raça atual do personagem não encontrada");
           previousBonuses = getActiveHeritageBonuses(previousRace.heritages, previousHeritages);
         }
@@ -189,15 +180,17 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       updateData.manaPointsMax = derived.manaPointsMax;
       updateData.block = derived.block;
 
-      const currentHp = validation.data.hitPointsCurrent !== undefined
-        ? validation.data.hitPointsCurrent
-        : existingCharacter.hitPointsCurrent;
+      const currentHp =
+        validation.data.hitPointsCurrent !== undefined
+          ? validation.data.hitPointsCurrent
+          : existingCharacter.hitPointsCurrent;
 
       updateData.hitPointsCurrent = Math.min(currentHp, newHitPointsMax);
 
-      const currentMana = validation.data.manaPointsCurrent !== undefined
-        ? validation.data.manaPointsCurrent
-        : existingCharacter.manaPointsCurrent;
+      const currentMana =
+        validation.data.manaPointsCurrent !== undefined
+          ? validation.data.manaPointsCurrent
+          : existingCharacter.manaPointsCurrent;
 
       updateData.manaPointsCurrent = Math.min(currentMana, derived.manaPointsMax);
     }
@@ -214,10 +207,10 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       data: updatedCharacter,
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao atualizar personagem');
+    logger.error({ err: error }, "Erro ao atualizar personagem");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -231,10 +224,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -243,35 +233,28 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     const [existingCharacter] = await db
       .select()
       .from(characters)
-      .where(
-        and(
-          eq(characters.id, id),
-          eq(characters.ownerId, session.user.id)
-        )
-      )
+      .where(and(eq(characters.id, id), eq(characters.ownerId, session.user.id)))
       .limit(1);
 
     if (!existingCharacter) {
       return NextResponse.json(
         { success: false, error: "Personagem não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     // Excluir personagem
-    await db
-      .delete(characters)
-      .where(eq(characters.id, id));
+    await db.delete(characters).where(eq(characters.id, id));
 
     return NextResponse.json({
       success: true,
       message: "Personagem excluído com sucesso",
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao excluir personagem');
+    logger.error({ err: error }, "Erro ao excluir personagem");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

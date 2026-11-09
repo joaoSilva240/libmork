@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  useTheme as useThemeContext,
-  type ThemeContextValue,
-} from "@/context/ThemeContext";
+import { useTheme as useThemeContext, type ThemeContextValue } from "@/context/ThemeContext";
 
 export function useTheme(): ThemeContextValue {
   return useThemeContext();

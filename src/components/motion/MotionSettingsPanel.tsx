@@ -14,7 +14,12 @@ import {
   type MotionPreset,
 } from "@/lib/motion";
 
-const PRESET_OPTIONS: Array<{ id: MotionPreset; label: string; icon: string; description: string }> = [
+const PRESET_OPTIONS: Array<{
+  id: MotionPreset;
+  label: string;
+  icon: string;
+  description: string;
+}> = [
   { id: "fade", label: "Esmaecer", icon: "◐", description: "Apenas surge suavemente" },
   { id: "slide-up", label: "Deslizar ↑", icon: "⇡", description: "Sobe enquanto aparece" },
   { id: "slide-side", label: "Deslizar →", icon: "⇢", description: "Entra pela lateral" },
@@ -183,14 +188,16 @@ export function MotionSettingsPanel() {
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-2.5">
-          <span className="text-xl" aria-hidden="true">✨</span>
+          <span className="text-xl" aria-hidden="true">
+            ✨
+          </span>
           <div>
             <h2 id={`${id}-title`} className="text-base font-bold text-secondary-pure">
               Animações e Efeitos
             </h2>
             <p className="text-xs text-secondary-muted">
-              Transições, animações e efeitos visuais em toda a aplicação. As preferências ficam salvas
-              neste dispositivo. Os dados 3D têm uma opção própria.
+              Transições, animações e efeitos visuais em toda a aplicação. As preferências ficam
+              salvas neste dispositivo. Os dados 3D têm uma opção própria.
             </p>
             <span
               data-testid="motion-status"
@@ -227,7 +234,10 @@ export function MotionSettingsPanel() {
               onChange={(event) => updateMotionPreferences({ speed: Number(event.target.value) })}
               className="flex-1 accent-[var(--accent-primary)]"
             />
-            <span className="w-14 text-right font-mono text-sm text-secondary-pure" data-testid="motion-speed">
+            <span
+              className="w-14 text-right font-mono text-sm text-secondary-pure"
+              data-testid="motion-speed"
+            >
               {formatSpeed(prefs.speed)}
             </span>
           </div>
@@ -251,7 +261,11 @@ export function MotionSettingsPanel() {
         </Section>
 
         <Section title="Estilo de transição">
-          <div role="radiogroup" aria-label="Estilo de transição" className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <div
+            role="radiogroup"
+            aria-label="Estilo de transição"
+            className="grid grid-cols-2 gap-2 sm:grid-cols-3"
+          >
             {PRESET_OPTIONS.map((option) => (
               <button
                 key={option.id}
@@ -272,8 +286,12 @@ export function MotionSettingsPanel() {
                   {option.icon}
                 </span>
                 <span>
-                  <span className="block text-xs font-bold text-secondary-pure">{option.label}</span>
-                  <span className="block text-[11px] text-secondary-muted">{option.description}</span>
+                  <span className="block text-xs font-bold text-secondary-pure">
+                    {option.label}
+                  </span>
+                  <span className="block text-[11px] text-secondary-muted">
+                    {option.description}
+                  </span>
                 </span>
               </button>
             ))}
@@ -336,7 +354,10 @@ export function MotionSettingsPanel() {
             {CATEGORY_OPTIONS.map((category) => (
               <li key={category.id} className="flex items-start justify-between gap-4">
                 <div>
-                  <p id={`${id}-${category.id}`} className="text-xs font-semibold text-secondary-pure">
+                  <p
+                    id={`${id}-${category.id}`}
+                    className="text-xs font-semibold text-secondary-pure"
+                  >
                     {category.label}
                   </p>
                   <p className="text-[11px] text-secondary-muted">{category.description}</p>
@@ -344,7 +365,9 @@ export function MotionSettingsPanel() {
                 <Switch
                   checked={prefs.categories[category.id]}
                   labelledBy={`${id}-${category.id}`}
-                  onChange={(checked) => updateMotionPreferences({ categories: { [category.id]: checked } })}
+                  onChange={(checked) =>
+                    updateMotionPreferences({ categories: { [category.id]: checked } })
+                  }
                 />
               </li>
             ))}

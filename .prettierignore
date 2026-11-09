@@ -7,3 +7,7 @@ coverage
 uploads
 dist-electron
 release
+AGENTS.md
+CLAUDE.md
+route-inventory.json
+package-lock.json

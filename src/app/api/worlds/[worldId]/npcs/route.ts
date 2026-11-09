@@ -19,11 +19,7 @@ type RouteContext = { params: Promise<{ worldId: string }> };
  * Retorna null se não encontrado.
  */
 async function getWorldAndPermission(worldId: string, userId: string) {
-  const [world] = await db
-    .select()
-    .from(worlds)
-    .where(eq(worlds.id, worldId))
-    .limit(1);
+  const [world] = await db.select().from(worlds).where(eq(worlds.id, worldId)).limit(1);
 
   if (!world) return { world: null, allowed: false };
 
@@ -52,26 +48,20 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { worldId } = await params;
     const { world, allowed } = await getWorldAndPermission(worldId, session.user.id);
 
     if (!world) {
-      return NextResponse.json(
-        { success: false, error: "Mundo não encontrado" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "Mundo não encontrado" }, { status: 404 });
     }
 
     if (!allowed) {
       return NextResponse.json(
         { success: false, error: "Sem permissão para acessar este mundo" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -86,10 +76,10 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: worldNpcs,
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao listar NPCs');
+    logger.error({ err: error }, "Erro ao listar NPCs");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -103,26 +93,20 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { worldId } = await params;
     const { world, allowed } = await getWorldAndPermission(worldId, session.user.id);
 
     if (!world) {
-      return NextResponse.json(
-        { success: false, error: "Mundo não encontrado" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "Mundo não encontrado" }, { status: 404 });
     }
 
     if (!allowed) {
       return NextResponse.json(
         { success: false, error: "Sem permissão para modificar este mundo" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -138,7 +122,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       if (!sourceNpc) {
         return NextResponse.json(
           { success: false, error: "NPC fonte não encontrado na biblioteca" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -195,7 +179,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
           data: safeQuantity === 1 ? createdNpcs[0] : createdNpcs,
           message: `${safeQuantity} instância(s) independente(s) do NPC adicionada(s) ao mundo.`,
         },
-        { status: 201 }
+        { status: 201 },
       );
     }
 
@@ -209,7 +193,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
           error: "Dados inválidos",
           errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -227,13 +211,13 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         success: true,
         data: newNpc,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao criar NPC');
+    logger.error({ err: error }, "Erro ao criar NPC");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

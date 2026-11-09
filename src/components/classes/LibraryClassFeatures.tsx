@@ -59,14 +59,16 @@ export function LibraryClassFeatures() {
         // Buscar os benefícios de cada classe em paralelo
         const results = await Promise.allSettled(
           classesList.map(async (cls) => {
-            const benRes = await fetch(`/api/classes/${cls.id}/benefits`, { credentials: "include" });
+            const benRes = await fetch(`/api/classes/${cls.id}/benefits`, {
+              credentials: "include",
+            });
             if (!benRes.ok) return { rpgClass: cls, benefits: [] };
             const benJson = await benRes.json();
             return {
               rpgClass: cls,
               benefits: Array.isArray(benJson.data) ? benJson.data : [],
             };
-          })
+          }),
         );
 
         if (cancelled) return;
@@ -107,14 +109,18 @@ export function LibraryClassFeatures() {
         const advantages = Array.isArray(ben.advantages)
           ? ben.advantages.join(", ")
           : (ben as Record<string, unknown>).advantages
-          ? String((ben as Record<string, unknown>).advantages)
-          : ben.description || "Habilidade de Nível";
+            ? String((ben as Record<string, unknown>).advantages)
+            : ben.description || "Habilidade de Nível";
         const description = ben.description || "";
         const hpBonus = ben.hp_bonus ?? (ben as Record<string, unknown>).hit_points_bonus ?? 0;
         const manaBonus = ben.mana_bonus ?? (ben as Record<string, unknown>).manaBonus ?? 0;
-        const extraSkills = ben.extra_trained_skills ?? (ben as Record<string, unknown>).extra_skills ?? 0;
+        const extraSkills =
+          ben.extra_trained_skills ?? (ben as Record<string, unknown>).extra_skills ?? 0;
         const attributeBonus = ben.attribute_bonuses
-          ? Object.entries(ben.attribute_bonuses).map(([attr, val]) => ({ attribute: attr, value: Number(val) }))[0]
+          ? Object.entries(ben.attribute_bonuses).map(([attr, val]) => ({
+              attribute: attr,
+              value: Number(val),
+            }))[0]
           : undefined;
 
         list.push({
@@ -142,7 +148,9 @@ export function LibraryClassFeatures() {
 
   // Lista de classes disponíveis para o filtro
   const availableClasses = useMemo(() => {
-    return classesData.map((c) => ({ id: c.rpgClass.id, name: c.rpgClass.name })).sort((a, b) => a.name.localeCompare(b.name));
+    return classesData
+      .map((c) => ({ id: c.rpgClass.id, name: c.rpgClass.name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }, [classesData]);
 
   // Filtragem das habilidades
@@ -159,7 +167,10 @@ export function LibraryClassFeatures() {
         const matchesName = feat.advantages.toLowerCase().includes(q);
         const matchesDesc = feat.description.toLowerCase().includes(q);
         const matchesClass = feat.className.toLowerCase().includes(q);
-        const matchesLevel = `nível ${feat.level}`.includes(q) || `nv ${feat.level}`.includes(q) || `nivel ${feat.level}`.includes(q);
+        const matchesLevel =
+          `nível ${feat.level}`.includes(q) ||
+          `nv ${feat.level}`.includes(q) ||
+          `nivel ${feat.level}`.includes(q);
         if (!matchesName && !matchesDesc && !matchesClass && !matchesLevel) {
           return false;
         }
@@ -213,7 +224,9 @@ export function LibraryClassFeatures() {
 
         <select
           value={selectedLevel}
-          onChange={(e) => setSelectedLevel(e.target.value === "all" ? "all" : Number(e.target.value))}
+          onChange={(e) =>
+            setSelectedLevel(e.target.value === "all" ? "all" : Number(e.target.value))
+          }
           className="rounded-xl border border-gray-800 bg-gray-950 px-3 py-2 text-xs text-white focus:border-purple-500 focus:outline-none transition"
         >
           <option value="all">Todos os Níveis (1-20)</option>
@@ -260,9 +273,7 @@ export function LibraryClassFeatures() {
             >
               <div className="space-y-2">
                 <div className="flex items-start justify-between gap-2">
-                  <h4 className="font-bold text-white text-base leading-snug">
-                    {feat.advantages}
-                  </h4>
+                  <h4 className="font-bold text-white text-base leading-snug">{feat.advantages}</h4>
                   <span className="shrink-0 rounded-lg bg-purple-950/80 border border-purple-800/60 px-2 py-0.5 text-[10px] font-bold text-purple-300 whitespace-nowrap">
                     {feat.className} · Nível {feat.level}
                   </span>
@@ -293,9 +304,7 @@ export function LibraryClassFeatures() {
                 </div>
 
                 {feat.description && (
-                  <p className="text-xs text-gray-300 leading-relaxed pt-1">
-                    {feat.description}
-                  </p>
+                  <p className="text-xs text-gray-300 leading-relaxed pt-1">{feat.description}</p>
                 )}
               </div>
             </div>

@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { desc, eq, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/lib/db";
-import { communityComments, communityLikes, communityPostVotes, communityPosts, users } from "@/lib/db/schema";
+import {
+  communityComments,
+  communityLikes,
+  communityPostVotes,
+  communityPosts,
+  users,
+} from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 
 const userLikes = alias(communityLikes, "user_likes");
@@ -10,7 +16,7 @@ const allLikes = alias(communityLikes, "all_likes");
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ userId: string }> }
+  { params }: { params: Promise<{ userId: string }> },
 ) {
   try {
     const session = await requireAuth();
@@ -37,7 +43,9 @@ export async function GET(
         upvotes: sql<number>`COALESCE(SUM(CASE WHEN ${communityPostVotes.value} = 1 THEN 1 ELSE 0 END), 0)`,
         downvotes: sql<number>`COALESCE(SUM(CASE WHEN ${communityPostVotes.value} = -1 THEN 1 ELSE 0 END), 0)`,
         score: sql<number>`COALESCE(SUM(${communityPostVotes.value}), 0)`,
-        userVote: session ? sql<number>`MAX(CASE WHEN ${communityPostVotes.userId} = ${session.user.id} THEN ${communityPostVotes.value} ELSE NULL END)` : sql<number>`NULL`,
+        userVote: session
+          ? sql<number>`MAX(CASE WHEN ${communityPostVotes.userId} = ${session.user.id} THEN ${communityPostVotes.value} ELSE NULL END)`
+          : sql<number>`NULL`,
       })
       .from(userLikes)
       .innerJoin(communityPosts, eq(communityPosts.id, userLikes.postId))
@@ -76,16 +84,13 @@ export async function GET(
           downvotes: Number(downvotes),
           score: Number(score),
           userVote: userVote !== null ? Number(userVote) : null,
-        })
+        }),
       ),
       page,
       limit,
     });
   } catch (error) {
     console.error("Erro ao buscar posts curtidos pelo usuário:", error);
-    return NextResponse.json(
-      { error: "Erro ao buscar posts curtidos" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Erro ao buscar posts curtidos" }, { status: 500 });
   }
 }

@@ -15,10 +15,7 @@ export async function GET() {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const userCharacters = await db
@@ -85,7 +82,7 @@ export async function GET() {
     logger.error({ err: error }, "Erro ao obter riquezas do jogador");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

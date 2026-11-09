@@ -2,7 +2,16 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, Dices, Globe2, Pencil, Shield, Sparkles, Sword, UserRound } from "lucide-react";
+import {
+  CalendarDays,
+  Dices,
+  Globe2,
+  Pencil,
+  Shield,
+  Sparkles,
+  Sword,
+  UserRound,
+} from "lucide-react";
 import CommunityCard, { CommunityPost } from "./CommunityCard";
 import PostDetailModal from "./PostDetailModal";
 import EditMasterProfileModal from "./EditMasterProfileModal";
@@ -44,12 +53,7 @@ const STAT_CONFIG = [
   { key: "worlds", label: "Mundos", Icon: Globe2 },
 ] as const;
 
-export default function MasterProfile({
-  userId,
-  profileData,
-  currentUserId,
-  onPostClick,
-}: Props) {
+export default function MasterProfile({ userId, profileData, currentUserId, onPostClick }: Props) {
   const [profile, setProfile] = useState<MasterProfileData | null>(profileData ?? null);
   const [loadingProfile, setLoadingProfile] = useState(!profileData);
   const [tab, setTab] = useState<Tab>("posts");
@@ -130,9 +134,7 @@ export default function MasterProfile({
   }, [fetchTabPosts]);
 
   const handlePostUpdate = (updatedPost: CommunityPost) => {
-    setPosts((prev) =>
-      prev.map((p) => (p.id === updatedPost.id ? updatedPost : p))
-    );
+    setPosts((prev) => prev.map((p) => (p.id === updatedPost.id ? updatedPost : p)));
     if (selectedPost && selectedPost.id === updatedPost.id) {
       setSelectedPost(updatedPost);
     }
@@ -160,7 +162,9 @@ export default function MasterProfile({
       <div className="flex h-64 flex-col items-center justify-center gap-2 text-gray-400">
         <span className="text-2xl">🔍</span>
         <h2 className="text-base font-semibold text-gray-300">Perfil não encontrado</h2>
-        <p className="text-xs text-gray-500">O usuário solicitado não existe ou não possui perfil ativo.</p>
+        <p className="text-xs text-gray-500">
+          O usuário solicitado não existe ou não possui perfil ativo.
+        </p>
       </div>
     );
   }
@@ -184,7 +188,7 @@ export default function MasterProfile({
                     ...updated,
                     statistics: prev.statistics,
                   }
-                : null
+                : null,
             );
           }}
         />
@@ -277,9 +281,7 @@ export default function MasterProfile({
                 {profile.masterBio}
               </p>
             ) : (
-              <p className="mt-2 text-xs italic text-gray-500">
-                Nenhuma biografia informada.
-              </p>
+              <p className="mt-2 text-xs italic text-gray-500">Nenhuma biografia informada.</p>
             )}
           </div>
 
@@ -315,9 +317,7 @@ export default function MasterProfile({
                     type="button"
                     onClick={() => setTab(id)}
                     className={`relative px-5 py-3 text-sm font-semibold transition-colors ${
-                      isActive
-                        ? "text-accent-hover"
-                        : "text-gray-400 hover:text-gray-200"
+                      isActive ? "text-accent-hover" : "text-gray-400 hover:text-gray-200"
                     }`}
                   >
                     <span>{label}</span>
@@ -344,8 +344,8 @@ export default function MasterProfile({
                   {tab === "posts"
                     ? "Nenhuma publicação criada por este mestre."
                     : tab === "cloned"
-                    ? "Nenhum conteúdo clonado por este mestre."
-                    : "Nenhum conteúdo curtido por este mestre."}
+                      ? "Nenhum conteúdo clonado por este mestre."
+                      : "Nenhum conteúdo curtido por este mestre."}
                 </p>
                 <p className="text-xs text-gray-600">
                   As criações compartilhadas aparecerão aqui quando disponíveis.

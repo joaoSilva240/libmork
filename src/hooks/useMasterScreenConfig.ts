@@ -18,7 +18,10 @@ export type ShieldModuleId =
 export const CONSOLIDATED_MODULES = {
   mediaPanel: ["worlds", "assets", "jukebox"],
   actorsPanel: ["charactersNpcs", "players"],
-} as const satisfies Record<string, readonly Exclude<ShieldModuleId, "mediaPanel" | "actorsPanel" | "sessionLog">[]>;
+} as const satisfies Record<
+  string,
+  readonly Exclude<ShieldModuleId, "mediaPanel" | "actorsPanel" | "sessionLog">[]
+>;
 
 export const ALL_SHIELD_MODULES: readonly ShieldModuleId[] = [
   "mediaPanel",
@@ -31,14 +34,9 @@ export const ALL_SHIELD_MODULES: readonly ShieldModuleId[] = [
   "sessionLog",
 ] as const;
 
-export const DEFAULT_SHIELD_LEFT_ORDER: ShieldModuleId[] = [
-  "mediaPanel",
-  "actorsPanel",
-];
+export const DEFAULT_SHIELD_LEFT_ORDER: ShieldModuleId[] = ["mediaPanel", "actorsPanel"];
 
-export const DEFAULT_SHIELD_RIGHT_ORDER: ShieldModuleId[] = [
-  "sessionLog",
-];
+export const DEFAULT_SHIELD_RIGHT_ORDER: ShieldModuleId[] = ["sessionLog"];
 
 export type MasterScreenConfig = {
   showRoster: boolean;
@@ -82,7 +80,7 @@ export const masterScreenConfigKey = "libmork:master-screen-config";
 
 function sanitizeColumnOrder(
   leftInput: unknown,
-  rightInput: unknown
+  rightInput: unknown,
 ): { left: ShieldModuleId[]; right: ShieldModuleId[] } {
   const isModuleId = (val: unknown): val is ShieldModuleId =>
     typeof val === "string" && ALL_SHIELD_MODULES.includes(val as ShieldModuleId);
@@ -157,7 +155,8 @@ export function sanitizeMasterScreenConfig(value: unknown): MasterScreenConfig {
     showMap: typeof input.showMap === "boolean" ? input.showMap : true,
     showJukebox: typeof input.showJukebox === "boolean" ? input.showJukebox : true,
     showDiceRolls: typeof input.showDiceRolls === "boolean" ? input.showDiceRolls : true,
-    showCharactersNpcs: typeof input.showCharactersNpcs === "boolean" ? input.showCharactersNpcs : true,
+    showCharactersNpcs:
+      typeof input.showCharactersNpcs === "boolean" ? input.showCharactersNpcs : true,
     showPlayers: typeof input.showPlayers === "boolean" ? input.showPlayers : true,
     showAssets: typeof input.showAssets === "boolean" ? input.showAssets : true,
     leftColumnOrder: left,
@@ -173,7 +172,9 @@ export function useMasterScreenConfig() {
     if (typeof window === "undefined") return { ...DEFAULT_MASTER_SCREEN_CONFIG };
     try {
       const stored = window.localStorage.getItem(masterScreenConfigKey);
-      return stored ? sanitizeMasterScreenConfig(JSON.parse(stored)) : { ...DEFAULT_MASTER_SCREEN_CONFIG };
+      return stored
+        ? sanitizeMasterScreenConfig(JSON.parse(stored))
+        : { ...DEFAULT_MASTER_SCREEN_CONFIG };
     } catch {
       return { ...DEFAULT_MASTER_SCREEN_CONFIG };
     }
@@ -201,7 +202,7 @@ export function useMasterScreenConfig() {
     try {
       window.localStorage.setItem(
         masterScreenConfigKey,
-        JSON.stringify(DEFAULT_MASTER_SCREEN_CONFIG)
+        JSON.stringify(DEFAULT_MASTER_SCREEN_CONFIG),
       );
     } catch {
       // ignore

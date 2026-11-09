@@ -29,10 +29,12 @@
 ### Task 1: Schema + migração aditiva do banco
 
 **Files:**
+
 - Modify: `src/lib/db/schema.ts` (tabelas `campaignChatGroups` ~linha 1334, `campaignChatMembers` ~linha 1352, `campaignChatMessages` ~linha 1379)
 - Create (temporário, deletar ao final): `scripts/tmp-apply-chat-evolution.js`
 
 **Interfaces:**
+
 - Produz: colunas novas no ORM — `campaignChatGroups.type/userAId/userBId` (campaignId nullable), `campaignChatMessages.payload`, `campaignChatMembers.canRead/canWrite/canShare`. Todas as tasks seguintes dependem disto.
 
 - [ ] **Step 1: Atualizar `campaignChatGroups` no schema.ts**
@@ -147,10 +149,12 @@ Esperado: tsc limpo (o tipo de `campaignId` em `ChatGroupSummary` quebra na Task
 ### Task 2: Validadores Zod (share, DM, permissões)
 
 **Files:**
+
 - Modify: `src/lib/validators/chat.ts`
 - Test: `src/lib/validators/__tests__/chat.test.ts` (estender o existente)
 
 **Interfaces:**
+
 - Consumes: `contentTypeSchema` de `@/lib/validators/content` (`"skills" | "spells" | "items" | "conditions"`).
 - Produz (usado pelas Tasks 3-5 e 7-9):
   - `shareInputSchema` → `{ kind: "library_item"|"profile"|"post"|"campaign"; id: string(uuid); contentType?: ContentType }`
@@ -175,19 +179,32 @@ import {
 
 describe("shareInputSchema", () => {
   it("aceita share de perfil com uuid", () => {
-    const r = shareInputSchema.safeParse({ kind: "profile", id: "550e8400-e29b-41d4-a716-446655440000" });
+    const r = shareInputSchema.safeParse({
+      kind: "profile",
+      id: "550e8400-e29b-41d4-a716-446655440000",
+    });
     expect(r.success).toBe(true);
   });
 
   it("exige contentType para library_item", () => {
-    const semTipo = shareInputSchema.safeParse({ kind: "library_item", id: "550e8400-e29b-41d4-a716-446655440000" });
+    const semTipo = shareInputSchema.safeParse({
+      kind: "library_item",
+      id: "550e8400-e29b-41d4-a716-446655440000",
+    });
     expect(semTipo.success).toBe(false);
-    const comTipo = shareInputSchema.safeParse({ kind: "library_item", id: "550e8400-e29b-41d4-a716-446655440000", contentType: "spells" });
+    const comTipo = shareInputSchema.safeParse({
+      kind: "library_item",
+      id: "550e8400-e29b-41d4-a716-446655440000",
+      contentType: "spells",
+    });
     expect(comTipo.success).toBe(true);
   });
 
   it("rejeita kind inválido e id não-uuid", () => {
-    expect(shareInputSchema.safeParse({ kind: "arquivo", id: "550e8400-e29b-41d4-a716-446655440000" }).success).toBe(false);
+    expect(
+      shareInputSchema.safeParse({ kind: "arquivo", id: "550e8400-e29b-41d4-a716-446655440000" })
+        .success,
+    ).toBe(false);
     expect(shareInputSchema.safeParse({ kind: "post", id: "abc" }).success).toBe(false);
   });
 });
@@ -205,7 +222,9 @@ describe("createChatMessageSchema com share", () => {
 
 describe("createDmSchema", () => {
   it("aceita uuid e rejeita inválido", () => {
-    expect(createDmSchema.safeParse({ userId: "550e8400-e29b-41d4-a716-446655440000" }).success).toBe(true);
+    expect(
+      createDmSchema.safeParse({ userId: "550e8400-e29b-41d4-a716-446655440000" }).success,
+    ).toBe(true);
     expect(createDmSchema.safeParse({ userId: "x" }).success).toBe(false);
   });
 });
@@ -221,7 +240,10 @@ describe("updateMemberPermissionsSchema", () => {
 
 describe("removeCampaignMemberSchema", () => {
   it("aceita uuid e rejeita inválido", () => {
-    expect(removeCampaignMemberSchema.safeParse({ userId: "550e8400-e29b-41d4-a716-446655440000" }).success).toBe(true);
+    expect(
+      removeCampaignMemberSchema.safeParse({ userId: "550e8400-e29b-41d4-a716-446655440000" })
+        .success,
+    ).toBe(true);
     expect(removeCampaignMemberSchema.safeParse({ userId: "x" }).success).toBe(false);
   });
 });
@@ -299,21 +321,49 @@ Expected: PASS (todos, incluindo os anteriores).
 ### Task 3: Tipos de share + DM no serviço + listUserChatGroups + rota POST /api/chat/dm
 
 **Files:**
+
 - Modify: `src/lib/server/chat-service.ts`
 - Create: `src/app/api/chat/dm/route.ts`
 - Test: `src/app/api/chat/__tests__/chat-dm.test.ts` (novo)
 - Test: `src/app/api/chat/__tests__/chat-routes.test.ts` (atualizar fixtures)
 
 **Interfaces:**
+
 - Consome: schema da Task 1, `createDmSchema`/`ShareInput` da Task 2.
 - Produz (usado pelas Tasks 4-11):
   - Tipos exportados em `chat-service.ts`:
     ```ts
     export type ShareKind = "library_item" | "profile" | "post" | "campaign";
-    export type LibraryItemSnapshot = { contentType: string; contentId: string; name: string; description: string | null; imageUrl: string | null };
-    export type ProfileSnapshot = { userId: string; displayName: string; avatarUrl: string | null; bio: string | null };
-    export type PostSnapshot = { postId: string; title: string; description: string | null; contentType: string; tags: string[]; authorId: string; authorName: string; payload: Record<string, unknown> };
-    export type CampaignSnapshot = { campaignId: string; name: string; coverImageUrl: string | null; inviteToken: string; masterName: string };
+    export type LibraryItemSnapshot = {
+      contentType: string;
+      contentId: string;
+      name: string;
+      description: string | null;
+      imageUrl: string | null;
+    };
+    export type ProfileSnapshot = {
+      userId: string;
+      displayName: string;
+      avatarUrl: string | null;
+      bio: string | null;
+    };
+    export type PostSnapshot = {
+      postId: string;
+      title: string;
+      description: string | null;
+      contentType: string;
+      tags: string[];
+      authorId: string;
+      authorName: string;
+      payload: Record<string, unknown>;
+    };
+    export type CampaignSnapshot = {
+      campaignId: string;
+      name: string;
+      coverImageUrl: string | null;
+      inviteToken: string;
+      masterName: string;
+    };
     export type SharePayload =
       | { kind: "library_item"; snapshot: LibraryItemSnapshot }
       | { kind: "profile"; snapshot: ProfileSnapshot }
@@ -370,45 +420,45 @@ No select de memberships, acrescentar campos:
 No `summaries.push`, para grupos `dm` derivar nome/avatar do outro participante:
 
 ```ts
-    let name = m.groupName;
-    let avatarUrl = m.groupAvatar;
-    let role = m.role as "admin" | "member";
+let name = m.groupName;
+let avatarUrl = m.groupAvatar;
+let role = m.role as "admin" | "member";
 
-    if (m.groupType === "dm") {
-      const otherId = m.userAId === userId ? m.userBId : m.userAId;
-      if (otherId) {
-        const [other] = await db
-          .select({ displayName: users.displayName, masterAvatar: users.masterAvatar })
-          .from(users)
-          .where(eq(users.id, otherId))
-          .limit(1);
-        name = other?.displayName || "Usuário";
-        avatarUrl = other?.masterAvatar || null;
+if (m.groupType === "dm") {
+  const otherId = m.userAId === userId ? m.userBId : m.userAId;
+  if (otherId) {
+    const [other] = await db
+      .select({ displayName: users.displayName, masterAvatar: users.masterAvatar })
+      .from(users)
+      .where(eq(users.id, otherId))
+      .limit(1);
+    name = other?.displayName || "Usuário";
+    avatarUrl = other?.masterAvatar || null;
+  }
+  role = "member";
+}
+
+summaries.push({
+  id: m.groupId,
+  campaignId: m.campaignId,
+  type: m.groupType === "dm" ? "dm" : "campaign",
+  name,
+  avatarUrl,
+  role,
+  permissions: { canRead: m.canRead, canWrite: m.canWrite, canShare: m.canShare },
+  unreadCount: Number(unreadRow?.count ?? 0),
+  lastMessage: lastMsg
+    ? {
+        id: lastMsg.id,
+        content: lastMsg.content,
+        type: lastMsg.type as "text" | "poll" | "system" | "share",
+        createdAt: lastMsg.createdAt.toISOString(),
+        senderName: lastMsg.senderName || "Participante",
       }
-      role = "member";
-    }
-
-    summaries.push({
-      id: m.groupId,
-      campaignId: m.campaignId,
-      type: m.groupType === "dm" ? "dm" : "campaign",
-      name,
-      avatarUrl,
-      role,
-      permissions: { canRead: m.canRead, canWrite: m.canWrite, canShare: m.canShare },
-      unreadCount: Number(unreadRow?.count ?? 0),
-      lastMessage: lastMsg
-        ? {
-            id: lastMsg.id,
-            content: lastMsg.content,
-            type: lastMsg.type as "text" | "poll" | "system" | "share",
-            createdAt: lastMsg.createdAt.toISOString(),
-            senderName: lastMsg.senderName || "Participante",
-          }
-        : null,
-      membersCount: Number(membersCountRow?.count ?? 0),
-      updatedAt: (lastMsg?.createdAt || m.groupUpdatedAt).toISOString(),
-    });
+    : null,
+  membersCount: Number(membersCountRow?.count ?? 0),
+  updatedAt: (lastMsg?.createdAt || m.groupUpdatedAt).toISOString(),
+});
 ```
 
 - [ ] **Step 3: Implementar `getOrCreateDmGroup`**
@@ -442,9 +492,7 @@ export async function getOrCreateDmGroup(
   let [group] = await db
     .select()
     .from(campaignChatGroups)
-    .where(
-      and(eq(campaignChatGroups.userAId, a), eq(campaignChatGroups.userBId, b)),
-    )
+    .where(and(eq(campaignChatGroups.userAId, a), eq(campaignChatGroups.userBId, b)))
     .limit(1);
 
   if (!group) {
@@ -512,7 +560,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: message }, { status: 400 });
     }
     logger.error({ err: error }, "Erro ao criar/obter DM");
-    return NextResponse.json({ success: false, error: "Erro interno do servidor" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "Erro interno do servidor" },
+      { status: 500 },
+    );
   }
 }
 ```
@@ -608,6 +659,7 @@ Expected: PASS. Se `tsc` acusar usos antigos de `ChatGroupSummary` em componente
 ### Task 4: Permissões + gestão de membros no serviço e rotas
 
 **Files:**
+
 - Modify: `src/lib/server/chat-service.ts`
 - Create: `src/app/api/chat/groups/[groupId]/members/route.ts` (GET)
 - Create: `src/app/api/chat/groups/[groupId]/members/[userId]/route.ts` (PATCH, DELETE)
@@ -615,6 +667,7 @@ Expected: PASS. Se `tsc` acusar usos antigos de `ChatGroupSummary` em componente
 - Test: `src/app/api/chat/__tests__/chat-members.test.ts` (novo)
 
 **Interfaces:**
+
 - Consome: tipos da Task 3; `updateMemberPermissionsSchema`/`removeCampaignMemberSchema` da Task 2.
 - Produz (usado pelas Tasks 6, 10):
   - `export type GroupMemberDetail = { userId: string; displayName: string; avatarUrl: string | null; role: "admin" | "member"; canRead: boolean; canWrite: boolean; canShare: boolean; joinedAt: string };`
@@ -630,33 +683,33 @@ Expected: PASS. Se `tsc` acusar usos antigos de `ChatGroupSummary` em componente
 Em `getGroupMessages`, após o check de membership:
 
 ```ts
-  if (!membership.canRead) {
-    throw new Error("Você não tem permissão para ler este grupo");
-  }
+if (!membership.canRead) {
+  throw new Error("Você não tem permissão para ler este grupo");
+}
 ```
 
 Em `postChatMessage`, o select de membership deve incluir `canWrite` e `canShare` (adicionar `canWrite: campaignChatMembers.canWrite, canShare: campaignChatMembers.canShare` ao objeto do select) e, após o check de existência:
 
 ```ts
-  if (!membership.canWrite) {
-    throw new Error("Você não tem permissão para escrever neste grupo");
-  }
+if (!membership.canWrite) {
+  throw new Error("Você não tem permissão para escrever neste grupo");
+}
 ```
 
 Ainda em `postChatMessage`, proteger a busca de campanha contra DMs (`campaignId` null):
 
 ```ts
-  const campaign = membership.campaignId
-    ? (
-        await db
-          .select({ masterId: campaigns.masterId })
-          .from(campaigns)
-          .where(eq(campaigns.id, membership.campaignId))
-          .limit(1)
-      )[0]
-    : undefined;
+const campaign = membership.campaignId
+  ? (
+      await db
+        .select({ masterId: campaigns.masterId })
+        .from(campaigns)
+        .where(eq(campaigns.id, membership.campaignId))
+        .limit(1)
+    )[0]
+  : undefined;
 
-  const isMaster = membership.role === "admin" && campaign?.masterId === userId;
+const isMaster = membership.role === "admin" && campaign?.masterId === userId;
 ```
 
 Em `getGroupMessages`, o join com `campaigns` continua correto para DMs (innerJoin sem match → `masterId` undefined → `isMaster: false`).
@@ -821,11 +874,7 @@ export async function removeUserFromCampaign(
   masterId: string,
   userId: string,
 ): Promise<void> {
-  const [campaign] = await db
-    .select()
-    .from(campaigns)
-    .where(eq(campaigns.id, campaignId))
-    .limit(1);
+  const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, campaignId)).limit(1);
 
   if (!campaign) {
     throw new Error("Campanha não encontrada");
@@ -838,9 +887,7 @@ export async function removeUserFromCampaign(
     await tx
       .update(campaignInvites)
       .set({ revoked: true })
-      .where(
-        and(eq(campaignInvites.campaignId, campaignId), eq(campaignInvites.userId, userId)),
-      );
+      .where(and(eq(campaignInvites.campaignId, campaignId), eq(campaignInvites.userId, userId)));
 
     const userCharacterIds = tx
       .select({ id: characters.id })
@@ -900,7 +947,10 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ success: false, error: message }, { status: 403 });
     }
     logger.error({ err: error }, "Erro ao listar membros do grupo");
-    return NextResponse.json({ success: false, error: "Erro interno do servidor" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "Erro interno do servidor" },
+      { status: 500 },
+    );
   }
 }
 ```
@@ -942,7 +992,10 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ success: false, error: message }, { status: 404 });
     }
     logger.error({ err: error }, "Erro ao atualizar permissões do membro");
-    return NextResponse.json({ success: false, error: "Erro interno do servidor" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "Erro interno do servidor" },
+      { status: 500 },
+    );
   }
 }
 
@@ -964,7 +1017,10 @@ export async function DELETE(_request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ success: false, error: message }, { status: 404 });
     }
     logger.error({ err: error }, "Erro ao remover membro do grupo");
-    return NextResponse.json({ success: false, error: "Erro interno do servidor" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "Erro interno do servidor" },
+      { status: 500 },
+    );
   }
 }
 ```
@@ -1006,7 +1062,10 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ success: false, error: message }, { status: 404 });
     }
     logger.error({ err: error }, "Erro ao remover usuário da campanha");
-    return NextResponse.json({ success: false, error: "Erro interno do servidor" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "Erro interno do servidor" },
+      { status: 500 },
+    );
   }
 }
 ```
@@ -1014,6 +1073,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 - [ ] **Step 6: Testes `src/app/api/chat/__tests__/chat-members.test.ts`**
 
 Mesmo padrão de mocks dos outros testes de rota (`requireAuth`, `chat-service`, `logger`). Cobrir:
+
 - GET members: 200 com lista; 403 quando serviço lança "Você não é membro deste grupo".
 - PATCH: 200 retornando membro; 400 body vazio; 403 quando serviço lança "Apenas o Mestre pode alterar permissões".
 - DELETE: 200; 403 para "Não é possível remover um administrador"; 404 para "Membro não encontrado".
@@ -1032,7 +1092,9 @@ it("retorna 403 quando não é admin", async () => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ canWrite: false }),
   });
-  const res = await patchMember(req, { params: Promise.resolve({ groupId: "g-1", userId: "u-2" }) });
+  const res = await patchMember(req, {
+    params: Promise.resolve({ groupId: "g-1", userId: "u-2" }),
+  });
   expect(res.status).toBe(403);
 });
 ```
@@ -1047,6 +1109,7 @@ Expected: PASS.
 ### Task 5: Compartilhamento — payload no servidor, catálogo e busca de usuários
 
 **Files:**
+
 - Modify: `src/lib/server/chat-service.ts`
 - Modify: `src/app/api/chat/groups/[groupId]/messages/route.ts` (mapear novos erros)
 - Create: `src/app/api/chat/share-catalog/route.ts` (GET)
@@ -1054,20 +1117,30 @@ Expected: PASS.
 - Test: `src/app/api/chat/__tests__/chat-share.test.ts` (novo)
 
 **Interfaces:**
+
 - Consome: `ShareInput`/`SharePayload` (Tasks 2-3); `CONTENT_TYPES`/`CONTENT_LABELS` de `@/lib/validators/content`; `getContentTable`/`getContentCampaignColumn`/`getContentIdColumn` de `@/lib/db/content-registry`; `generateUrlSafeToken` de `@/lib/utils/tokens`; tabelas `communityPosts`, `campaignInvites`, `campaigns`, `users`.
 - Produz (usado pelas Tasks 7-9):
   - `buildSharePayload(input: ShareInput, actorId: string): Promise<SharePayload>` — erros: `"Conteúdo não encontrado para compartilhar"`, `"Publicação não encontrada"`, `"Usuário não encontrado"`, `"Apenas o Mestre pode compartilhar acesso à campanha"`.
   - `getShareCatalog(userId: string): Promise<ShareCatalog>` com
     ```ts
     export type ShareCatalog = {
-      library: { type: string; label: string; items: { id: string; name: string; description: string | null; imageUrl: string | null }[] }[];
+      library: {
+        type: string;
+        label: string;
+        items: { id: string; name: string; description: string | null; imageUrl: string | null }[];
+      }[];
       posts: { id: string; title: string; contentType: string; authorName: string }[];
       campaigns: { id: string; name: string; coverImageUrl: string | null }[];
     };
     ```
   - `searchChatUsers(query: string, currentUserId: string, groupId?: string): Promise<ChatUserResult[]>` com
     ```ts
-    export type ChatUserResult = { userId: string; displayName: string; avatarUrl: string | null; isGroupMember: boolean };
+    export type ChatUserResult = {
+      userId: string;
+      displayName: string;
+      avatarUrl: string | null;
+      isGroupMember: boolean;
+    };
     ```
   - `postChatMessage` aceita `type: "share"` + `input.share`, grava `payload` e retorna `payload` em `ChatMessageDetail`.
 
@@ -1095,7 +1168,12 @@ export async function buildSharePayload(input: ShareInput, actorId: string): Pro
     const rows = await db
       .select()
       .from(table)
-      .where(and(eq(getContentIdColumn(contentType), input.id), isNull(getContentCampaignColumn(contentType))))
+      .where(
+        and(
+          eq(getContentIdColumn(contentType), input.id),
+          isNull(getContentCampaignColumn(contentType)),
+        ),
+      )
       .limit(1);
     const row = rows[0] as Record<string, unknown> | undefined;
     if (!row) {
@@ -1173,11 +1251,7 @@ export async function buildSharePayload(input: ShareInput, actorId: string): Pro
   }
 
   // kind === "campaign"
-  const [campaign] = await db
-    .select()
-    .from(campaigns)
-    .where(eq(campaigns.id, input.id))
-    .limit(1);
+  const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, input.id)).limit(1);
   if (!campaign) {
     throw new Error("Campanha não encontrada");
   }
@@ -1218,19 +1292,19 @@ export async function buildSharePayload(input: ShareInput, actorId: string): Pro
 Após o check de `canWrite` (Task 4) e antes do check de enquete:
 
 ```ts
-  const isShare = input.type === "share" || Boolean(input.share);
-  if (isShare && !membership.canShare) {
-    throw new Error("Você não tem permissão para compartilhar neste grupo");
-  }
+const isShare = input.type === "share" || Boolean(input.share);
+if (isShare && !membership.canShare) {
+  throw new Error("Você não tem permissão para compartilhar neste grupo");
+}
 ```
 
 Antes do insert da mensagem:
 
 ```ts
-  let sharePayload: SharePayload | null = null;
-  if (isShare && input.share) {
-    sharePayload = await buildSharePayload(input.share, userId);
-  }
+let sharePayload: SharePayload | null = null;
+if (isShare && input.share) {
+  sharePayload = await buildSharePayload(input.share, userId);
+}
 ```
 
 No `values` do insert: `type: isPoll ? "poll" : isShare ? "share" : input.type || "text",` e `payload: sharePayload,`. No retorno: `type: createdMessage.type as "text" | "poll" | "system" | "share",` e `payload: sharePayload,`.
@@ -1358,7 +1432,10 @@ export async function GET() {
     return NextResponse.json({ success: true, data: catalog });
   } catch (error) {
     logger.error({ err: error }, "Erro ao montar catálogo de compartilhamento");
-    return NextResponse.json({ success: false, error: "Erro interno do servidor" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "Erro interno do servidor" },
+      { status: 500 },
+    );
   }
 }
 ```
@@ -1389,7 +1466,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, data: users });
   } catch (error) {
     logger.error({ err: error }, "Erro ao buscar usuários do chat");
-    return NextResponse.json({ success: false, error: "Erro interno do servidor" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "Erro interno do servidor" },
+      { status: 500 },
+    );
   }
 }
 ```
@@ -1407,6 +1487,7 @@ Em GET, adicionar: mensagem `"Você não tem permissão para ler este grupo"` �
 - [ ] **Step 6: Testes `src/app/api/chat/__tests__/chat-share.test.ts`**
 
 Mocks: `requireAuth`, `chat-service` (`getShareCatalog`, `searchChatUsers`, `postChatMessage`), `logger`. Cobrir:
+
 - GET share-catalog: 200 `{ success: true, data }`; 401 sem sessão.
 - GET users: 400 com `q` de 1 char; 200 com `q=mar` chamando `searchChatUsers("mar", "user-1", undefined)`; 401.
 - POST messages com `type: "share"`: serviço resolve mensagem com `payload`; resposta 201 e `json.data.payload.kind` correto; serviço lançando `"Você não tem permissão para compartilhar neste grupo"` → 403.
@@ -1421,11 +1502,13 @@ Expected: PASS.
 ### Task 6: Eventos Socket.IO de membros
 
 **Files:**
+
 - Modify: `server.js` (bloco de eventos `chat:*`, ~linha 360-384)
 - Modify: `src/context/SocketContext.tsx` (interface ~linha 218-226, implementações ~linha 997-1100, value ~linha 1155-1162)
 - Test: não há teste unitário de server.js no projeto — validação manual no Step 4.
 
 **Interfaces:**
+
 - Produz (usado pelas Tasks 10):
   - Cliente emite `chat:member-updated` → sala recebe `chat:member-updated` com `{ groupId, userId, canRead, canWrite, canShare }`.
   - Cliente emite `chat:member-removed` → sala recebe `chat:member-removed` com `{ groupId, userId, reason: "group" | "campaign" }`.
@@ -1436,15 +1519,15 @@ Expected: PASS.
 Após o handler `chat:poll-close`, adicionar:
 
 ```js
-        socket.on("chat:member-updated", (payload) => {
-          if (!payload || !payload.groupId) return;
-          io.to(`chat:${payload.groupId}`).emit("chat:member-updated", payload);
-        });
+socket.on("chat:member-updated", (payload) => {
+  if (!payload || !payload.groupId) return;
+  io.to(`chat:${payload.groupId}`).emit("chat:member-updated", payload);
+});
 
-        socket.on("chat:member-removed", (payload) => {
-          if (!payload || !payload.groupId) return;
-          io.to(`chat:${payload.groupId}`).emit("chat:member-removed", payload);
-        });
+socket.on("chat:member-removed", (payload) => {
+  if (!payload || !payload.groupId) return;
+  io.to(`chat:${payload.groupId}`).emit("chat:member-removed", payload);
+});
 ```
 
 - [ ] **Step 2: SocketContext**
@@ -1473,12 +1556,14 @@ Com o dev server rodando, abrir o console do navegador em duas abas logadas e va
 ### Task 7: `SharedContentCard` + `ShareDetailModal` + renderização no `ActiveChatRoom`
 
 **Files:**
+
 - Create: `src/components/chat/SharedContentCard.tsx`
 - Create: `src/components/chat/ShareDetailModal.tsx`
 - Modify: `src/components/chat/ActiveChatRoom.tsx`
 - Test: `src/components/chat/__tests__/SharedContentCard.test.tsx` (novo)
 
 **Interfaces:**
+
 - Consome: `SharePayload` e snapshots (Task 3); `PostDetailModal` de `@/components/community/PostDetailModal` (prop `post: CommunityPost`, `onClose`, `onCloned?`); `Modal` de `@/components/ui/Modal` (verificar assinatura exata antes — usada em `CreatePollModal.tsx`); `CONTENT_LABELS` de `@/lib/validators/content`.
 - Produz (usado pelas Tasks 8-9):
   - `SharedContentCard({ payload, onClick }: { payload: SharePayload; onClick: () => void })` — `data-testid={`shared-card-${payload.kind}`}`.
@@ -1548,7 +1633,11 @@ const KIND_CONFIG = {
   campaign: { Icon: Map, label: "Campanha" },
 } as const;
 
-function describePayload(payload: SharePayload): { title: string; subtitle: string; imageUrl: string | null } {
+function describePayload(payload: SharePayload): {
+  title: string;
+  subtitle: string;
+  imageUrl: string | null;
+} {
   switch (payload.kind) {
     case "library_item":
       return {
@@ -1639,7 +1728,12 @@ type ShareDetailModalProps = {
   onStartDm?: (userId: string) => void;
 };
 
-export function ShareDetailModal({ payload, currentUserId, onClose, onStartDm }: ShareDetailModalProps) {
+export function ShareDetailModal({
+  payload,
+  currentUserId,
+  onClose,
+  onStartDm,
+}: ShareDetailModalProps) {
   if (payload.kind === "post") {
     const s = payload.snapshot;
     const post = {
@@ -1661,7 +1755,14 @@ export function ShareDetailModal({ payload, currentUserId, onClose, onStartDm }:
     return <PostDetailModal post={post} onClose={onClose} />;
   }
 
-  return <GenericShareModal payload={payload} currentUserId={currentUserId} onClose={onClose} onStartDm={onStartDm} />;
+  return (
+    <GenericShareModal
+      payload={payload}
+      currentUserId={currentUserId}
+      onClose={onClose}
+      onStartDm={onStartDm}
+    />
+  );
 }
 ```
 
@@ -1714,55 +1815,57 @@ Em `ActiveChatRoom.tsx`:
 5. No fim do componente (após `CreatePollModal`):
 
 ```tsx
-      {selectedShare && (
-        <ShareDetailModal
-          payload={selectedShare}
-          currentUserId={currentUserId}
-          onClose={() => setSelectedShare(null)}
-          onStartDm={
-            onStartDm
-              ? async (userId) => {
-                  setSelectedShare(null);
-                  await onStartDm(userId);
-                }
-              : undefined
-          }
-        />
-      )}
+{
+  selectedShare && (
+    <ShareDetailModal
+      payload={selectedShare}
+      currentUserId={currentUserId}
+      onClose={() => setSelectedShare(null)}
+      onStartDm={
+        onStartDm
+          ? async (userId) => {
+              setSelectedShare(null);
+              await onStartDm(userId);
+            }
+          : undefined
+      }
+    />
+  );
+}
 ```
 
 6. Atualizar `CampaignChat.tsx` para compilar: adicionar `handleSendShare` e `handleStartDm` e passar como props (implementação completa na Task 8; por enquanto criar as funções):
 
 ```tsx
-  const handleSendShare = async (share: ShareInput, text?: string) => {
-    if (!activeGroupId) return;
-    const res = await fetch(`/api/chat/groups/${activeGroupId}/messages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: text || "Conteúdo compartilhado", type: "share", share }),
-      credentials: "include",
-    });
-    const data = await res.json();
-    if (res.ok && data.data) {
-      setMessages((prev) => [...prev, data.data]);
-      sendChatMessage(data.data);
-    }
-  };
+const handleSendShare = async (share: ShareInput, text?: string) => {
+  if (!activeGroupId) return;
+  const res = await fetch(`/api/chat/groups/${activeGroupId}/messages`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content: text || "Conteúdo compartilhado", type: "share", share }),
+    credentials: "include",
+  });
+  const data = await res.json();
+  if (res.ok && data.data) {
+    setMessages((prev) => [...prev, data.data]);
+    sendChatMessage(data.data);
+  }
+};
 
-  const handleStartDm = async (otherUserId: string) => {
-    const res = await fetch("/api/chat/dm", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: otherUserId }),
-      credentials: "include",
-    });
-    const data = await res.json();
-    if (res.ok && data.data) {
-      await loadGroups();
-      setActiveGroupId(data.data.id);
-      setIsMobileRoomOpen(true);
-    }
-  };
+const handleStartDm = async (otherUserId: string) => {
+  const res = await fetch("/api/chat/dm", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId: otherUserId }),
+    credentials: "include",
+  });
+  const data = await res.json();
+  if (res.ok && data.data) {
+    await loadGroups();
+    setActiveGroupId(data.data.id);
+    setIsMobileRoomOpen(true);
+  }
+};
 ```
 
 Passar no `<ActiveChatRoom>`: `onSendShare={handleSendShare}`, `onStartDm={handleStartDm}`, `onOpenSettings={() => {}}` (substituído na Task 10).
@@ -1779,11 +1882,13 @@ Expected: PASS.
 ### Task 8: `SharePickerModal` + botão "+" no input
 
 **Files:**
+
 - Create: `src/components/chat/SharePickerModal.tsx`
 - Modify: `src/components/chat/ActiveChatRoom.tsx`
 - Test: `src/components/chat/__tests__/SharePickerModal.test.tsx` (novo)
 
 **Interfaces:**
+
 - Consome: `GET /api/chat/share-catalog` (Task 5) → `{ success, data: ShareCatalog }`; `onSendShare` (Task 7).
 - Produz: `SharePickerModal({ isOpen, onClose, onPick }: { isOpen: boolean; onClose: () => void; onPick: (share: ShareInput, label: string) => void })`.
 
@@ -1798,7 +1903,11 @@ const catalog = {
   success: true,
   data: {
     library: [
-      { type: "spells", label: "magia", items: [{ id: "s-1", name: "Bola de Fogo", description: null, imageUrl: null }] },
+      {
+        type: "spells",
+        label: "magia",
+        items: [{ id: "s-1", name: "Bola de Fogo", description: null, imageUrl: null }],
+      },
     ],
     posts: [{ id: "p-1", title: "Post épico", contentType: "spell", authorName: "Maria" }],
     campaigns: [{ id: "c-1", name: "Strahd", coverImageUrl: null }],
@@ -1849,33 +1958,35 @@ Estrutura (seguir `CreatePollModal.tsx` como modelo visual — ler o arquivo e c
 No formulário de envio, ANTES do botão de enquete:
 
 ```tsx
-        {group.permissions.canShare && (
-          <button
-            type="button"
-            onClick={() => setIsShareModalOpen(true)}
-            data-testid="open-share-modal-button"
-            title="Compartilhar conteúdo"
-            aria-label="Compartilhar conteúdo"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-secondary-border bg-secondary-input text-secondary-muted hover:text-accent hover:border-accent transition-colors cursor-pointer"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
-        )}
+{
+  group.permissions.canShare && (
+    <button
+      type="button"
+      onClick={() => setIsShareModalOpen(true)}
+      data-testid="open-share-modal-button"
+      title="Compartilhar conteúdo"
+      aria-label="Compartilhar conteúdo"
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-secondary-border bg-secondary-input text-secondary-muted hover:text-accent hover:border-accent transition-colors cursor-pointer"
+    >
+      <Plus className="h-4 w-4" />
+    </button>
+  );
+}
 ```
 
 - Importar `Plus` de lucide-react; estado `isShareModalOpen`.
 - Renderizar:
 
 ```tsx
-      <SharePickerModal
-        isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
-        onPick={(share, label) => {
-          setIsShareModalOpen(false);
-          void onSendShare(share, inputText.trim() || label);
-          setInputText("");
-        }}
-      />
+<SharePickerModal
+  isOpen={isShareModalOpen}
+  onClose={() => setIsShareModalOpen(false)}
+  onPick={(share, label) => {
+    setIsShareModalOpen(false);
+    void onSendShare(share, inputText.trim() || label);
+    setInputText("");
+  }}
+/>
 ```
 
 - Desabilitar input/`+`/envio quando `!group.permissions.canWrite`: no textarea adicionar `disabled={!group.permissions.canWrite}` e placeholder alternativo "Você não tem permissão para escrever neste grupo"; ocultar o `+` também quando `!canWrite`.
@@ -1893,10 +2004,12 @@ Run: `npx vitest run src/components/chat/__tests__ && npx tsc --noEmit` → PASS
 ### Task 9: Autocomplete de `@` no input
 
 **Files:**
+
 - Modify: `src/components/chat/ActiveChatRoom.tsx`
 - Test: `src/components/chat/__tests__/ActiveChatRoom.mention.test.tsx` (novo)
 
 **Interfaces:**
+
 - Consome: `GET /api/chat/users?q=&groupId=` (Task 5) → `{ success, data: ChatUserResult[] }`; `onSendShare` (Task 7).
 - Produz: comportamento — digitar `@` + ≥2 chars abre dropdown `data-testid="mention-dropdown"`; clicar em usuário envia `share` de perfil com o texto anterior como `content`.
 
@@ -1907,9 +2020,19 @@ Renderizar `ActiveChatRoom` com grupo mockado (permissões true), mock de `fetch
 ```tsx
 it("envia share de perfil ao selecionar menção", async () => {
   const onSendShare = vi.fn().mockResolvedValue(undefined);
-  render(<ActiveChatRoom group={mockGroup} messages={[]} currentUserId="u-1"
-    onSendMessage={vi.fn()} onCreatePoll={vi.fn()} onVotePoll={vi.fn()}
-    onClosePoll={vi.fn()} onSendShare={onSendShare} onOpenSettings={vi.fn()} />);
+  render(
+    <ActiveChatRoom
+      group={mockGroup}
+      messages={[]}
+      currentUserId="u-1"
+      onSendMessage={vi.fn()}
+      onCreatePoll={vi.fn()}
+      onVotePoll={vi.fn()}
+      onClosePoll={vi.fn()}
+      onSendShare={onSendShare}
+      onOpenSettings={vi.fn()}
+    />,
+  );
   const textarea = screen.getByTestId("chat-input-textarea");
   fireEvent.change(textarea, { target: { value: "Oi @mar" } });
   const option = await screen.findByText("Maria Silveira");
@@ -1926,13 +2049,13 @@ it("envia share de perfil ao selecionar menção", async () => {
 - Seleção (clique ou Enter com dropdown aberto — nesse caso `preventDefault`):
 
 ```ts
-  const selectMention = (user: ChatUserResult) => {
-    const textBefore = inputText.replace(/(^|\s)@\S+$/, "$1").trim();
-    setInputText("");
-    setMentionQuery(null);
-    setMentionResults([]);
-    void onSendShare({ kind: "profile", id: user.userId }, textBefore || undefined);
-  };
+const selectMention = (user: ChatUserResult) => {
+  const textBefore = inputText.replace(/(^|\s)@\S+$/, "$1").trim();
+  setInputText("");
+  setMentionQuery(null);
+  setMentionResults([]);
+  void onSendShare({ kind: "profile", id: user.userId }, textBefore || undefined);
+};
 ```
 
 Ajustar `onSendShare` para aceitar `text?: string` (já aceita desde a Task 7) — quando `undefined`, o `CampaignChat.handleSendShare` usa `label`; para menção sem texto usar `content = "Perfil compartilhado"`: alterar chamada para `onSendShare({ kind: "profile", id: user.userId }, textBefore || "Perfil compartilhado")`.
@@ -1948,12 +2071,14 @@ Run: `npx vitest run src/components/chat/__tests__ && npx tsc --noEmit` → PASS
 ### Task 10: Menu hambúrguer + `ChatSettingsPanel`
 
 **Files:**
+
 - Create: `src/components/chat/ChatSettingsPanel.tsx`
 - Modify: `src/components/chat/ActiveChatRoom.tsx`
 - Modify: `src/components/chat/CampaignChat.tsx`
 - Test: `src/components/chat/__tests__/ChatSettingsPanel.test.tsx` (novo)
 
 **Interfaces:**
+
 - Consome: `GET /api/chat/groups/:id/members`, `PATCH/DELETE .../members/:userId`, `POST /api/campaigns/:id/remove-member` (Task 4); `sendChatMemberUpdated`/`sendChatMemberRemoved` (Task 6); `GroupMemberDetail` (Task 4 — importar como type de `chat-service`).
 - Produz:
   - `ChatSettingsPanel({ group, currentUserId, onClose, onPermissionsChanged, onMemberRemoved }: { group: ChatGroupSummary; currentUserId: string; onClose: () => void; onPermissionsChanged: (userId: string, perms: MemberPermissions) => void; onMemberRemoved: (userId: string, reason: "group" | "campaign") => void })`.
@@ -1964,6 +2089,7 @@ Run: `npx vitest run src/components/chat/__tests__ && npx tsc --noEmit` → PASS
 Mock de fetch: GET members → `{ success: true, data: [admin {userId:"u-1",role:"admin",...}, member {userId:"u-2", displayName:"Maria", role:"member", canRead:true, canWrite:true, canShare:true, joinedAt:...}] }`; PATCH/DELETE → `{ success: true, data: {...} }` / `{ success: true }`.
 
 Casos:
+
 1. Renderiza lista com nomes e badge "Mestre" para admin.
 2. Para `currentUserId="u-1"` (admin): toggles habilitados; clicar no toggle "Escrever" de Maria → `fetch` PATCH chamado com `{ canWrite: false }` e `onPermissionsChanged("u-2", {...})`.
 3. Botão `data-testid="remove-from-group-u-2"` → confirmação (`confirm-remove-u-2`) → DELETE chamado → `onMemberRemoved("u-2", "group")`.
@@ -1987,29 +2113,32 @@ Casos:
 No header, à direita (fora do bloco de avatar/nome):
 
 ```tsx
-        <div className="relative shrink-0">
-          <button
-            type="button"
-            onClick={() => setIsMenuOpen((v) => !v)}
-            data-testid="chat-menu-button"
-            aria-label="Menu do grupo"
-            className="p-2 rounded-lg text-secondary-muted hover:text-secondary-pure hover:bg-secondary-input transition-colors cursor-pointer"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          {isMenuOpen && (
-            <div className="absolute right-0 top-full mt-1 w-44 rounded-lg border border-secondary-border bg-secondary-card shadow-lg z-20">
-              <button
-                type="button"
-                onClick={() => { setIsMenuOpen(false); onOpenSettings(); }}
-                data-testid="chat-menu-settings"
-                className="flex w-full items-center gap-2 px-3 py-2 text-xs text-secondary-pure hover:bg-secondary-input rounded-lg cursor-pointer"
-              >
-                <Settings className="h-3.5 w-3.5" /> Configurações
-              </button>
-            </div>
-          )}
-        </div>
+<div className="relative shrink-0">
+  <button
+    type="button"
+    onClick={() => setIsMenuOpen((v) => !v)}
+    data-testid="chat-menu-button"
+    aria-label="Menu do grupo"
+    className="p-2 rounded-lg text-secondary-muted hover:text-secondary-pure hover:bg-secondary-input transition-colors cursor-pointer"
+  >
+    <Menu className="h-5 w-5" />
+  </button>
+  {isMenuOpen && (
+    <div className="absolute right-0 top-full mt-1 w-44 rounded-lg border border-secondary-border bg-secondary-card shadow-lg z-20">
+      <button
+        type="button"
+        onClick={() => {
+          setIsMenuOpen(false);
+          onOpenSettings();
+        }}
+        data-testid="chat-menu-settings"
+        className="flex w-full items-center gap-2 px-3 py-2 text-xs text-secondary-pure hover:bg-secondary-input rounded-lg cursor-pointer"
+      >
+        <Settings className="h-3.5 w-3.5" /> Configurações
+      </button>
+    </div>
+  )}
+</div>
 ```
 
 Importar `Menu`, `Settings` de lucide-react; estado `isMenuOpen`.
@@ -2022,29 +2151,31 @@ Importar `Menu`, `Settings` de lucide-react; estado `isMenuOpen`.
 - Renderizar o painel quando `settingsGroupId` e grupo ativo:
 
 ```tsx
-      {settingsGroup && (
-        <ChatSettingsPanel
-          group={settingsGroup}
-          currentUserId={currentUser.id}
-          onClose={() => setSettingsGroupId(null)}
-          onPermissionsChanged={(userId, perms) => {
-            sendChatMemberUpdated({ groupId: settingsGroup.id, userId, ...perms });
-            if (userId === currentUser.id) {
-              setGroups((prev) =>
-                prev.map((g) => (g.id === settingsGroup.id ? { ...g, permissions: perms } : g)),
-              );
-            }
-          }}
-          onMemberRemoved={(userId, reason) => {
-            sendChatMemberRemoved({ groupId: settingsGroup.id, userId, reason });
-            setGroups((prev) =>
-              prev.map((g) =>
-                g.id === settingsGroup.id ? { ...g, membersCount: Math.max(0, g.membersCount - 1) } : g,
-              ),
-            );
-          }}
-        />
-      )}
+{
+  settingsGroup && (
+    <ChatSettingsPanel
+      group={settingsGroup}
+      currentUserId={currentUser.id}
+      onClose={() => setSettingsGroupId(null)}
+      onPermissionsChanged={(userId, perms) => {
+        sendChatMemberUpdated({ groupId: settingsGroup.id, userId, ...perms });
+        if (userId === currentUser.id) {
+          setGroups((prev) =>
+            prev.map((g) => (g.id === settingsGroup.id ? { ...g, permissions: perms } : g)),
+          );
+        }
+      }}
+      onMemberRemoved={(userId, reason) => {
+        sendChatMemberRemoved({ groupId: settingsGroup.id, userId, reason });
+        setGroups((prev) =>
+          prev.map((g) =>
+            g.id === settingsGroup.id ? { ...g, membersCount: Math.max(0, g.membersCount - 1) } : g,
+          ),
+        );
+      }}
+    />
+  );
+}
 ```
 
 (`const settingsGroup = groups.find((g) => g.id === settingsGroupId) ?? null;`)
@@ -2052,39 +2183,53 @@ Importar `Menu`, `Settings` de lucide-react; estado `isMenuOpen`.
 - Subscrições em tempo real (novo `useEffect` ou estender o existente):
 
 ```ts
-    const unsubMemberUpdated = subscribeChatMemberUpdated((raw) => {
-      const payload = raw as unknown as {
-        groupId: string; userId: string;
-        canRead: boolean; canWrite: boolean; canShare: boolean;
-      };
-      if (payload.userId === currentUserRef.current.id) {
-        setGroups((prev) =>
-          prev.map((g) =>
-            g.id === payload.groupId
-              ? { ...g, permissions: { canRead: payload.canRead, canWrite: payload.canWrite, canShare: payload.canShare } }
-              : g,
-          ),
-        );
-      }
-    });
+const unsubMemberUpdated = subscribeChatMemberUpdated((raw) => {
+  const payload = raw as unknown as {
+    groupId: string;
+    userId: string;
+    canRead: boolean;
+    canWrite: boolean;
+    canShare: boolean;
+  };
+  if (payload.userId === currentUserRef.current.id) {
+    setGroups((prev) =>
+      prev.map((g) =>
+        g.id === payload.groupId
+          ? {
+              ...g,
+              permissions: {
+                canRead: payload.canRead,
+                canWrite: payload.canWrite,
+                canShare: payload.canShare,
+              },
+            }
+          : g,
+      ),
+    );
+  }
+});
 
-    const unsubMemberRemoved = subscribeChatMemberRemoved((raw) => {
-      const payload = raw as unknown as { groupId: string; userId: string; reason: "group" | "campaign" };
-      if (payload.userId === currentUserRef.current.id) {
-        setGroups((prev) => prev.filter((g) => g.id !== payload.groupId));
-        if (activeGroupRef.current === payload.groupId) {
-          setActiveGroupId(null);
-          setMessages([]);
-          setIsMobileRoomOpen(false);
-        }
-      } else {
-        setGroups((prev) =>
-          prev.map((g) =>
-            g.id === payload.groupId ? { ...g, membersCount: Math.max(0, g.membersCount - 1) } : g,
-          ),
-        );
-      }
-    });
+const unsubMemberRemoved = subscribeChatMemberRemoved((raw) => {
+  const payload = raw as unknown as {
+    groupId: string;
+    userId: string;
+    reason: "group" | "campaign";
+  };
+  if (payload.userId === currentUserRef.current.id) {
+    setGroups((prev) => prev.filter((g) => g.id !== payload.groupId));
+    if (activeGroupRef.current === payload.groupId) {
+      setActiveGroupId(null);
+      setMessages([]);
+      setIsMobileRoomOpen(false);
+    }
+  } else {
+    setGroups((prev) =>
+      prev.map((g) =>
+        g.id === payload.groupId ? { ...g, membersCount: Math.max(0, g.membersCount - 1) } : g,
+      ),
+    );
+  }
+});
 ```
 
 Criar `currentUserRef` (`useRef(currentUser)` sincronizado em `useEffect`) para evitar dependência instável — mesmo padrão do `activeGroupRef` existente.
@@ -2098,6 +2243,7 @@ Run: `npx vitest run src/components/chat/__tests__ && npx tsc --noEmit` → PASS
 ### Task 11: `@handle` clicável no MasterProfile + navegação com parâmetros
 
 **Files:**
+
 - Modify: `src/components/community/MasterProfile.tsx` (~linha 239-241)
 - Modify: `src/components/community/MasterCommunityView.tsx`
 - Modify: `src/app/master/community/page.tsx` (Suspense)
@@ -2106,6 +2252,7 @@ Run: `npx vitest run src/components/chat/__tests__ && npx tsc --noEmit` → PASS
 - Test: `src/components/community/__tests__/MasterCommunityView.test.tsx` (estender)
 
 **Interfaces:**
+
 - Consome: `POST /api/chat/dm` (Task 3); `initialGroupId?: string` em `CampaignChat`.
 
 - [ ] **Step 1: `CampaignChat` aceita `initialGroupId`**
@@ -2120,13 +2267,14 @@ type CampaignChatProps = {
 Em `loadGroups`, ao definir o grupo inicial:
 
 ```ts
-        if (!activeGroupId && data.data.length > 0) {
-          const preferred = initialGroupId && data.data.some((g: ChatGroupSummary) => g.id === initialGroupId)
-            ? initialGroupId
-            : data.data[0].id;
-          setActiveGroupId(preferred);
-          if (initialGroupId === preferred) setIsMobileRoomOpen(true);
-        }
+if (!activeGroupId && data.data.length > 0) {
+  const preferred =
+    initialGroupId && data.data.some((g: ChatGroupSummary) => g.id === initialGroupId)
+      ? initialGroupId
+      : data.data[0].id;
+  setActiveGroupId(preferred);
+  if (initialGroupId === preferred) setIsMobileRoomOpen(true);
+}
 ```
 
 Adicionar `initialGroupId` ao `useCallback` deps de `loadGroups`.
@@ -2136,10 +2284,10 @@ Adicionar `initialGroupId` ao `useCallback` deps de `loadGroups`.
 ```ts
 import { useSearchParams } from "next/navigation";
 
-  const searchParams = useSearchParams();
-  const initialTab = searchParams.get("tab") === "chat" ? "chat" : "feed";
-  const [activeTab, setActiveTab] = useState<"feed" | "chat">(initialTab);
-  const dmGroupId = searchParams.get("dm") ?? undefined;
+const searchParams = useSearchParams();
+const initialTab = searchParams.get("tab") === "chat" ? "chat" : "feed";
+const [activeTab, setActiveTab] = useState<"feed" | "chat">(initialTab);
+const dmGroupId = searchParams.get("dm") ?? undefined;
 ```
 
 Passar `initialGroupId={dmGroupId}` ao `<CampaignChat>`.
@@ -2151,42 +2299,44 @@ Em `src/app/master/community/page.tsx`, envolver o retorno em `<Suspense>` (impo
 Substituir o `<p>` do handle (linhas 239-241):
 
 ```tsx
-            {!isOwnProfile && currentUserId ? (
-              <button
-                type="button"
-                onClick={handleStartDm}
-                disabled={isStartingDm}
-                data-testid="start-dm-button"
-                className="text-xs font-medium text-accent hover:text-accent-hover hover:underline transition-colors cursor-pointer disabled:opacity-50"
-              >
-                @{userHandle}
-              </button>
-            ) : (
-              <p className="text-xs font-medium text-gray-500">@{userHandle}</p>
-            )}
+{
+  !isOwnProfile && currentUserId ? (
+    <button
+      type="button"
+      onClick={handleStartDm}
+      disabled={isStartingDm}
+      data-testid="start-dm-button"
+      className="text-xs font-medium text-accent hover:text-accent-hover hover:underline transition-colors cursor-pointer disabled:opacity-50"
+    >
+      @{userHandle}
+    </button>
+  ) : (
+    <p className="text-xs font-medium text-gray-500">@{userHandle}</p>
+  );
+}
 ```
 
 Handler (com `useRouter` de `next/navigation`, estado `isStartingDm`):
 
 ```ts
-  const handleStartDm = async () => {
-    if (!currentUserId || isStartingDm) return;
-    setIsStartingDm(true);
-    try {
-      const res = await fetch("/api/chat/dm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (res.ok && data.data?.id) {
-        router.push(`/master/community?tab=chat&dm=${data.data.id}`);
-      }
-    } finally {
-      setIsStartingDm(false);
+const handleStartDm = async () => {
+  if (!currentUserId || isStartingDm) return;
+  setIsStartingDm(true);
+  try {
+    const res = await fetch("/api/chat/dm", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+      credentials: "include",
+    });
+    const data = await res.json();
+    if (res.ok && data.data?.id) {
+      router.push(`/master/community?tab=chat&dm=${data.data.id}`);
     }
-  };
+  } finally {
+    setIsStartingDm(false);
+  }
+};
 ```
 
 - [ ] **Step 4: Teste `MasterProfile.dm.test.tsx`**

@@ -45,14 +45,7 @@ describe("Auth - registerSchema", () => {
   });
 
   it("should reject invalid email formats", () => {
-    const invalidEmails = [
-      "",
-      "   ",
-      "not-an-email",
-      "user@",
-      "@domain.com",
-      "user@domain",
-    ];
+    const invalidEmails = ["", "   ", "not-an-email", "user@", "@domain.com", "user@domain"];
 
     for (const email of invalidEmails) {
       const result = registerSchema.safeParse({

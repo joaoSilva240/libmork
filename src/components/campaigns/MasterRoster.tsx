@@ -18,15 +18,24 @@ import { ExternalLink, Minimize2 } from "lucide-react";
 import { MissingHabitantSheet } from "@/components/systems/missing/MissingHabitantSheet";
 import type { MissingHabitant, EquipmentStatus } from "@/lib/systems/missing/types";
 
-const CombatTrackerModal = dynamic(() => import("@/components/combat/CombatTrackerModal").then(m => ({ default: m.CombatTrackerModal })), {
-  ssr: false,
-  loading: () => null,
-});
+const CombatTrackerModal = dynamic(
+  () =>
+    import("@/components/combat/CombatTrackerModal").then((m) => ({
+      default: m.CombatTrackerModal,
+    })),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
 
-const MapEditor = dynamic(() => import("@/components/campaigns/MapEditor").then(m => ({ default: m.MapEditor })), {
-  ssr: false,
-  loading: () => <div className="animate-pulse bg-gray-800 h-96 rounded-lg" />,
-});
+const MapEditor = dynamic(
+  () => import("@/components/campaigns/MapEditor").then((m) => ({ default: m.MapEditor })),
+  {
+    ssr: false,
+    loading: () => <div className="animate-pulse bg-gray-800 h-96 rounded-lg" />,
+  },
+);
 
 type RosterData = {
   players: RosterPlayer[];
@@ -57,7 +66,8 @@ export function MasterRoster({
   onResetConfig,
 }: MasterRosterProps) {
   const isMissing = rulesEngine === "missing_zero";
-  const { isConnected, presenceList, joinCampaign, subscribeActorStatus, subscribeCombatState } = useSocket();
+  const { isConnected, presenceList, joinCampaign, subscribeActorStatus, subscribeCombatState } =
+    useSocket();
   const [roster, setRoster] = useState<RosterData>({ players: [], npcs: [] });
   const [worlds, setWorlds] = useState<World[]>([]);
   const [activeEncounter, setActiveEncounter] = useState<Encounter | null>(null);
@@ -67,7 +77,9 @@ export function MasterRoster({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<RosterActor | null>(null);
-  const [selectedMissingHabitant, setSelectedMissingHabitant] = useState<MissingHabitant | null>(null);
+  const [selectedMissingHabitant, setSelectedMissingHabitant] = useState<MissingHabitant | null>(
+    null,
+  );
   const [activeCenterView, setActiveCenterView] = useState<"canvas" | "map">("canvas");
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -135,7 +147,7 @@ export function MasterRoster({
   const handleRosterChanged = useCallback(async () => {
     try {
       const response = await fetch(`/api/campaigns/${campaignId}/roster`, {
-        credentials: "include"
+        credentials: "include",
       });
       const data = await response.json();
 
@@ -193,27 +205,30 @@ export function MasterRoster({
     }
   }, [campaignId]);
 
-  const handleDropActor = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    try {
-      const dataStr = e.dataTransfer.getData("application/json");
-      if (!dataStr) return;
-      const actor: RosterActor = JSON.parse(dataStr);
-      if (actor && actor.id) {
-        setDeskActors((prev) => {
-          if (prev.some((a) => a.id === actor.id && a.kind === actor.kind)) {
-            return prev;
-          }
-          const next = [...prev, actor];
-          try {
-            localStorage.setItem(`carousel-desk-${campaignId}`, JSON.stringify(next));
-          } catch {}
-          return next;
-        });
-        void handleRosterChanged();
-      }
-    } catch {}
-  }, [campaignId, handleRosterChanged]);
+  const handleDropActor = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      try {
+        const dataStr = e.dataTransfer.getData("application/json");
+        if (!dataStr) return;
+        const actor: RosterActor = JSON.parse(dataStr);
+        if (actor && actor.id) {
+          setDeskActors((prev) => {
+            if (prev.some((a) => a.id === actor.id && a.kind === actor.kind)) {
+              return prev;
+            }
+            const next = [...prev, actor];
+            try {
+              localStorage.setItem(`carousel-desk-${campaignId}`, JSON.stringify(next));
+            } catch {}
+            return next;
+          });
+          void handleRosterChanged();
+        }
+      } catch {}
+    },
+    [campaignId, handleRosterChanged],
+  );
 
   // Entrar no Socket da campanha e escutar atualizações em tempo real
   useEffect(() => {
@@ -235,7 +250,7 @@ export function MasterRoster({
     }
     try {
       const res = await fetch(`/api/campaigns/${campaignId}/worlds/${selectedWorldId}/encounters`, {
-        credentials: "include"
+        credentials: "include",
       });
       const data = await res.json();
       if (res.ok && data.data) {
@@ -280,7 +295,6 @@ export function MasterRoster({
 
         const combinedWorlds = Array.from(allWorldsMap.values());
         setWorlds(combinedWorlds);
-
       } catch {
         if (!cancelled) {
           setError("Erro de conexão. Tente novamente.");
@@ -308,9 +322,12 @@ export function MasterRoster({
         return;
       }
       try {
-        const res = await fetch(`/api/campaigns/${campaignId}/worlds/${selectedWorldId}/encounters`, {
-          credentials: "include"
-        });
+        const res = await fetch(
+          `/api/campaigns/${campaignId}/worlds/${selectedWorldId}/encounters`,
+          {
+            credentials: "include",
+          },
+        );
         const data = await res.json();
         if (cancelled) return;
         if (res.ok && data.data) {
@@ -392,7 +409,7 @@ export function MasterRoster({
       try {
         const res = await fetch(
           `/api/systems/missing/campaigns/${campaignId}/habitants/${actor.id}`,
-          { credentials: "include" }
+          { credentials: "include" },
         );
         if (res.ok) {
           const json = await res.json();
@@ -430,7 +447,7 @@ export function MasterRoster({
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({ lineId, reason }),
-        }
+        },
       );
       if (res.ok) {
         const json = await res.json();
@@ -453,7 +470,7 @@ export function MasterRoster({
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({ addLine: text }),
-        }
+        },
       );
       if (res.ok) {
         const json = await res.json();
@@ -468,7 +485,7 @@ export function MasterRoster({
 
   const handleUpdateHabitantEquipment = async (
     slot: 1 | 2 | 3,
-    equipment: { name: string; notes?: string; status: EquipmentStatus }
+    equipment: { name: string; notes?: string; status: EquipmentStatus },
   ) => {
     if (!selectedMissingHabitant) return;
     try {
@@ -484,7 +501,7 @@ export function MasterRoster({
               ...equipment,
             },
           }),
-        }
+        },
       );
       if (res.ok) {
         const json = await res.json();
@@ -530,31 +547,28 @@ export function MasterRoster({
         xpReward: npc.xpReward,
       })),
     ],
-    [roster.npcs, roster.players]
+    [roster.npcs, roster.players],
   );
 
   const selectedWorld = worlds.find((w) => w.id === selectedWorldId);
   const npcWorldIds = useMemo(
     () => new Map(roster.npcs.map((npc) => [npc.id, npc.worldId])),
-    [roster.npcs]
+    [roster.npcs],
   );
   const isActorVisible = useCallback(
     (actor: RosterActor) =>
       actor.kind === "character" ||
       !selectedWorldId ||
       npcWorldIds.get(actor.id) === selectedWorldId,
-    [npcWorldIds, selectedWorldId]
+    [npcWorldIds, selectedWorldId],
   );
-  const visibleActors = useMemo(
-    () => actors.filter(isActorVisible),
-    [actors, isActorVisible]
-  );
+  const visibleActors = useMemo(() => actors.filter(isActorVisible), [actors, isActorVisible]);
   const visibleDeskActors = deskActors;
   const carouselActors = visibleDeskActors.length > 0 ? visibleDeskActors : visibleActors;
 
   useEffect(() => {
     const isDeskActor = deskActors.some(
-      (actor) => actor.id === selected?.id && actor.kind === selected?.kind
+      (actor) => actor.id === selected?.id && actor.kind === selected?.kind,
     );
     if (selected && !isDeskActor && !isActorVisible(selected)) {
       const clearSelection = window.setTimeout(() => setSelected(null), 0);
@@ -575,7 +589,8 @@ export function MasterRoster({
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-1.5 border-b border-gray-800 pb-1.5 shrink-0 text-xs">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-bold text-white truncate">
-            {isMissing ? "Dossiê de Campo" : "Mesa"}{selectedWorld ? ` — ${selectedWorld.name}` : ""}
+            {isMissing ? "Dossiê de Campo" : "Mesa"}
+            {selectedWorld ? ` — ${selectedWorld.name}` : ""}
           </h2>
 
           {/* Alternador de Vista Central: Canva / Mapa */}
@@ -632,47 +647,66 @@ export function MasterRoster({
           )}
 
           {/* Status Socket WebSocket em tempo real */}
-          <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-            isConnected ? "bg-emerald-950/80 text-emerald-400 border border-emerald-800" : "bg-rose-950/80 text-rose-400 border border-rose-800"
-          }`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${isConnected ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
-           {isConnected ? "Ao Vivo" : "Conectando..."}
-           </span>
+          <span
+            className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+              isConnected
+                ? "bg-emerald-950/80 text-emerald-400 border border-emerald-800"
+                : "bg-rose-950/80 text-rose-400 border border-rose-800"
+            }`}
+          >
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${isConnected ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`}
+            />
+            {isConnected ? "Ao Vivo" : "Conectando..."}
+          </span>
 
-           {onTogglePopOut && (isPoppedOut || showRoster) && (
-             <button
-               onClick={onTogglePopOut}
-               className="flex shrink-0 items-center whitespace-nowrap gap-1 rounded-lg border border-gray-700 bg-gray-800 px-2 py-0.5 text-xs font-semibold text-gray-300 hover:bg-gray-700"
-               title={isPoppedOut ? "Reencaixar Mesa no painel principal" : "Destacar Mesa em nova janela"}
-               aria-label={isPoppedOut ? "Reencaixar Mesa no painel principal" : "Destacar Mesa em nova janela"}
-             >
-               {isPoppedOut ? <Minimize2 className="h-3.5 w-3.5" /> : <ExternalLink className="h-3.5 w-3.5" />}
-               <span>{isPoppedOut ? "Reencaixar" : "Destacar"}</span>
-             </button>
-           )}
-         </div>
+          {onTogglePopOut && (isPoppedOut || showRoster) && (
+            <button
+              onClick={onTogglePopOut}
+              className="flex shrink-0 items-center whitespace-nowrap gap-1 rounded-lg border border-gray-700 bg-gray-800 px-2 py-0.5 text-xs font-semibold text-gray-300 hover:bg-gray-700"
+              title={
+                isPoppedOut ? "Reencaixar Mesa no painel principal" : "Destacar Mesa em nova janela"
+              }
+              aria-label={
+                isPoppedOut ? "Reencaixar Mesa no painel principal" : "Destacar Mesa em nova janela"
+              }
+            >
+              {isPoppedOut ? (
+                <Minimize2 className="h-3.5 w-3.5" />
+              ) : (
+                <ExternalLink className="h-3.5 w-3.5" />
+              )}
+              <span>{isPoppedOut ? "Reencaixar" : "Destacar"}</span>
+            </button>
+          )}
+        </div>
 
         {/* Presença de Participantes da Mesa (RF-026, D-37) */}
         <div className="flex items-center gap-2">
           <div className="flex items-center -space-x-1 overflow-hidden">
-            {presenceList.filter(p => p.online).map((p) => (
-              <div
-                key={p.userId}
-                title={`${p.userName} (${p.role === "master" ? "Mestre" : "Jogador"})`}
-                className="relative"
-              >
-                <div className={`flex h-6 w-6 items-center justify-center rounded-full border border-gray-900 text-[10px] font-bold text-white ${
-                  p.role === "master" ? "bg-purple-700" : "bg-blue-600"
-                }`}>
-                  {p.userName.slice(0, 2).toUpperCase()}
+            {presenceList
+              .filter((p) => p.online)
+              .map((p) => (
+                <div
+                  key={p.userId}
+                  title={`${p.userName} (${p.role === "master" ? "Mestre" : "Jogador"})`}
+                  className="relative"
+                >
+                  <div
+                    className={`flex h-6 w-6 items-center justify-center rounded-full border border-gray-900 text-[10px] font-bold text-white ${
+                      p.role === "master" ? "bg-purple-700" : "bg-blue-600"
+                    }`}
+                  >
+                    {p.userName.slice(0, 2).toUpperCase()}
+                  </div>
+                  <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full border-2 border-gray-950 bg-emerald-500" />
                 </div>
-                <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full border-2 border-gray-950 bg-emerald-500" />
-              </div>
-            ))}
+              ))}
           </div>
 
           <span className="text-[11px] text-secondary-muted">
-            {roster.players.length} J · {visibleActors.filter((actor) => actor.kind === "npc").length} N
+            {roster.players.length} J ·{" "}
+            {visibleActors.filter((actor) => actor.kind === "npc").length} N
           </span>
         </div>
       </div>
@@ -709,19 +743,17 @@ export function MasterRoster({
               Selecione um mundo para abrir o Canva.
             </div>
           )
+        ) : selectedWorldId ? (
+          <MapEditor
+            key={`map-${selectedWorldId}`}
+            worldId={selectedWorldId}
+            mapUrl={selectedWorld?.mapUrl || null}
+            isMissing={isMissing}
+          />
         ) : (
-          selectedWorldId ? (
-            <MapEditor
-              key={`map-${selectedWorldId}`}
-              worldId={selectedWorldId}
-              mapUrl={selectedWorld?.mapUrl || null}
-              isMissing={isMissing}
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center p-6 text-center text-sm text-gray-400">
-              Selecione um mundo para abrir o mapa.
-            </div>
-          )
+          <div className="flex h-full items-center justify-center p-6 text-center text-sm text-gray-400">
+            Selecione um mundo para abrir o mapa.
+          </div>
         )}
         <ResizeHandle
           direction="vertical"
@@ -732,125 +764,167 @@ export function MasterRoster({
       </div>
 
       {/* Barra de Ações sobre o Carrossel (Combate/Encontros ou Registro Civil) */}
-      {showRoster && (isMissing ? (
-        <div className="mb-1 flex items-center justify-between rounded-t-lg bg-[#111215] px-3 py-2 border border-b-0 border-zinc-800 text-xs flex-wrap gap-2">
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-[11px] font-bold text-zinc-400 tracking-wider">
-              [ REGISTRO CIVIL // HABITANTES DA REGIÃO ]
-            </span>
-            <span className="font-mono text-[10px] text-zinc-500">
-              ({carouselActors.length} registrados)
-            </span>
-          </div>
+      {showRoster &&
+        (isMissing ? (
+          <div className="mb-1 flex items-center justify-between rounded-t-lg bg-[#111215] px-3 py-2 border border-b-0 border-zinc-800 text-xs flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[11px] font-bold text-zinc-400 tracking-wider">
+                [ REGISTRO CIVIL // HABITANTES DA REGIÃO ]
+              </span>
+              <span className="font-mono text-[10px] text-zinc-500">
+                ({carouselActors.length} registrados)
+              </span>
+            </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={toggleCarousel}
-              className="flex items-center gap-1 rounded border border-zinc-700 bg-zinc-800/80 px-2.5 py-1 text-xs font-mono font-medium text-zinc-300 hover:bg-zinc-700 transition-colors"
-              title={isCarouselCollapsed ? "Expandir carrossel" : "Recolher carrossel"}
-            >
-              {isCarouselCollapsed ? (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleCarousel}
+                className="flex items-center gap-1 rounded border border-zinc-700 bg-zinc-800/80 px-2.5 py-1 text-xs font-mono font-medium text-zinc-300 hover:bg-zinc-700 transition-colors"
+                title={isCarouselCollapsed ? "Expandir carrossel" : "Recolher carrossel"}
+              >
+                {isCarouselCollapsed ? (
+                  <>
+                    <svg
+                      className="h-3.5 w-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 15l7-7 7 7"
+                      />
+                    </svg>
+                    <span>Expandir</span>
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      className="h-3.5 w-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                    <span>Recolher</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-1 flex items-center justify-between rounded-t-lg bg-gray-900 px-3 py-2 border border-b-0 border-gray-800 text-xs flex-wrap gap-2">
+            <div className="flex items-center gap-3">
+              {combatState?.active || activeEncounter ? (
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500"></span>
+                  </span>
+                  <span className="font-bold text-red-400">
+                    COMBATE ATIVO {activeEncounter ? `: ${activeEncounter.name}` : ""}{" "}
+                    {combatState?.active ? `(Rodada ${combatState.round})` : ""}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-gray-400">Nenhum combate ativo</span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              {combatState?.active ? (
                 <>
-                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                  </svg>
-                  <span>Expandir</span>
+                  {/* Controles RÁPIDOS de Turno para o Mestre */}
+                  <button
+                    onClick={() => handleSpendAction(1)}
+                    className="rounded-lg border border-purple-600/60 bg-purple-950/60 px-2.5 py-1 text-xs font-bold text-purple-200 hover:bg-purple-900"
+                  >
+                    ⚡ Gastar 1 Ação
+                  </button>
+                  <button
+                    onClick={handleNextTurn}
+                    className="rounded-lg bg-purple-600 px-3 py-1 text-xs font-bold text-white shadow hover:bg-purple-500"
+                  >
+                    Próximo Turno ⏩
+                  </button>
+                  <button
+                    onClick={() => setShowCombatTrackerModal(true)}
+                    className="rounded-lg border border-gray-700 bg-gray-800 px-2.5 py-1 text-xs font-semibold text-gray-200 hover:bg-gray-700"
+                  >
+                    📋 Detalhes
+                  </button>
+                  <button
+                    onClick={handleEndEncounter}
+                    className="rounded-lg bg-red-900/80 px-2.5 py-1 text-xs font-bold text-red-200 hover:bg-red-800"
+                  >
+                    🏁 Encerrar
+                  </button>
                 </>
               ) : (
                 <>
-                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                  <span>Recolher</span>
+                  <button
+                    onClick={() => setShowEncounterModal(true)}
+                    disabled={!selectedWorldId}
+                    className="rounded-lg bg-accent px-3 py-1.5 text-xs font-bold text-white shadow-md hover:bg-accent-vibrant disabled:opacity-50 transition"
+                  >
+                    ⚔️ Iniciar Encontro (Combate)
+                  </button>
+
+                  {/* Botão recolher/expandir movido para cá */}
+                  <button
+                    onClick={toggleCarousel}
+                    className="flex items-center gap-1 rounded-lg border border-gray-700 bg-gray-800 px-2.5 py-1.5 text-xs font-semibold text-gray-300 hover:bg-gray-700 transition-colors"
+                    title={isCarouselCollapsed ? "Expandir carrossel" : "Recolher carrossel"}
+                  >
+                    {isCarouselCollapsed ? (
+                      <>
+                        <svg
+                          className="h-3.5 w-3.5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 15l7-7 7 7"
+                          />
+                        </svg>
+                        <span>Expandir</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="h-3.5 w-3.5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                        <span>Recolher</span>
+                      </>
+                    )}
+                  </button>
                 </>
               )}
-            </button>
+            </div>
           </div>
-        </div>
-      ) : (
-        <div className="mb-1 flex items-center justify-between rounded-t-lg bg-gray-900 px-3 py-2 border border-b-0 border-gray-800 text-xs flex-wrap gap-2">
-          <div className="flex items-center gap-3">
-            {combatState?.active || activeEncounter ? (
-              <div className="flex items-center gap-2">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
-                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500"></span>
-                </span>
-                <span className="font-bold text-red-400">
-                  COMBATE ATIVO {activeEncounter ? `: ${activeEncounter.name}` : ""} {combatState?.active ? `(Rodada ${combatState.round})` : ""}
-                </span>
-              </div>
-            ) : (
-              <span className="text-gray-400">Nenhum combate ativo</span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            {combatState?.active ? (
-              <>
-                {/* Controles RÁPIDOS de Turno para o Mestre */}
-                <button
-                  onClick={() => handleSpendAction(1)}
-                  className="rounded-lg border border-purple-600/60 bg-purple-950/60 px-2.5 py-1 text-xs font-bold text-purple-200 hover:bg-purple-900"
-                >
-                  ⚡ Gastar 1 Ação
-                </button>
-                <button
-                  onClick={handleNextTurn}
-                  className="rounded-lg bg-purple-600 px-3 py-1 text-xs font-bold text-white shadow hover:bg-purple-500"
-                >
-                  Próximo Turno ⏩
-                </button>
-                <button
-                  onClick={() => setShowCombatTrackerModal(true)}
-                  className="rounded-lg border border-gray-700 bg-gray-800 px-2.5 py-1 text-xs font-semibold text-gray-200 hover:bg-gray-700"
-                >
-                  📋 Detalhes
-                </button>
-                <button
-                  onClick={handleEndEncounter}
-                  className="rounded-lg bg-red-900/80 px-2.5 py-1 text-xs font-bold text-red-200 hover:bg-red-800"
-                >
-                  🏁 Encerrar
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={() => setShowEncounterModal(true)}
-                  disabled={!selectedWorldId}
-                  className="rounded-lg bg-accent px-3 py-1.5 text-xs font-bold text-white shadow-md hover:bg-accent-vibrant disabled:opacity-50 transition"
-                >
-                  ⚔️ Iniciar Encontro (Combate)
-                </button>
-
-                {/* Botão recolher/expandir movido para cá */}
-                <button
-                  onClick={toggleCarousel}
-                  className="flex items-center gap-1 rounded-lg border border-gray-700 bg-gray-800 px-2.5 py-1.5 text-xs font-semibold text-gray-300 hover:bg-gray-700 transition-colors"
-                  title={isCarouselCollapsed ? "Expandir carrossel" : "Recolher carrossel"}
-                >
-                  {isCarouselCollapsed ? (
-                    <>
-                      <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                      </svg>
-                      <span>Expandir</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                      <span>Recolher</span>
-                    </>
-                  )}
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      ))}
+        ))}
 
       {/* Carrossel de personagens fixo na parte inferior */}
       {showRoster && !isCarouselCollapsed && (
@@ -869,8 +943,8 @@ export function MasterRoster({
             isMissing
               ? "border-zinc-800 bg-[#0d0e11]/80"
               : isDragOver
-              ? "border-purple-500 bg-purple-950/40"
-              : "border-gray-800 bg-gray-900/50"
+                ? "border-purple-500 bg-purple-950/40"
+                : "border-gray-800 bg-gray-900/50"
           }`}
         >
           <CharacterCarousel
@@ -941,7 +1015,8 @@ export function MasterRoster({
             name: a.name,
             type: a.kind === "npc" ? "npc" : "character",
             vigor: (a as unknown as { attributes?: { vigor?: number } }).attributes?.vigor ?? 10,
-            destreza: (a as unknown as { attributes?: { destreza?: number } }).attributes?.destreza ?? 10,
+            destreza:
+              (a as unknown as { attributes?: { destreza?: number } }).attributes?.destreza ?? 10,
             level: a.level ?? 1,
             hpCurrent: a.hitPoints ?? 15,
             hpMax: a.hitPointsMax ?? 15,
@@ -952,7 +1027,6 @@ export function MasterRoster({
           onClose={() => setShowCombatTrackerModal(false)}
         />
       )}
-
     </div>
   );
 }

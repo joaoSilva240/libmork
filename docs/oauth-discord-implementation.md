@@ -18,6 +18,7 @@ Escolhemos **não** usar NextAuth.js diretamente nas rotas de autenticação, ma
 - **Compatibilidade total**: login local (`/api/auth/login`, `/api/auth/register`) permanece funcional e inalterado
 
 **Justificativa**: Next.js 16 + React 19 + Drizzle PostgreSQL já possuem sessões próprias robustas. NextAuth seria redundante e introduziria complexidade de migração sem benefício funcional imediato. A solução implementada é:
+
 - **Segura**: state HMAC, validação de email verificado, proteção contra CSRF
 - **Extensível**: `oauth_accounts.provider` suporta múltiplos provedores
 - **Simples**: 3 arquivos core + migração + testes
@@ -68,12 +69,13 @@ CREATE TABLE "oauth_accounts" (
   "updated_at" timestamp DEFAULT now() NOT NULL
 );
 
-CREATE UNIQUE INDEX "idx_oauth_provider_account" 
+CREATE UNIQUE INDEX "idx_oauth_provider_account"
   ON "oauth_accounts" ("provider", "provider_account_id");
 CREATE INDEX "idx_oauth_accounts_user" ON "oauth_accounts" ("user_id");
 ```
 
 **Decisões de Design**:
+
 - **Sem armazenamento de tokens**: `access_token` e `refresh_token` NÃO são persistidos por segurança e ausência de requisito funcional para chamadas Discord pós-autenticação
 - **Multi-provider**: mesma tabela para Discord, Google (futuro), GitHub (futuro)
 - **Cascade delete**: remover usuário = remover vinculações OAuth
@@ -81,6 +83,7 @@ CREATE INDEX "idx_oauth_accounts_user" ON "oauth_accounts" ("user_id");
 ### Tabela `users` Existente
 
 Não modificada. Campos relevantes:
+
 - `email`: único, usado para lookup de vinculação
 - `password_hash`: NULL para usuários criados via OAuth
 - `oauth_provider`: `"local"` ou `"discord"` (informativo; fonte da criação original)
@@ -109,20 +112,17 @@ Não modificada. Campos relevantes:
 
 ### 2. Usuário Existente via Discord (já vinculado)
 
-1-7. (igual acima)
-8. **Encontra `oauth_accounts` existente** para Discord ID
-9. Usa `userId` da vinculação, cria sessão
-10. Redireciona para destino
+1-7. (igual acima) 8. **Encontra `oauth_accounts` existente** para Discord ID 9. Usa `userId` da vinculação, cria sessão 10. Redireciona para destino
 
 ### 3. Vincular Discord a Conta Local Existente (usuário autenticado)
 
 1. Usuário autenticado clica "Continuar com Discord"
-2-7. (igual acima)
-8. Callback detecta `getSession()` retorna usuário autenticado
-9. Verifica se Discord ID já vinculado:
+   2-7. (igual acima)
+2. Callback detecta `getSession()` retorna usuário autenticado
+3. Verifica se Discord ID já vinculado:
    - **Vinculado a outro usuário**: erro `oauth_account_linked_to_other`
    - **Não vinculado**: cria `oauth_accounts` para `userId` da sessão atual
-10. Mantém sessão existente, redireciona
+4. Mantém sessão existente, redireciona
 
 ### 4. Conflito de Email (Discord email = email local, mas sem sessão)
 
@@ -236,19 +236,19 @@ DROP TABLE IF EXISTS oauth_accounts;
 
 ### Códigos de Erro OAuth (query param `?error=`)
 
-| Código | Contexto | Mensagem ao Usuário |
-|--------|----------|---------------------|
-| `oauth_access_denied` | Usuário cancelou autorização Discord | "Acesso cancelado pelo usuário no Discord." |
-| `oauth_invalid_request` | `code` ou `state` ausentes no callback | "Solicitação OAuth inválida. Tente novamente." |
-| `oauth_state_invalid` | State expirado, assinatura inválida ou AUTH_SECRET ausente | "Sessão de autenticação expirada ou inválida. Tente novamente." |
-| `oauth_not_configured` | `DISCORD_CLIENT_ID` ou `DISCORD_CLIENT_SECRET` ausentes | "Discord OAuth não configurado no servidor." |
-| `oauth_token_exchange_failed` | Falha ao trocar code por access_token (rede, 4xx, 5xx) | "Falha ao autenticar com Discord. Tente novamente." |
-| `oauth_profile_fetch_failed` | Falha ao buscar `/users/@me` (rede, 401) | "Falha ao buscar perfil Discord. Tente novamente." |
-| `oauth_profile_invalid` | Perfil sem `id` | "Perfil Discord inválido. Entre em contato com suporte." |
-| `discord_email_unverified` | `email` null ou `verified: false` | "Seu e-mail no Discord não está verificado ou não foi compartilhado. Verifique sua conta no Discord e tente novamente." |
-| `account_linking_required` | Email Discord = email local, mas sem sessão ativa | "Já existe uma conta com este e-mail. Faça login normalmente para vincular sua conta Discord." |
-| `oauth_account_linked_to_other` | Discord ID já vinculado a outro userId (tentativa de vincular estando autenticado como outro usuário) | "Esta conta Discord já está vinculada a outro usuário." |
-| `oauth_processing_failed` | Erro de banco/exceção não tratada | "Erro ao processar autenticação. Tente novamente." |
+| Código                          | Contexto                                                                                              | Mensagem ao Usuário                                                                                                     |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `oauth_access_denied`           | Usuário cancelou autorização Discord                                                                  | "Acesso cancelado pelo usuário no Discord."                                                                             |
+| `oauth_invalid_request`         | `code` ou `state` ausentes no callback                                                                | "Solicitação OAuth inválida. Tente novamente."                                                                          |
+| `oauth_state_invalid`           | State expirado, assinatura inválida ou AUTH_SECRET ausente                                            | "Sessão de autenticação expirada ou inválida. Tente novamente."                                                         |
+| `oauth_not_configured`          | `DISCORD_CLIENT_ID` ou `DISCORD_CLIENT_SECRET` ausentes                                               | "Discord OAuth não configurado no servidor."                                                                            |
+| `oauth_token_exchange_failed`   | Falha ao trocar code por access_token (rede, 4xx, 5xx)                                                | "Falha ao autenticar com Discord. Tente novamente."                                                                     |
+| `oauth_profile_fetch_failed`    | Falha ao buscar `/users/@me` (rede, 401)                                                              | "Falha ao buscar perfil Discord. Tente novamente."                                                                      |
+| `oauth_profile_invalid`         | Perfil sem `id`                                                                                       | "Perfil Discord inválido. Entre em contato com suporte."                                                                |
+| `discord_email_unverified`      | `email` null ou `verified: false`                                                                     | "Seu e-mail no Discord não está verificado ou não foi compartilhado. Verifique sua conta no Discord e tente novamente." |
+| `account_linking_required`      | Email Discord = email local, mas sem sessão ativa                                                     | "Já existe uma conta com este e-mail. Faça login normalmente para vincular sua conta Discord."                          |
+| `oauth_account_linked_to_other` | Discord ID já vinculado a outro userId (tentativa de vincular estando autenticado como outro usuário) | "Esta conta Discord já está vinculada a outro usuário."                                                                 |
+| `oauth_processing_failed`       | Erro de banco/exceção não tratada                                                                     | "Erro ao processar autenticação. Tente novamente."                                                                      |
 
 ### Tratamento na UI
 
@@ -294,6 +294,7 @@ npm test -- src/app/api/auth/discord/__tests__/route.test.ts
 ## Logout
 
 Logout existente (`/api/auth/logout`) continua funcional:
+
 - Remove sessão do banco (`sessions`)
 - Deleta cookie `libmork_session`
 - **Não revoga token Discord** (não armazenado; usuário deve revogar manualmente em Discord Settings > Authorized Apps se desejar)
@@ -321,6 +322,7 @@ Arquitetura suporta adicionar Google, GitHub, etc. com:
 **Status**: Issue menciona "Exibir status de Discord em configurações". Não existe tela `/settings` ou `/profile` atualmente no projeto.
 
 **Ação**: Documentado como **follow-up** (Issue #20-SETTINGS ou similar). Quando implementada, a tela deve:
+
 - Listar `oauth_accounts` do usuário (`SELECT * FROM oauth_accounts WHERE user_id = $1`)
 - Exibir "Discord conectado" se `provider='discord'` existe
 - Permitir desvinculação (`DELETE FROM oauth_accounts WHERE user_id = $1 AND provider = 'discord'`)
@@ -331,6 +333,7 @@ Arquitetura suporta adicionar Google, GitHub, etc. com:
 **Decisão**: `access_token` descartado após validação do perfil.
 
 **Impacto**: não é possível:
+
 - Buscar lista de servidores Discord do usuário
 - Avatar Discord em tempo real (usar `imageUrl` do perfil inicial)
 - Roles/permissões Discord
@@ -401,6 +404,7 @@ docker compose up -d
 ### "Sessão de autenticação expirada" (`oauth_state_invalid`)
 
 **Causas**:
+
 1. State expirou (>10 min entre authorize e callback)
 2. `AUTH_SECRET` mudou entre requests
 3. State adulterado
@@ -412,6 +416,7 @@ docker compose up -d
 **Causa**: usuário não verificou email no Discord ou desabilitou compartilhamento.
 
 **Solução**:
+
 1. Discord Settings > My Account > Verify Email
 2. Discord Settings > Authorized Apps > Libmork > verifique scope `email` autorizado
 
@@ -424,6 +429,7 @@ docker compose up -d
 ### Conta local existe mas quer vincular Discord
 
 **Solução**:
+
 1. Fazer login com email/senha
 2. Clicar "Continuar com Discord"
 3. Autorizar → vinculação automática
@@ -467,6 +473,7 @@ DELETE FROM oauth_accounts WHERE user_id = '<uuid>' AND provider = 'discord';
    - Adicionar redirect URLs (dev + prod)
 
 2. **Atualizar `.env.local`**:
+
    ```env
    DISCORD_CLIENT_ID=<seu-client-id>
    DISCORD_CLIENT_SECRET=<seu-client-secret>
@@ -475,11 +482,13 @@ DELETE FROM oauth_accounts WHERE user_id = '<uuid>' AND provider = 'discord';
    ```
 
 3. **Aplicar Migração**:
+
    ```bash
    npm run db:push
    ```
 
 4. **Reiniciar Servidor**:
+
    ```bash
    npm run dev
    ```
@@ -563,6 +572,7 @@ git status --short
 ## Conclusão
 
 Implementação **completa e testada** de OAuth Discord com:
+
 - ✅ Segurança CSRF robusta
 - ✅ Multi-provider extensível
 - ✅ Login local preservado
@@ -572,6 +582,7 @@ Implementação **completa e testada** de OAuth Discord com:
 - ✅ Documentação completa de setup e troubleshooting
 
 **Usuário deve**:
+
 1. Configurar Discord Developer Portal
 2. Preencher `.env.local` com credenciais
 3. Aplicar migração (`npm run db:push`)

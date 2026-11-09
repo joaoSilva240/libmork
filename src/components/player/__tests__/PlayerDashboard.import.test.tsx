@@ -136,7 +136,9 @@ describe("PlayerDashboard - Import Character Modal", () => {
     });
 
     // Click the campaign card to open overlay
-    const campaignCard = screen.getByRole("button", { name: /Ver detalhes da campanha Test Campaign/i });
+    const campaignCard = screen.getByRole("button", {
+      name: /Ver detalhes da campanha Test Campaign/i,
+    });
     fireEvent.click(campaignCard);
 
     // Click the import button inside the overlay
@@ -161,7 +163,13 @@ describe("PlayerDashboard - Import Character Modal", () => {
           json: () =>
             Promise.resolve({
               data: [
-                { id: "char-1", name: "Aragorn", level: 10, hitPointsCurrent: 80, hitPointsMax: 80 },
+                {
+                  id: "char-1",
+                  name: "Aragorn",
+                  level: 10,
+                  hitPointsCurrent: 80,
+                  hitPointsMax: 80,
+                },
                 { id: "char-2", name: "Legolas", level: 9, hitPointsCurrent: 60, hitPointsMax: 60 },
                 { id: "char-3", name: "Gimli", level: 8, hitPointsCurrent: 90, hitPointsMax: 90 },
               ],
@@ -232,7 +240,13 @@ describe("PlayerDashboard - Import Character Modal", () => {
           json: () =>
             Promise.resolve({
               data: [
-                { id: "char-100", name: "Imported Hero", level: 4, hitPointsCurrent: 35, hitPointsMax: 35 },
+                {
+                  id: "char-100",
+                  name: "Imported Hero",
+                  level: 4,
+                  hitPointsCurrent: 35,
+                  hitPointsMax: 35,
+                },
               ],
             }),
         });
@@ -269,7 +283,13 @@ describe("PlayerDashboard - Import Character Modal", () => {
                   rulesEngine: "dual_d20_sum",
                   master: { displayName: "GM" },
                   characters: [
-                    { id: "char-100", name: "Imported Hero", level: 4, hitPointsCurrent: 35, hitPointsMax: 35 },
+                    {
+                      id: "char-100",
+                      name: "Imported Hero",
+                      level: 4,
+                      hitPointsCurrent: 35,
+                      hitPointsMax: 35,
+                    },
                   ],
                 },
               ],
@@ -326,7 +346,13 @@ describe("PlayerDashboard - Import Character Modal", () => {
           json: () =>
             Promise.resolve({
               data: [
-                { id: "char-dup", name: "Duplicate Hero", level: 2, hitPointsCurrent: 20, hitPointsMax: 20 },
+                {
+                  id: "char-dup",
+                  name: "Duplicate Hero",
+                  level: 2,
+                  hitPointsCurrent: 20,
+                  hitPointsMax: 20,
+                },
               ],
             }),
         });
@@ -394,7 +420,13 @@ describe("PlayerDashboard - Import Character Modal", () => {
           json: () =>
             Promise.resolve({
               data: [
-                { id: "char-linked", name: "Already Linked", level: 1, hitPointsCurrent: 0, hitPointsMax: 10 },
+                {
+                  id: "char-linked",
+                  name: "Already Linked",
+                  level: 1,
+                  hitPointsCurrent: 0,
+                  hitPointsMax: 10,
+                },
               ],
             }),
         });
@@ -412,7 +444,13 @@ describe("PlayerDashboard - Import Character Modal", () => {
                   rulesEngine: "dual_d20_sum",
                   master: { displayName: "GM" },
                   characters: [
-                    { id: "char-linked", name: "Already Linked", level: 1, hitPointsCurrent: 0, hitPointsMax: 10 },
+                    {
+                      id: "char-linked",
+                      name: "Already Linked",
+                      level: 1,
+                      hitPointsCurrent: 0,
+                      hitPointsMax: 10,
+                    },
                   ],
                 },
               ],
@@ -513,7 +551,9 @@ describe("PlayerDashboard - Import Character Modal", () => {
     });
 
     // Abrir o modal de detalhes
-    const campaignCard = screen.getByRole("button", { name: /Ver detalhes da campanha Epic Quest/i });
+    const campaignCard = screen.getByRole("button", {
+      name: /Ver detalhes da campanha Epic Quest/i,
+    });
     fireEvent.click(campaignCard);
 
     // Verificar banner, badges e dados
@@ -591,11 +631,15 @@ describe("PlayerDashboard - Import Character Modal", () => {
       expect(screen.getByText("Graveyard Campaign")).toBeInTheDocument();
     });
 
-    const campaignCard = screen.getByRole("button", { name: /Ver detalhes da campanha Graveyard Campaign/i });
+    const campaignCard = screen.getByRole("button", {
+      name: /Ver detalhes da campanha Graveyard Campaign/i,
+    });
     fireEvent.click(campaignCard);
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "Graveyard Campaign", level: 2 })).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: "Graveyard Campaign", level: 2 }),
+      ).toBeInTheDocument();
     });
 
     // Como o personagem está com HP 0 (morto), os botões de criar e importar devem ser exibidos

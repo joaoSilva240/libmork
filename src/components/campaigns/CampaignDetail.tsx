@@ -123,7 +123,8 @@ export function CampaignDetail() {
     const current = shieldColumns[side];
     const maxWidth = getMaxSideWidth(side, { ...shieldLayoutInput, ...shieldColumns });
     // Só cresce até o limite que preserva a coluna central; encolher é sempre permitido.
-    const next = delta > 0 ? Math.min(current + delta, Math.max(current, maxWidth)) : current + delta;
+    const next =
+      delta > 0 ? Math.min(current + delta, Math.max(current, maxWidth)) : current + delta;
     if (next !== panel.width) panel.setWidth(next);
   };
 
@@ -335,9 +336,7 @@ export function CampaignDetail() {
             onOpenWorld={setOverlayWorld}
             establishments={selectedWorldEstablishments}
             isEstablishmentsExpanded={isEstablishmentsExpanded}
-            onToggleEstablishmentsExpanded={() =>
-              setIsEstablishmentsExpanded((prev) => !prev)
-            }
+            onToggleEstablishmentsExpanded={() => setIsEstablishmentsExpanded((prev) => !prev)}
             onToggleEstablishment={handleToggleEstablishment}
             className="lg:min-h-[200px]"
           />
@@ -360,10 +359,7 @@ export function CampaignDetail() {
         return (
           <div className="flex-1 min-h-[220px]">
             {!isMissing ? (
-              <SessionLog
-                campaignId={campaign.id}
-                showDiceRolls={screenConfig.showDiceRolls}
-              />
+              <SessionLog campaignId={campaign.id} showDiceRolls={screenConfig.showDiceRolls} />
             ) : (
               <MissingSessionLog campaignId={campaign.id} />
             )}

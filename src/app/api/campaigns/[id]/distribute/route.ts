@@ -38,10 +38,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -55,7 +52,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!campaign) {
       return NextResponse.json(
         { success: false, error: "Campanha não encontrada" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -69,23 +66,19 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
           error: "Dados inválidos",
           errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const { playerEmail, name, classId, attributes } = validation.data;
 
     // Encontra o jogador pelo e-mail
-    const [player] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, playerEmail))
-      .limit(1);
+    const [player] = await db.select().from(users).where(eq(users.email, playerEmail)).limit(1);
 
     if (!player) {
       return NextResponse.json(
         { success: false, error: "Jogador não encontrado com este e-mail" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -135,13 +128,13 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
           link,
         },
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     logger.error({ err: error }, "Erro ao distribuir ficha");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

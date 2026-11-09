@@ -6,7 +6,7 @@ import { getPendingMutations } from "@/lib/offline/storage";
 
 export function useOfflineSync(characterId?: string) {
   const [isOffline, setIsOffline] = useState<boolean>(
-    typeof navigator !== "undefined" ? !navigator.onLine : false
+    typeof navigator !== "undefined" ? !navigator.onLine : false,
   );
   const [pendingCount, setPendingCount] = useState<number>(0);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);

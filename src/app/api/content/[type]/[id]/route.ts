@@ -7,10 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth/session";
-import {
-  contentTypeSchema,
-  getContentUpdateValidator,
-} from "@/lib/validators/content";
+import { contentTypeSchema, getContentUpdateValidator } from "@/lib/validators/content";
 import {
   getContentTable,
   getContentCampaignColumn,
@@ -30,10 +27,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { type, id } = await params;
@@ -42,7 +36,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     if (!parsed.success) {
       return NextResponse.json(
         { success: false, error: "Tipo de conteúdo inválido" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -52,17 +46,14 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       .select()
       .from(table)
       .where(
-        and(
-          eq(getContentIdColumn(parsed.data), id),
-          isNull(getContentCampaignColumn(parsed.data))
-        )
+        and(eq(getContentIdColumn(parsed.data), id), isNull(getContentCampaignColumn(parsed.data))),
       )
       .limit(1);
 
     if (!content) {
       return NextResponse.json(
         { success: false, error: "Conteúdo não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -71,10 +62,10 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: content,
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao obter conteúdo global');
+    logger.error({ err: error }, "Erro ao obter conteúdo global");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -88,16 +79,13 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     if (session.user.role !== "master") {
       return NextResponse.json(
         { success: false, error: "Apenas mestres podem gerenciar a biblioteca global" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -107,7 +95,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     if (!parsed.success) {
       return NextResponse.json(
         { success: false, error: "Tipo de conteúdo inválido" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -117,17 +105,14 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       .select()
       .from(table)
       .where(
-        and(
-          eq(getContentIdColumn(parsed.data), id),
-          isNull(getContentCampaignColumn(parsed.data))
-        )
+        and(eq(getContentIdColumn(parsed.data), id), isNull(getContentCampaignColumn(parsed.data))),
       )
       .limit(1);
 
     if (!existing) {
       return NextResponse.json(
         { success: false, error: "Conteúdo não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -142,7 +127,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
           error: "Dados inválidos",
           errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -157,10 +142,10 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       data: updated,
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao atualizar conteúdo global');
+    logger.error({ err: error }, "Erro ao atualizar conteúdo global");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -174,16 +159,13 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     if (session.user.role !== "master") {
       return NextResponse.json(
         { success: false, error: "Apenas mestres podem gerenciar a biblioteca global" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -193,7 +175,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     if (!parsed.success) {
       return NextResponse.json(
         { success: false, error: "Tipo de conteúdo inválido" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -203,17 +185,14 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       .select()
       .from(table)
       .where(
-        and(
-          eq(getContentIdColumn(parsed.data), id),
-          isNull(getContentCampaignColumn(parsed.data))
-        )
+        and(eq(getContentIdColumn(parsed.data), id), isNull(getContentCampaignColumn(parsed.data))),
       )
       .limit(1);
 
     if (!existing) {
       return NextResponse.json(
         { success: false, error: "Conteúdo não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -224,10 +203,10 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       message: "Conteúdo excluído com sucesso",
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao excluir conteúdo global');
+    logger.error({ err: error }, "Erro ao excluir conteúdo global");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

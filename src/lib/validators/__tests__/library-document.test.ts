@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  createLibraryDocumentSchema,
-  updateLibraryDocumentSchema,
-} from "../library-document";
+import { createLibraryDocumentSchema, updateLibraryDocumentSchema } from "../library-document";
 
 describe("LibraryDocument Validators", () => {
   describe("createLibraryDocumentSchema", () => {
@@ -57,11 +54,7 @@ describe("LibraryDocument Validators", () => {
     });
 
     it("rejeita path traversal em externalUrl", () => {
-      const invalidCases = [
-        "../secrets.txt",
-        "subfolder/../../etc/passwd",
-        "folder/../livro.pdf",
-      ];
+      const invalidCases = ["../secrets.txt", "subfolder/../../etc/passwd", "folder/../livro.pdf"];
 
       for (const externalUrl of invalidCases) {
         const result = createLibraryDocumentSchema.safeParse({

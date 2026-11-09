@@ -14,13 +14,7 @@ describe("MasterScreenConfigPanel Component", () => {
   };
 
   it("renders all nine toggles and reset button", () => {
-    render(
-      <MasterScreenConfigPanel
-        config={defaultConfig}
-        onUpdate={vi.fn()}
-        onReset={vi.fn()}
-      />
-    );
+    render(<MasterScreenConfigPanel config={defaultConfig} onUpdate={vi.fn()} onReset={vi.fn()} />);
 
     expect(screen.getByText("Visibilidade do Escudo")).toBeInTheDocument();
     expect(screen.getByText("Carrossel de Personagens")).toBeInTheDocument();
@@ -46,11 +40,7 @@ describe("MasterScreenConfigPanel Component", () => {
   it("calls onUpdate with toggled flag when each checkbox is clicked", () => {
     const handleUpdate = vi.fn();
     render(
-      <MasterScreenConfigPanel
-        config={defaultConfig}
-        onUpdate={handleUpdate}
-        onReset={vi.fn()}
-      />
+      <MasterScreenConfigPanel config={defaultConfig} onUpdate={handleUpdate} onReset={vi.fn()} />,
     );
 
     const checkboxes = screen.getAllByRole("checkbox");
@@ -97,13 +87,7 @@ describe("MasterScreenConfigPanel Component", () => {
       showAssets: false,
     };
 
-    render(
-      <MasterScreenConfigPanel
-        config={offConfig}
-        onUpdate={vi.fn()}
-        onReset={vi.fn()}
-      />
-    );
+    render(<MasterScreenConfigPanel config={offConfig} onUpdate={vi.fn()} onReset={vi.fn()} />);
 
     const checkboxes = screen.getAllByRole("checkbox");
     checkboxes.forEach((cb) => {
@@ -129,7 +113,7 @@ describe("MasterScreenConfigPanel Component", () => {
         }}
         onUpdate={vi.fn()}
         onReset={handleReset}
-      />
+      />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Restaurar Padrão" }));
@@ -146,11 +130,7 @@ describe("MasterScreenConfigPanel + useMasterScreenConfig Integration", () => {
     function TestWrapper() {
       const { config, updateConfig, resetConfig } = useMasterScreenConfig();
       return (
-        <MasterScreenConfigPanel
-          config={config}
-          onUpdate={updateConfig}
-          onReset={resetConfig}
-        />
+        <MasterScreenConfigPanel config={config} onUpdate={updateConfig} onReset={resetConfig} />
       );
     }
 
@@ -174,11 +154,7 @@ describe("MasterScreenConfigPanel + useMasterScreenConfig Integration", () => {
     function TestWrapper() {
       const { config, updateConfig, resetConfig } = useMasterScreenConfig();
       return (
-        <MasterScreenConfigPanel
-          config={config}
-          onUpdate={updateConfig}
-          onReset={resetConfig}
-        />
+        <MasterScreenConfigPanel config={config} onUpdate={updateConfig} onReset={resetConfig} />
       );
     }
 

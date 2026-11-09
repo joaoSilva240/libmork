@@ -77,7 +77,9 @@ export function parseOpdsXml(xmlString: string, baseUrl?: string): OpdsFeedResul
   // Feed-level metadata
   const feedTitleMatch = cleanXml.match(/<feed[^>]*>[\s\S]*?<title[^>]*>([\s\S]*?)<\/title>/i);
   const feedIdMatch = cleanXml.match(/<feed[^>]*>[\s\S]*?<id[^>]*>([\s\S]*?)<\/id>/i);
-  const feedUpdatedMatch = cleanXml.match(/<feed[^>]*>[\s\S]*?<updated[^>]*>([\s\S]*?)<\/updated>/i);
+  const feedUpdatedMatch = cleanXml.match(
+    /<feed[^>]*>[\s\S]*?<updated[^>]*>([\s\S]*?)<\/updated>/i,
+  );
   const totalMatch = cleanXml.match(/<(?:[a-zA-Z0-9_-]+:)?totalResults[^>]*>(\d+)<\//i);
   const itemsPerPageMatch = cleanXml.match(/<(?:[a-zA-Z0-9_-]+:)?itemsPerPage[^>]*>(\d+)<\//i);
   const startIndexMatch = cleanXml.match(/<(?:[a-zA-Z0-9_-]+:)?startIndex[^>]*>(\d+)<\//i);
@@ -165,8 +167,10 @@ export function parseOpdsXml(xmlString: string, baseUrl?: string): OpdsFeedResul
       if (isCatalog) continue;
 
       const isOpdsAcquisitionRel = rel.includes("acquisition");
-      const isPdfType = type === "application/pdf" || type === "application/pdf/download" || type.includes("pdf");
-      const isDownloadUrl = href.toLowerCase().includes("download") || href.toLowerCase().endsWith(".pdf");
+      const isPdfType =
+        type === "application/pdf" || type === "application/pdf/download" || type.includes("pdf");
+      const isDownloadUrl =
+        href.toLowerCase().includes("download") || href.toLowerCase().endsWith(".pdf");
 
       if (isOpdsAcquisitionRel && (isPdfType || isDownloadUrl)) {
         if (!acquisitionUrl) {
@@ -187,7 +191,9 @@ export function parseOpdsXml(xmlString: string, baseUrl?: string): OpdsFeedResul
     const idM = entryXml.match(/<id[^>]*>([\s\S]*?)<\/id>/i);
     const summaryM = entryXml.match(/<(?:summary|content)[^>]*>([\s\S]*?)<\/(?:summary|content)>/i);
     const updatedM = entryXml.match(/<updated[^>]*>([\s\S]*?)<\/updated>/i);
-    const authorM = entryXml.match(/<author[^>]*>[\s\S]*?<name[^>]*>([\s\S]*?)<\/name>[\s\S]*?<\/author>/i);
+    const authorM = entryXml.match(
+      /<author[^>]*>[\s\S]*?<name[^>]*>([\s\S]*?)<\/name>[\s\S]*?<\/author>/i,
+    );
     const formatM = entryXml.match(/<(?:[a-zA-Z0-9_-]+:)?format[^>]*>([\s\S]*?)<\//i);
 
     const title = titleM ? decodeXmlEntities(titleM[1].trim()) : "Sem título";

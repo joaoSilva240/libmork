@@ -26,6 +26,7 @@ resolveNpcPinAttack(pin: {attackExpression?, damageExpression?, damageType?, rol
 ```
 
 Regras:
+
 1. Campos configurados → `source: "configured"`, usa como estão.
 2. Sem campos novos → parser legado interno (hoje `parseNpcPinExpression` em `ActorOverlay.tsx:74-115`): `ataque(dano)` → `legacy-paren`; `1d8+3` puro → `legacy-damage-only`.
 3. **Nunca inventar `1d6+X`**: remover o branch de modificador puro que gera dano; `+9` vira apenas ataque `1d20+9` com `source: "none"` para o dano.
@@ -61,7 +62,9 @@ Regras:
 - Migração: script idempotente roda 2x sem erro.
 
 ## Critérios de aceite
+
 Todos os 7 da issue, com foco em: `1d20+9 / 3d6+5 cortante` aplica exatamente o dano; nenhum caminho gera `1d6` inventado; aviso visível em vez de 0 silencioso; pins antigos continuam funcionando; PF2e importa ataque+dano; log/dados 3D mostram tudo.
 
 ## Riscos
+
 - Maior superfície (migração + API + UI + importador), mas é o caminho que resolve de verdade; `roll_expression` legado garante compat sem backfill.

@@ -28,7 +28,7 @@ export async function GET() {
     logger.error({ err: error }, "Erro ao buscar sessão");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

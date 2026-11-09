@@ -6,15 +6,25 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
 
-let _db: ReturnType<typeof drizzle<typeof schema>> | null = null;
-let _client: ReturnType<typeof postgres> | null = null;
+type DbClient = ReturnType<typeof postgres>;
+type DbInstance = ReturnType<typeof drizzle<typeof schema>>;
+
+const globalForDb = globalThis as unknown as {
+  _libmorkDb?: DbInstance;
+  _libmorkClient?: DbClient;
+};
+
+let _db: DbInstance | null = globalForDb._libmorkDb ?? null;
+let _client: DbClient | null = globalForDb._libmorkClient ?? null;
 
 export function getDb() {
   if (_db) return _db;
 
   const url = process.env.DATABASE_URL;
   if (!url) {
-    throw new Error("DATABASE_URL não definida. Configure a variável DATABASE_URL no ambiente ou .env.local");
+    throw new Error(
+      "DATABASE_URL não definida. Configure a variável DATABASE_URL no ambiente ou .env.local",
+    );
   }
 
   if (!_client) {
@@ -23,9 +33,15 @@ export function getDb() {
       idle_timeout: 20,
       connect_timeout: 10,
     });
+    if (process.env.NODE_ENV !== "production") {
+      globalForDb._libmorkClient = _client;
+    }
   }
 
   _db = drizzle(_client, { schema });
+  if (process.env.NODE_ENV !== "production") {
+    globalForDb._libmorkDb = _db;
+  }
   return _db;
 }
 

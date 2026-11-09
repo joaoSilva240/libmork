@@ -147,7 +147,7 @@ export function InitialContentModal({
 
   // Filtragem de Mundos
   const filteredWorlds = worlds.filter((w) =>
-    w.name.toLowerCase().includes(worldSearchTerm.toLowerCase())
+    w.name.toLowerCase().includes(worldSearchTerm.toLowerCase()),
   );
 
   const handleSelectAllFilteredWorlds = () => {
@@ -438,7 +438,9 @@ export function InitialContentModal({
                             )}
                           </div>
                           <div className="min-w-0">
-                            <div className="text-xs font-bold truncate text-white">{world.name}</div>
+                            <div className="text-xs font-bold truncate text-white">
+                              {world.name}
+                            </div>
                             {world.description && (
                               <p className="text-[11px] text-gray-400 line-clamp-1 mt-0.5">
                                 {world.description}

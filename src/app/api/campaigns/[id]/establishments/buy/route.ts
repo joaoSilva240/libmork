@@ -1,16 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { establishmentInventory, characterItems, characterSpells, characterSkills, characters } from "@/lib/db/schema";
+import {
+  establishmentInventory,
+  characterItems,
+  characterSpells,
+  characterSkills,
+  characters,
+} from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getSession } from "@/lib/auth/session";
 import type { CoinsBalance } from "@/lib/validators/character";
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await getSession(); const user = session?.user;
+    const session = await getSession();
+    const user = session?.user;
     if (!user) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
     const body = await req.json();
@@ -59,7 +63,7 @@ export async function POST(
             success: false,
             error: `Ouro insuficiente para realizar a compra. Necessário: ${finalPrice} Ouro, Saldo atual: ${currentGold} Ouro.`,
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -79,8 +83,8 @@ export async function POST(
         .where(
           and(
             eq(characterItems.characterId, characterId),
-            eq(characterItems.itemId, item.contentId)
-          )
+            eq(characterItems.itemId, item.contentId),
+          ),
         );
 
       if (existingItem) {
@@ -102,15 +106,18 @@ export async function POST(
         .where(
           and(
             eq(characterSpells.characterId, characterId),
-            eq(characterSpells.spellId, item.contentId)
-          )
+            eq(characterSpells.spellId, item.contentId),
+          ),
         );
 
       if (existingSpell) {
-        return NextResponse.json({
-          success: false,
-          error: "Personagem já possui esta magia!",
-        }, { status: 400 });
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Personagem já possui esta magia!",
+          },
+          { status: 400 },
+        );
       }
 
       try {
@@ -119,10 +126,13 @@ export async function POST(
           spellId: item.contentId,
         });
       } catch {
-        return NextResponse.json({
-          success: false,
-          error: "Personagem já possui esta magia!",
-        }, { status: 400 });
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Personagem já possui esta magia!",
+          },
+          { status: 400 },
+        );
       }
     } else if (contentType === "skills" && item.contentId) {
       const [existingSkill] = await db
@@ -131,15 +141,18 @@ export async function POST(
         .where(
           and(
             eq(characterSkills.characterId, characterId),
-            eq(characterSkills.skillId, item.contentId)
-          )
+            eq(characterSkills.skillId, item.contentId),
+          ),
         );
 
       if (existingSkill) {
-        return NextResponse.json({
-          success: false,
-          error: "Personagem já possui esta habilidade!",
-        }, { status: 400 });
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Personagem já possui esta habilidade!",
+          },
+          { status: 400 },
+        );
       }
 
       try {
@@ -149,19 +162,19 @@ export async function POST(
           trained: true,
         });
       } catch {
-        return NextResponse.json({
-          success: false,
-          error: "Personagem já possui esta habilidade!",
-        }, { status: 400 });
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Personagem já possui esta habilidade!",
+          },
+          { status: 400 },
+        );
       }
     }
 
     // Aplicar dedução de ouro se houver
     if (newCoins) {
-      await db
-        .update(characters)
-        .set({ coins: newCoins })
-        .where(eq(characters.id, characterId));
+      await db.update(characters).set({ coins: newCoins }).where(eq(characters.id, characterId));
     }
 
     // Atualiza o estoque do estabelecimento se não for infinito (-1)

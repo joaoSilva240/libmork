@@ -3,11 +3,7 @@
 import React, { useState, useRef, useEffect, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { BedIcon } from "@/components/ui/Icons";
-import {
-  RestType,
-  REST_OPTIONS,
-  calculateRest,
-} from "@/lib/engine/rest";
+import { RestType, REST_OPTIONS, calculateRest } from "@/lib/engine/rest";
 
 const emptySubscribe = () => () => {};
 
@@ -33,7 +29,11 @@ export function RestPopover({
   disabled = false,
 }: RestPopoverProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
+  const mounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
   const [coords, setCoords] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
   const popoverRef = useRef<HTMLDivElement>(null);
   const triggerButtonRef = useRef<HTMLButtonElement>(null);
@@ -118,7 +118,9 @@ export function RestPopover({
         <BedIcon className="w-5 h-5" />
       </button>
 
-      {isOpen && mounted && typeof document !== "undefined" &&
+      {isOpen &&
+        mounted &&
+        typeof document !== "undefined" &&
         createPortal(
           <>
             {/* Backdrop para capturar cliques fora e evitar cortes em qualquer layout pai */}
@@ -181,16 +183,14 @@ export function RestPopover({
                       </span>
                     </div>
                     <div className="mt-1 flex items-center justify-between text-xs">
-                      <span className="text-emerald-400 font-medium">
-                        {recoveryPreview}
-                      </span>
+                      <span className="text-emerald-400 font-medium">{recoveryPreview}</span>
                     </div>
                   </button>
                 );
               })}
             </div>
           </>,
-          document.body
+          document.body,
         )}
     </div>
   );

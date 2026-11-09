@@ -1,14 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { communityClones, communityComments, communityPosts, items, npcs, rpgClasses, spells, worlds } from "@/lib/db/schema";
+import {
+  communityClones,
+  communityComments,
+  communityPosts,
+  items,
+  npcs,
+  rpgClasses,
+  spells,
+  worlds,
+} from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { isModified, sanitizePayload } from "../../../clone-utils";
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await requireAuth();
     if (!session) {
@@ -33,7 +39,7 @@ export async function POST(
     if (contentType === "campaign") {
       return NextResponse.json(
         { error: "Clonagem de campanhas não é suportada ainda" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -134,10 +140,7 @@ export async function POST(
       }
 
       default:
-        return NextResponse.json(
-          { error: "Tipo de conteúdo inválido" },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: "Tipo de conteúdo inválido" }, { status: 400 });
     }
 
     let attachedComment: unknown = null;
@@ -145,9 +148,7 @@ export async function POST(
     if (hasModifications) {
       const authorName = (session.user as any).displayName || "Mestre";
       const attachmentTitle =
-        (finalPayload as any).name ||
-        (finalPayload as any).title ||
-        post.title;
+        (finalPayload as any).name || (finalPayload as any).title || post.title;
 
       const [newComment] = await db
         .insert(communityComments)
@@ -188,8 +189,11 @@ export async function POST(
   } catch (error) {
     console.error("Erro ao clonar conteúdo:", error);
     return NextResponse.json(
-      { error: "Erro ao importar conteúdo. Verifique se as tabelas da comunidade foram criadas no banco de dados." },
-      { status: 500 }
+      {
+        error:
+          "Erro ao importar conteúdo. Verifique se as tabelas da comunidade foram criadas no banco de dados.",
+      },
+      { status: 500 },
     );
   }
 }

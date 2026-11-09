@@ -53,7 +53,7 @@ export interface DuelSessionState {
 export function createDuelSession(
   campaignId: string,
   permanentResults: boolean,
-  participants: Omit<DuelParticipant, "actionsRemaining" | "maxActions">[]
+  participants: Omit<DuelParticipant, "actionsRemaining" | "maxActions">[],
 ): DuelSessionState {
   return {
     id: `duel_${Date.now()}`,
@@ -112,7 +112,7 @@ export function advanceDuelTurn(state: DuelSessionState): DuelSessionState {
   const newRound = isNewRound ? state.round + 1 : state.round;
 
   const updatedParticipants = state.participants.map((p, idx) =>
-    idx === nextIndex ? { ...p, actionsRemaining: 3 } : p
+    idx === nextIndex ? { ...p, actionsRemaining: 3 } : p,
   );
 
   const activeName = updatedParticipants[nextIndex]?.name ?? "Desconhecido";
@@ -141,10 +141,10 @@ export function advanceDuelTurn(state: DuelSessionState): DuelSessionState {
 export function spendDuelActions(
   state: DuelSessionState,
   participantId: string,
-  cost: number = 1
+  cost: number = 1,
 ): { session: DuelSessionState; autoAdvanced: boolean } {
   const pIndex = state.participants.findIndex(
-    (p) => p.id === participantId || p.characterId === participantId
+    (p) => p.id === participantId || p.characterId === participantId,
   );
 
   if (pIndex === -1 || pIndex !== state.currentTurnIndex) {
@@ -177,7 +177,7 @@ export function spendDuelActions(
 export function applyDuelDamage(
   state: DuelSessionState,
   targetId: string,
-  damageTaken: number
+  damageTaken: number,
 ): DuelSessionState {
   let winnerId: string | null = null;
 
@@ -220,7 +220,7 @@ export function applyDuelDamage(
  */
 export function finishDuelSession(
   state: DuelSessionState,
-  winnerId?: string
+  winnerId?: string,
 ): { session: DuelSessionState; restoredParticipants: DuelParticipant[] } {
   const restored = state.participants.map((p) => {
     if (!state.permanentResults) {
@@ -240,7 +240,9 @@ export function finishDuelSession(
         id: `log_${Date.now()}`,
         timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
         message: `Duelo finalizado. ${
-          !state.permanentResults ? "Status temporários restaurados ao valor original." : "Resultados mantidos permanentemente."
+          !state.permanentResults
+            ? "Status temporários restaurados ao valor original."
+            : "Resultados mantidos permanentemente."
         }`,
       },
     ],

@@ -98,7 +98,10 @@ export default function CommunityCard({ post, onOpen, onUpdate }: Props) {
   const [isLiking, setIsLiking] = useState(false);
   const [isVoting, setIsVoting] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error" | "info";
+  } | null>(null);
 
   const handleVote = async (e: React.MouseEvent, targetValue: 1 | -1) => {
     e.stopPropagation();
@@ -174,7 +177,8 @@ export default function CommunityCard({ post, onOpen, onUpdate }: Props) {
         score: Number(data.score),
         upvotes: Number(data.upvotes),
         downvotes: Number(data.downvotes),
-        userVote: data.userVote !== null && data.userVote !== undefined ? Number(data.userVote) : null,
+        userVote:
+          data.userVote !== null && data.userVote !== undefined ? Number(data.userVote) : null,
       });
     } catch (err) {
       // Rollback on error
@@ -240,13 +244,7 @@ export default function CommunityCard({ post, onOpen, onUpdate }: Props) {
 
   return (
     <>
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {showImportModal && (
         <ImportCustomizeModal
@@ -285,9 +283,7 @@ export default function CommunityCard({ post, onOpen, onUpdate }: Props) {
             }`}
           >
             <ArrowBigUp
-              className={`h-5 w-5 ${
-                post.userVote === 1 ? "fill-orange-500 text-orange-500" : ""
-              }`}
+              className={`h-5 w-5 ${post.userVote === 1 ? "fill-orange-500 text-orange-500" : ""}`}
             />
           </button>
           <span
@@ -295,8 +291,8 @@ export default function CommunityCard({ post, onOpen, onUpdate }: Props) {
               post.userVote === 1
                 ? "text-orange-500"
                 : post.userVote === -1
-                ? "text-blue-500"
-                : "text-gray-300"
+                  ? "text-blue-500"
+                  : "text-gray-300"
             }`}
             aria-label={`Pontuação: ${post.score ?? 0}`}
             title={`Pontuação: ${post.score ?? 0}`}
@@ -316,9 +312,7 @@ export default function CommunityCard({ post, onOpen, onUpdate }: Props) {
             }`}
           >
             <ArrowBigDown
-              className={`h-5 w-5 ${
-                post.userVote === -1 ? "fill-blue-500 text-blue-500" : ""
-              }`}
+              className={`h-5 w-5 ${post.userVote === -1 ? "fill-blue-500 text-blue-500" : ""}`}
             />
           </button>
         </div>
@@ -330,11 +324,7 @@ export default function CommunityCard({ post, onOpen, onUpdate }: Props) {
             onClick={(e) => e.stopPropagation()}
             className="flex h-10 w-10 shrink-0 overflow-hidden rounded-full ring-1 ring-white/10 hover:opacity-80 transition-opacity"
           >
-            <img
-              src={authorAvatar}
-              alt={authorName}
-              className="h-full w-full object-cover"
-            />
+            <img src={authorAvatar} alt={authorName} className="h-full w-full object-cover" />
           </Link>
         ) : (
           <Link

@@ -24,25 +24,15 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { worldId } = await params;
 
-    const [existingWorld] = await db
-      .select()
-      .from(worlds)
-      .where(eq(worlds.id, worldId))
-      .limit(1);
+    const [existingWorld] = await db.select().from(worlds).where(eq(worlds.id, worldId)).limit(1);
 
     if (!existingWorld) {
-      return NextResponse.json(
-        { success: false, error: "Mundo não encontrado" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "Mundo não encontrado" }, { status: 404 });
     }
 
     const formData = await request.formData();
@@ -52,14 +42,14 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (type !== "cover" && type !== "map") {
       return NextResponse.json(
         { success: false, error: "Tipo de imagem inválido. Use 'cover' ou 'map'." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!(file instanceof File)) {
       return NextResponse.json(
         { success: false, error: "Arquivo de imagem não enviado (campo 'image')" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -72,10 +62,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     }
 
     const imageUrl = `/api/uploads/worlds/${filename}`;
-    const updateData =
-      type === "cover"
-        ? { coverUrl: imageUrl }
-        : { mapUrl: imageUrl };
+    const updateData = type === "cover" ? { coverUrl: imageUrl } : { mapUrl: imageUrl };
 
     const [updatedWorld] = await db
       .update(worlds)
@@ -92,10 +79,10 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       },
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao enviar imagem do mundo');
+    logger.error({ err: error }, "Erro ao enviar imagem do mundo");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

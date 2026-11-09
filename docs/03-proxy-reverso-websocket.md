@@ -42,7 +42,7 @@ server {
     location /api/socket/io {
         proxy_pass http://127.0.0.1:3000/api/socket/io;
         proxy_http_version 1.1;
-        
+
         # Headers essenciais para WebSocket Upgrade
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "Upgrade";
@@ -55,7 +55,7 @@ server {
         # Timeouts longos para manter a conexão WebSocket viva durante a sessão
         proxy_read_timeout 86400s;
         proxy_send_timeout 86400s;
-        
+
         # Desabilitar buffering para respostas em tempo real instantâneas
         proxy_buffering off;
     }

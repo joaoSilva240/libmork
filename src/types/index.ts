@@ -252,11 +252,11 @@ export type Spell = {
   range: string | null;
   target: string | null;
   area: string | null;
-  damage: any | null;
+  damage: Record<string, unknown> | null;
   damageType: string | null;
-  structuredEffects: any | null;
+  structuredEffects: Record<string, unknown> | null;
   castingTime: string | null;
-  translation: any | null;
+  translation: Record<string, unknown> | null;
 };
 
 export type Item = {
@@ -297,7 +297,6 @@ export interface LibraryDocument {
   acquisitionUrl?: string | null;
   webReaderUrl?: string | null;
 }
-
 
 export type Npc = {
   id: string;
@@ -426,8 +425,21 @@ export type PlayerCampaignDetails = {
   dice3dPlayersEnabled?: boolean;
   dice3dMasterEnabled?: boolean;
   worlds: Array<{ id: string; name: string; description: string | null; coverUrl: string | null }>;
-  establishments: Array<{ id: string; name: string; type: string; worldId: string; reputationLevel: number }>;
-  npcs: Array<{ id: string; name: string; npcType: string; level: number; imageUrl: string | null; worldId: string | null }>;
+  establishments: Array<{
+    id: string;
+    name: string;
+    type: string;
+    worldId: string;
+    reputationLevel: number;
+  }>;
+  npcs: Array<{
+    id: string;
+    name: string;
+    npcType: string;
+    level: number;
+    imageUrl: string | null;
+    worldId: string | null;
+  }>;
 };
 
 // =============================================================================
@@ -452,4 +464,3 @@ export type PaginatedResponse<T> = {
 // =============================================================================
 
 export type * from "@/lib/systems/missing";
-

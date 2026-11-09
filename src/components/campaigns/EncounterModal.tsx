@@ -27,7 +27,7 @@ export function EncounterModal({
   const [encounters, setEncounters] = useState<Encounter[]>([]);
   const [selectedEncounterId, setSelectedEncounterId] = useState<string>("");
   const [selectedActorIds, setSelectedActorIds] = useState<Set<string>>(
-    new Set(actors.map((a) => `${a.kind}:${a.id}`))
+    new Set(actors.map((a) => `${a.kind}:${a.id}`)),
   );
   const [initiatives, setInitiatives] = useState<Record<string, number>>(() => {
     const initial: Record<string, number> = {};
@@ -128,14 +128,17 @@ export function EncounterModal({
       // 2. Adicionar participantes selecionados no banco de dados
       const promises = Array.from(selectedActorIds).map((key) => {
         const [kind, id] = key.split(":");
-        return fetch(`/api/campaigns/${campaignId}/encounters/${selectedEncounterId}/participants`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            actorType: kind,
-            actorId: id,
-          }),
-        });
+        return fetch(
+          `/api/campaigns/${campaignId}/encounters/${selectedEncounterId}/participants`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              actorType: kind,
+              actorId: id,
+            }),
+          },
+        );
       });
 
       await Promise.all(promises);
@@ -152,12 +155,13 @@ export function EncounterModal({
           characterId: a.kind === "character" ? a.id : undefined,
           npcId: a.kind === "npc" ? a.id : undefined,
           initiative: iniValue,
-           hpCurrent: a.hitPoints,
-           hpMax: a.hitPointsMax,
-           manaCurrent: Number.isFinite(a.manaPoints) ? Math.max(0, a.manaPoints) : undefined,
-           manaMax: Number.isFinite(a.manaPointsMax) ? Math.max(0, a.manaPointsMax) : undefined,
+          hpCurrent: a.hitPoints,
+          hpMax: a.hitPointsMax,
+          manaCurrent: Number.isFinite(a.manaPoints) ? Math.max(0, a.manaPoints) : undefined,
+          manaMax: Number.isFinite(a.manaPointsMax) ? Math.max(0, a.manaPointsMax) : undefined,
           vigor: (a as unknown as { attributes?: { vigor?: number } }).attributes?.vigor ?? 10,
-          destreza: (a as unknown as { attributes?: { destreza?: number } }).attributes?.destreza ?? 10,
+          destreza:
+            (a as unknown as { attributes?: { destreza?: number } }).attributes?.destreza ?? 10,
           level: a.level || 1,
           avatarUrl: a.imageUrl,
         };
@@ -188,7 +192,9 @@ export function EncounterModal({
           <div className="flex items-center gap-2">
             <span className="text-2xl">⚔️</span>
             <div>
-              <h2 className="text-lg font-bold text-white">Iniciar Encontro & Fila de Iniciativa</h2>
+              <h2 className="text-lg font-bold text-white">
+                Iniciar Encontro & Fila de Iniciativa
+              </h2>
               <p className="text-xs text-purple-300">Selecione o combate e defina as iniciativas</p>
             </div>
           </div>
@@ -250,7 +256,8 @@ export function EncounterModal({
 
               {requestedPrompt && (
                 <div className="rounded-lg bg-purple-950/40 p-2 text-[11px] text-purple-300 border border-purple-900/40">
-                  ⚡ Pop-up enviado para os jogadores conectados! Conforme eles rolares, o valor da iniciativa atualizará aqui em tempo real.
+                  ⚡ Pop-up enviado para os jogadores conectados! Conforme eles rolares, o valor da
+                  iniciativa atualizará aqui em tempo real.
                 </div>
               )}
 
@@ -263,7 +270,9 @@ export function EncounterModal({
                     <div
                       key={key}
                       className={`flex items-center justify-between rounded-lg p-2 transition-colors ${
-                        isChecked ? "bg-gray-800/90 border border-purple-900/50" : "bg-gray-950/50 opacity-60"
+                        isChecked
+                          ? "bg-gray-800/90 border border-purple-900/50"
+                          : "bg-gray-950/50 opacity-60"
                       }`}
                     >
                       <label className="flex items-center gap-2.5 cursor-pointer text-xs text-white">

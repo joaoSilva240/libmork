@@ -5,7 +5,7 @@
 // =============================================================================
 
 import { z } from "zod";
-import { ATTRIBUTES, SPELL_USE_TYPES } from "@/lib/utils/constants";
+import { ATTRIBUTES } from "@/lib/utils/constants";
 import { NPC_DAMAGE_TYPES } from "@/lib/engine/npc-attack";
 
 /**
@@ -30,7 +30,11 @@ export const spellSchema = z.object({
   duration: z.string().max(100).optional().nullable(),
   extraEffect: z.string().max(5000).optional().nullable(),
   actionCostOverride: z.number().int().min(0).max(3).optional().nullable(),
-  imageUrl: z.url().refine((value) => /^https?:\/\//i.test(value), "URL deve usar HTTP ou HTTPS").optional().nullable(),
+  imageUrl: z
+    .url()
+    .refine((value) => /^https?:\/\//i.test(value), "URL deve usar HTTP ou HTTPS")
+    .optional()
+    .nullable(),
   range: z.string().max(250).optional().nullable(),
   target: z.string().optional().nullable(),
   area: z.string().max(250).optional().nullable(),
@@ -75,7 +79,11 @@ export const updateSpellSchema = z.object({
   duration: z.string().max(100).optional().nullable(),
   extraEffect: z.string().max(5000).optional().nullable(),
   actionCostOverride: z.number().int().min(0).max(3).optional().nullable(),
-  imageUrl: z.url().refine((value) => /^https?:\/\//i.test(value), "URL deve usar HTTP ou HTTPS").optional().nullable(),
+  imageUrl: z
+    .url()
+    .refine((value) => /^https?:\/\//i.test(value), "URL deve usar HTTP ou HTTPS")
+    .optional()
+    .nullable(),
   range: z.string().max(250).optional().nullable(),
   target: z.string().optional().nullable(),
   area: z.string().max(250).optional().nullable(),
@@ -96,7 +104,10 @@ export const attackSchema = z.object({
   attackExpression: z
     .string()
     .max(200)
-    .regex(/^\s*[+-]?\s*\d*d\s*\d+\s*(?:[+-]\s*\d+)?\s*$/i, "Ataque inválido. Use XdY±Z (ex.: 1d20+9).")
+    .regex(
+      /^\s*[+-]?\s*\d*d\s*\d+\s*(?:[+-]\s*\d+)?\s*$/i,
+      "Ataque inválido. Use XdY±Z (ex.: 1d20+9).",
+    )
     .optional()
     .nullable(),
   damageExpression: z

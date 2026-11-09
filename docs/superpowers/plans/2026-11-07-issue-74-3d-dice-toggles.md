@@ -4,7 +4,8 @@
 
 **Goal:** Add two persistent toggles in the Master Shield campaign settings to control 3D dice rendering between master and players ("Dados 3d nas rolagens dos jogadores" and "Dados 3d nas rolagens do mestre"), and relay rolled dice through WebSockets with client-side role filtering.
 
-**Architecture:** 
+**Architecture:**
+
 - Add `dice3d_players_enabled` and `dice3d_master_enabled` boolean columns (default `true`) to the `campaigns` table in Drizzle ORM and update validators/APIs.
 - Render two accessible switch toggles in `CampaignSettingsModal` (opened from the master shield `CampaignDetail`).
 - Extend `RollDataPayload` in `SocketContext` with `senderRole` and `rolledDice: Dice3DDie[]`, forwarding dice to `showDice3D()` on remote clients when allowed by campaign toggles and role matrix.
@@ -26,6 +27,7 @@
 ### Task 1: Database Schema, Types, and Validators for Campaign Dice 3D Toggles
 
 **Files:**
+
 - Modify: `src/lib/db/schema.ts:168-175`
 - Create: `drizzle/0023_add_campaign_dice3d_toggles.sql`
 - Modify: `src/types/index.ts:140-149`
@@ -33,12 +35,14 @@
 - Test: `src/lib/validators/__tests__/campaign-dice3d.test.ts`
 
 **Interfaces:**
+
 - Consumes: `campaigns` pgTable in `src/lib/db/schema.ts`, `Campaign` type in `src/types/index.ts`.
 - Produces: `dice3dPlayersEnabled: boolean` and `dice3dMasterEnabled: boolean` on `campaigns` table, `Campaign` type, and `createCampaignSchema` / `updateCampaignSchema`.
 
 - [ ] **Step 1: Write the failing test for campaign validators**
 
 Create `src/lib/validators/__tests__/campaign-dice3d.test.ts`:
+
 ```typescript
 import { describe, it, expect } from "vitest";
 import { createCampaignSchema, updateCampaignSchema } from "../campaign";
@@ -94,18 +98,21 @@ Expected: FAIL with missing fields or undefined assertions.
 - [ ] **Step 3: Update schema, types, migration, and validators**
 
 In `src/lib/db/schema.ts`, add the two columns to `campaigns` table:
+
 ```typescript
   dice3dPlayersEnabled: boolean("dice3d_players_enabled").notNull().default(true),
   dice3dMasterEnabled: boolean("dice3d_master_enabled").notNull().default(true),
 ```
 
 Create `drizzle/0023_add_campaign_dice3d_toggles.sql`:
+
 ```sql
 ALTER TABLE "campaigns" ADD COLUMN IF NOT EXISTS "dice3d_players_enabled" boolean DEFAULT true NOT NULL;
 ALTER TABLE "campaigns" ADD COLUMN IF NOT EXISTS "dice3d_master_enabled" boolean DEFAULT true NOT NULL;
 ```
 
 In `src/types/index.ts`, update `Campaign`:
+
 ```typescript
 export type Campaign = {
   id: string;
@@ -128,6 +135,7 @@ export type Campaign = {
 ```
 
 In `src/lib/validators/campaign.ts`, update `createCampaignSchema` and `updateCampaignSchema`:
+
 ```typescript
 export const createCampaignSchema = z.object({
   name: z.string().min(2, "Nome deve ter no mínimo 2 caracteres").max(200),
@@ -176,17 +184,20 @@ git commit -m "feat(campaigns): adiciona campos de toggles de dados 3d no schema
 ### Task 2: API Route Updates for Campaign Dice 3D Settings and Player Details
 
 **Files:**
+
 - Modify: `src/app/api/player/campaigns/[id]/details/route.ts:15-37`
 - Modify: `src/app/api/player/campaigns/route.ts:60-76`
 - Test: `src/app/api/campaigns/[id]/__tests__/dice3d-route.test.ts`
 
 **Interfaces:**
+
 - Consumes: `updateCampaignSchema`, `campaigns` table.
 - Produces: `dice3dPlayersEnabled` and `dice3dMasterEnabled` returned in `GET /api/player/campaigns/[id]/details` and `PATCH /api/campaigns/[id]`.
 
 - [ ] **Step 1: Write failing test for PATCH /api/campaigns/[id] with dice 3D toggles**
 
 Create `src/app/api/campaigns/[id]/__tests__/dice3d-route.test.ts`:
+
 ```typescript
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
@@ -275,6 +286,7 @@ Expected: PASS (because `PATCH /api/campaigns/[id]` already uses `updateCampaign
 
 In `src/app/api/player/campaigns/[id]/details/route.ts`, ensure `dice3dPlayersEnabled` and `dice3dMasterEnabled` are selected so player clients receive the rules:
 Lines 16 and 33:
+
 ```typescript
       .select({
         id: campaigns.id,
@@ -283,10 +295,12 @@ Lines 16 and 33:
         dice3dMasterEnabled: campaigns.dice3dMasterEnabled,
       })
 ```
+
 Include them in the returned response JSON.
 
 In `src/app/api/player/campaigns/route.ts`:
 Line 69:
+
 ```typescript
         theme: campaigns.theme,
         dice3dPlayersEnabled: campaigns.dice3dPlayersEnabled,
@@ -311,17 +325,20 @@ git commit -m "feat(api): propaga toggles de dados 3d na api de campanhas (#74)"
 ### Task 3: Realtime Socket Protocol and Remote 3D Dice Bridge
 
 **Files:**
+
 - Modify: `server.js:160-166`
 - Modify: `src/context/SocketContext.tsx:42-58,132-218,220-455`
 - Test: `src/context/__tests__/SocketContext.dice3d.test.tsx`
 
 **Interfaces:**
+
 - Consumes: `showDice3D` and `Dice3DDie` from `@/lib/dice3d`.
 - Produces: `RollDataPayload` with `senderRole?: "master" | "player"`, `rolledDice?: Dice3DDie[]`, `senderSocketId?: string`; `campaign:dice3d-settings-updated` socket event; automatic trigger of `showDice3D` on remote clients when allowed.
 
 - [ ] **Step 1: Write failing test for SocketContext 3D dice filtering**
 
 Create `src/context/__tests__/SocketContext.dice3d.test.tsx`:
+
 ```typescript
 import React from "react";
 import { renderHook, act } from "@testing-library/react";
@@ -540,29 +557,31 @@ Expected: FAIL (`setCampaignDice3DSettings` undefined, no handling in socket).
 - [ ] **Step 3: Implement SocketContext and server.js changes**
 
 In `server.js:160-166`:
-```javascript
-        // Evento de rolagem de dados em tempo real - RF-041, RF-046
-        socket.on("roll-dice", (rollData) => {
-          if (!rollData) return;
-          if (rollData.campaignId) {
-            io.to(`campaign:${rollData.campaignId}`).emit("dice-rolled", {
-              ...rollData,
-              senderSocketId: socket.id,
-            });
-          }
-        });
 
-        // Configurações de Dados 3D da Campanha (Issue #74)
-        socket.on("campaign:dice3d-settings-update", (payload) => {
-          if (!payload || !payload.campaignId) return;
-          io.to(`campaign:${payload.campaignId}`).emit("campaign:dice3d-settings-updated", payload);
-        });
+```javascript
+// Evento de rolagem de dados em tempo real - RF-041, RF-046
+socket.on("roll-dice", (rollData) => {
+  if (!rollData) return;
+  if (rollData.campaignId) {
+    io.to(`campaign:${rollData.campaignId}`).emit("dice-rolled", {
+      ...rollData,
+      senderSocketId: socket.id,
+    });
+  }
+});
+
+// Configurações de Dados 3D da Campanha (Issue #74)
+socket.on("campaign:dice3d-settings-update", (payload) => {
+  if (!payload || !payload.campaignId) return;
+  io.to(`campaign:${payload.campaignId}`).emit("campaign:dice3d-settings-updated", payload);
+});
 ```
 
 In `src/context/SocketContext.tsx`:
 Import `showDice3D, type Dice3DDie` from `@/lib/dice3d`.
 
 Update `RollDataPayload`:
+
 ```typescript
 export interface RollDataPayload {
   campaignId: string;
@@ -587,6 +606,7 @@ export interface RollDataPayload {
 ```
 
 Add to `SocketContextValue`:
+
 ```typescript
   setCampaignDice3DSettings: (
     campaignId: string,
@@ -601,59 +621,66 @@ Add to `SocketContextValue`:
 
 Inside `SocketProvider`:
 Maintain state / ref for current role and campaign settings:
+
 ```typescript
-  const currentRoleRef = useRef<"master" | "player">("player");
-  const campaignDice3DRef = useRef<Map<string, { dice3dPlayersEnabled: boolean; dice3dMasterEnabled: boolean }>>(
-    new Map()
-  );
+const currentRoleRef = useRef<"master" | "player">("player");
+const campaignDice3DRef = useRef<
+  Map<string, { dice3dPlayersEnabled: boolean; dice3dMasterEnabled: boolean }>
+>(new Map());
 ```
 
 When `joinCampaign` is called:
+
 ```typescript
-  if (data.role) {
-    currentRoleRef.current = data.role;
-  }
+if (data.role) {
+  currentRoleRef.current = data.role;
+}
 ```
 
 Add socket listener for `campaign:dice3d-settings-updated`:
+
 ```typescript
-    socketInstance.on("campaign:dice3d-settings-updated", (payload: {
-      campaignId: string;
-      dice3dPlayersEnabled: boolean;
-      dice3dMasterEnabled: boolean;
-    }) => {
-      campaignDice3DRef.current.set(payload.campaignId, {
-        dice3dPlayersEnabled: payload.dice3dPlayersEnabled,
-        dice3dMasterEnabled: payload.dice3dMasterEnabled,
-      });
+socketInstance.on(
+  "campaign:dice3d-settings-updated",
+  (payload: {
+    campaignId: string;
+    dice3dPlayersEnabled: boolean;
+    dice3dMasterEnabled: boolean;
+  }) => {
+    campaignDice3DRef.current.set(payload.campaignId, {
+      dice3dPlayersEnabled: payload.dice3dPlayersEnabled,
+      dice3dMasterEnabled: payload.dice3dMasterEnabled,
     });
+  },
+);
 ```
 
 In `socketInstance.on("dice-rolled")`:
+
 ```typescript
-    socketInstance.on("dice-rolled", (rollData: RollDataPayload) => {
-      rollSubscribersRef.current.forEach((handler) => handler(rollData));
+socketInstance.on("dice-rolled", (rollData: RollDataPayload) => {
+  rollSubscribersRef.current.forEach((handler) => handler(rollData));
 
-      // Issue #74: Remote 3D Dice rendering
-      if (
-        rollData.rolledDice &&
-        rollData.rolledDice.length > 0 &&
-        rollData.senderSocketId !== socketInstance.id
-      ) {
-        const settings = campaignDice3DRef.current.get(rollData.campaignId) ?? {
-          dice3dPlayersEnabled: true,
-          dice3dMasterEnabled: true,
-        };
-        const myRole = currentRoleRef.current;
-        const senderRole = rollData.senderRole ?? "player";
+  // Issue #74: Remote 3D Dice rendering
+  if (
+    rollData.rolledDice &&
+    rollData.rolledDice.length > 0 &&
+    rollData.senderSocketId !== socketInstance.id
+  ) {
+    const settings = campaignDice3DRef.current.get(rollData.campaignId) ?? {
+      dice3dPlayersEnabled: true,
+      dice3dMasterEnabled: true,
+    };
+    const myRole = currentRoleRef.current;
+    const senderRole = rollData.senderRole ?? "player";
 
-        if (myRole === "master" && senderRole === "player" && settings.dice3dPlayersEnabled) {
-          showDice3D(rollData.rolledDice);
-        } else if (myRole === "player" && senderRole === "master" && settings.dice3dMasterEnabled) {
-          showDice3D(rollData.rolledDice);
-        }
-      }
-    });
+    if (myRole === "master" && senderRole === "player" && settings.dice3dPlayersEnabled) {
+      showDice3D(rollData.rolledDice);
+    } else if (myRole === "player" && senderRole === "master" && settings.dice3dMasterEnabled) {
+      showDice3D(rollData.rolledDice);
+    }
+  }
+});
 ```
 
 In `rollDice`:
@@ -676,17 +703,20 @@ git commit -m "feat(socket): adiciona suporte a sincronizacao e filtro de dados 
 ### Task 4: Campaign Settings Modal UI Toggles in Master Shield
 
 **Files:**
+
 - Modify: `src/components/campaigns/CampaignSettingsModal.tsx:23-75,257-296`
 - Modify: `src/components/campaigns/CampaignDetail.tsx:688-700`
 - Test: `src/components/campaigns/__tests__/CampaignSettingsModal.dice3d.test.tsx`
 
 **Interfaces:**
+
 - Consumes: `campaign.dice3dPlayersEnabled`, `campaign.dice3dMasterEnabled`, `useSocket().broadcastCampaignDice3DSettings`.
 - Produces: Two accessible checkbox toggles labeled "Dados 3d nas rolagens dos jogadores" and "Dados 3d nas rolagens do mestre", persisting to DB via PATCH and updating SocketContext.
 
 - [ ] **Step 1: Write failing test for CampaignSettingsModal dice 3D toggles**
 
 Create `src/components/campaigns/__tests__/CampaignSettingsModal.dice3d.test.tsx`:
+
 ```typescript
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
@@ -801,78 +831,91 @@ Expected: FAIL with "Unable to find text 'Dados 3d nas rolagens dos jogadores'".
 
 In `src/components/campaigns/CampaignSettingsModal.tsx`:
 Add states:
+
 ```typescript
-  const [dice3dPlayersEnabled, setDice3dPlayersEnabled] = useState(
-    campaign.dice3dPlayersEnabled ?? true
-  );
-  const [dice3dMasterEnabled, setDice3dMasterEnabled] = useState(
-    campaign.dice3dMasterEnabled ?? true
-  );
+const [dice3dPlayersEnabled, setDice3dPlayersEnabled] = useState(
+  campaign.dice3dPlayersEnabled ?? true,
+);
+const [dice3dMasterEnabled, setDice3dMasterEnabled] = useState(
+  campaign.dice3dMasterEnabled ?? true,
+);
 ```
 
 In `handleSave`:
 Include `dice3dPlayersEnabled` and `dice3dMasterEnabled` in the body payload sent to `/api/campaigns/${campaign.id}`.
 On success:
+
 ```typescript
-  broadcastCampaignDice3DSettings?.({
-    campaignId: campaign.id,
-    dice3dPlayersEnabled,
-    dice3dMasterEnabled,
-  });
+broadcastCampaignDice3DSettings?.({
+  campaignId: campaign.id,
+  dice3dPlayersEnabled,
+  dice3dMasterEnabled,
+});
 ```
 
 In JSX, in the "Regras e Parâmetros da Mesa" section (under PvP toggle):
-```tsx
-            {/* Toggle Dados 3D Jogadores */}
-            <label className="flex items-center justify-between p-3 rounded-lg border border-secondary-border bg-dominant-deep cursor-pointer group">
-              <div>
-                <span className="text-xs font-bold text-secondary-pure group-hover:text-accent-hover transition block">
-                  Dados 3d nas rolagens dos jogadores
-                </span>
-                <span className="text-[11px] text-secondary-muted block mt-0.5">
-                  Quando ligado, as rolagens dos jogadores aparecem em 3d para o mestre.
-                </span>
-              </div>
-              <input
-                type="checkbox"
-                data-testid="toggle-dice3d-players"
-                checked={dice3dPlayersEnabled}
-                onChange={(e) => setDice3dPlayersEnabled(e.target.checked)}
-                className="h-4 w-4 rounded border-secondary-border bg-secondary-card text-accent focus:ring-2 focus:ring-accent cursor-pointer ml-3 shrink-0"
-              />
-            </label>
 
-            {/* Toggle Dados 3D Mestre */}
-            <label className="flex items-center justify-between p-3 rounded-lg border border-secondary-border bg-dominant-deep cursor-pointer group">
-              <div>
-                <span className="text-xs font-bold text-secondary-pure group-hover:text-accent-hover transition block">
-                  Dados 3d nas rolagens do mestre
-                </span>
-                <span className="text-[11px] text-secondary-muted block mt-0.5">
-                  Quando ligado, a rolagem do mestre aparece em 3d para o jogador.
-                </span>
-              </div>
-              <input
-                type="checkbox"
-                data-testid="toggle-dice3d-master"
-                checked={dice3dMasterEnabled}
-                onChange={(e) => setDice3dMasterEnabled(e.target.checked)}
-                className="h-4 w-4 rounded border-secondary-border bg-secondary-card text-accent focus:ring-2 focus:ring-accent cursor-pointer ml-3 shrink-0"
-              />
-            </label>
+```tsx
+{
+  /* Toggle Dados 3D Jogadores */
+}
+<label className="flex items-center justify-between p-3 rounded-lg border border-secondary-border bg-dominant-deep cursor-pointer group">
+  <div>
+    <span className="text-xs font-bold text-secondary-pure group-hover:text-accent-hover transition block">
+      Dados 3d nas rolagens dos jogadores
+    </span>
+    <span className="text-[11px] text-secondary-muted block mt-0.5">
+      Quando ligado, as rolagens dos jogadores aparecem em 3d para o mestre.
+    </span>
+  </div>
+  <input
+    type="checkbox"
+    data-testid="toggle-dice3d-players"
+    checked={dice3dPlayersEnabled}
+    onChange={(e) => setDice3dPlayersEnabled(e.target.checked)}
+    className="h-4 w-4 rounded border-secondary-border bg-secondary-card text-accent focus:ring-2 focus:ring-accent cursor-pointer ml-3 shrink-0"
+  />
+</label>;
+
+{
+  /* Toggle Dados 3D Mestre */
+}
+<label className="flex items-center justify-between p-3 rounded-lg border border-secondary-border bg-dominant-deep cursor-pointer group">
+  <div>
+    <span className="text-xs font-bold text-secondary-pure group-hover:text-accent-hover transition block">
+      Dados 3d nas rolagens do mestre
+    </span>
+    <span className="text-[11px] text-secondary-muted block mt-0.5">
+      Quando ligado, a rolagem do mestre aparece em 3d para o jogador.
+    </span>
+  </div>
+  <input
+    type="checkbox"
+    data-testid="toggle-dice3d-master"
+    checked={dice3dMasterEnabled}
+    onChange={(e) => setDice3dMasterEnabled(e.target.checked)}
+    className="h-4 w-4 rounded border-secondary-border bg-secondary-card text-accent focus:ring-2 focus:ring-accent cursor-pointer ml-3 shrink-0"
+  />
+</label>;
 ```
 
 In `CampaignDetail.tsx`:
 When campaign is loaded, also initialize `setCampaignDice3DSettings`:
+
 ```typescript
-  useEffect(() => {
-    if (campaign) {
-      setCampaignDice3DSettings(campaign.id, {
-        dice3dPlayersEnabled: campaign.dice3dPlayersEnabled ?? true,
-        dice3dMasterEnabled: campaign.dice3dMasterEnabled ?? true,
-      });
-    }
-  }, [campaign?.id, campaign?.dice3dPlayersEnabled, campaign?.dice3dMasterEnabled, setCampaignDice3DSettings]);
+useEffect(() => {
+  if (campaign) {
+    setCampaignDice3DSettings(campaign.id, {
+      dice3dPlayersEnabled: campaign.dice3dPlayersEnabled ?? true,
+      dice3dMasterEnabled: campaign.dice3dMasterEnabled ?? true,
+    });
+  }
+}, [
+  campaign?.id,
+  campaign?.dice3dPlayersEnabled,
+  campaign?.dice3dMasterEnabled,
+  setCampaignDice3DSettings,
+]);
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -892,6 +935,7 @@ git commit -m "feat(campaigns): adiciona toggles de dados 3d no modal de configu
 ### Task 5: Propagate `rolledDice` and `senderRole` in Rolagem Components
 
 **Files:**
+
 - Modify: `src/components/campaigns/ActorOverlay.tsx:400-420,540-560`
 - Modify: `src/components/characters/CharacterDetail.tsx:745-775`
 - Modify: `src/components/characters/CharacterContent.tsx:735-760`
@@ -899,12 +943,14 @@ git commit -m "feat(campaigns): adiciona toggles de dados 3d no modal de configu
 - Test: `src/components/campaigns/__tests__/ActorOverlay.dice3d.test.tsx`
 
 **Interfaces:**
+
 - Consumes: `showDice3D`, `d20s`, `rollDice` with `RollDataPayload`.
 - Produces: `rolledDice` and `senderRole` populated in `rollDice()` calls.
 
 - [ ] **Step 1: Write failing test verifying ActorOverlay emits rolledDice and senderRole: "master"**
 
 Create `src/components/campaigns/__tests__/ActorOverlay.dice3d.test.tsx`:
+
 ```typescript
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
@@ -966,6 +1012,7 @@ Run: `npx vitest run src/components/campaigns/__tests__/ActorOverlay.dice3d.test
 In `src/components/campaigns/ActorOverlay.tsx`:
 In each `rollDice` invocation:
 Add:
+
 ```typescript
   senderRole: "master",
   rolledDice: ... // e.g. attack.rolledDice ?? d20s(finalResult)
@@ -974,6 +1021,7 @@ Add:
 In `src/components/characters/CharacterDetail.tsx`:
 In each `rollDice` invocation:
 Add:
+
 ```typescript
   senderRole: "player",
   rolledDice: d20s(die), // or rollRes
@@ -982,6 +1030,7 @@ Add:
 In `src/components/characters/CharacterContent.tsx`:
 In each `rollDice` invocation:
 Add:
+
 ```typescript
   senderRole: "player",
   rolledDice: rollResult.rolledDice ?? [],
@@ -990,6 +1039,7 @@ Add:
 In `src/components/characters/CombatSheet.tsx`:
 In each `rollDice` invocation:
 Add:
+
 ```typescript
   senderRole: "player",
   rolledDice: d20s(d20),
@@ -1012,6 +1062,7 @@ git commit -m "feat(dice): envia dados individuais e papel do emissor nas rolage
 ### Task 6: Full Verification and Regression Testing
 
 **Files:**
+
 - Existing project test suites
 
 - [ ] **Step 1: Run TypeScript check**

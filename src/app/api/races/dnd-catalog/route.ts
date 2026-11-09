@@ -14,10 +14,7 @@ export async function GET() {
   try {
     const session = await requireAuth();
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const res = await fetch("https://www.dnd5eapi.co/api/races", {
@@ -27,7 +24,7 @@ export async function GET() {
     if (!res.ok) {
       return NextResponse.json(
         { success: false, error: "Erro ao consultar API D&D 5e" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -42,7 +39,7 @@ export async function GET() {
     logger.error({ err: error }, "Erro ao carregar catálogo de raças D&D 5e");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

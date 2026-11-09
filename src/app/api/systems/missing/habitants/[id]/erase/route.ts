@@ -5,11 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/session";
-import {
-  getHabitantById,
-  eraseHabitantLine,
-  handleApiError,
-} from "@/lib/server/missing-service";
+import { getHabitantById, eraseHabitantLine, handleApiError } from "@/lib/server/missing-service";
 import { eraseLineSchema } from "@/lib/systems/missing/validators";
 
 type RouteContext = { params: Promise<{ id: string }> };

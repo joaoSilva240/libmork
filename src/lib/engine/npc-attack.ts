@@ -18,11 +18,7 @@ export type NpcPinAttackInput = {
 };
 
 export type NpcAttackSource =
-  | "configured"
-  | "legacy-paren"
-  | "legacy-damage-only"
-  | "attack-only"
-  | "none";
+  "configured" | "legacy-paren" | "legacy-damage-only" | "attack-only" | "none";
 
 export type NpcPinAttack = {
   attackExpr: string;
