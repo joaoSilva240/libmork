@@ -1,5 +1,21 @@
 import { describe, it, expect } from "vitest";
-import { resolveNpcPinAttack, NPC_DAMAGE_TYPES } from "../npc-attack";
+import { resolveNpcPinAttack, doubleDamageDice, NPC_DAMAGE_TYPES } from "../npc-attack";
+
+describe("doubleDamageDice — crítico no natural 20 (follow-up #90)", () => {
+  it("dobra apenas os dados, preservando o modificador", () => {
+    expect(doubleDamageDice("1d6+3")).toBe("2d6+3");
+    expect(doubleDamageDice("2d6+5")).toBe("4d6+5");
+    expect(doubleDamageDice("3d6")).toBe("6d6");
+    expect(doubleDamageDice("1d12-2")).toBe("2d12-2");
+  });
+
+  it("dobra qualquer dado, inclusive d20 (callers só aplicam a dano)", () => {
+    expect(doubleDamageDice("1d20+9")).toBe("2d20+9");
+    expect(doubleDamageDice("texto aleatório")).toBe("texto aleatório");
+    expect(doubleDamageDice(undefined)).toBeUndefined();
+    expect(doubleDamageDice(null)).toBeUndefined();
+  });
+});
 
 describe("resolveNpcPinAttack (issue #90)", () => {
   it("usa campos configurados quando presentes", () => {

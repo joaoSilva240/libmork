@@ -7,7 +7,7 @@ import { getDefenseValue } from "@/lib/engine/combat";
 import type { CombatSessionState, Combatant } from "@/lib/engine";
 import { TargetSelectionModal } from "@/components/combat/TargetSelectionModal";
 import { spendSpell, spendCombatActions, applyResolvedDamage, applyHealing, rollExpression as rollExpressionFn } from "@/lib/engine";
-import { resolveNpcPinAttack, type NpcPinAttack } from "@/lib/engine/npc-attack";
+import { resolveNpcPinAttack, doubleDamageDice, type NpcPinAttack } from "@/lib/engine/npc-attack";
 import { d20s, showDice3D, type Dice3DDie } from "@/lib/dice3d";
 
 export type RosterCondition = {
@@ -522,14 +522,23 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
       });
     } else {
       // Se não estiver em combate, rola diretamente: ataque e, quando
-      // configurado, também o dano (issue #90).
+      // configurado, também o dano (issue #90). Natural 20 = crítico: dados
+      // de dano dobrados.
       const attack = rollExpressionFn(attackExpr, 1);
-      const damage = damageExpr ? rollExpressionFn(damageExpr, 0) : null;
+      const isCritical = (attack.rolledDice ?? []).some(
+        (die) => die.sides === 20 && die.value === 20
+      );
+      const outCritExpr = isCritical ? doubleDamageDice(damageExpr) : undefined;
+      const damage = (outCritExpr ?? damageExpr)
+        ? rollExpressionFn(outCritExpr ?? damageExpr, 0)
+        : null;
       showDice3D([...(attack.rolledDice ?? []), ...(damage?.rolledDice ?? [])]);
       const die = attack.total;
-      const formula = damage ? `${attackExpr} (dano ${damageExpr})` : attackExpr;
+      const formula = damage
+        ? `${attackExpr}${isCritical ? " ⚡CRÍTICO!" : ""} (dano ${outCritExpr ?? damageExpr})`
+        : attackExpr;
       const diceDetail = damage
-        ? `Rolou ${pin.label}: ${attack.detail}. Dano: ${damage.detail}`
+        ? `Rolou ${pin.label}: ${attack.detail}. Dano${isCritical ? " CRÍTICO (dados dobrados)" : ""}: ${damage.detail}`
         : isAttackWithoutDamage
           ? `Rolou ${pin.label}: ${attack.detail}. Ataque sem dano configurado — nenhum dano será aplicado.`
           : `Rolou ${pin.label}: ${attack.detail}`;
@@ -653,24 +662,26 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
       await onChanged();
     } else {
       const attack = rollExpressionFn((selectedActionItem.rollExpr || "1d20") as string, 1);
-      let damage = rollExpressionFn(selectedActionItem.damageExpr, 0);
-      // Crítico (issue #90): rolagem natural no d20 >= faixa configurada dobra
-      // os dados de dano.
-      const criticalRange = selectedActionItem.criticalRange;
-      if (
-        criticalRange &&
-        damage.valid &&
-        !damage.missing &&
+      // Crítico: natural 20 no d20 sempre critica; criticalRange configurado
+      // amplia a faixa. Crítico dobra apenas os DADOS do dano (modificador
+      // único): 2d6+5 → 4d6+5.
+      const natural20 = (attack.rolledDice ?? []).some(
+        (die) => die.sides === 20 && die.value === 20
+      );
+      const withinCritRange =
+        selectedActionItem.criticalRange &&
         (attack.rolledDice ?? []).some(
-          (die) => die.sides === 20 && die.value >= criticalRange
-        )
-      ) {
-        const critDamage = rollExpressionFn(selectedActionItem.damageExpr, 0);
+          (die) => die.sides === 20 && die.value >= selectedActionItem.criticalRange!
+        );
+      const isCritical = Boolean(natural20 || withinCritRange);
+      const critExpr = isCritical
+        ? doubleDamageDice(selectedActionItem.damageExpr)
+        : undefined;
+      let damage = rollExpressionFn(critExpr ?? selectedActionItem.damageExpr, 0);
+      if (isCritical && critExpr) {
         damage = {
           ...damage,
-          total: damage.total + critDamage.total,
-          rolledDice: [...(damage.rolledDice ?? []), ...(critDamage.rolledDice ?? [])],
-          detail: `${damage.detail} + crítico ${critDamage.detail}`,
+          detail: `CRÍTICO! ${damage.detail} (dados dobrados)`,
         };
       }
       showDice3D([...(attack.rolledDice ?? []), ...(damage.rolledDice ?? [])]);
@@ -739,7 +750,7 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
         rollType: `Ataque: ${selectedActionItem.name}`,
         formula: attack.formula,
         result: attack.total,
-        diceDetail: `Ataque contra ${target.name}: ${attack.detail}; dano: ${damage.total}`,
+        diceDetail: `Ataque contra ${target.name}: ${attack.detail}; dano: ${damage.detail || damage.total}`,
         senderRole: "master",
         rolledDice: [...(attack.rolledDice ?? []), ...(damage.rolledDice ?? [])],
       });

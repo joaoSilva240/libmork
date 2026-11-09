@@ -9,6 +9,7 @@ import {
   spells,
   items,
   conditions,
+  attacks,
   characterSkills,
   characterSpells,
   characterItems,
@@ -29,6 +30,8 @@ export function getContentTable(type: ContentType) {
       return items;
     case "conditions":
       return conditions;
+    case "attacks":
+      return attacks;
   }
 }
 
@@ -45,6 +48,9 @@ export function getJunctionTable(type: ContentType) {
       return characterItems;
     case "conditions":
       return characterConditions;
+    case "attacks":
+      // Ataques não têm junção ficha↔conteúdo (vinculados via npc_pins).
+      throw new Error("Ataques não possuem junção com fichas de personagem");
   }
 }
 
@@ -61,6 +67,9 @@ export function getJunctionContentColumn(type: ContentType) {
       return characterItems.itemId;
     case "conditions":
       return characterConditions.conditionId;
+    case "attacks":
+      // Ataques não têm junção ficha↔conteúdo (vinculados via npc_pins).
+      throw new Error("Ataques não possuem junção com fichas de personagem");
   }
 }
 
@@ -77,6 +86,9 @@ export function getJunctionCharacterColumn(type: ContentType) {
       return characterItems.characterId;
     case "conditions":
       return characterConditions.characterId;
+    case "attacks":
+      // Ataques não têm junção ficha↔conteúdo (vinculados via npc_pins).
+      throw new Error("Ataques não possuem junção com fichas de personagem");
   }
 }
 
@@ -93,6 +105,8 @@ export function getContentIdColumn(type: ContentType) {
       return items.id;
     case "conditions":
       return conditions.id;
+    case "attacks":
+      return attacks.id;
   }
 }
 
@@ -109,6 +123,8 @@ export function getContentCampaignColumn(type: ContentType) {
       return items.campaignId;
     case "conditions":
       return conditions.campaignId;
+    case "attacks":
+      return attacks.campaignId;
   }
 }
 
@@ -125,6 +141,8 @@ export function getContentNameColumn(type: ContentType) {
       return items.name;
     case "conditions":
       return conditions.name;
+    case "attacks":
+      return attacks.name;
   }
 }
 
@@ -155,6 +173,8 @@ export function buildJunctionValues(
     }
     case "conditions":
       return { characterId, conditionId: contentId, permanent: (data.permanent as boolean) ?? false };
+    case "attacks":
+      throw new Error("Ataques não possuem junção com fichas de personagem");
   }
 }
 
@@ -185,5 +205,7 @@ export function buildJunctionPatch(
       return { permanent: data.permanent as boolean };
     case "spells":
       return {};
+    case "attacks":
+      throw new Error("Ataques não possuem junção com fichas de personagem");
   }
 }

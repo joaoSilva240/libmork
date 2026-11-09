@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { npcs, npcPins } from "@/lib/db/schema";
+import { npcs, npcPins, attacks } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { fetchAndParsePf2eMonster, fetchPf2eMonsterCatalog } from "@/lib/content/pf2e-monsters";
 import { translateContentWithLLM } from "@/lib/server/content-translation";
@@ -65,11 +65,35 @@ async function importSinglePf2eMonster(path: string, userId: string, translateWi
         .returning();
 
       if (finalPins.length > 0) {
+        // Ataques com dano configurado vão para a Biblioteca Global (issue #90
+        // follow-up): o pin fica vinculado por contentId e o ataque fica junto
+        // dos dados da biblioteca, reutilizável por outros NPCs.
+        const contentIdByLabel = new Map<string, string>();
+        const attackPins = finalPins.filter(
+          (pin) =>
+            pin.pinType === "attack" &&
+            (pin as { attackExpression?: string }).attackExpression
+        );
+        if (attackPins.length > 0) {
+          const libraryAttacks = await tx
+            .insert(attacks)
+            .values(
+              attackPins.map((pin) => ({
+                name: pin.label,
+                attackExpression: (pin as { attackExpression?: string }).attackExpression ?? null,
+                damageExpression: (pin as { damageExpression?: string }).damageExpression ?? null,
+              }))
+            )
+            .returning();
+          libraryAttacks.forEach((attack) => contentIdByLabel.set(attack.name, attack.id));
+        }
+
         const pinRows = finalPins.map((pin) => ({
           npcId: npc.id,
           pinType: pin.pinType,
           label: pin.label,
           rollExpression: pin.rollExpression || null,
+          contentId: contentIdByLabel.get(pin.label) ?? null,
           attackExpression: (pin as { attackExpression?: string }).attackExpression || null,
           damageExpression: (pin as { damageExpression?: string }).damageExpression || null,
           manaCost: pin.manaCost || null,

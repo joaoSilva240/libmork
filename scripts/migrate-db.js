@@ -297,6 +297,23 @@ async function runMigrations() {
     `);
     console.log('✓ Columns npc_pins.attack_expression/damage_expression/damage_type/critical_range ensured.');
 
+    console.log('\n--- 15. Applying global attacks library migration (Issue #90 follow-up) ---');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "attacks" (
+        "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+        "campaign_id" uuid REFERENCES "public"."campaigns"("id") ON DELETE cascade,
+        "name" varchar(100) NOT NULL,
+        "description" text,
+        "attack_expression" varchar(200),
+        "damage_expression" varchar(200),
+        "damage_type" varchar(30),
+        "critical_range" integer,
+        "created_at" timestamp DEFAULT now() NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS "idx_attack_campaign" ON "attacks" USING btree ("campaign_id");
+    `);
+    console.log('✓ Table attacks (biblioteca global de ataques) ensured.');
+
     console.log('\nAll migrations executed successfully!');
   } catch (error) {
     console.error('Migration error:', error);

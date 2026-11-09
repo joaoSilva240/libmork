@@ -81,6 +81,25 @@ function parseLegacyExpression(rawExpr?: string | null): {
 }
 
 /**
+ * Dobra a quantidade de dados de uma expressão de dano, preservando o
+ * modificador (crítico no natural 20 — issue #90 follow-up):
+ *   1d6+3 → 2d6+3 | 2d6+5 → 4d6+5 | 3d6 → 6d6
+ * Retorna a própria expressão se ela não estiver no formato XdY±Z.
+ */
+export function doubleDamageDice(expr: string | undefined | null): string | undefined {
+  if (!expr) return undefined;
+  const match = expr.trim().match(/^(\d+)\s*d\s*(\d+)\s*(?:([+-])\s*(\d+))?$/i);
+  if (!match) return expr.trim();
+
+  const dice = Number.parseInt(match[1], 10) * 2;
+  const sides = match[2];
+  const sign = match[3];
+  const mod = match[4];
+  const modPart = sign && mod ? `${sign}${mod}` : "";
+  return `${dice}d${sides}${modPart}`;
+}
+
+/**
  * Resolve ataque/dano de um atalho de NPC (issue #90).
  *
  * Regras:
