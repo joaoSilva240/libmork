@@ -2,4 +2,6 @@
 .husky
 node_modules
 .next
+dist-electron
+release
 *.log
