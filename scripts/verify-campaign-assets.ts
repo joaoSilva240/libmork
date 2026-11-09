@@ -27,7 +27,9 @@ async function verify() {
     console.log("✓ Sucesso ao consultar campaignAssets via Drizzle ORM!");
     console.log(`   Retornados: ${assetRows.length} registros`);
 
-    console.log("\n✓ Todas as consultas do Drizzle executaram perfeitamente sem erro de coluna inexistente!");
+    console.log(
+      "\n✓ Todas as consultas do Drizzle executaram perfeitamente sem erro de coluna inexistente!",
+    );
     process.exit(0);
   } catch (error) {
     console.error("✗ Falha na verificação:", error);

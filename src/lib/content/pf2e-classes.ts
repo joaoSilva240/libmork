@@ -36,7 +36,7 @@ function generateLevels(
   hpPerLevel: number,
   isSpellcaster: boolean,
   keyAttr: string,
-  classFeaturesByLevel: Record<number, string[]>
+  classFeaturesByLevel: Record<number, string[]>,
 ): Pf2eClassDefinition["levels"] {
   const levels: Pf2eClassDefinition["levels"] = [];
 
@@ -67,7 +67,7 @@ function generateLevels(
       hpBonus: hpPerLevel,
       manaBonus,
       attributeBonuses,
-      extraTrainedSkills: lvl === 1 ? 3 : (lvl % 2 === 1 ? 1 : 0),
+      extraTrainedSkills: lvl === 1 ? 3 : lvl % 2 === 1 ? 1 : 0,
       advantages: features,
       description: descriptionParts.join(". "),
     });
@@ -82,7 +82,8 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
     name: "Alchemist",
     keyAttribute: "inteligencia",
     hpPerLevel: 8,
-    description: "Mestre das ciências arcanas e reações químicas. Prepara elixires, bombas alquímicas, venenos e mutagênicos com precisão cirúrgica.",
+    description:
+      "Mestre das ciências arcanas e reações químicas. Prepara elixires, bombas alquímicas, venenos e mutagênicos com precisão cirúrgica.",
     proficiencies: {
       weapons: ["Armas simples", "Bombas alquímicas"],
       armor: ["Armadura leve", "Defesa sem armadura"],
@@ -90,9 +91,21 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
       tools: ["Kit de alquimia", "Ferramentas de artesão"],
     },
     initialItems: [
-      { name: "Kit de Alquimia Básico", quantity: 1, description: "Conjunto de tubos de ensaio, almofariz e reagentes." },
-      { name: "Fórmula de Fogo Alquímico", quantity: 2, description: "Frasco com líquido inflamável." },
-      { name: "Elixir de Vida Menor", quantity: 2, description: "Restaura pontos de vida quando consumido." },
+      {
+        name: "Kit de Alquimia Básico",
+        quantity: 1,
+        description: "Conjunto de tubos de ensaio, almofariz e reagentes.",
+      },
+      {
+        name: "Fórmula de Fogo Alquímico",
+        quantity: 2,
+        description: "Frasco com líquido inflamável.",
+      },
+      {
+        name: "Elixir de Vida Menor",
+        quantity: 2,
+        description: "Restaura pontos de vida quando consumido.",
+      },
       { name: "Adaga", quantity: 1, description: "Arma simples leve para defesa pessoal." },
     ],
     levels: generateLevels(8, false, "inteligencia", {
@@ -114,7 +127,8 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
     name: "Barbarian",
     keyAttribute: "forca",
     hpPerLevel: 12,
-    description: "Guerreiro movido pela fúria primal do combate. Converte cólera em poder devastador, resistência física sobre-humana e brutalidade implacável.",
+    description:
+      "Guerreiro movido pela fúria primal do combate. Converte cólera em poder devastador, resistência física sobre-humana e brutalidade implacável.",
     proficiencies: {
       weapons: ["Armas simples", "Armas marciais", "Ataques desarmados"],
       armor: ["Armadura leve", "Armadura média", "Defesa sem armadura"],
@@ -122,10 +136,22 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
       tools: [],
     },
     initialItems: [
-      { name: "Machado de Batalha", quantity: 1, description: "Arma marcial pesada capaz de desferir golpes devastadores." },
+      {
+        name: "Machado de Batalha",
+        quantity: 1,
+        description: "Arma marcial pesada capaz de desferir golpes devastadores.",
+      },
       { name: "Armadura de Couro Batido", quantity: 1, description: "Proteção leve e flexível." },
-      { name: "Azagaias", quantity: 4, description: "Armas de arremesso para engajamento à distância." },
-      { name: "Mochila de Aventureiro", quantity: 1, description: "Corda, tochas, rações e cantil." },
+      {
+        name: "Azagaias",
+        quantity: 4,
+        description: "Armas de arremesso para engajamento à distância.",
+      },
+      {
+        name: "Mochila de Aventureiro",
+        quantity: 1,
+        description: "Corda, tochas, rações e cantil.",
+      },
     ],
     levels: generateLevels(12, false, "forca", {
       1: ["Fúria Primal", "Instinto Bárbaro"],
@@ -146,7 +172,8 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
     name: "Bard",
     keyAttribute: "empatia",
     hpPerLevel: 8,
-    description: "Erudito e artista que canaliza a magia oculta através de atuações musicais, poéticas e retórica inspiradora para apoiar aliados e confundir inimigos.",
+    description:
+      "Erudito e artista que canaliza a magia oculta através de atuações musicais, poéticas e retórica inspiradora para apoiar aliados e confundir inimigos.",
     proficiencies: {
       weapons: ["Armas simples", "Florete", "Espada curta", "Chicote"],
       armor: ["Armadura leve", "Defesa sem armadura"],
@@ -154,10 +181,18 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
       tools: ["Instrumento musical"],
     },
     initialItems: [
-      { name: "Alaúde Artesanal", quantity: 1, description: "Instrumento de cordas finamente trabalhado para conjurar magia." },
+      {
+        name: "Alaúde Artesanal",
+        quantity: 1,
+        description: "Instrumento de cordas finamente trabalhado para conjurar magia.",
+      },
       { name: "Florete", quantity: 1, description: "Arma leve e precisa para duelos." },
       { name: "Armadura de Couro", quantity: 1, description: "Armadura leve básica." },
-      { name: "Bolsa de Componentes", quantity: 1, description: "Pós, ervas e cristais para magia." },
+      {
+        name: "Bolsa de Componentes",
+        quantity: 1,
+        description: "Pós, ervas e cristais para magia.",
+      },
     ],
     levels: generateLevels(8, true, "empatia", {
       1: ["Composição Mágica", "Musa Bárdica", "Magia Oculta"],
@@ -178,7 +213,8 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
     name: "Champion",
     keyAttribute: "forca",
     hpPerLevel: 10,
-    description: "Guerreiro sagrado jurado a uma causa divina. Porta escudo e armadura impenetráveis para proteger os fracos e punir transgressores.",
+    description:
+      "Guerreiro sagrado jurado a uma causa divina. Porta escudo e armadura impenetráveis para proteger os fracos e punir transgressores.",
     proficiencies: {
       weapons: ["Armas simples", "Armas marciais", "Ataques desarmados"],
       armor: ["Todas as armaduras (Leve, Média, Pesada)", "Escudos", "Defesa sem armadura"],
@@ -187,7 +223,11 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
     },
     initialItems: [
       { name: "Espada Longa", quantity: 1, description: "Arma marcial de uma mão clássica." },
-      { name: "Escudo de Aço Pesado", quantity: 1, description: "Escudo reforçado para bloquear ataques pesados." },
+      {
+        name: "Escudo de Aço Pesado",
+        quantity: 1,
+        description: "Escudo reforçado para bloquear ataques pesados.",
+      },
       { name: "Cota de Malha", quantity: 1, description: "Armadura média de anéis entrelaçados." },
       { name: "Símbolo Sagrado de Prata", quantity: 1, description: "Canalizador divino." },
     ],
@@ -210,7 +250,8 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
     name: "Cleric",
     keyAttribute: "empatia",
     hpPerLevel: 8,
-    description: "Canalizador devoto das bênçãos e milagres divinos. Cura ferimentos, bane mortos-vivos e fortalece aliados com o poder de sua divindade.",
+    description:
+      "Canalizador devoto das bênçãos e milagres divinos. Cura ferimentos, bane mortos-vivos e fortalece aliados com o poder de sua divindade.",
     proficiencies: {
       weapons: ["Armas simples", "Arma favorecida da divindade"],
       armor: ["Defesa sem armadura", "Armadura leve (doutrina)", "Escudos"],
@@ -220,8 +261,16 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
     initialItems: [
       { name: "Maça Estrela", quantity: 1, description: "Arma sagrada de impacto e perfuração." },
       { name: "Símbolo Sagrado Entalhado", quantity: 1, description: "Foco de conjuração divina." },
-      { name: "Armadura de Couro Batido", quantity: 1, description: "Proteção leve de couro reforçado." },
-      { name: "Kit de Primeiros Socorros", quantity: 1, description: "Bandagens, unguentos e talas para tratar ferimentos." },
+      {
+        name: "Armadura de Couro Batido",
+        quantity: 1,
+        description: "Proteção leve de couro reforçado.",
+      },
+      {
+        name: "Kit de Primeiros Socorros",
+        quantity: 1,
+        description: "Bandagens, unguentos e talas para tratar ferimentos.",
+      },
     ],
     levels: generateLevels(8, true, "empatia", {
       1: ["Doutrina Divina", "Canalização Divina (Cura/Dano)", "Magia Divina"],
@@ -242,7 +291,8 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
     name: "Druid",
     keyAttribute: "empatia",
     hpPerLevel: 8,
-    description: "Guardião da natureza e do equilíbrio ecológico. Molda os elementos, conjura a fúria das tempestades e transforma-se em feras selvagens.",
+    description:
+      "Guardião da natureza e do equilíbrio ecológico. Molda os elementos, conjura a fúria das tempestades e transforma-se em feras selvagens.",
     proficiencies: {
       weapons: ["Armas simples", "Lança", "Cajado", "Foice", "Clava"],
       armor: ["Armadura leve", "Armadura média", "Escudos (não-metálicos)", "Defesa sem armadura"],
@@ -250,9 +300,17 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
       tools: ["Bolsa de ervas"],
     },
     initialItems: [
-      { name: "Cajado de Carvalho", quantity: 1, description: "Cajado entalhado com runas naturais." },
+      {
+        name: "Cajado de Carvalho",
+        quantity: 1,
+        description: "Cajado entalhado com runas naturais.",
+      },
       { name: "Armadura de Couro Rústico", quantity: 1, description: "Armadura natural flexível." },
-      { name: "Escudo de Madeira Reforçado", quantity: 1, description: "Escudo feito de troncos entrelaçados." },
+      {
+        name: "Escudo de Madeira Reforçado",
+        quantity: 1,
+        description: "Escudo feito de troncos entrelaçados.",
+      },
       { name: "Bolsa de Sementes e Ervas", quantity: 1, description: "Reagentes druídicos." },
     ],
     levels: generateLevels(8, true, "empatia", {
@@ -274,7 +332,8 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
     name: "Fighter",
     keyAttribute: "forca",
     hpPerLevel: 10,
-    description: "Mestre incomparável de todas as armas e técnicas marciais. Combina reflexos aguçados, versatilidade tática e precisão devastadora em combate.",
+    description:
+      "Mestre incomparável de todas as armas e técnicas marciais. Combina reflexos aguçados, versatilidade tática e precisão devastadora em combate.",
     proficiencies: {
       weapons: ["Armas simples", "Armas marciais", "Armas avançadas", "Ataques desarmados"],
       armor: ["Todas as armaduras (Leve, Média, Pesada)", "Escudos", "Defesa sem armadura"],
@@ -282,7 +341,11 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
       tools: ["Kit de manutenção de armas"],
     },
     initialItems: [
-      { name: "Montante de Aço", quantity: 1, description: "Espada de duas mãos com excelente alcance e dano." },
+      {
+        name: "Montante de Aço",
+        quantity: 1,
+        description: "Espada de duas mãos com excelente alcance e dano.",
+      },
       { name: "Arco Composto", quantity: 1, description: "Arco de precisão marcial." },
       { name: "Brunea de Aço", quantity: 1, description: "Armadura média protetora." },
       { name: "Aljava com 20 Flechas", quantity: 1, description: "Munição para o arco." },
@@ -306,7 +369,8 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
     name: "Gunslinger",
     keyAttribute: "destreza",
     hpPerLevel: 10,
-    description: "Atirador de elite com armas de fogo e bestas. Especialista em recargas rápidas, truques de tiro espetaculares e pontaria letal a distância.",
+    description:
+      "Atirador de elite com armas de fogo e bestas. Especialista em recargas rápidas, truques de tiro espetaculares e pontaria letal a distância.",
     proficiencies: {
       weapons: ["Armas de fogo", "Bestas", "Armas simples", "Armas marciais"],
       armor: ["Armadura leve", "Armadura média", "Defesa sem armadura"],
@@ -314,8 +378,16 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
       tools: ["Kit de armeiro", "Pólvora e balas"],
     },
     initialItems: [
-      { name: "Pistola de Pederneira", quantity: 1, description: "Arma de fogo portátil de recarga ágil." },
-      { name: "Cartucheira com 30 Tiros", quantity: 1, description: "Balas de chumbo e doses de pólvora negra." },
+      {
+        name: "Pistola de Pederneira",
+        quantity: 1,
+        description: "Arma de fogo portátil de recarga ágil.",
+      },
+      {
+        name: "Cartucheira com 30 Tiros",
+        quantity: 1,
+        description: "Balas de chumbo e doses de pólvora negra.",
+      },
       { name: "Adaga Oculta", quantity: 1, description: "Arma secundária rápida." },
       { name: "Armadura de Couro Reforçada", quantity: 1, description: "Proteção ágil." },
     ],
@@ -338,7 +410,8 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
     name: "Inventor",
     keyAttribute: "inteligencia",
     hpPerLevel: 8,
-    description: "Engenheiro genial que desenvolve uma inovação revolucionária (arma, armadura ou constructo companheiro) e arrisca sobrecarregar seus limites mecânicos.",
+    description:
+      "Engenheiro genial que desenvolve uma inovação revolucionária (arma, armadura ou constructo companheiro) e arrisca sobrecarregar seus limites mecânicos.",
     proficiencies: {
       weapons: ["Armas simples", "Armas marciais"],
       armor: ["Armadura leve", "Armadura média", "Defesa sem armadura", "Escudos"],
@@ -346,8 +419,16 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
       tools: ["Kit de engenharia e artesanato"],
     },
     initialItems: [
-      { name: "Inovação Personalizada", quantity: 1, description: "Protótipo mecânico único desenvolvido pelo inventor." },
-      { name: "Kit de Ferramentas de Precisão", quantity: 1, description: "Chaves, engrenagens, alicates e soldas." },
+      {
+        name: "Inovação Personalizada",
+        quantity: 1,
+        description: "Protótipo mecânico único desenvolvido pelo inventor.",
+      },
+      {
+        name: "Kit de Ferramentas de Precisão",
+        quantity: 1,
+        description: "Chaves, engrenagens, alicates e soldas.",
+      },
       { name: "Balestra Leve", quantity: 1, description: "Arma de disparo mecânica." },
       { name: "Armadura de Couro Cravejado", quantity: 1, description: "Proteção moderada." },
     ],
@@ -370,7 +451,8 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
     name: "Investigator",
     keyAttribute: "inteligencia",
     hpPerLevel: 8,
-    description: "Detetive brilhante que desvenda mistérios insolúveis e antecipa o desfecho do combate através de dedução lógica e ataques estratégicos calculados.",
+    description:
+      "Detetive brilhante que desvenda mistérios insolúveis e antecipa o desfecho do combate através de dedução lógica e ataques estratégicos calculados.",
     proficiencies: {
       weapons: ["Armas simples", "Armas marciais leves (Arco curto, Rapieira, Espada curta)"],
       armor: ["Armadura leve", "Defesa sem armadura"],
@@ -378,9 +460,21 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
       tools: ["Kit forense / Lupa"],
     },
     initialItems: [
-      { name: "Rapieira Fina", quantity: 1, description: "Arma perfurante precisa para ataques calculados." },
-      { name: "Lupa de Investigação", quantity: 1, description: "Instrumento óptico para examinar pistas minúsculas." },
-      { name: "Caderno de Anotações e Tinta", quantity: 1, description: "Para registrar pistas e deduções." },
+      {
+        name: "Rapieira Fina",
+        quantity: 1,
+        description: "Arma perfurante precisa para ataques calculados.",
+      },
+      {
+        name: "Lupa de Investigação",
+        quantity: 1,
+        description: "Instrumento óptico para examinar pistas minúsculas.",
+      },
+      {
+        name: "Caderno de Anotações e Tinta",
+        quantity: 1,
+        description: "Para registrar pistas e deduções.",
+      },
       { name: "Armadura de Couro Discreta", quantity: 1, description: "Proteção leve." },
     ],
     levels: generateLevels(8, false, "inteligencia", {
@@ -402,7 +496,8 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
     name: "Kineticist",
     keyAttribute: "vigor",
     hpPerLevel: 8,
-    description: "Canalizador físico da matéria e energia elemental (Fogo, Água, Terra, Ar, Madeira, Metal). Molda rajadas cinéticas contínuas e portais dos planos elementais.",
+    description:
+      "Canalizador físico da matéria e energia elemental (Fogo, Água, Terra, Ar, Madeira, Metal). Molda rajadas cinéticas contínuas e portais dos planos elementais.",
     proficiencies: {
       weapons: ["Armas simples", "Rajada Cinética"],
       armor: ["Armadura leve", "Defesa sem armadura", "Escudos"],
@@ -410,13 +505,25 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
       tools: [],
     },
     initialItems: [
-      { name: "Foco Cinético", quantity: 1, description: "Gema ou talismã canalizador dos portais elementais." },
+      {
+        name: "Foco Cinético",
+        quantity: 1,
+        description: "Gema ou talismã canalizador dos portais elementais.",
+      },
       { name: "Adaga de Defesa", quantity: 1, description: "Arma simples de reserva." },
-      { name: "Armadura de Couro Leve", quantity: 1, description: "Traje flexível para canalização." },
+      {
+        name: "Armadura de Couro Leve",
+        quantity: 1,
+        description: "Traje flexível para canalização.",
+      },
       { name: "Mochila de Viagem", quantity: 1, description: "Provisões e cantil." },
     ],
     levels: generateLevels(8, false, "vigor", {
-      1: ["Portal Cinético (Elemental Gate)", "Rajada Cinética (Kinetic Blast)", "Canalização de Impulsos"],
+      1: [
+        "Portal Cinético (Elemental Gate)",
+        "Rajada Cinética (Kinetic Blast)",
+        "Canalização de Impulsos",
+      ],
       2: ["Talento de Cinético"],
       3: ["Expansão de Portal", "Impulso Aprimorado"],
       5: ["Especialista em Impulsos Cinéticos", "Aura Elemental"],
@@ -434,7 +541,8 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
     name: "Magus",
     keyAttribute: "inteligencia",
     hpPerLevel: 8,
-    description: "Guerreiro arcano que une feitiçaria e esgrima em um estilo de luta simbiótico, canalizando magias de destruição através do fio de sua lâmina no Spellstrike.",
+    description:
+      "Guerreiro arcano que une feitiçaria e esgrima em um estilo de luta simbiótico, canalizando magias de destruição através do fio de sua lâmina no Spellstrike.",
     proficiencies: {
       weapons: ["Armas simples", "Armas marciais"],
       armor: ["Armadura leve", "Armadura média", "Defesa sem armadura", "Escudos"],
@@ -442,9 +550,21 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
       tools: ["Livro de magias"],
     },
     initialItems: [
-      { name: "Espada Larga Rúnica", quantity: 1, description: "Arma condutora para o Spellstrike." },
-      { name: "Livro de Magias do Magus", quantity: 1, description: "Tomo de feitiços arcanos de combate." },
-      { name: "Brunea de Couro Reforçado", quantity: 1, description: "Armadura equilibrada para conjuração e combate." },
+      {
+        name: "Espada Larga Rúnica",
+        quantity: 1,
+        description: "Arma condutora para o Spellstrike.",
+      },
+      {
+        name: "Livro de Magias do Magus",
+        quantity: 1,
+        description: "Tomo de feitiços arcanos de combate.",
+      },
+      {
+        name: "Brunea de Couro Reforçado",
+        quantity: 1,
+        description: "Armadura equilibrada para conjuração e combate.",
+      },
       { name: "Bolsa de Componentes Arcanos", quantity: 1, description: "Reagentes para magias." },
     ],
     levels: generateLevels(8, true, "inteligencia", {
@@ -466,7 +586,8 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
     name: "Monk",
     keyAttribute: "destreza",
     hpPerLevel: 10,
-    description: "Mestre das artes marciais e disciplina interior do Ki. Desfere sequências de golpes desarmados letais com velocidade espantosa e mobilidade acrobática.",
+    description:
+      "Mestre das artes marciais e disciplina interior do Ki. Desfere sequências de golpes desarmados letais com velocidade espantosa e mobilidade acrobática.",
     proficiencies: {
       weapons: ["Armas simples", "Armas de monge", "Ataques desarmados poderosos"],
       armor: ["Defesa sem armadura (Especialista inicial)"],
@@ -474,10 +595,22 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
       tools: [],
     },
     initialItems: [
-      { name: "Vestes de Seda de Treinamento", quantity: 1, description: "Vestimentas leves que permitem total liberdade de movimentos." },
-      { name: "Bastão Bo de Madeira Nobre", quantity: 1, description: "Arma tradicional de monge." },
+      {
+        name: "Vestes de Seda de Treinamento",
+        quantity: 1,
+        description: "Vestimentas leves que permitem total liberdade de movimentos.",
+      },
+      {
+        name: "Bastão Bo de Madeira Nobre",
+        quantity: 1,
+        description: "Arma tradicional de monge.",
+      },
       { name: "Shurikens de Aço", quantity: 5, description: "Armas de arremesso silenciosas." },
-      { name: "Contas de Meditação Ki", quantity: 1, description: "Foco interior para concentração espiritual." },
+      {
+        name: "Contas de Meditação Ki",
+        quantity: 1,
+        description: "Foco interior para concentração espiritual.",
+      },
     ],
     levels: generateLevels(10, true, "destreza", {
       1: ["Rajada de Golpes (Flurry of Blows)", "Punho Poderoso", "Movimento Místico (+3m)"],
@@ -498,7 +631,8 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
     name: "Oracle",
     keyAttribute: "empatia",
     hpPerLevel: 8,
-    description: "Vidente tocado por forças cósmicas avassaladoras. Porta uma Maldição Divina que debilita seu corpo enquanto liberta poderes miraculosos avassaladores.",
+    description:
+      "Vidente tocado por forças cósmicas avassaladoras. Porta uma Maldição Divina que debilita seu corpo enquanto liberta poderes miraculosos avassaladores.",
     proficiencies: {
       weapons: ["Armas simples"],
       armor: ["Armadura leve", "Defesa sem armadura"],
@@ -506,10 +640,26 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
       tools: ["Foco oracular"],
     },
     initialItems: [
-      { name: "Cetro Oracular", quantity: 1, description: "Cetro entalhado com representações do mistério cósmico." },
-      { name: "Túnica com Runas Astrais", quantity: 1, description: "Vestes imbuídas com energia oracular." },
-      { name: "Adaga de Prata Cerimonial", quantity: 1, description: "Para rituais e defesa básica." },
-      { name: "Bolsa de Incensos Místicos", quantity: 1, description: "Para entrar em transe profético." },
+      {
+        name: "Cetro Oracular",
+        quantity: 1,
+        description: "Cetro entalhado com representações do mistério cósmico.",
+      },
+      {
+        name: "Túnica com Runas Astrais",
+        quantity: 1,
+        description: "Vestes imbuídas com energia oracular.",
+      },
+      {
+        name: "Adaga de Prata Cerimonial",
+        quantity: 1,
+        description: "Para rituais e defesa básica.",
+      },
+      {
+        name: "Bolsa de Incensos Místicos",
+        quantity: 1,
+        description: "Para entrar em transe profético.",
+      },
     ],
     levels: generateLevels(8, true, "empatia", {
       1: ["Mistério do Oráculo", "Maldição do Oráculo", "Magia Divina Espontânea"],
@@ -530,7 +680,8 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
     name: "Psychic",
     keyAttribute: "inteligencia",
     hpPerLevel: 6,
-    description: "Mente prodigiosa capaz de dobrar a realidade por pura força mental. Amplifica truques mentais ao entrar em estados de transe psíquico (Unleash Psyche).",
+    description:
+      "Mente prodigiosa capaz de dobrar a realidade por pura força mental. Amplifica truques mentais ao entrar em estados de transe psíquico (Unleash Psyche).",
     proficiencies: {
       weapons: ["Armas simples"],
       armor: ["Defesa sem armadura"],
@@ -538,13 +689,29 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
       tools: ["Ampulheta ou Foco Psíquico"],
     },
     initialItems: [
-      { name: "Cristal Psíquico Ressonante", quantity: 1, description: "Cristal que amplifica vibrações mentais." },
-      { name: "Vestes Acadêmicas Confortáveis", quantity: 1, description: "Roupas leves que auxiliam a concentração." },
+      {
+        name: "Cristal Psíquico Ressonante",
+        quantity: 1,
+        description: "Cristal que amplifica vibrações mentais.",
+      },
+      {
+        name: "Vestes Acadêmicas Confortáveis",
+        quantity: 1,
+        description: "Roupas leves que auxiliam a concentração.",
+      },
       { name: "Adaga de Bolso", quantity: 1, description: "Arma de último recurso." },
-      { name: "Diário de Pesquisa Psíquica", quantity: 1, description: "Mapas mentais e registros telecinéticos." },
+      {
+        name: "Diário de Pesquisa Psíquica",
+        quantity: 1,
+        description: "Mapas mentais e registros telecinéticos.",
+      },
     ],
     levels: generateLevels(6, true, "inteligencia", {
-      1: ["Libertar a Psique (Unleash Psyche)", "Mente Consciente & Inconsciente", "Magia Oculta Espontânea"],
+      1: [
+        "Libertar a Psique (Unleash Psyche)",
+        "Mente Consciente & Inconsciente",
+        "Magia Oculta Espontânea",
+      ],
       2: ["Talento de Psíquico"],
       3: ["Magias de 2º Círculo", "Truques Psíquicos Amplificados"],
       5: ["Magias de 3º Círculo", "Especialista em Conjuração Oculta"],
@@ -562,7 +729,8 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
     name: "Ranger",
     keyAttribute: "destreza",
     hpPerLevel: 10,
-    description: "Rastreador e caçador implacável das terras ermas. Marca presas com precisão cirúrgica, ataca de emboscadas e guia companheiros em qualquer terreno.",
+    description:
+      "Rastreador e caçador implacável das terras ermas. Marca presas com precisão cirúrgica, ataca de emboscadas e guia companheiros em qualquer terreno.",
     proficiencies: {
       weapons: ["Armas simples", "Armas marciais", "Ataques desarmados"],
       armor: ["Armadura leve", "Armadura média", "Defesa sem armadura", "Escudos"],
@@ -570,9 +738,21 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
       tools: ["Armadilhas", "Kit de sobrevivência"],
     },
     initialItems: [
-      { name: "Arco Longo de Caça", quantity: 1, description: "Arco de grande alcance e precisão." },
-      { name: "Espadas Curtas Gêmeas", quantity: 2, description: "Par de espadas leves para combate com duas armas." },
-      { name: "Armadura de Couro Batido", quantity: 1, description: "Proteção leve e flexível para camuflagem." },
+      {
+        name: "Arco Longo de Caça",
+        quantity: 1,
+        description: "Arco de grande alcance e precisão.",
+      },
+      {
+        name: "Espadas Curtas Gêmeas",
+        quantity: 2,
+        description: "Par de espadas leves para combate com duas armas.",
+      },
+      {
+        name: "Armadura de Couro Batido",
+        quantity: 1,
+        description: "Proteção leve e flexível para camuflagem.",
+      },
       { name: "Carcás com 30 Flechas", quantity: 1, description: "Munição para caçada." },
     ],
     levels: generateLevels(10, false, "destreza", {
@@ -594,7 +774,8 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
     name: "Rogue",
     keyAttribute: "destreza",
     hpPerLevel: 8,
-    description: "Especialista em infiltração, truques sujos e golpes de oportunidade. Explora fraquezas dos adversários com Ataques Furtivos letais e perícias sem limites.",
+    description:
+      "Especialista em infiltração, truques sujos e golpes de oportunidade. Explora fraquezas dos adversários com Ataques Furtivos letais e perícias sem limites.",
     proficiencies: {
       weapons: ["Armas simples", "Espada curta", "Rapieira", "Arco curto", "Clube"],
       armor: ["Armadura leve", "Defesa sem armadura"],
@@ -602,9 +783,21 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
       tools: ["Ferramentas de ladrão (gazúas)"],
     },
     initialItems: [
-      { name: "Rapieira de Duelo", quantity: 1, description: "Lâmina ágil perfeita para ataques furtivos." },
-      { name: "Adagas de Arremesso", quantity: 3, description: "Adagas equilibradas para ataque à queima-roupa ou arremesso." },
-      { name: "Gazúas de Aço Profissionais", quantity: 1, description: "Conjunto para desarmar armadilhas e abrir fechaduras." },
+      {
+        name: "Rapieira de Duelo",
+        quantity: 1,
+        description: "Lâmina ágil perfeita para ataques furtivos.",
+      },
+      {
+        name: "Adagas de Arremesso",
+        quantity: 3,
+        description: "Adagas equilibradas para ataque à queima-roupa ou arremesso.",
+      },
+      {
+        name: "Gazúas de Aço Profissionais",
+        quantity: 1,
+        description: "Conjunto para desarmar armadilhas e abrir fechaduras.",
+      },
       { name: "Armadura de Couro Escuro", quantity: 1, description: "Camuflagem em sombras." },
     ],
     levels: generateLevels(8, false, "destreza", {
@@ -626,7 +819,8 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
     name: "Sorcerer",
     keyAttribute: "empatia",
     hpPerLevel: 6,
-    description: "Conjurador com magia inata pulsando em suas veias herdada de linhagens místicas (dracônica, angelical, demoníaca, fada ou aberrante).",
+    description:
+      "Conjurador com magia inata pulsando em suas veias herdada de linhagens místicas (dracônica, angelical, demoníaca, fada ou aberrante).",
     proficiencies: {
       weapons: ["Armas simples"],
       armor: ["Defesa sem armadura"],
@@ -634,10 +828,22 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
       tools: [],
     },
     initialItems: [
-      { name: "Bordão com Cristal Incrustado", quantity: 1, description: "Cajado simples para canalização mágica." },
+      {
+        name: "Bordão com Cristal Incrustado",
+        quantity: 1,
+        description: "Cajado simples para canalização mágica.",
+      },
       { name: "Adaga Elegante", quantity: 1, description: "Arma leve cerimonial." },
-      { name: "Manto de Tecido Nobre", quantity: 1, description: "Vestes com símbolos da linhagem sanguínea." },
-      { name: "Bolsa de Reagentes de Linhagem", quantity: 1, description: "Escamas, penas ou essências místicas." },
+      {
+        name: "Manto de Tecido Nobre",
+        quantity: 1,
+        description: "Vestes com símbolos da linhagem sanguínea.",
+      },
+      {
+        name: "Bolsa de Reagentes de Linhagem",
+        quantity: 1,
+        description: "Escamas, penas ou essências místicas.",
+      },
     ],
     levels: generateLevels(6, true, "empatia", {
       1: ["Linhagem de Sangue (Bloodline)", "Magia Espontânea", "Magia da Linhagem"],
@@ -658,7 +864,8 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
     name: "Summoner",
     keyAttribute: "empatia",
     hpPerLevel: 10,
-    description: "Convocador ligado por um elo místico inquebrável a um Eidolon companheiro manifestado diretamente de outros planos para lutar em perfeita sincronia.",
+    description:
+      "Convocador ligado por um elo místico inquebrável a um Eidolon companheiro manifestado diretamente de outros planos para lutar em perfeita sincronia.",
     proficiencies: {
       weapons: ["Armas simples"],
       armor: ["Defesa sem armadura"],
@@ -666,10 +873,22 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
       tools: [],
     },
     initialItems: [
-      { name: "Talismã do Elo Espiritual", quantity: 1, description: "Canalizador da conexão simbiótica com o Eidolon." },
+      {
+        name: "Talismã do Elo Espiritual",
+        quantity: 1,
+        description: "Canalizador da conexão simbiótica com o Eidolon.",
+      },
       { name: "Lança Leve", quantity: 1, description: "Arma simples de alcance." },
-      { name: "Túnica de Convocador", quantity: 1, description: "Vestimentas com runas de convocação." },
-      { name: "Kit de Acampamento", quantity: 1, description: "Provisões para o mestre e a criatura." },
+      {
+        name: "Túnica de Convocador",
+        quantity: 1,
+        description: "Vestimentas com runas de convocação.",
+      },
+      {
+        name: "Kit de Acampamento",
+        quantity: 1,
+        description: "Provisões para o mestre e a criatura.",
+      },
     ],
     levels: generateLevels(10, true, "empatia", {
       1: ["Manifestar Eidolon", "Ato Uno (Act Together)", "Pontos de Vida Compartilhados"],
@@ -690,16 +909,28 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
     name: "Swashbuckler",
     keyAttribute: "destreza",
     hpPerLevel: 10,
-    description: "Duelista acrobata e audacioso que transforma acrobacias ousadas em 'Panache', finalizando oponentes com finalizadores espetaculares (Finishers).",
+    description:
+      "Duelista acrobata e audacioso que transforma acrobacias ousadas em 'Panache', finalizando oponentes com finalizadores espetaculares (Finishers).",
     proficiencies: {
-      weapons: ["Armas simples", "Armas marciais ágeis/acrobáticas (Rapieira, Florete, Adaga, Chicote)"],
+      weapons: [
+        "Armas simples",
+        "Armas marciais ágeis/acrobáticas (Rapieira, Florete, Adaga, Chicote)",
+      ],
       armor: ["Armadura leve", "Defesa sem armadura", "Escudos"],
       languages: ["Comum"],
       tools: [],
     },
     initialItems: [
-      { name: "Florete Elegante de Duelo", quantity: 1, description: "Espada fina com guarda intrincada." },
-      { name: "Capa Elegante com Forro de Seda", quantity: 1, description: "Acessório para fintas e distrações no combate." },
+      {
+        name: "Florete Elegante de Duelo",
+        quantity: 1,
+        description: "Espada fina com guarda intrincada.",
+      },
+      {
+        name: "Capa Elegante com Forro de Seda",
+        quantity: 1,
+        description: "Acessório para fintas e distrações no combate.",
+      },
       { name: "Adaga Canhota", quantity: 1, description: "Para aparar ataques e contragolpes." },
       { name: "Armadura de Couro Fino", quantity: 1, description: "Proteção ágil." },
     ],
@@ -722,7 +953,8 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
     name: "Thaumaturge",
     keyAttribute: "empatia",
     hpPerLevel: 8,
-    description: "Erudito do oculto que carrega implementos mágicos esotéricos (espelho, amuleto, cálice, lanterna, sino) e explora vulnerabilidades místicas em qualquer criatura.",
+    description:
+      "Erudito do oculto que carrega implementos mágicos esotéricos (espelho, amuleto, cálice, lanterna, sino) e explora vulnerabilidades místicas em qualquer criatura.",
     proficiencies: {
       weapons: ["Armas simples", "Armas marciais"],
       armor: ["Armadura leve", "Armadura média", "Defesa sem armadura", "Escudos"],
@@ -730,13 +962,29 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
       tools: ["Implementos esotéricos"],
     },
     initialItems: [
-      { name: "Implemento de Taumaturgo (Amuleto/Espelho)", quantity: 1, description: "Relíquia esotérica canalizadora de poderes ocultos." },
-      { name: "Espada Curta Cerimonial", quantity: 1, description: "Arma com símbolos esotéricos entalhados." },
+      {
+        name: "Implemento de Taumaturgo (Amuleto/Espelho)",
+        quantity: 1,
+        description: "Relíquia esotérica canalizadora de poderes ocultos.",
+      },
+      {
+        name: "Espada Curta Cerimonial",
+        quantity: 1,
+        description: "Arma com símbolos esotéricos entalhados.",
+      },
       { name: "Armadura de Couro Cravejado", quantity: 1, description: "Proteção média." },
-      { name: "Bolsa de Relíquias e Simpatias", quantity: 1, description: "Ossos, pós, pós de ferro e espelhos para explorar fraquezas." },
+      {
+        name: "Bolsa de Relíquias e Simpatias",
+        quantity: 1,
+        description: "Ossos, pós, pós de ferro e espelhos para explorar fraquezas.",
+      },
     ],
     levels: generateLevels(8, false, "empatia", {
-      1: ["Explorar Vulnerabilidade (Exploit Vulnerability)", "Primeiro Implemento", "Simpatia Esotérica"],
+      1: [
+        "Explorar Vulnerabilidade (Exploit Vulnerability)",
+        "Primeiro Implemento",
+        "Simpatia Esotérica",
+      ],
       2: ["Talento de Taumaturgo"],
       3: ["Especialista em Ocultismo", "Implemento Aprimorado"],
       5: ["Segundo Implemento", "Especialista em Armas Marciais"],
@@ -754,7 +1002,8 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
     name: "Witch",
     keyAttribute: "inteligencia",
     hpPerLevel: 6,
-    description: "Conjuradora que forja um pacto com um Patrono misterioso, ensinando feitiços ancestrais e truques de maldição através de um Familiar Mágico falante.",
+    description:
+      "Conjuradora que forja um pacto com um Patrono misterioso, ensinando feitiços ancestrais e truques de maldição através de um Familiar Mágico falante.",
     proficiencies: {
       weapons: ["Armas simples"],
       armor: ["Defesa sem armadura"],
@@ -762,10 +1011,26 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
       tools: ["Caldeirão / Tomo de feitiços"],
     },
     initialItems: [
-      { name: "Familiar Mágico (Corvo, Gato ou Serpente)", quantity: 1, description: "Criatura mística companheira que guarda as magias da bruxa." },
-      { name: "Caldeirão de Ferro Pequeno", quantity: 1, description: "Para preparar pós e misturas rituais." },
-      { name: "Foice Pequena de Colheita", quantity: 1, description: "Para colher ingredientes e defesa pessoal." },
-      { name: "Manto das Sombras com Capuz", quantity: 1, description: "Roupas tradicionais de bruxaria." },
+      {
+        name: "Familiar Mágico (Corvo, Gato ou Serpente)",
+        quantity: 1,
+        description: "Criatura mística companheira que guarda as magias da bruxa.",
+      },
+      {
+        name: "Caldeirão de Ferro Pequeno",
+        quantity: 1,
+        description: "Para preparar pós e misturas rituais.",
+      },
+      {
+        name: "Foice Pequena de Colheita",
+        quantity: 1,
+        description: "Para colher ingredientes e defesa pessoal.",
+      },
+      {
+        name: "Manto das Sombras com Capuz",
+        quantity: 1,
+        description: "Roupas tradicionais de bruxaria.",
+      },
     ],
     levels: generateLevels(6, true, "inteligencia", {
       1: ["Patrono da Bruxa", "Familiar Mágico Guardião", "Feitiços de Maldição (Hexes)"],
@@ -786,7 +1051,8 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
     name: "Wizard",
     keyAttribute: "inteligencia",
     hpPerLevel: 6,
-    description: "Estudioso supremo das leis arcanas do cosmos. Prepara feitiços complexos através de rigoroso estudo metódico de seu grimório pessoal.",
+    description:
+      "Estudioso supremo das leis arcanas do cosmos. Prepara feitiços complexos através de rigoroso estudo metódico de seu grimório pessoal.",
     proficiencies: {
       weapons: ["Armas simples (Bordão, Adaga, Besta leve)"],
       armor: ["Defesa sem armadura"],
@@ -794,13 +1060,30 @@ export const PF2E_CLASSES: Pf2eClassDefinition[] = [
       tools: ["Grimório / Livro de Magias"],
     },
     initialItems: [
-      { name: "Grimório Arcano Encadernado em Couro", quantity: 1, description: "Livro de feitiços manuscrito contendo a biblioteca de magias do mago." },
+      {
+        name: "Grimório Arcano Encadernado em Couro",
+        quantity: 1,
+        description: "Livro de feitiços manuscrito contendo a biblioteca de magias do mago.",
+      },
       { name: "Bordão de Madeira de Carvalho", quantity: 1, description: "Foco arcano clássico." },
-      { name: "Adaga Cerimonial", quantity: 1, description: "Para rituais e defesa de emergência." },
-      { name: "Bolsa de Componentes Arcanos e Tinta Mágica", quantity: 1, description: "Pós raros e tinta alquímica para transcrever novos feitiços." },
+      {
+        name: "Adaga Cerimonial",
+        quantity: 1,
+        description: "Para rituais e defesa de emergência.",
+      },
+      {
+        name: "Bolsa de Componentes Arcanos e Tinta Mágica",
+        quantity: 1,
+        description: "Pós raros e tinta alquímica para transcrever novos feitiços.",
+      },
     ],
     levels: generateLevels(6, true, "inteligencia", {
-      1: ["Escola de Magia Arcana", "Tese Arcana", "Grimório de Feitiços", "Conjuração Arcana Preparada"],
+      1: [
+        "Escola de Magia Arcana",
+        "Tese Arcana",
+        "Grimório de Feitiços",
+        "Conjuração Arcana Preparada",
+      ],
       2: ["Talento de Mago"],
       3: ["Magias de 2º Círculo", "Dreno de Foco Arcano"],
       5: ["Magias de 3º Círculo", "Especialista em Conjuração Arcana"],

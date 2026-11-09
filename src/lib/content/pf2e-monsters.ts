@@ -2,7 +2,7 @@
 // Libmork — Helper: Leitor e Parser de Monstros Pathfinder 2e (Foundry PF2e)
 // =============================================================================
 
-import { logger } from '@/lib/logger';
+import { logger } from "@/lib/logger";
 
 export interface Pf2eMonsterCatalogItem {
   index: string;
@@ -55,7 +55,8 @@ const TARGET_PACKS = [
 let catalogCache: { timestamp: number; items: Pf2eMonsterCatalogItem[] } | null = null;
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hora de cache em memória
 
-const clamp = (val: number, min = 1, max = 30) => Math.max(min, Math.min(max, Math.round(val || 10)));
+const clamp = (val: number, min = 1, max = 30) =>
+  Math.max(min, Math.min(max, Math.round(val || 10)));
 
 /**
  * Valida rigorosamente se o caminho recebido pertence aos packs autorizados do Foundry PF2e.
@@ -82,7 +83,7 @@ export async function fetchPf2eMonsterCatalog(): Promise<Pf2eMonsterCatalogItem[
     });
 
     if (!res.ok) {
-      logger.error({ status: res.status }, '[fetchPf2eMonsterCatalog] HTTP status');
+      logger.error({ status: res.status }, "[fetchPf2eMonsterCatalog] HTTP status");
       return catalogCache?.items || [];
     }
 
@@ -118,7 +119,7 @@ export async function fetchPf2eMonsterCatalog(): Promise<Pf2eMonsterCatalogItem[
     catalogCache = { timestamp: Date.now(), items: catalogItems };
     return catalogItems;
   } catch (error) {
-    logger.error({ err: error }, '[fetchPf2eMonsterCatalog] Erro ao buscar catálogo');
+    logger.error({ err: error }, "[fetchPf2eMonsterCatalog] Erro ao buscar catálogo");
     return catalogCache?.items || [];
   }
 }
@@ -144,7 +145,10 @@ async function fetchJsonWithRetry(url: string, retries = 2): Promise<any> {
   const timeoutId = setTimeout(() => controller.abort(), 12000);
 
   try {
-    const headers: Record<string, string> = { Accept: "application/json", "User-Agent": "LibmorkApp" };
+    const headers: Record<string, string> = {
+      Accept: "application/json",
+      "User-Agent": "LibmorkApp",
+    };
     if (process.env.GITHUB_TOKEN) {
       headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
     }
@@ -161,7 +165,7 @@ async function fetchJsonWithRetry(url: string, retries = 2): Promise<any> {
         await new Promise((resolve) => setTimeout(resolve, 1500));
         return fetchJsonWithRetry(url, retries - 1);
       }
-      logger.error({ status: res.status, url }, '[fetchJsonWithRetry] HTTP error');
+      logger.error({ status: res.status, url }, "[fetchJsonWithRetry] HTTP error");
       return null;
     }
 
@@ -172,7 +176,7 @@ async function fetchJsonWithRetry(url: string, retries = 2): Promise<any> {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       return fetchJsonWithRetry(url, retries - 1);
     }
-    logger.error({ err, url }, '[fetchJsonWithRetry] Falha ao consultar URL');
+    logger.error({ err, url }, "[fetchJsonWithRetry] Falha ao consultar URL");
     return null;
   }
 }
@@ -182,7 +186,7 @@ async function fetchJsonWithRetry(url: string, retries = 2): Promise<any> {
  */
 export async function fetchAndParsePf2eMonster(path: string): Promise<Pf2eMonsterParsed | null> {
   if (!isValidPf2ePath(path)) {
-    logger.warn({ path }, '[fetchAndParsePf2eMonster] Caminho inválido rejeitado');
+    logger.warn({ path }, "[fetchAndParsePf2eMonster] Caminho inválido rejeitado");
     return null;
   }
 
@@ -312,7 +316,7 @@ export async function fetchAndParsePf2eMonster(path: string): Promise<Pf2eMonste
       publicNotes,
     };
   } catch (error) {
-    logger.error({ err: error, path }, '[fetchAndParsePf2eMonster] Erro ao parsear monstro');
+    logger.error({ err: error, path }, "[fetchAndParsePf2eMonster] Erro ao parsear monstro");
     return null;
   }
 }

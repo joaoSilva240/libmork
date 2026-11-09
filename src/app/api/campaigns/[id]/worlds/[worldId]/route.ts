@@ -21,10 +21,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id, worldId } = await params;
@@ -38,7 +35,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     if (!campaign) {
       return NextResponse.json(
         { success: false, error: "Campanha não encontrada" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -49,10 +46,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       .limit(1);
 
     if (!existingWorld) {
-      return NextResponse.json(
-        { success: false, error: "Mundo não encontrado" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "Mundo não encontrado" }, { status: 404 });
     }
 
     const body = await request.json();
@@ -65,7 +59,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
           error: "Dados inválidos",
           errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -80,10 +74,10 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       data: updatedWorld,
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao atualizar mundo');
+    logger.error({ err: error }, "Erro ao atualizar mundo");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -97,10 +91,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id, worldId } = await params;
@@ -114,7 +105,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     if (!campaign) {
       return NextResponse.json(
         { success: false, error: "Campanha não encontrada" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -125,10 +116,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       .limit(1);
 
     if (!existingWorld) {
-      return NextResponse.json(
-        { success: false, error: "Mundo não encontrado" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "Mundo não encontrado" }, { status: 404 });
     }
 
     await db.delete(worlds).where(eq(worlds.id, worldId));
@@ -138,10 +126,10 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       message: "Mundo excluído com sucesso",
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao excluir mundo');
+    logger.error({ err: error }, "Erro ao excluir mundo");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

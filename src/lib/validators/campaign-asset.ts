@@ -14,10 +14,7 @@ export type CampaignAssetCategory = (typeof CAMPAIGN_ASSET_CATEGORIES)[number];
  * Schema de criação de asset da campanha (Issue #61).
  */
 export const createCampaignAssetSchema = z.object({
-  name: z
-    .string()
-    .min(1, "Nome é obrigatório")
-    .max(200, "Nome deve ter no máximo 200 caracteres"),
+  name: z.string().min(1, "Nome é obrigatório").max(200, "Nome deve ter no máximo 200 caracteres"),
   description: z.string().max(5000).optional().nullable(),
   imageUrl: z
     .string()

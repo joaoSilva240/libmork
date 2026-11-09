@@ -41,11 +41,7 @@ vi.mock("@/lib/db", () => {
 });
 
 const { requireAuth } = await import("@/lib/auth/session");
-const {
-  GET: getShare,
-  POST: postShare,
-  DELETE: deleteShare,
-} = await import("../[id]/share/route");
+const { GET: getShare, POST: postShare, DELETE: deleteShare } = await import("../[id]/share/route");
 const { GET: getHub } = await import("../[id]/hub/route");
 const { GET: getPublicSheet } = await import("../../public-sheet/[token]/route");
 const { GET: getImportPreview, POST: postAcquire } = await import("../import/[token]/route");
@@ -72,9 +68,10 @@ describe("GET /api/characters/:id/share", () => {
 
   it("retorna o link de aquisição com URL /characters/import/:token", async () => {
     vi.mocked(requireAuth).mockResolvedValue(authed);
-    selectResults.push([characterRow], [
-      { token: "tok-acq", kind: "acquire", revoked: false, characterId: "char-1" },
-    ]);
+    selectResults.push(
+      [characterRow],
+      [{ token: "tok-acq", kind: "acquire", revoked: false, characterId: "char-1" }],
+    );
     const res = await getShare(
       new NextRequest("http://localhost/api/characters/char-1/share?kind=acquire"),
       params("char-1"),

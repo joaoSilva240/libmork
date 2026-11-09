@@ -117,7 +117,7 @@ describe("NPC Pins API — dano configurado (issue #90)", () => {
         damageExpression: "3d6+5",
         damageType: "cortante",
         criticalRange: 19,
-      })
+      }),
     );
   });
 
@@ -159,7 +159,7 @@ describe("NPC Pins API — dano configurado (issue #90)", () => {
     expect(response.status).toBe(200);
     expect(json.data.damageExpression).toBe("2d8+4");
     expect(updateQuery.set).toHaveBeenCalledWith(
-      expect.objectContaining({ damageExpression: "2d8+4" })
+      expect.objectContaining({ damageExpression: "2d8+4" }),
     );
   });
 

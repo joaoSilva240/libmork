@@ -13,14 +13,16 @@ export function Dice3DSettingsPanel() {
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-2.5">
-          <span className="text-xl" aria-hidden="true">🎲</span>
+          <span className="text-xl" aria-hidden="true">
+            🎲
+          </span>
           <div>
             <h2 id="dice3d-settings-title" className="text-base font-bold text-secondary-pure">
               Dados 3D
             </h2>
             <p className="text-xs text-secondary-muted">
-              Mostra os dados rolando com física na sua tela, nas cores do tema atual. Apenas você vê a
-              animação; os resultados não mudam. Desligue para economizar desempenho.
+              Mostra os dados rolando com física na sua tela, nas cores do tema atual. Apenas você
+              vê a animação; os resultados não mudam. Desligue para economizar desempenho.
             </p>
           </div>
         </div>
@@ -44,7 +46,12 @@ export function Dice3DSettingsPanel() {
       <button
         type="button"
         disabled={!enabled}
-        onClick={() => showDice3D([{ sides: 20, value: 20 }, { sides: 6, value: 6 }])}
+        onClick={() =>
+          showDice3D([
+            { sides: 20, value: 20 },
+            { sides: 6, value: 6 },
+          ])
+        }
         className="rounded-md border border-secondary-border px-3 py-1.5 text-xs font-semibold text-secondary-pure transition hover:border-accent disabled:opacity-40"
       >
         Testar dados

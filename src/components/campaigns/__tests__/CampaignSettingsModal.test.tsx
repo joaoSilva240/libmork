@@ -37,7 +37,7 @@ describe("CampaignSettingsModal Component", () => {
         onClose={vi.fn()}
         onSaved={vi.fn()}
         onDelete={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText("Configurações da Campanha")).toBeInTheDocument();
@@ -71,7 +71,7 @@ describe("CampaignSettingsModal Component", () => {
         onClose={handleClose}
         onSaved={handleSaved}
         onDelete={vi.fn()}
-      />
+      />,
     );
 
     const nameInput = screen.getByDisplayValue("A Maldição de Strahd");
@@ -90,7 +90,7 @@ describe("CampaignSettingsModal Component", () => {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: expect.stringContaining('"name":"Strahd Redux"'),
-        })
+        }),
       );
       expect(handleSaved).toHaveBeenCalledWith(updatedCampaign);
       expect(handleClose).toHaveBeenCalled();
@@ -106,7 +106,7 @@ describe("CampaignSettingsModal Component", () => {
         onClose={vi.fn()}
         onSaved={vi.fn()}
         onDelete={handleDelete}
-      />
+      />,
     );
 
     // Clica no primeiro botão de exclusão
@@ -115,7 +115,9 @@ describe("CampaignSettingsModal Component", () => {
 
     // Diálogo de confirmação deve aparecer
     expect(
-      screen.getByText(/Tem certeza absoluta que deseja excluir a campanha "A Maldição de Strahd"\?/i)
+      screen.getByText(
+        /Tem certeza absoluta que deseja excluir a campanha "A Maldição de Strahd"\?/i,
+      ),
     ).toBeInTheDocument();
 
     // Confirma a exclusão

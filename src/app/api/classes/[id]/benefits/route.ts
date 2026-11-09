@@ -21,25 +21,15 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
 
-    const [rpgClass] = await db
-      .select()
-      .from(rpgClasses)
-      .where(eq(rpgClasses.id, id))
-      .limit(1);
+    const [rpgClass] = await db.select().from(rpgClasses).where(eq(rpgClasses.id, id)).limit(1);
 
     if (!rpgClass) {
-      return NextResponse.json(
-        { success: false, error: "Classe não encontrada" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "Classe não encontrada" }, { status: 404 });
     }
 
     const benefits = await db
@@ -53,10 +43,10 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: benefits,
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao listar benefícios');
+    logger.error({ err: error }, "Erro ao listar benefícios");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -70,32 +60,22 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     if (session.user.role !== "master") {
       return NextResponse.json(
         { success: false, error: "Apenas mestres podem gerenciar classes" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     const { id } = await params;
 
-    const [rpgClass] = await db
-      .select()
-      .from(rpgClasses)
-      .where(eq(rpgClasses.id, id))
-      .limit(1);
+    const [rpgClass] = await db.select().from(rpgClasses).where(eq(rpgClasses.id, id)).limit(1);
 
     if (!rpgClass) {
-      return NextResponse.json(
-        { success: false, error: "Classe não encontrada" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "Classe não encontrada" }, { status: 404 });
     }
 
     const body = await request.json();
@@ -108,7 +88,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
           error: "Dados inválidos",
           errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -118,15 +98,13 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const [existing] = await db
       .select()
       .from(classLevelBenefits)
-      .where(
-        and(eq(classLevelBenefits.classId, id), eq(classLevelBenefits.level, level))
-      )
+      .where(and(eq(classLevelBenefits.classId, id), eq(classLevelBenefits.level, level)))
       .limit(1);
 
     if (existing) {
       return NextResponse.json(
         { success: false, error: `Já existe benefício para o nível ${level}` },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -139,15 +117,12 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       })
       .returning();
 
-    return NextResponse.json(
-      { success: true, data: newBenefit },
-      { status: 201 }
-    );
+    return NextResponse.json({ success: true, data: newBenefit }, { status: 201 });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao criar benefício');
+    logger.error({ err: error }, "Erro ao criar benefício");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

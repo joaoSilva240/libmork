@@ -18,7 +18,11 @@ import {
 
 export async function GET(request: NextRequest) {
   const healthToken = (process.env.HEALTH_TOKEN?.trim() || "").trim();
-  const providedToken = (request.headers.get("x-health-token") || request.headers.get("x_health_token") || "").trim();
+  const providedToken = (
+    request.headers.get("x-health-token") ||
+    request.headers.get("x_health_token") ||
+    ""
+  ).trim();
 
   // Auth: if HEALTH_TOKEN is set, validate token; otherwise allow public access
   const isAuthenticated =

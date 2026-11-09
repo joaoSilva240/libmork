@@ -1,6 +1,14 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import { io, Socket } from "socket.io-client";
 import { showDice3D, type Dice3DDie } from "@/lib/dice3d";
 import type { CampaignLog, CampaignAsset } from "@/types";
@@ -936,114 +944,72 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
   const subscribeAudioTrackAdd = useCallback(
     (callback: (payload: AudioTrackAddPayload) => void) => {
-      const currentSocket = socketRef.current || socket;
-      if (currentSocket) {
-        currentSocket.on(AUDIO_EVENTS.TRACK_ADD, callback);
-      }
+      audioTrackAddSubscribersRef.current.add(callback);
       return () => {
-        const activeSocket = socketRef.current || socket;
-        if (activeSocket) {
-          activeSocket.off(AUDIO_EVENTS.TRACK_ADD, callback);
-        }
+        audioTrackAddSubscribersRef.current.delete(callback);
       };
     },
-    [socket],
+    [],
   );
 
   const subscribeAudioTrackPlay = useCallback(
     (callback: (payload: AudioTrackPlayPayload) => void) => {
-      const currentSocket = socketRef.current || socket;
-      if (currentSocket) {
-        currentSocket.on(AUDIO_EVENTS.TRACK_PLAY, callback);
-      }
+      audioTrackPlaySubscribersRef.current.add(callback);
       return () => {
-        const activeSocket = socketRef.current || socket;
-        if (activeSocket) {
-          activeSocket.off(AUDIO_EVENTS.TRACK_PLAY, callback);
-        }
+        audioTrackPlaySubscribersRef.current.delete(callback);
       };
     },
-    [socket],
+    [],
   );
 
   const subscribeAudioTrackPause = useCallback(
     (callback: (payload: AudioTrackPausePayload) => void) => {
-      const currentSocket = socketRef.current || socket;
-      if (currentSocket) {
-        currentSocket.on(AUDIO_EVENTS.TRACK_PAUSE, callback);
-      }
+      audioTrackPauseSubscribersRef.current.add(callback);
       return () => {
-        const activeSocket = socketRef.current || socket;
-        if (activeSocket) {
-          activeSocket.off(AUDIO_EVENTS.TRACK_PAUSE, callback);
-        }
+        audioTrackPauseSubscribersRef.current.delete(callback);
       };
     },
-    [socket],
+    [],
   );
 
   const subscribeAudioTrackLoop = useCallback(
     (callback: (payload: AudioTrackLoopPayload) => void) => {
-      const currentSocket = socketRef.current || socket;
-      if (currentSocket) {
-        currentSocket.on(AUDIO_EVENTS.TRACK_LOOP, callback);
-      }
+      audioTrackLoopSubscribersRef.current.add(callback);
       return () => {
-        const activeSocket = socketRef.current || socket;
-        if (activeSocket) {
-          activeSocket.off(AUDIO_EVENTS.TRACK_LOOP, callback);
-        }
+        audioTrackLoopSubscribersRef.current.delete(callback);
       };
     },
-    [socket],
+    [],
   );
 
   const subscribeAudioTrackRemove = useCallback(
     (callback: (payload: AudioTrackRemovePayload) => void) => {
-      const currentSocket = socketRef.current || socket;
-      if (currentSocket) {
-        currentSocket.on(AUDIO_EVENTS.TRACK_REMOVE, callback);
-      }
+      audioTrackRemoveSubscribersRef.current.add(callback);
       return () => {
-        const activeSocket = socketRef.current || socket;
-        if (activeSocket) {
-          activeSocket.off(AUDIO_EVENTS.TRACK_REMOVE, callback);
-        }
+        audioTrackRemoveSubscribersRef.current.delete(callback);
       };
     },
-    [socket],
+    [],
   );
 
   const subscribeAudioTrackPlaylist = useCallback(
     (callback: (payload: AudioTrackPlaylistPayload) => void) => {
-      const currentSocket = socketRef.current || socket;
-      if (currentSocket) {
-        currentSocket.on(AUDIO_EVENTS.TRACK_PLAYLIST, callback);
-      }
+      audioTrackPlaylistSubscribersRef.current.add(callback);
       return () => {
-        const activeSocket = socketRef.current || socket;
-        if (activeSocket) {
-          activeSocket.off(AUDIO_EVENTS.TRACK_PLAYLIST, callback);
-        }
+        audioTrackPlaylistSubscribersRef.current.delete(callback);
       };
     },
-    [socket],
+    [],
   );
 
   const subscribeAudioTrackState = useCallback(
     (callback: (payload: AudioTrackStatePayload) => void) => {
-      const currentSocket = socketRef.current || socket;
-      if (currentSocket) {
-        currentSocket.on(AUDIO_EVENTS.TRACK_STATE, callback);
-      }
+      audioTrackStateSubscribersRef.current.add(callback);
       return () => {
-        const activeSocket = socketRef.current || socket;
-        if (activeSocket) {
-          activeSocket.off(AUDIO_EVENTS.TRACK_STATE, callback);
-        }
+        audioTrackStateSubscribersRef.current.delete(callback);
       };
     },
-    [socket],
+    [],
   );
 
   // ============================= Assets (Issue #61) =============================
@@ -1350,91 +1316,168 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     [socket],
   );
 
-  return (
-    <SocketContext.Provider
-      value={{
-        socket,
-        isConnected,
-        presenceList,
-        joinCampaign,
-        leaveCampaign,
-        updateActorStatus,
-        rollDice,
-        updateCombatState,
-        requestInitiativeRoll,
-        requestInitiativeRollDelayed,
-        requestDefenseReaction,
-        respondDefenseReaction,
-        requestDuelInvite,
-        respondDuelInvite,
-        updateDuelState,
-        finishDuel,
-        subscribeActorStatus,
-        subscribeDiceRoll,
-        subscribeCombatState,
-        subscribeInitiativeRequest,
-        subscribeDefenseRequest,
-        subscribeDefenseResponse,
-        subscribeDuelInvite,
-        subscribeDuelResponse,
-        subscribeDuelState,
-        subscribeDuelFinish,
-        broadcastCampaignLog,
-        broadcastCampaignLogUpdate,
-        subscribeCampaignLogCreated,
-        subscribeCampaignLogUpdated,
-        notifyCharacterInventoryChange,
-        subscribeCharacterInventoryChange,
-        notifyCampaignInviteCreated,
-        notifyCampaignInviteRevoked,
-        subscribeCampaignInviteCreated,
-        subscribeCampaignInviteRevoked,
-        emitAudioTrackAdd,
-        emitAudioTrackPlay,
-        emitAudioTrackPause,
-        emitAudioTrackLoop,
-        emitAudioTrackRemove,
-        emitAudioTrackPlaylist,
-        subscribeAudioTrackAdd,
-        subscribeAudioTrackPlay,
-        subscribeAudioTrackPause,
-        subscribeAudioTrackLoop,
-        subscribeAudioTrackRemove,
-        subscribeAudioTrackPlaylist,
-        subscribeAudioTrackState,
-        activeAsset,
-        activateCampaignAsset,
-        deactivateCampaignAsset,
-        subscribeCampaignAssetActivated,
-        subscribeCampaignAssetDeactivated,
-        subscribeCampaignAssetState,
-        setCampaignDice3DSettings,
-        broadcastCampaignDice3DSettings,
-        joinChatGroup,
-        leaveChatGroup,
-        sendChatMessage,
-        sendChatPollVote,
-        sendChatPollClose,
-        subscribeChatMessage,
-        subscribeChatPollUpdated,
-        subscribeChatPollClosed,
-        sendChatMemberUpdated,
-        sendChatMemberRemoved,
-        subscribeChatMemberUpdated,
-        subscribeChatMemberRemoved,
-        sendSessionPublish,
-        sendSessionApply,
-        sendSessionConfirm,
-        sendSessionCancel,
-        subscribeSessionPublished,
-        subscribeSessionApplied,
-        subscribeSessionConfirmed,
-        subscribeSessionCancelled,
-      }}
-    >
-      {children}
-    </SocketContext.Provider>
+  const contextValue = useMemo<SocketContextValue>(
+    () => ({
+      socket,
+      isConnected,
+      presenceList,
+      joinCampaign,
+      leaveCampaign,
+      updateActorStatus,
+      rollDice,
+      updateCombatState,
+      requestInitiativeRoll,
+      requestInitiativeRollDelayed,
+      requestDefenseReaction,
+      respondDefenseReaction,
+      requestDuelInvite,
+      respondDuelInvite,
+      updateDuelState,
+      finishDuel,
+      subscribeActorStatus,
+      subscribeDiceRoll,
+      subscribeCombatState,
+      subscribeInitiativeRequest,
+      subscribeDefenseRequest,
+      subscribeDefenseResponse,
+      subscribeDuelInvite,
+      subscribeDuelResponse,
+      subscribeDuelState,
+      subscribeDuelFinish,
+      broadcastCampaignLog,
+      broadcastCampaignLogUpdate,
+      subscribeCampaignLogCreated,
+      subscribeCampaignLogUpdated,
+      notifyCharacterInventoryChange,
+      subscribeCharacterInventoryChange,
+      notifyCampaignInviteCreated,
+      notifyCampaignInviteRevoked,
+      subscribeCampaignInviteCreated,
+      subscribeCampaignInviteRevoked,
+      emitAudioTrackAdd,
+      emitAudioTrackPlay,
+      emitAudioTrackPause,
+      emitAudioTrackLoop,
+      emitAudioTrackRemove,
+      emitAudioTrackPlaylist,
+      subscribeAudioTrackAdd,
+      subscribeAudioTrackPlay,
+      subscribeAudioTrackPause,
+      subscribeAudioTrackLoop,
+      subscribeAudioTrackRemove,
+      subscribeAudioTrackPlaylist,
+      subscribeAudioTrackState,
+      activeAsset,
+      activateCampaignAsset,
+      deactivateCampaignAsset,
+      subscribeCampaignAssetActivated,
+      subscribeCampaignAssetDeactivated,
+      subscribeCampaignAssetState,
+      setCampaignDice3DSettings,
+      broadcastCampaignDice3DSettings,
+      joinChatGroup,
+      leaveChatGroup,
+      sendChatMessage,
+      sendChatPollVote,
+      sendChatPollClose,
+      subscribeChatMessage,
+      subscribeChatPollUpdated,
+      subscribeChatPollClosed,
+      sendChatMemberUpdated,
+      sendChatMemberRemoved,
+      subscribeChatMemberUpdated,
+      subscribeChatMemberRemoved,
+      sendSessionPublish,
+      sendSessionApply,
+      sendSessionConfirm,
+      sendSessionCancel,
+      subscribeSessionPublished,
+      subscribeSessionApplied,
+      subscribeSessionConfirmed,
+      subscribeSessionCancelled,
+    }),
+    [
+      socket,
+      isConnected,
+      presenceList,
+      joinCampaign,
+      leaveCampaign,
+      updateActorStatus,
+      rollDice,
+      updateCombatState,
+      requestInitiativeRoll,
+      requestInitiativeRollDelayed,
+      requestDefenseReaction,
+      respondDefenseReaction,
+      requestDuelInvite,
+      respondDuelInvite,
+      updateDuelState,
+      finishDuel,
+      subscribeActorStatus,
+      subscribeDiceRoll,
+      subscribeCombatState,
+      subscribeInitiativeRequest,
+      subscribeDefenseRequest,
+      subscribeDefenseResponse,
+      subscribeDuelInvite,
+      subscribeDuelResponse,
+      subscribeDuelState,
+      subscribeDuelFinish,
+      broadcastCampaignLog,
+      broadcastCampaignLogUpdate,
+      subscribeCampaignLogCreated,
+      subscribeCampaignLogUpdated,
+      notifyCharacterInventoryChange,
+      subscribeCharacterInventoryChange,
+      notifyCampaignInviteCreated,
+      notifyCampaignInviteRevoked,
+      subscribeCampaignInviteCreated,
+      subscribeCampaignInviteRevoked,
+      emitAudioTrackAdd,
+      emitAudioTrackPlay,
+      emitAudioTrackPause,
+      emitAudioTrackLoop,
+      emitAudioTrackRemove,
+      emitAudioTrackPlaylist,
+      subscribeAudioTrackAdd,
+      subscribeAudioTrackPlay,
+      subscribeAudioTrackPause,
+      subscribeAudioTrackLoop,
+      subscribeAudioTrackRemove,
+      subscribeAudioTrackPlaylist,
+      subscribeAudioTrackState,
+      activeAsset,
+      activateCampaignAsset,
+      deactivateCampaignAsset,
+      subscribeCampaignAssetActivated,
+      subscribeCampaignAssetDeactivated,
+      subscribeCampaignAssetState,
+      setCampaignDice3DSettings,
+      broadcastCampaignDice3DSettings,
+      joinChatGroup,
+      leaveChatGroup,
+      sendChatMessage,
+      sendChatPollVote,
+      sendChatPollClose,
+      subscribeChatMessage,
+      subscribeChatPollUpdated,
+      subscribeChatPollClosed,
+      sendChatMemberUpdated,
+      sendChatMemberRemoved,
+      subscribeChatMemberUpdated,
+      subscribeChatMemberRemoved,
+      sendSessionPublish,
+      sendSessionApply,
+      sendSessionConfirm,
+      sendSessionCancel,
+      subscribeSessionPublished,
+      subscribeSessionApplied,
+      subscribeSessionConfirmed,
+      subscribeSessionCancelled,
+    ],
   );
+
+  return <SocketContext.Provider value={contextValue}>{children}</SocketContext.Provider>;
 }
 
 export function useSocket() {

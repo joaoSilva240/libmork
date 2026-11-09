@@ -9,10 +9,7 @@ const voteSchema = z.object({
   value: z.union([z.literal(1), z.literal(-1)]),
 });
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await requireAuth();
     if (!session) {
@@ -30,10 +27,7 @@ export async function POST(
 
     const parsed = voteSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: "Valor de voto inválido. Use 1 ou -1." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Valor de voto inválido. Use 1 ou -1." }, { status: 400 });
     }
 
     const voteValue = parsed.data.value;
@@ -52,10 +46,7 @@ export async function POST(
       .select({ value: communityPostVotes.value })
       .from(communityPostVotes)
       .where(
-        and(
-          eq(communityPostVotes.postId, postId),
-          eq(communityPostVotes.userId, session.user.id)
-        )
+        and(eq(communityPostVotes.postId, postId), eq(communityPostVotes.userId, session.user.id)),
       )
       .limit(1);
 
@@ -69,8 +60,8 @@ export async function POST(
           .where(
             and(
               eq(communityPostVotes.postId, postId),
-              eq(communityPostVotes.userId, session.user.id)
-            )
+              eq(communityPostVotes.userId, session.user.id),
+            ),
           );
         newUserVote = null;
       } else {
@@ -84,8 +75,8 @@ export async function POST(
           .where(
             and(
               eq(communityPostVotes.postId, postId),
-              eq(communityPostVotes.userId, session.user.id)
-            )
+              eq(communityPostVotes.userId, session.user.id),
+            ),
           );
         newUserVote = voteValue;
       }
@@ -118,7 +109,7 @@ export async function POST(
     console.error("Erro ao registrar voto:", error);
     return NextResponse.json(
       { error: "Erro ao registrar voto. Verifique o banco de dados." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

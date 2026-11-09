@@ -160,7 +160,18 @@ export function SessionLaunchModal({ isOpen, onClose, onLaunched }: SessionLaunc
         setSubmitting(false);
       }
     },
-    [selectedCampaignId, description, startDate, endDate, needsConfig, maxSlots, sessionType, xpReward, onLaunched, onClose],
+    [
+      selectedCampaignId,
+      description,
+      startDate,
+      endDate,
+      needsConfig,
+      maxSlots,
+      sessionType,
+      xpReward,
+      onLaunched,
+      onClose,
+    ],
   );
 
   return (
@@ -189,7 +200,10 @@ export function SessionLaunchModal({ isOpen, onClose, onLaunched }: SessionLaunc
 
           {/* Campanha */}
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="launch-campaign-select" className="text-xs font-semibold text-secondary-pure">
+            <label
+              htmlFor="launch-campaign-select"
+              className="text-xs font-semibold text-secondary-pure"
+            >
               Campanha *
             </label>
             <select
@@ -208,9 +222,7 @@ export function SessionLaunchModal({ isOpen, onClose, onLaunched }: SessionLaunc
             </select>
           </div>
 
-          {loadingContext && (
-            <p className="text-xs text-secondary-muted">Carregando contexto...</p>
-          )}
+          {loadingContext && <p className="text-xs text-secondary-muted">Carregando contexto...</p>}
 
           {context && !loadingContext && needsConfig && (
             <div className="flex flex-col gap-2 rounded-lg border border-accent/30 bg-accent/5 p-3">
@@ -242,7 +254,10 @@ export function SessionLaunchModal({ isOpen, onClose, onLaunched }: SessionLaunc
                 </label>
               </div>
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="launch-max-slots" className="text-xs font-semibold text-secondary-pure">
+                <label
+                  htmlFor="launch-max-slots"
+                  className="text-xs font-semibold text-secondary-pure"
+                >
                   Vagas (1–20) *
                 </label>
                 <input
@@ -289,7 +304,10 @@ export function SessionLaunchModal({ isOpen, onClose, onLaunched }: SessionLaunc
 
           {/* Descrição */}
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="launch-description" className="text-xs font-semibold text-secondary-pure">
+            <label
+              htmlFor="launch-description"
+              className="text-xs font-semibold text-secondary-pure"
+            >
               Descrição da sessão *
             </label>
             <textarea
@@ -306,7 +324,10 @@ export function SessionLaunchModal({ isOpen, onClose, onLaunched }: SessionLaunc
           {/* Período proposto */}
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="launch-start-date" className="text-xs font-semibold text-secondary-pure">
+              <label
+                htmlFor="launch-start-date"
+                className="text-xs font-semibold text-secondary-pure"
+              >
                 Início do período *
               </label>
               <input
@@ -319,7 +340,10 @@ export function SessionLaunchModal({ isOpen, onClose, onLaunched }: SessionLaunc
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="launch-end-date" className="text-xs font-semibold text-secondary-pure">
+              <label
+                htmlFor="launch-end-date"
+                className="text-xs font-semibold text-secondary-pure"
+              >
                 Fim do período *
               </label>
               <input
@@ -355,7 +379,12 @@ export function SessionLaunchModal({ isOpen, onClose, onLaunched }: SessionLaunc
           <Button type="button" variant="secondary" onClick={onClose} disabled={submitting}>
             Cancelar
           </Button>
-          <Button type="submit" variant="primary" data-testid="launch-submit" disabled={submitting || loadingContext}>
+          <Button
+            type="submit"
+            variant="primary"
+            data-testid="launch-submit"
+            disabled={submitting || loadingContext}
+          >
             {submitting ? "Lançando..." : "Lançar Sessão"}
           </Button>
         </Modal.Footer>

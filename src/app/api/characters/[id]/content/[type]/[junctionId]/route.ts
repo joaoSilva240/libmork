@@ -37,12 +37,7 @@ async function canManageCharacterContent(characterId: string, userId: string): P
     .select()
     .from(characterCampaigns)
     .innerJoin(campaigns, eq(characterCampaigns.campaignId, campaigns.id))
-    .where(
-      and(
-        eq(characterCampaigns.characterId, characterId),
-        eq(campaigns.masterId, userId)
-      )
-    )
+    .where(and(eq(characterCampaigns.characterId, characterId), eq(campaigns.masterId, userId)))
     .limit(1);
 
   return !!masterLink;
@@ -75,10 +70,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id, type, junctionId } = await params;
@@ -87,7 +79,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     if (!parsed.success) {
       return NextResponse.json(
         { success: false, error: "Tipo de conteúdo inválido" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -96,7 +88,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     if (!canManage) {
       return NextResponse.json(
         { success: false, error: "Sem permissão ou personagem não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -111,7 +103,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
           error: "Dados inválidos",
           errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -120,18 +112,13 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     const [existing] = await db
       .select()
       .from(junctionTable)
-      .where(
-        and(
-          eq(junctionTable.id, junctionId),
-          eq(getJunctionCharacterColumn(parsed.data), id)
-        )
-      )
+      .where(and(eq(junctionTable.id, junctionId), eq(getJunctionCharacterColumn(parsed.data), id)))
       .limit(1);
 
     if (!existing) {
       return NextResponse.json(
         { success: false, error: "Vínculo não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -152,10 +139,10 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       data: updated,
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao atualizar vínculo de conteúdo');
+    logger.error({ err: error }, "Erro ao atualizar vínculo de conteúdo");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -169,10 +156,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id, type, junctionId } = await params;
@@ -181,7 +165,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     if (!parsed.success) {
       return NextResponse.json(
         { success: false, error: "Tipo de conteúdo inválido" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -190,7 +174,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     if (!canManage) {
       return NextResponse.json(
         { success: false, error: "Sem permissão ou personagem não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -199,18 +183,13 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     const [existing] = await db
       .select()
       .from(junctionTable)
-      .where(
-        and(
-          eq(junctionTable.id, junctionId),
-          eq(getJunctionCharacterColumn(parsed.data), id)
-        )
-      )
+      .where(and(eq(junctionTable.id, junctionId), eq(getJunctionCharacterColumn(parsed.data), id)))
       .limit(1);
 
     if (!existing) {
       return NextResponse.json(
         { success: false, error: "Vínculo não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -221,10 +200,10 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       message: "Conteúdo desvinculado com sucesso",
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao desvincular conteúdo');
+    logger.error({ err: error }, "Erro ao desvincular conteúdo");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

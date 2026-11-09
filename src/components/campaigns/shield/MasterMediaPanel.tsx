@@ -104,10 +104,6 @@ export function MasterMediaPanel({
   ];
 
   return (
-    <ShieldTabContainer
-      persistKey="libmork:shield-tab:media"
-      tabs={tabs}
-      className={className}
-    />
+    <ShieldTabContainer persistKey="libmork:shield-tab:media" tabs={tabs} className={className} />
   );
 }

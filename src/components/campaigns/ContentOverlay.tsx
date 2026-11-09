@@ -3,7 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import type { Campaign, Spell } from "@/types";
-import { formatTechnicalField, getTechnicalLabel, PF2E_DAMAGE_TYPES_PT } from "@/lib/content/pf2e-item-formatter";
+import {
+  formatTechnicalField,
+  getTechnicalLabel,
+  PF2E_DAMAGE_TYPES_PT,
+} from "@/lib/content/pf2e-item-formatter";
 import { Spinner } from "@/components/ui";
 
 import { extractItemDamageInfo } from "@/components/content/ContentManager";
@@ -15,7 +19,11 @@ type ContentOverlayProps = {
 };
 
 type ContentTab = "worlds" | "skills" | "spells" | "items" | "conditions" | "npcs";
-type ContentItem = Record<string, unknown> & { id: string; name: string; campaignId: string | null };
+type ContentItem = Record<string, unknown> & {
+  id: string;
+  name: string;
+  campaignId: string | null;
+};
 
 const formatValue = (value: unknown): string => {
   if (value === null || value === undefined) return "-";
@@ -47,7 +55,7 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
     setError(null);
     setSearchQuery("");
     setSelectedItem(null);
-    
+
     try {
       if (activeTab === "worlds") {
         const response = await fetch("/api/worlds", {
@@ -64,7 +72,7 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
       } else if (activeTab === "npcs") {
         const [libRes, campRes] = await Promise.all([
           fetch("/api/npcs"),
-          fetch(`/api/campaigns/${campaignId}/npcs`)
+          fetch(`/api/campaigns/${campaignId}/npcs`),
         ]);
         const libData = await libRes.json();
         const campData = await campRes.json();
@@ -75,7 +83,7 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
         const campaignNpcIds = new Set((campData.data || []).map((n: { id: string }) => n.id));
         const mapped = (libData.data || []).map((npc: any) => ({
           ...npc,
-          campaignId: campaignNpcIds.has(npc.id) ? campaignId : null
+          campaignId: campaignNpcIds.has(npc.id) ? campaignId : null,
         }));
         setItems(mapped);
       } else {
@@ -98,13 +106,13 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
 
   useEffect(() => {
     let cancelled = false;
-    
+
     const load = async () => {
       setIsLoading(true);
       setError(null);
       setSearchQuery("");
       setSelectedItem(null);
-      
+
       try {
         if (activeTab === "worlds") {
           const response = await fetch("/api/worlds", {
@@ -123,7 +131,7 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
         } else if (activeTab === "npcs") {
           const [libRes, campRes] = await Promise.all([
             fetch("/api/npcs"),
-            fetch(`/api/campaigns/${campaignId}/npcs`)
+            fetch(`/api/campaigns/${campaignId}/npcs`),
           ]);
           const libData = await libRes.json();
           const campData = await campRes.json();
@@ -135,7 +143,7 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
           const campaignNpcIds = new Set((campData.data || []).map((n: { id: string }) => n.id));
           const mapped = (libData.data || []).map((npc: any) => ({
             ...npc,
-            campaignId: campaignNpcIds.has(npc.id) ? campaignId : null
+            campaignId: campaignNpcIds.has(npc.id) ? campaignId : null,
           }));
           setItems(mapped);
         } else {
@@ -208,21 +216,22 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
           // Update items array so it's cached locally
           setItems((prevItems) =>
             prevItems.map((item) =>
-              item.id === spellId ? { ...item, translation: data.translation } : item
-            )
+              item.id === spellId ? { ...item, translation: data.translation } : item,
+            ),
           );
           // Update selectedItem state
           setSelectedItem((prev) =>
-            prev && prev.id === spellId
-              ? { ...prev, translation: data.translation }
-              : prev
+            prev && prev.id === spellId ? { ...prev, translation: data.translation } : prev,
           );
           // Mude a linguagem do modal para PT-BR por padrão
           setModalLanguage("pt");
         }
       })
       .catch((err) => {
-        console.error(`Erro ao traduzir ${activeTab === "items" ? "item" : "magia"}:`, err instanceof Error ? err.message : "erro desconhecido");
+        console.error(
+          `Erro ao traduzir ${activeTab === "items" ? "item" : "magia"}:`,
+          err instanceof Error ? err.message : "erro desconhecido",
+        );
       })
       .finally(() => {
         if (active) {
@@ -262,9 +271,12 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
       } else {
         if (currentlyEnabled) {
           // Desabilitar = deletar o item privado da campanha
-          const response = await fetch(`/api/campaigns/${campaignId}/content/${activeTab}/${item.id}`, {
-            method: "DELETE",
-          });
+          const response = await fetch(
+            `/api/campaigns/${campaignId}/content/${activeTab}/${item.id}`,
+            {
+              method: "DELETE",
+            },
+          );
 
           if (!response.ok) {
             const data = await response.json();
@@ -307,7 +319,7 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
   };
 
   const filteredItems = items.filter((item) =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    item.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const renderItemDetails = (item: ContentItem) => {
@@ -354,7 +366,9 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
           {!!item.publicNotes && (
             <div>
               <span className="font-semibold text-gray-400">Notas Públicas:</span>
-              <p className="mt-1 text-gray-300 whitespace-pre-wrap">{formatValue(item.publicNotes)}</p>
+              <p className="mt-1 text-gray-300 whitespace-pre-wrap">
+                {formatValue(item.publicNotes)}
+              </p>
             </div>
           )}
         </div>
@@ -390,7 +404,13 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
       const translation = (spell.translation || null) as Record<string, unknown> | null;
 
       const getField = (key: string) => {
-        if (isPt && translation && translation[key] !== undefined && translation[key] !== null && translation[key] !== "") {
+        if (
+          isPt &&
+          translation &&
+          translation[key] !== undefined &&
+          translation[key] !== null &&
+          translation[key] !== ""
+        ) {
           return translation[key];
         }
         return spell[key as keyof Spell];
@@ -443,8 +463,15 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
                 }
                 if (typeof eff === "object" && eff !== null) {
                   const typedEff = eff as Record<string, unknown>;
-                  const name = String(typedEff.name || typedEff.type || typedEff.label || `Efeito ${idx + 1}`);
-                  const desc = String(typedEff.description || typedEff.value || typedEff.formula || JSON.stringify(eff));
+                  const name = String(
+                    typedEff.name || typedEff.type || typedEff.label || `Efeito ${idx + 1}`,
+                  );
+                  const desc = String(
+                    typedEff.description ||
+                      typedEff.value ||
+                      typedEff.formula ||
+                      JSON.stringify(eff),
+                  );
                   return (
                     <li key={idx}>
                       <strong className="text-purple-300">{name}</strong>: {desc}
@@ -472,7 +499,8 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
         const mapped = parts.map((part) => {
           if (part === "somatic" || part === "somático") return isPt ? "Somático" : "Somatic";
           if (part === "verbal" || part === "falada") return isPt ? "Falada" : "Verbal";
-          if (part === "manual" || part === "material" || part === "componentes") return isPt ? "Componentes" : "Material";
+          if (part === "manual" || part === "material" || part === "componentes")
+            return isPt ? "Componentes" : "Material";
           return part;
         });
         return mapped.filter(Boolean).join(", ");
@@ -499,7 +527,10 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
       const displayDamageVal = getField("damage");
       const displayDamage = displayDamageVal ? formatDamage(displayDamageVal) : null;
 
-      const renderActionCost = (cost: number | null | undefined, textVal: string | null | undefined) => {
+      const renderActionCost = (
+        cost: number | null | undefined,
+        textVal: string | null | undefined,
+      ) => {
         if (cost !== null && cost !== undefined) {
           if (cost >= 1 && cost <= 3) {
             const dots = Array.from({ length: 3 }, (_, i) => (
@@ -510,18 +541,28 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
             return (
               <div className="flex items-center gap-1.5" title={`${cost} ações`}>
                 <div className="flex gap-0.5 text-lg leading-none">{dots}</div>
-                <span className="text-xs text-gray-400">({cost} {cost === 1 ? "ação" : "ações"})</span>
+                <span className="text-xs text-gray-400">
+                  ({cost} {cost === 1 ? "ação" : "ações"})
+                </span>
               </div>
             );
           }
           if (cost === 0) {
-            return <span className="text-white font-medium">⚡ {isPt ? "Reação" : "Reaction"}</span>;
+            return (
+              <span className="text-white font-medium">⚡ {isPt ? "Reação" : "Reaction"}</span>
+            );
           }
         }
         if (textVal) {
           const cleanText = textVal.toLowerCase();
-          if (cleanText.includes("reaction") || cleanText.includes("reação") || cleanText.includes("reac.")) {
-            return <span className="text-white font-medium">⚡ {isPt ? "Reação" : "Reaction"}</span>;
+          if (
+            cleanText.includes("reaction") ||
+            cleanText.includes("reação") ||
+            cleanText.includes("reac.")
+          ) {
+            return (
+              <span className="text-white font-medium">⚡ {isPt ? "Reação" : "Reaction"}</span>
+            );
           }
           return <span className="text-white font-medium">{textVal}</span>;
         }
@@ -533,7 +574,13 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
         const lower = areaVal.toLowerCase();
         let icon = "⛶";
         if (lower.includes("cone")) icon = "📐";
-        else if (lower.includes("burst") || lower.includes("emanation") || lower.includes("circle") || lower.includes("cylinder")) icon = "⭕";
+        else if (
+          lower.includes("burst") ||
+          lower.includes("emanation") ||
+          lower.includes("circle") ||
+          lower.includes("cylinder")
+        )
+          icon = "⭕";
         else if (lower.includes("line")) icon = "▬";
         else if (lower.includes("cube")) icon = "⬜";
 
@@ -553,15 +600,66 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
               <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-purple-950/25 border border-purple-900/30 w-24 shrink-0">
                 {/* D20 SVG */}
                 <div className="relative flex h-12 w-12 shrink-0 items-center justify-center">
-                  <svg className="absolute inset-0 h-full w-full text-purple-600 hover:text-purple-500 transition-colors" viewBox="0 0 100 100" fill="currentColor">
-                    <polygon points="50,2 95,25 95,75 50,98 5,75 5,25" fill="rgba(15, 10, 25, 0.8)" stroke="currentColor" strokeWidth="3" />
-                    <polygon points="50,2 50,98" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2,2" opacity="0.4" />
-                    <polygon points="5,25 95,25" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2,2" opacity="0.4" />
-                    <polygon points="5,75 95,75" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2,2" opacity="0.4" />
-                    <polygon points="50,2 5,75" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2,2" opacity="0.4" />
-                    <polygon points="50,2 95,75" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2,2" opacity="0.4" />
-                    <polygon points="5,25 50,98" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2,2" opacity="0.4" />
-                    <polygon points="95,25 50,98" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2,2" opacity="0.4" />
+                  <svg
+                    className="absolute inset-0 h-full w-full text-purple-600 hover:text-purple-500 transition-colors"
+                    viewBox="0 0 100 100"
+                    fill="currentColor"
+                  >
+                    <polygon
+                      points="50,2 95,25 95,75 50,98 5,75 5,25"
+                      fill="rgba(15, 10, 25, 0.8)"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                    />
+                    <polygon
+                      points="50,2 50,98"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeDasharray="2,2"
+                      opacity="0.4"
+                    />
+                    <polygon
+                      points="5,25 95,25"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeDasharray="2,2"
+                      opacity="0.4"
+                    />
+                    <polygon
+                      points="5,75 95,75"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeDasharray="2,2"
+                      opacity="0.4"
+                    />
+                    <polygon
+                      points="50,2 5,75"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeDasharray="2,2"
+                      opacity="0.4"
+                    />
+                    <polygon
+                      points="50,2 95,75"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeDasharray="2,2"
+                      opacity="0.4"
+                    />
+                    <polygon
+                      points="5,25 50,98"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeDasharray="2,2"
+                      opacity="0.4"
+                    />
+                    <polygon
+                      points="95,25 50,98"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeDasharray="2,2"
+                      opacity="0.4"
+                    />
                   </svg>
                   <span className="relative z-10 text-center text-[10px] font-black text-white px-1 leading-tight break-all">
                     {displayDamage}
@@ -580,59 +678,113 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
             <div className={`${displayDamage ? "flex-1" : "w-full"} space-y-2`}>
               {/* Linha 1 (Círculo, Custo de Mana, Alvo, Alcance, Área) */}
               <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-gray-300 pb-3 border-b border-purple-900/20">
-                <span><strong className="text-purple-400 font-bold">{circleLabel}:</strong> {spell.circle}</span>
-                <span><strong className="text-purple-400 font-bold">{manaCostLabel}:</strong> {spell.manaCost}</span>
+                <span>
+                  <strong className="text-purple-400 font-bold">{circleLabel}:</strong>{" "}
+                  {spell.circle}
+                </span>
+                <span>
+                  <strong className="text-purple-400 font-bold">{manaCostLabel}:</strong>{" "}
+                  {spell.manaCost}
+                </span>
                 {getField("target") && (
-                  <span><strong className="text-purple-400 font-bold">{targetLabel}:</strong> {String(getField("target"))}</span>
+                  <span>
+                    <strong className="text-purple-400 font-bold">{targetLabel}:</strong>{" "}
+                    {String(getField("target"))}
+                  </span>
                 )}
                 {getField("range") && (
-                  <span><strong className="text-purple-400 font-bold">{rangeLabel}:</strong> {String(getField("range"))}</span>
+                  <span>
+                    <strong className="text-purple-400 font-bold">{rangeLabel}:</strong>{" "}
+                    {String(getField("range"))}
+                  </span>
                 )}
                 {getField("area") && (
-                  <span className="inline-flex items-center gap-1"><strong className="text-purple-400 font-bold">{areaLabel}:</strong> {renderArea(getField("area") as string)}</span>
+                  <span className="inline-flex items-center gap-1">
+                    <strong className="text-purple-400 font-bold">{areaLabel}:</strong>{" "}
+                    {renderArea(getField("area") as string)}
+                  </span>
                 )}
               </div>
 
               {/* Linha 2 (Condições, Duração, Tempo de Conjuração) */}
               <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-gray-300 pt-2 pb-3 border-b border-purple-900/20">
                 {displayUseType && (
-                  <span><strong className="text-purple-400 font-bold">{useTypeLabel}:</strong> {displayUseType}</span>
+                  <span>
+                    <strong className="text-purple-400 font-bold">{useTypeLabel}:</strong>{" "}
+                    {displayUseType}
+                  </span>
                 )}
                 {getField("duration") && (
-                  <span><strong className="text-purple-400 font-bold">{durationLabel}:</strong> {String(getField("duration"))}</span>
+                  <span>
+                    <strong className="text-purple-400 font-bold">{durationLabel}:</strong>{" "}
+                    {String(getField("duration"))}
+                  </span>
                 )}
                 {renderActionCost(spell.actionCostOverride, getField("castingTime") as string) && (
-                  <span className="inline-flex items-center gap-1"><strong className="text-purple-400 font-bold">{castingTimeLabel}:</strong> {renderActionCost(spell.actionCostOverride, getField("castingTime") as string)}</span>
+                  <span className="inline-flex items-center gap-1">
+                    <strong className="text-purple-400 font-bold">{castingTimeLabel}:</strong>{" "}
+                    {renderActionCost(spell.actionCostOverride, getField("castingTime") as string)}
+                  </span>
                 )}
               </div>
             </div>
           </div>
 
-          {getField("description") !== null && getField("description") !== undefined && getField("description") !== "" && (
-            <div>
-              <span className="font-semibold text-gray-400">{descriptionLabel}:</span>
-              <p className="mt-1 text-gray-300 whitespace-pre-wrap leading-relaxed">{formatValue(getField("description"))}</p>
-            </div>
-          )}
-          {getField("extraEffect") !== null && getField("extraEffect") !== undefined && getField("extraEffect") !== "" && (
-            <div>
-              <span className="font-semibold text-gray-400">{extraEffectLabel}:</span>
-              <p className="mt-1 text-gray-300 whitespace-pre-wrap leading-relaxed">{formatValue(getField("extraEffect"))}</p>
-            </div>
-          )}
+          {getField("description") !== null &&
+            getField("description") !== undefined &&
+            getField("description") !== "" && (
+              <div>
+                <span className="font-semibold text-gray-400">{descriptionLabel}:</span>
+                <p className="mt-1 text-gray-300 whitespace-pre-wrap leading-relaxed">
+                  {formatValue(getField("description"))}
+                </p>
+              </div>
+            )}
+          {getField("extraEffect") !== null &&
+            getField("extraEffect") !== undefined &&
+            getField("extraEffect") !== "" && (
+              <div>
+                <span className="font-semibold text-gray-400">{extraEffectLabel}:</span>
+                <p className="mt-1 text-gray-300 whitespace-pre-wrap leading-relaxed">
+                  {formatValue(getField("extraEffect"))}
+                </p>
+              </div>
+            )}
         </div>
       );
     }
 
     if (activeTab === "items") {
-      const translation = item.translation && typeof selectedItem?.translation === "object" ? item.translation as Record<string, unknown> : null;
-      const getItemField = (key: string) => modalLanguage === "pt" && translation?.[key] ? translation[key] : item[key];
-      const sourceData = item.sourceData && typeof item.sourceData === "object" ? item.sourceData as Record<string, unknown> : {};
-      const system = sourceData.system && typeof sourceData.system === "object" ? sourceData.system as Record<string, unknown> : {};
-      const technical = ["level", "price", "bulk", "quantity", "usage", "category", "group", "damage", "traits", "ac", "resiliency"];
+      const translation =
+        item.translation && typeof selectedItem?.translation === "object"
+          ? (item.translation as Record<string, unknown>)
+          : null;
+      const getItemField = (key: string) =>
+        modalLanguage === "pt" && translation?.[key] ? translation[key] : item[key];
+      const sourceData =
+        item.sourceData && typeof item.sourceData === "object"
+          ? (item.sourceData as Record<string, unknown>)
+          : {};
+      const system =
+        sourceData.system && typeof sourceData.system === "object"
+          ? (sourceData.system as Record<string, unknown>)
+          : {};
+      const technical = [
+        "level",
+        "price",
+        "bulk",
+        "quantity",
+        "usage",
+        "category",
+        "group",
+        "damage",
+        "traits",
+        "ac",
+        "resiliency",
+      ];
       const itemDmgInfo = extractItemDamageInfo(item);
       const translatedType = itemDmgInfo.damageType
-        ? (PF2E_DAMAGE_TYPES_PT[itemDmgInfo.damageType.toLowerCase()] || itemDmgInfo.damageType)
+        ? PF2E_DAMAGE_TYPES_PT[itemDmgInfo.damageType.toLowerCase()] || itemDmgInfo.damageType
         : null;
 
       return (
@@ -640,46 +792,61 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
           {itemDmgInfo.damage && (
             <div className="mb-2">
               <span className="rounded-md bg-rose-950 px-2.5 py-1 text-xs font-bold text-rose-300 border border-rose-800/60 inline-flex items-center gap-1.5 shadow-sm">
-                ⚔️ Dano: {itemDmgInfo.damage}{translatedType ? ` (${translatedType})` : ""}
+                ⚔️ Dano: {itemDmgInfo.damage}
+                {translatedType ? ` (${translatedType})` : ""}
               </span>
             </div>
           )}
           <div className="flex flex-wrap gap-x-4 gap-y-2 border-b border-purple-900/20 pb-3 text-xs text-gray-300">
             {technical.map((key) => {
               const raw = system[key];
-              const value = raw && typeof raw === "object" && "value" in raw ? (raw as Record<string, unknown>).value : raw;
+              const value =
+                raw && typeof raw === "object" && "value" in raw
+                  ? (raw as Record<string, unknown>).value
+                  : raw;
               if (value === null || value === undefined || value === "") return null;
-              
+
               const formattedValue = formatTechnicalField(key, value, modalLanguage);
               if (!formattedValue) return null;
-              
+
               return (
                 <span key={key}>
-                  <strong className="text-purple-400">{getTechnicalLabel(key, modalLanguage)}:</strong> {formattedValue}
+                  <strong className="text-purple-400">
+                    {getTechnicalLabel(key, modalLanguage)}:
+                  </strong>{" "}
+                  {formattedValue}
                 </span>
               );
             })}
           </div>
-           {getItemField("description") !== null && getItemField("description") !== undefined && (
+          {getItemField("description") !== null && getItemField("description") !== undefined && (
             <div>
               <span className="font-semibold text-gray-400">Descrição:</span>
-               <p className="mt-1 text-gray-300">{formatValue(getItemField("description"))}</p>
+              <p className="mt-1 text-gray-300">{formatValue(getItemField("description"))}</p>
             </div>
           )}
-           {getItemField("qualityDescription") !== null && getItemField("qualityDescription") !== undefined && getItemField("qualityDescription") !== "" && (
-            <div className="rounded-xl border border-emerald-800/60 bg-emerald-950/30 p-3">
-              <span className="flex items-center gap-1.5 font-bold text-emerald-300 text-xs">
-                ✦ Qualidade
-              </span>
-               <p className="mt-1 text-emerald-100 text-xs">{formatValue(getItemField("qualityDescription"))}</p>
-            </div>
-          )}
-           {getItemField("counterpointDescription") !== null && getItemField("counterpointDescription") !== undefined && getItemField("counterpointDescription") !== "" ? (
+          {getItemField("qualityDescription") !== null &&
+            getItemField("qualityDescription") !== undefined &&
+            getItemField("qualityDescription") !== "" && (
+              <div className="rounded-xl border border-emerald-800/60 bg-emerald-950/30 p-3">
+                <span className="flex items-center gap-1.5 font-bold text-emerald-300 text-xs">
+                  ✦ Qualidade
+                </span>
+                <p className="mt-1 text-emerald-100 text-xs">
+                  {formatValue(getItemField("qualityDescription"))}
+                </p>
+              </div>
+            )}
+          {getItemField("counterpointDescription") !== null &&
+          getItemField("counterpointDescription") !== undefined &&
+          getItemField("counterpointDescription") !== "" ? (
             <div className="rounded-xl border border-rose-800/60 bg-rose-950/30 p-3">
               <span className="flex items-center gap-1.5 font-bold text-rose-300 text-xs">
                 ⚠️ Contraponto (Defeito do Mestre)
               </span>
-               <p className="mt-1 text-rose-100 text-xs">{formatValue(getItemField("counterpointDescription"))}</p>
+              <p className="mt-1 text-rose-100 text-xs">
+                {formatValue(getItemField("counterpointDescription"))}
+              </p>
             </div>
           ) : item.qualityDescription ? (
             <div className="rounded-xl border border-amber-800/60 bg-amber-950/30 p-2.5 text-xs text-amber-300 flex items-center justify-between">
@@ -826,225 +993,314 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
             )}
           </div>
         ) : (
-        <div className="flex flex-1 gap-3 overflow-hidden">
-          {/* Lista */}
-          <div className="w-1/2 overflow-y-auto rounded-lg border border-gray-800 bg-gray-950 p-2">
-            {isLoading ? (
-              <div className="flex items-center justify-center min-h-[200px]">
-                <Spinner size="md" />
-              </div>
-            ) : filteredItems.length === 0 ? (
-              <p className="text-center text-sm text-gray-500">Nenhum item encontrado</p>
-            ) : (
-               <div className={(activeTab === "items" || activeTab === "npcs") ? "grid grid-cols-1 gap-3 sm:grid-cols-2" : "space-y-1"}>
-                 {filteredItems.map((item) => {
-                   const isEnabled = item.campaignId === campaignId;
-                   const isGlobal = item.campaignId === null;
-                   const sourceData = item.sourceData && typeof item.sourceData === "object" ? item.sourceData as Record<string, unknown> : {};
-                   const system = sourceData.system && typeof sourceData.system === "object" ? sourceData.system as Record<string, unknown> : {};
-                   const technicalFields = ["category", "level", "price", "bulk", "quantity", "usage", "damage", "traits", "ac", "resiliency"];
-                   const technical = technicalFields
-                     .map((key) => {
-                       const raw = system[key];
-                       const value = raw && typeof raw === "object" && "value" in raw ? (raw as Record<string, unknown>).value : raw;
-                       return [key, value] as const;
-                     })
-                     .filter(([, value]) => value !== null && value !== undefined && value !== "")
-                     .slice(0, 3);
+          <div className="flex flex-1 gap-3 overflow-hidden">
+            {/* Lista */}
+            <div className="w-1/2 overflow-y-auto rounded-lg border border-gray-800 bg-gray-950 p-2">
+              {isLoading ? (
+                <div className="flex items-center justify-center min-h-[200px]">
+                  <Spinner size="md" />
+                </div>
+              ) : filteredItems.length === 0 ? (
+                <p className="text-center text-sm text-gray-500">Nenhum item encontrado</p>
+              ) : (
+                <div
+                  className={
+                    activeTab === "items" || activeTab === "npcs"
+                      ? "grid grid-cols-1 gap-3 sm:grid-cols-2"
+                      : "space-y-1"
+                  }
+                >
+                  {filteredItems.map((item) => {
+                    const isEnabled = item.campaignId === campaignId;
+                    const isGlobal = item.campaignId === null;
+                    const sourceData =
+                      item.sourceData && typeof item.sourceData === "object"
+                        ? (item.sourceData as Record<string, unknown>)
+                        : {};
+                    const system =
+                      sourceData.system && typeof sourceData.system === "object"
+                        ? (sourceData.system as Record<string, unknown>)
+                        : {};
+                    const technicalFields = [
+                      "category",
+                      "level",
+                      "price",
+                      "bulk",
+                      "quantity",
+                      "usage",
+                      "damage",
+                      "traits",
+                      "ac",
+                      "resiliency",
+                    ];
+                    const technical = technicalFields
+                      .map((key) => {
+                        const raw = system[key];
+                        const value =
+                          raw && typeof raw === "object" && "value" in raw
+                            ? (raw as Record<string, unknown>).value
+                            : raw;
+                        return [key, value] as const;
+                      })
+                      .filter(([, value]) => value !== null && value !== undefined && value !== "")
+                      .slice(0, 3);
 
-                     return (
+                    return (
                       <div
                         key={item.id}
-                        className={`${(activeTab === "items" || activeTab === "npcs") ? "flex flex-col" : "flex items-center gap-2"} rounded-lg border p-2 transition-colors ${
+                        className={`${activeTab === "items" || activeTab === "npcs" ? "flex flex-col" : "flex items-center gap-2"} rounded-lg border p-2 transition-colors ${
                           selectedItem?.id === item.id
                             ? "border-purple-600 bg-purple-900/20"
                             : "border-gray-800 bg-gray-900 hover:border-gray-700"
                         }`}
                       >
                         {(activeTab === "items" || activeTab === "npcs") && (
-                         <div className="mb-2 flex items-start gap-3">
-                           {item.imageUrl && !failedImages.has(item.id) ? (
-                             <img
-                               src={String(item.imageUrl)}
-                               alt={`Imagem de ${item.name}`}
-                               width={72}
-                               height={72}
-                               loading="lazy"
-                               className="h-[72px] w-[72px] shrink-0 rounded-lg border border-purple-900/60 object-cover"
-                               onError={() => setFailedImages((previous) => new Set(previous).add(item.id))}
-                             />
-                           ) : (
-                             <div aria-label={`Imagem indisponível para ${item.name}`} className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-lg border border-gray-800 bg-gray-950 text-2xl text-gray-600">✦</div>
-                           )}
-                           <div className="min-w-0 flex-1">
-                             <button
-                               onClick={() => setSelectedItem(item)}
-                               onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedItem(item); } }}
-                               aria-label={`Ver detalhes de ${item.name}`}
-                               className="text-left text-sm font-bold text-white hover:text-purple-300"
-                             >
-                               {item.name}
-                             </button>
-                              {isGlobal && activeTab !== "npcs" && <span className="ml-2 rounded bg-gray-800 px-1.5 py-0.5 text-xs text-gray-400">Global</span>}
-                               {activeTab === "npcs" && (
-                                 <div className="mt-1 text-xs text-gray-400">
-                                   Nível {String(item.level)} · {String(item.npcType) === "enemy" ? "Inimigo" : "Aliado"}
-                                 </div>
-                               )}
-                               {activeTab === "items" && (() => {
-                                 const dmgInfo = extractItemDamageInfo(item);
-                                 if (!dmgInfo.damage) return null;
-                                 const translatedType = dmgInfo.damageType
-                                   ? (PF2E_DAMAGE_TYPES_PT[dmgInfo.damageType.toLowerCase()] || dmgInfo.damageType)
-                                   : null;
-                                 return (
-                                   <div className="mt-1">
-                                     <span className="rounded bg-rose-950 px-2 py-0.5 text-[10px] font-bold text-rose-300 border border-rose-800/60 inline-flex items-center gap-1">
-                                       ⚔️ Dano: {dmgInfo.damage}{translatedType ? ` (${translatedType})` : ""}
-                                     </span>
-                                   </div>
-                                 );
-                               })()}
-                               {activeTab !== "npcs" && technical.length > 0 && (
+                          <div className="mb-2 flex items-start gap-3">
+                            {item.imageUrl && !failedImages.has(item.id) ? (
+                              <img
+                                src={String(item.imageUrl)}
+                                alt={`Imagem de ${item.name}`}
+                                width={72}
+                                height={72}
+                                loading="lazy"
+                                className="h-[72px] w-[72px] shrink-0 rounded-lg border border-purple-900/60 object-cover"
+                                onError={() =>
+                                  setFailedImages((previous) => new Set(previous).add(item.id))
+                                }
+                              />
+                            ) : (
+                              <div
+                                aria-label={`Imagem indisponível para ${item.name}`}
+                                className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-lg border border-gray-800 bg-gray-950 text-2xl text-gray-600"
+                              >
+                                ✦
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <button
+                                onClick={() => setSelectedItem(item)}
+                                onKeyDown={(event) => {
+                                  if (event.key === "Enter" || event.key === " ") {
+                                    event.preventDefault();
+                                    setSelectedItem(item);
+                                  }
+                                }}
+                                aria-label={`Ver detalhes de ${item.name}`}
+                                className="text-left text-sm font-bold text-white hover:text-purple-300"
+                              >
+                                {item.name}
+                              </button>
+                              {isGlobal && activeTab !== "npcs" && (
+                                <span className="ml-2 rounded bg-gray-800 px-1.5 py-0.5 text-xs text-gray-400">
+                                  Global
+                                </span>
+                              )}
+                              {activeTab === "npcs" && (
+                                <div className="mt-1 text-xs text-gray-400">
+                                  Nível {String(item.level)} ·{" "}
+                                  {String(item.npcType) === "enemy" ? "Inimigo" : "Aliado"}
+                                </div>
+                              )}
+                              {activeTab === "items" &&
+                                (() => {
+                                  const dmgInfo = extractItemDamageInfo(item);
+                                  if (!dmgInfo.damage) return null;
+                                  const translatedType = dmgInfo.damageType
+                                    ? PF2E_DAMAGE_TYPES_PT[dmgInfo.damageType.toLowerCase()] ||
+                                      dmgInfo.damageType
+                                    : null;
+                                  return (
+                                    <div className="mt-1">
+                                      <span className="rounded bg-rose-950 px-2 py-0.5 text-[10px] font-bold text-rose-300 border border-rose-800/60 inline-flex items-center gap-1">
+                                        ⚔️ Dano: {dmgInfo.damage}
+                                        {translatedType ? ` (${translatedType})` : ""}
+                                      </span>
+                                    </div>
+                                  );
+                                })()}
+                              {activeTab !== "npcs" && technical.length > 0 && (
                                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-gray-400">
                                   {technical.map(([key, value]) => {
-                                    const formatted = formatTechnicalField(key, value, modalLanguage);
+                                    const formatted = formatTechnicalField(
+                                      key,
+                                      value,
+                                      modalLanguage,
+                                    );
                                     if (!formatted) return null;
                                     return (
                                       <span key={key}>
-                                        <strong className="text-purple-300">{getTechnicalLabel(key, modalLanguage)}:</strong> {formatted}
+                                        <strong className="text-purple-300">
+                                          {getTechnicalLabel(key, modalLanguage)}:
+                                        </strong>{" "}
+                                        {formatted}
                                       </span>
                                     );
                                   })}
-                                 </div>
+                                </div>
                               )}
-                              {item.description !== null && item.description !== undefined && activeTab !== "npcs" && <p className="mt-1 line-clamp-2 text-[11px] text-gray-400">{String(item.description)}</p>}
+                              {item.description !== null &&
+                                item.description !== undefined &&
+                                activeTab !== "npcs" && (
+                                  <p className="mt-1 line-clamp-2 text-[11px] text-gray-400">
+                                    {String(item.description)}
+                                  </p>
+                                )}
                             </div>
                           </div>
                         )}
                         <input
-                         type="checkbox"
-                         checked={isEnabled}
-                         onChange={() => toggleItemEnabled(item, isEnabled)}
-                         disabled={activeTab !== "npcs" && isGlobal}
-                         className="h-4 w-4 accent-purple-600 disabled:opacity-50"
-                       />
-                       {activeTab !== "items" && activeTab !== "npcs" && <button
-                         onClick={() => setSelectedItem(item)}
-                         onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedItem(item); } }}
-                         aria-label={`Ver detalhes de ${item.name}`}
-                         className="flex-1 text-left text-sm text-white hover:text-purple-300"
-                       >
-                         {item.name}
-                         {isGlobal && (
-                           <span className="ml-2 rounded bg-gray-800 px-1.5 py-0.5 text-xs text-gray-400">
-                             Global
-                           </span>
-                         )}
-                       </button>}
-                       {(activeTab === "items" || activeTab === "npcs") && <button
-                         onClick={() => setSelectedItem(item)}
-                         onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedItem(item); } }}
-                         aria-label={`Ver detalhes de ${item.name}`}
-                         className="flex-1 text-left text-sm text-white hover:text-purple-300"
-                       >
-                         Ver detalhes
-                       </button>}
+                          type="checkbox"
+                          checked={isEnabled}
+                          onChange={() => toggleItemEnabled(item, isEnabled)}
+                          disabled={activeTab !== "npcs" && isGlobal}
+                          className="h-4 w-4 accent-purple-600 disabled:opacity-50"
+                        />
+                        {activeTab !== "items" && activeTab !== "npcs" && (
+                          <button
+                            onClick={() => setSelectedItem(item)}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault();
+                                setSelectedItem(item);
+                              }
+                            }}
+                            aria-label={`Ver detalhes de ${item.name}`}
+                            className="flex-1 text-left text-sm text-white hover:text-purple-300"
+                          >
+                            {item.name}
+                            {isGlobal && (
+                              <span className="ml-2 rounded bg-gray-800 px-1.5 py-0.5 text-xs text-gray-400">
+                                Global
+                              </span>
+                            )}
+                          </button>
+                        )}
+                        {(activeTab === "items" || activeTab === "npcs") && (
+                          <button
+                            onClick={() => setSelectedItem(item)}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault();
+                                setSelectedItem(item);
+                              }
+                            }}
+                            aria-label={`Ver detalhes de ${item.name}`}
+                            className="flex-1 text-left text-sm text-white hover:text-purple-300"
+                          >
+                            Ver detalhes
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Detalhes */}
+            <div className="w-1/2 overflow-y-auto rounded-lg border border-gray-800 bg-gray-950 p-3">
+              {selectedItem ? (
+                (() => {
+                  const isSpell = activeTab === "spells";
+                  const isPt = modalLanguage === "pt";
+                  const spell = selectedItem as unknown as Spell;
+                  const translation = (spell.translation || null) as Record<string, unknown> | null;
+
+                  const getField = (key: string) => {
+                    if (
+                      isPt &&
+                      translation &&
+                      translation[key] !== undefined &&
+                      translation[key] !== null &&
+                      translation[key] !== ""
+                    ) {
+                      return translation[key];
+                    }
+                    return spell[key as keyof Spell];
+                  };
+
+                  const itemTranslation =
+                    selectedItem.translation && typeof selectedItem.translation === "object"
+                      ? (selectedItem.translation as Record<string, unknown>)
+                      : null;
+                  const displayName = isSpell
+                    ? getField("name")
+                      ? String(getField("name"))
+                      : spell.name
+                    : modalLanguage === "pt" && itemTranslation?.name
+                      ? String(itemTranslation.name)
+                      : selectedItem.name;
+
+                  return (
+                    <div>
+                      <div className="mb-3 flex items-center justify-between border-b border-gray-800 pb-2">
+                        <div className="flex items-center gap-3">
+                          {(isSpell || activeTab === "npcs") &&
+                            (spell.imageUrl || selectedItem.imageUrl ? (
+                              <img
+                                src={String(spell.imageUrl || selectedItem.imageUrl)}
+                                alt={`Imagem de ${displayName}`}
+                                width={44}
+                                height={44}
+                                className="h-11 w-11 rounded-lg border border-purple-900/60 object-cover"
+                              />
+                            ) : (
+                              <div
+                                aria-label={`Imagem indisponível para ${displayName}`}
+                                className="flex h-11 w-11 items-center justify-center rounded-lg border border-purple-900/60 bg-gray-900 text-xl text-gray-600"
+                              >
+                                ✦
+                              </div>
+                            ))}
+                          <h3 className="text-lg font-bold text-white">{displayName}</h3>
+                        </div>
+                        {(isSpell || activeTab === "items") && (
+                          <div className="flex items-center gap-2">
+                            {isTranslating && (
+                              <span className="text-[10px] text-purple-400 animate-pulse">
+                                Traduzindo...
+                              </span>
+                            )}
+                            {spell.translation ? (
+                              <div className="flex gap-1 rounded-lg border border-purple-800 bg-gray-900 p-0.5">
+                                <button
+                                  type="button"
+                                  onClick={() => setModalLanguage("pt")}
+                                  className={`rounded px-1.5 py-0.5 text-[10px] font-bold transition ${
+                                    modalLanguage === "pt"
+                                      ? "bg-purple-600 text-white"
+                                      : "text-gray-400 hover:text-white"
+                                  }`}
+                                >
+                                  PT
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setModalLanguage("en")}
+                                  className={`rounded px-1.5 py-0.5 text-[10px] font-bold transition ${
+                                    modalLanguage === "en"
+                                      ? "bg-purple-600 text-white"
+                                      : "text-gray-400 hover:text-white"
+                                  }`}
+                                >
+                                  EN
+                                </button>
+                              </div>
+                            ) : null}
+                          </div>
+                        )}
+                      </div>
+                      {renderItemDetails(selectedItem)}
                     </div>
                   );
-                })}
-              </div>
-            )}
+                })()
+              ) : (
+                <p className="text-center text-sm text-gray-500">
+                  Selecione um item para ver os detalhes
+                </p>
+              )}
+            </div>
           </div>
-
-          {/* Detalhes */}
-          <div className="w-1/2 overflow-y-auto rounded-lg border border-gray-800 bg-gray-950 p-3">
-            {selectedItem ? (() => {
-              const isSpell = activeTab === "spells";
-              const isPt = modalLanguage === "pt";
-              const spell = selectedItem as unknown as Spell;
-              const translation = (spell.translation || null) as Record<string, unknown> | null;
-
-              const getField = (key: string) => {
-                if (isPt && translation && translation[key] !== undefined && translation[key] !== null && translation[key] !== "") {
-                  return translation[key];
-                }
-                return spell[key as keyof Spell];
-              };
-
-               const itemTranslation = selectedItem.translation && typeof selectedItem.translation === "object" ? selectedItem.translation as Record<string, unknown> : null;
-               const displayName = isSpell ? (getField("name") ? String(getField("name")) : spell.name) : (modalLanguage === "pt" && itemTranslation?.name ? String(itemTranslation.name) : selectedItem.name);
-
-              return (
-                <div>
-                  <div className="mb-3 flex items-center justify-between border-b border-gray-800 pb-2">
-               <div className="flex items-center gap-3">
-                      {(isSpell || activeTab === "npcs") && (
-                        (spell.imageUrl || selectedItem.imageUrl) ? (
-                          <img
-                            src={String(spell.imageUrl || selectedItem.imageUrl)}
-                            alt={`Imagem de ${displayName}`}
-                            width={44}
-                            height={44}
-                            className="h-11 w-11 rounded-lg border border-purple-900/60 object-cover"
-                          />
-                        ) : (
-                          <div
-                            aria-label={`Imagem indisponível para ${displayName}`}
-                            className="flex h-11 w-11 items-center justify-center rounded-lg border border-purple-900/60 bg-gray-900 text-xl text-gray-600"
-                          >
-                            ✦
-                          </div>
-                        )
-                      )}
-                       <h3 className="text-lg font-bold text-white">{displayName}</h3>
-                    </div>
-                    {(isSpell || activeTab === "items") && (
-                      <div className="flex items-center gap-2">
-                        {isTranslating && (
-                          <span className="text-[10px] text-purple-400 animate-pulse">
-                            Traduzindo...
-                          </span>
-                        )}
-                        {spell.translation ? (
-                          <div className="flex gap-1 rounded-lg border border-purple-800 bg-gray-900 p-0.5">
-                            <button
-                              type="button"
-                              onClick={() => setModalLanguage("pt")}
-                              className={`rounded px-1.5 py-0.5 text-[10px] font-bold transition ${
-                                modalLanguage === "pt"
-                                  ? "bg-purple-600 text-white"
-                                  : "text-gray-400 hover:text-white"
-                              }`}
-                            >
-                              PT
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setModalLanguage("en")}
-                              className={`rounded px-1.5 py-0.5 text-[10px] font-bold transition ${
-                                modalLanguage === "en"
-                                  ? "bg-purple-600 text-white"
-                                  : "text-gray-400 hover:text-white"
-                              }`}
-                            >
-                              EN
-                            </button>
-                          </div>
-                        ) : null}
-                      </div>
-                    )}
-                  </div>
-                  {renderItemDetails(selectedItem)}
-                </div>
-              );
-            })() : (
-              <p className="text-center text-sm text-gray-500">
-                Selecione um item para ver os detalhes
-              </p>
-            )}
-          </div>
-        </div>
         )}
       </div>
     </div>

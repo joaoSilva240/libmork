@@ -40,7 +40,9 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
   const [selectedMapFile, setSelectedMapFile] = useState<File | null>(null);
 
   // Formulários de sub-elementos do mundo selecionado
-  const [activeSubTab, setActiveSubTab] = useState<"details" | "encounters" | "establishments" | "npcs">("details");
+  const [activeSubTab, setActiveSubTab] = useState<
+    "details" | "encounters" | "establishments" | "npcs"
+  >("details");
 
   // Form Estabelecimento
   const [estName, setEstName] = useState("");
@@ -61,7 +63,9 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
   const [productPriceGold, setProductPriceGold] = useState(10);
   const [productStock, setProductStock] = useState(-1);
   const [selectedContentId, setSelectedContentId] = useState<string | null>(null);
-  const [globalContentList, setGlobalContentList] = useState<Array<{ id: string; name: string; description?: string | null }>>([]);
+  const [globalContentList, setGlobalContentList] = useState<
+    Array<{ id: string; name: string; description?: string | null }>
+  >([]);
   const [isLoadingContentList, setIsLoadingContentList] = useState(false);
   const [isCreatingProduct, setIsCreatingProduct] = useState(false);
 
@@ -126,7 +130,7 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
     setIsDetailsLoading(true);
     try {
       const res = await fetch(`/api/worlds/${worldId}`, {
-        credentials: "include"
+        credentials: "include",
       });
       const data = await res.json();
       if (res.ok) {
@@ -146,7 +150,7 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
       setIsLoading(true);
       try {
         const res = await fetch("/api/worlds", {
-          credentials: "include"
+          credentials: "include",
         });
         const data = await res.json();
         if (cancelled) return;
@@ -247,9 +251,9 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
     if (!window.confirm("Deseja realmente excluir este mundo?")) return;
 
     try {
-      const res = await fetch(`/api/worlds/${id}`, { 
+      const res = await fetch(`/api/worlds/${id}`, {
         method: "DELETE",
-        credentials: "include"
+        credentials: "include",
       });
       if (res.ok) {
         if (selectedWorld?.id === id) setSelectedWorld(null);
@@ -338,19 +342,22 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
     setIsCreatingProduct(true);
 
     try {
-      const res = await fetch(`/api/worlds/${selectedWorld.id}/establishments/${addingProductEstId}/inventory`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: productName,
-          description: productDescription || null,
-          contentType: productType,
-          contentId: selectedContentId || null,
-          priceGold: productPriceGold,
-          stock: productStock,
-        }),
-        credentials: "include",
-      });
+      const res = await fetch(
+        `/api/worlds/${selectedWorld.id}/establishments/${addingProductEstId}/inventory`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: productName,
+            description: productDescription || null,
+            contentType: productType,
+            contentId: selectedContentId || null,
+            priceGold: productPriceGold,
+            stock: productStock,
+          }),
+          credentials: "include",
+        },
+      );
 
       if (res.ok) {
         setProductName("");
@@ -372,12 +379,12 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
   };
 
   const filteredWorlds = worlds.filter((w) =>
-    w.name.toLowerCase().includes(searchQuery.toLowerCase())
+    w.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
   const totalPages = Math.ceil(filteredWorlds.length / pageSize) || 1;
   const paginatedWorlds = filteredWorlds.slice(
     (currentPage - 1) * pageSize,
-    currentPage * pageSize
+    currentPage * pageSize,
   );
 
   // Fechar modal ao pressionar ESC
@@ -410,7 +417,10 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
             <span>Mundos da Biblioteca</span>
           </h3>
           <div className="text-xs text-gray-400 font-semibold whitespace-nowrap">
-            Total: <span className="text-xs text-purple-400 font-bold bg-purple-950/60 border border-purple-900/60 px-2.5 py-1 rounded-lg">{filteredWorlds.length}</span>
+            Total:{" "}
+            <span className="text-xs text-purple-400 font-bold bg-purple-950/60 border border-purple-900/60 px-2.5 py-1 rounded-lg">
+              {filteredWorlds.length}
+            </span>
           </div>
         </div>
 
@@ -438,7 +448,11 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
                     className="group relative min-h-[120px] overflow-hidden rounded-xl border border-gray-800 bg-gray-950 p-3.5 cursor-pointer transition-all hover:border-purple-600/60 hover:shadow-lg flex flex-col justify-between"
                     style={
                       world.coverUrl
-                        ? { backgroundImage: `url(${world.coverUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+                        ? {
+                            backgroundImage: `url(${world.coverUrl})`,
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
+                          }
                         : undefined
                     }
                     onClick={() => {
@@ -455,9 +469,13 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
                     />
                     <div className="relative z-10 flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-white text-base drop-shadow-sm truncate">{world.name}</h4>
+                        <h4 className="font-bold text-white text-base drop-shadow-sm truncate">
+                          {world.name}
+                        </h4>
                         {world.description && (
-                          <p className="text-xs text-gray-400 line-clamp-2 mt-1 drop-shadow-sm">{world.description}</p>
+                          <p className="text-xs text-gray-400 line-clamp-2 mt-1 drop-shadow-sm">
+                            {world.description}
+                          </p>
                         )}
                       </div>
 
@@ -473,7 +491,9 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
                     </div>
                     <div className="relative z-10 mt-4 flex items-center justify-between text-[11px] text-gray-400">
                       <span>Clique para ver detalhes</span>
-                      <span className="text-purple-400 font-medium group-hover:translate-x-0.5 transition-transform">Ver mais &rarr;</span>
+                      <span className="text-purple-400 font-medium group-hover:translate-x-0.5 transition-transform">
+                        Ver mais &rarr;
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -537,7 +557,9 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
               <button
                 onClick={() => setActiveSubTab("details")}
                 className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
-                  activeSubTab === "details" ? "bg-purple-600 text-white shadow" : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                  activeSubTab === "details"
+                    ? "bg-purple-600 text-white shadow"
+                    : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
                 }`}
               >
                 Geral
@@ -545,7 +567,9 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
               <button
                 onClick={() => setActiveSubTab("establishments")}
                 className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
-                  activeSubTab === "establishments" ? "bg-purple-600 text-white shadow" : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                  activeSubTab === "establishments"
+                    ? "bg-purple-600 text-white shadow"
+                    : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
                 }`}
               >
                 🏬 Estabelecimentos ({selectedWorld.establishments?.length || 0})
@@ -553,7 +577,9 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
               <button
                 onClick={() => setActiveSubTab("encounters")}
                 className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
-                  activeSubTab === "encounters" ? "bg-purple-600 text-white shadow" : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                  activeSubTab === "encounters"
+                    ? "bg-purple-600 text-white shadow"
+                    : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
                 }`}
               >
                 ⚔️ Encontros ({selectedWorld.encounters?.length || 0})
@@ -561,7 +587,9 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
               <button
                 onClick={() => setActiveSubTab("npcs")}
                 className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
-                  activeSubTab === "npcs" ? "bg-purple-600 text-white shadow" : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                  activeSubTab === "npcs"
+                    ? "bg-purple-600 text-white shadow"
+                    : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
                 }`}
               >
                 👥 NPCs ({selectedWorld.npcs?.length || 0})
@@ -575,11 +603,27 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
             ) : activeSubTab === "details" ? (
               <div className="space-y-4">
                 <div className="space-y-3 text-xs text-gray-400">
-                  <p><span className="font-semibold text-white">ID:</span> {selectedWorld.id}</p>
-                  <p><span className="font-semibold text-white">Criado em:</span> {selectedWorld.createdAt ? new Date(selectedWorld.createdAt).toLocaleDateString("pt-BR") : "-"}</p>
-                  <p><span className="font-semibold text-white">Total de Locais:</span> {selectedWorld.establishments?.length || 0}</p>
-                  <p><span className="font-semibold text-white">Total de Encontros:</span> {selectedWorld.encounters?.length || 0}</p>
-                  <p><span className="font-semibold text-white">Total de NPCs:</span> {selectedWorld.npcs?.length || 0}</p>
+                  <p>
+                    <span className="font-semibold text-white">ID:</span> {selectedWorld.id}
+                  </p>
+                  <p>
+                    <span className="font-semibold text-white">Criado em:</span>{" "}
+                    {selectedWorld.createdAt
+                      ? new Date(selectedWorld.createdAt).toLocaleDateString("pt-BR")
+                      : "-"}
+                  </p>
+                  <p>
+                    <span className="font-semibold text-white">Total de Locais:</span>{" "}
+                    {selectedWorld.establishments?.length || 0}
+                  </p>
+                  <p>
+                    <span className="font-semibold text-white">Total de Encontros:</span>{" "}
+                    {selectedWorld.encounters?.length || 0}
+                  </p>
+                  <p>
+                    <span className="font-semibold text-white">Total de NPCs:</span>{" "}
+                    {selectedWorld.npcs?.length || 0}
+                  </p>
                 </div>
 
                 <div className="border-t border-gray-800 pt-3 space-y-4">
@@ -591,8 +635,12 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
                       currentImageUrl={selectedWorld.coverUrl}
                       label="Imagem de Capa"
                       onUploaded={(url) => {
-                        setSelectedWorld((prev) => prev ? { ...prev, coverUrl: url } : null);
-                        setWorlds((prev) => prev.map((w) => w.id === selectedWorld.id ? { ...w, coverUrl: url } : w));
+                        setSelectedWorld((prev) => (prev ? { ...prev, coverUrl: url } : null));
+                        setWorlds((prev) =>
+                          prev.map((w) =>
+                            w.id === selectedWorld.id ? { ...w, coverUrl: url } : w,
+                          ),
+                        );
                       }}
                     />
                     <WorldImageUpload
@@ -601,8 +649,10 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
                       currentImageUrl={selectedWorld.mapUrl}
                       label="Imagem de Mapa"
                       onUploaded={(url) => {
-                        setSelectedWorld((prev) => prev ? { ...prev, mapUrl: url } : null);
-                        setWorlds((prev) => prev.map((w) => w.id === selectedWorld.id ? { ...w, mapUrl: url } : w));
+                        setSelectedWorld((prev) => (prev ? { ...prev, mapUrl: url } : null));
+                        setWorlds((prev) =>
+                          prev.map((w) => (w.id === selectedWorld.id ? { ...w, mapUrl: url } : w)),
+                        );
                       }}
                     />
                   </div>
@@ -657,7 +707,12 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
                       disabled={isCreatingEst}
                       className={`${inputClass} text-xs`}
                     />
-                    <Button type="submit" variant="master" isLoading={isCreatingEst} className="w-full text-xs py-1">
+                    <Button
+                      type="submit"
+                      variant="master"
+                      isLoading={isCreatingEst}
+                      className="w-full text-xs py-1"
+                    >
                       Adicionar Estabelecimento
                     </Button>
                   </div>
@@ -665,13 +720,21 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
 
                 <div className="space-y-3 max-h-80 overflow-y-auto">
                   {selectedWorld.establishments?.map((est) => (
-                    <div key={est.id} className="rounded-xl border border-gray-800 bg-gray-900 p-3 text-xs space-y-2">
+                    <div
+                      key={est.id}
+                      className="rounded-xl border border-gray-800 bg-gray-900 p-3 text-xs space-y-2"
+                    >
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-bold text-white text-sm">
-                            {est.name} <span className="text-xs text-purple-400 font-normal">({est.type})</span>
+                            {est.name}{" "}
+                            <span className="text-xs text-purple-400 font-normal">
+                              ({est.type})
+                            </span>
                           </p>
-                          {est.description && <p className="text-xs text-gray-400">{est.description}</p>}
+                          {est.description && (
+                            <p className="text-xs text-gray-400">{est.description}</p>
+                          )}
                         </div>
                         <div className="flex items-center gap-2">
                           <button
@@ -692,7 +755,10 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
                           >
                             {addingProductEstId === est.id ? "Cancelar" : "+ Produto"}
                           </button>
-                          <button onClick={() => handleDeleteEstablishment(est.id)} className="text-xs text-red-400 hover:text-red-300 transition-colors">
+                          <button
+                            onClick={() => handleDeleteEstablishment(est.id)}
+                            className="text-xs text-red-400 hover:text-red-300 transition-colors"
+                          >
                             Excluir
                           </button>
                         </div>
@@ -701,10 +767,14 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
                       {addingProductEstId === est.id && (
                         <Form onSubmit={handleCreateProduct} error={undefined}>
                           <div className="space-y-2 rounded-lg border border-purple-900/60 bg-gray-950 p-2.5 mt-2">
-                            <h5 className="font-bold text-xs text-purple-300">Cadastrar Produto no Estoque de {est.name}</h5>
+                            <h5 className="font-bold text-xs text-purple-300">
+                              Cadastrar Produto no Estoque de {est.name}
+                            </h5>
                             <div className="grid grid-cols-2 gap-2">
                               <div>
-                                <label className="block text-[10px] font-semibold text-gray-400 mb-0.5">Tipo de Conteúdo</label>
+                                <label className="block text-[10px] font-semibold text-gray-400 mb-0.5">
+                                  Tipo de Conteúdo
+                                </label>
                                 <select
                                   value={productType}
                                   onChange={(e) => {
@@ -722,7 +792,9 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
                               </div>
 
                               <div>
-                                <label className="block text-[10px] font-semibold text-gray-400 mb-0.5">Biblioteca Global</label>
+                                <label className="block text-[10px] font-semibold text-gray-400 mb-0.5">
+                                  Biblioteca Global
+                                </label>
                                 <select
                                   value={selectedContentId || ""}
                                   onChange={(e) => {
@@ -731,7 +803,9 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
                                       setSelectedContentId(null);
                                       return;
                                     }
-                                    const selected = globalContentList.find((item) => item.id === id);
+                                    const selected = globalContentList.find(
+                                      (item) => item.id === id,
+                                    );
                                     if (selected) {
                                       setSelectedContentId(selected.id);
                                       setProductName(selected.name);
@@ -752,7 +826,9 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
                             </div>
 
                             <div>
-                              <label className="block text-[10px] font-semibold text-gray-400 mb-0.5">Nome</label>
+                              <label className="block text-[10px] font-semibold text-gray-400 mb-0.5">
+                                Nome
+                              </label>
                               <input
                                 type="text"
                                 placeholder="Nome do produto"
@@ -766,7 +842,9 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
 
                             <div className="grid grid-cols-2 gap-2">
                               <div>
-                                <label className="block text-[10px] font-semibold text-gray-400 mb-0.5">Preço (Ouro)</label>
+                                <label className="block text-[10px] font-semibold text-gray-400 mb-0.5">
+                                  Preço (Ouro)
+                                </label>
                                 <input
                                   type="number"
                                   min={0}
@@ -778,7 +856,9 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
                                 />
                               </div>
                               <div>
-                                <label className="block text-[10px] font-semibold text-gray-400 mb-0.5">Qtd Estoque (-1 = ilimitado)</label>
+                                <label className="block text-[10px] font-semibold text-gray-400 mb-0.5">
+                                  Qtd Estoque (-1 = ilimitado)
+                                </label>
                                 <input
                                   type="number"
                                   min={-1}
@@ -798,7 +878,12 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
                               disabled={isCreatingProduct}
                               className={`${inputClass} text-xs`}
                             />
-                            <Button type="submit" variant="master" isLoading={isCreatingProduct} className="w-full text-xs py-1">
+                            <Button
+                              type="submit"
+                              variant="master"
+                              isLoading={isCreatingProduct}
+                              className="w-full text-xs py-1"
+                            >
                               Salvar no Estoque
                             </Button>
                           </div>
@@ -830,7 +915,12 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
                       rows={2}
                       className={`${inputClass} text-xs`}
                     />
-                    <Button type="submit" variant="master" isLoading={isCreatingEnc} className="w-full text-xs py-1">
+                    <Button
+                      type="submit"
+                      variant="master"
+                      isLoading={isCreatingEnc}
+                      className="w-full text-xs py-1"
+                    >
                       Cadastrar Encontro
                     </Button>
                   </div>
@@ -838,7 +928,10 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
 
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {selectedWorld.encounters?.map((enc) => (
-                    <div key={enc.id} className="rounded-xl border border-gray-800 bg-gray-900 p-2.5 text-xs">
+                    <div
+                      key={enc.id}
+                      className="rounded-xl border border-gray-800 bg-gray-900 p-2.5 text-xs"
+                    >
                       <div className="flex justify-between items-center">
                         <p className="font-bold text-white">{enc.name}</p>
                         {enc.isActive && (
@@ -847,7 +940,9 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
                           </span>
                         )}
                       </div>
-                      {enc.description && <p className="text-[10px] text-gray-400 mt-1">{enc.description}</p>}
+                      {enc.description && (
+                        <p className="text-[10px] text-gray-400 mt-1">{enc.description}</p>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -855,13 +950,26 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {selectedWorld.npcs?.length === 0 ? (
-                  <p className="text-xs text-gray-400 text-center py-4">Nenhum NPC vinculado a este mundo.</p>
+                  <p className="text-xs text-gray-400 text-center py-4">
+                    Nenhum NPC vinculado a este mundo.
+                  </p>
                 ) : (
                   selectedWorld.npcs?.map((npc) => (
-                    <div key={npc.id} className="flex justify-between items-center rounded-xl border border-gray-800 bg-gray-900 p-2.5 text-xs">
+                    <div
+                      key={npc.id}
+                      className="flex justify-between items-center rounded-xl border border-gray-800 bg-gray-900 p-2.5 text-xs"
+                    >
                       <div>
-                        <p className="font-bold text-white">{npc.name} <span className="text-[10px] text-gray-400 font-normal">Nv {npc.level}</span></p>
-                        <p className="text-[10px] text-gray-400">HP {npc.hitPoints}/{npc.hitPointsMax} · Mana {npc.manaPoints}/{npc.manaPointsMax}</p>
+                        <p className="font-bold text-white">
+                          {npc.name}{" "}
+                          <span className="text-[10px] text-gray-400 font-normal">
+                            Nv {npc.level}
+                          </span>
+                        </p>
+                        <p className="text-[10px] text-gray-400">
+                          HP {npc.hitPoints}/{npc.hitPointsMax} · Mana {npc.manaPoints}/
+                          {npc.manaPointsMax}
+                        </p>
                       </div>
                       <span className="rounded-lg bg-purple-950/60 px-2 py-0.5 text-[10px] text-purple-300 font-medium border border-purple-900/60">
                         {npc.npcType === "enemy" ? "Inimigo" : "NPC"}
@@ -917,9 +1025,7 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
 
               {/* Input: Descrição */}
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-300">
-                  Descrição
-                </label>
+                <label className="mb-1 block text-sm font-medium text-gray-300">Descrição</label>
                 <textarea
                   value={newWorldDescription}
                   onChange={(e) => setNewWorldDescription(e.target.value)}
@@ -955,17 +1061,24 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
                   <label
                     htmlFor="modal-cover-file-input"
                     className={`flex items-center gap-1.5 rounded-xl border border-gray-800 bg-gray-900 px-3.5 py-2 text-xs font-semibold text-gray-300 hover:bg-gray-800 hover:text-white cursor-pointer transition-colors ${
-                      isCreating ? 'opacity-50 cursor-not-allowed' : ''
+                      isCreating ? "opacity-50 cursor-not-allowed" : ""
                     }`}
                   >
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                      />
                     </svg>
-                    {selectedCoverFile ? selectedCoverFile.name.slice(0, 15) : 'Upload'}
+                    {selectedCoverFile ? selectedCoverFile.name.slice(0, 15) : "Upload"}
                   </label>
                 </div>
                 {selectedCoverFile && (
-                  <p className="mt-1 text-xs text-purple-400 font-semibold">📎 {selectedCoverFile.name}</p>
+                  <p className="mt-1 text-xs text-purple-400 font-semibold">
+                    📎 {selectedCoverFile.name}
+                  </p>
                 )}
               </div>
 
@@ -994,17 +1107,24 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
                   <label
                     htmlFor="modal-map-file-input"
                     className={`flex items-center gap-1.5 rounded-xl border border-gray-800 bg-gray-900 px-3.5 py-2 text-xs font-semibold text-gray-300 hover:bg-gray-800 hover:text-white cursor-pointer transition-colors ${
-                      isCreating ? 'opacity-50 cursor-not-allowed' : ''
+                      isCreating ? "opacity-50 cursor-not-allowed" : ""
                     }`}
                   >
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                      />
                     </svg>
-                    {selectedMapFile ? selectedMapFile.name.slice(0, 15) : 'Upload'}
+                    {selectedMapFile ? selectedMapFile.name.slice(0, 15) : "Upload"}
                   </label>
                 </div>
                 {selectedMapFile && (
-                  <p className="mt-1 text-xs text-purple-400 font-semibold">📎 {selectedMapFile.name}</p>
+                  <p className="mt-1 text-xs text-purple-400 font-semibold">
+                    📎 {selectedMapFile.name}
+                  </p>
                 )}
               </div>
 
@@ -1018,12 +1138,7 @@ export function LibraryWorlds({ onRegisterActions }: LibraryWorldsProps = {}) {
                 >
                   Cancelar
                 </button>
-                <Button
-                  type="submit"
-                  variant="master"
-                  isLoading={isCreating}
-                  className="w-1/2"
-                >
+                <Button type="submit" variant="master" isLoading={isCreating} className="w-1/2">
                   Criar Mundo
                 </Button>
               </div>

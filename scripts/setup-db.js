@@ -14,9 +14,7 @@ async function setupDatabase() {
   const databaseUrl = process.env.DATABASE_URL;
 
   if (!databaseUrl) {
-    throw new Error(
-      "DATABASE_URL não definida. Configure essa variável no arquivo .env.local.",
-    );
+    throw new Error("DATABASE_URL não definida. Configure essa variável no arquivo .env.local.");
   }
 
   // Conecta no banco padrão primeiro

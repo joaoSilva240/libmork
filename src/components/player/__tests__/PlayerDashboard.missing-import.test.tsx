@@ -97,9 +97,7 @@ describe("PlayerDashboard - MISSING Campaign Import and Sheet Integration", () =
       ownerId: "user-1",
       name: "Agente Sarah Miller",
       status: "missing",
-      lines: [
-        { id: "l-3", index: 1, text: "Memória apagada", isErased: true },
-      ],
+      lines: [{ id: "l-3", index: 1, text: "Memória apagada", isErased: true }],
       equipments: [
         { id: "eq-4", slot: 1, name: "Distintivo", notes: "", status: "active" },
         { id: "eq-5", slot: 2, name: "", notes: "", status: "active" },
@@ -162,12 +160,16 @@ describe("PlayerDashboard - MISSING Campaign Import and Sheet Integration", () =
     expect(screen.getAllByText("MISSING — Edição ZERO").length).toBeGreaterThanOrEqual(1);
 
     // Abrir o modal da campanha
-    const campaignCard = screen.getByRole("button", { name: /Ver detalhes da campanha Névoa sobre Innsmouth/i });
+    const campaignCard = screen.getByRole("button", {
+      name: /Ver detalhes da campanha Névoa sobre Innsmouth/i,
+    });
     fireEvent.click(campaignCard);
 
     // Verificar detalhes da campanha
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "Névoa sobre Innsmouth", level: 2 })).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: "Névoa sobre Innsmouth", level: 2 }),
+      ).toBeInTheDocument();
     });
 
     // Badge no topo do modal detalhado
@@ -177,7 +179,7 @@ describe("PlayerDashboard - MISSING Campaign Import and Sheet Integration", () =
     const createBtn = screen.getByText("+ Criar Habitante nesta Campanha");
     expect(createBtn.closest("a")).toHaveAttribute(
       "href",
-      "/player/characters/new?campaignId=camp-missing-1&system=missing_zero"
+      "/player/characters/new?campaignId=camp-missing-1&system=missing_zero",
     );
 
     expect(screen.getByText("↩ Importar Habitante Existente")).toBeInTheDocument();
@@ -502,13 +504,17 @@ describe("PlayerDashboard - MISSING Campaign Import and Sheet Integration", () =
 
     // Modal da ficha de Habitante (MissingHabitantSheet) deve ser aberto no painel
     await waitFor(() => {
-      expect(screen.getByRole("dialog", { name: "Ficha de Detetive John Doe" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("dialog", { name: "Ficha de Detetive John Doe" }),
+      ).toBeInTheDocument();
     });
 
     // Fechar a ficha
     const fecharFichaBtn = screen.getByRole("button", { name: "Fechar ficha" });
     fireEvent.click(fecharFichaBtn);
 
-    expect(screen.queryByRole("dialog", { name: "Ficha de Detetive John Doe" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: "Ficha de Detetive John Doe" }),
+    ).not.toBeInTheDocument();
   });
 });

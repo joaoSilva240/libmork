@@ -37,10 +37,12 @@
 ### Task 1: Schema + migração aditiva
 
 **Files:**
+
 - Modify: `src/lib/db/schema.ts` (campaigns ~linha 157; adicionar tabelas após o bloco de chat ~linha 1530)
 - Create/Delete: `scripts/tmp-apply-session-calendar.js`
 
 **Interfaces:**
+
 - Produz: `campaigns.oneShot/maxPlayers`; tabelas `campaignSessions`, `sessionCandidates` + relations. Todas as tasks seguintes dependem disto.
 
 - [ ] **Step 1: Colunas em `campaigns`**
@@ -121,9 +123,15 @@ export const campaignSessionsRelations = relations(campaignSessions, ({ one, man
 }));
 
 export const sessionCandidatesRelations = relations(sessionCandidates, ({ one }) => ({
-  session: one(campaignSessions, { fields: [sessionCandidates.sessionId], references: [campaignSessions.id] }),
+  session: one(campaignSessions, {
+    fields: [sessionCandidates.sessionId],
+    references: [campaignSessions.id],
+  }),
   user: one(users, { fields: [sessionCandidates.userId], references: [users.id] }),
-  character: one(characters, { fields: [sessionCandidates.characterId], references: [characters.id] }),
+  character: one(characters, {
+    fields: [sessionCandidates.characterId],
+    references: [characters.id],
+  }),
 }));
 ```
 
@@ -203,7 +211,10 @@ COMMIT;
   await client.query(SQL);
   console.log("OK: tabelas de sessões aplicadas.");
   await client.end();
-})().catch((e) => { console.error(e.message); process.exit(1); });
+})().catch((e) => {
+  console.error(e.message);
+  process.exit(1);
+});
 ```
 
 Rodar: `NODE_PATH="C:/Users/kyone/Documents/Dev/libmork/node_modules" node scripts/tmp-apply-session-calendar.js` → esperado `OK: tabelas de sessões aplicadas.`
@@ -223,10 +234,12 @@ Esperado: 2 tabelas + 2 colunas; tsc limpo.
 ### Task 2: Validadores Zod
 
 **Files:**
+
 - Create: `src/lib/validators/sessions.ts`
 - Test: `src/lib/validators/__tests__/sessions.test.ts`
 
 **Interfaces:**
+
 - Produz: `launchSessionSchema`/`LaunchSessionInput`, `applySessionSchema`/`ApplySessionInput`, `updateSessionSchema`/`UpdateSessionInput`, `decideCandidateSchema`/`DecideCandidateInput`.
 
 - [ ] **Step 1: Testes (falham primeiro)**
@@ -253,14 +266,18 @@ describe("launchSessionSchema", () => {
     expect(launchSessionSchema.safeParse(base).success).toBe(true);
   });
   it("rejeita período invertido", () => {
-    expect(launchSessionSchema.safeParse({ ...base, proposedEnd: "2026-11-01T00:00:00.000Z" }).success).toBe(false);
+    expect(
+      launchSessionSchema.safeParse({ ...base, proposedEnd: "2026-11-01T00:00:00.000Z" }).success,
+    ).toBe(false);
   });
   it("rejeita descrição curta e xp negativo", () => {
     expect(launchSessionSchema.safeParse({ ...base, description: "curta" }).success).toBe(false);
     expect(launchSessionSchema.safeParse({ ...base, xpReward: -1 }).success).toBe(false);
   });
   it("aceita sessionType/maxSlots opcionais", () => {
-    expect(launchSessionSchema.safeParse({ ...base, sessionType: "one_shot", maxSlots: 5 }).success).toBe(true);
+    expect(
+      launchSessionSchema.safeParse({ ...base, sessionType: "one_shot", maxSlots: 5 }).success,
+    ).toBe(true);
     expect(launchSessionSchema.safeParse({ ...base, maxSlots: 0 }).success).toBe(false);
     expect(launchSessionSchema.safeParse({ ...base, maxSlots: 21 }).success).toBe(false);
   });
@@ -275,18 +292,42 @@ describe("applySessionSchema", () => {
     expect(applySessionSchema.safeParse({ availableDays: ["01/12/2026"] }).success).toBe(false);
   });
   it("exige horários aos pares e fim > início", () => {
-    expect(applySessionSchema.safeParse({ availableDays: ["2026-12-01"], preferredStart: "19:00" }).success).toBe(false);
-    expect(applySessionSchema.safeParse({ availableDays: ["2026-12-01"], preferredStart: "23:00", preferredEnd: "19:00" }).success).toBe(false);
-    expect(applySessionSchema.safeParse({ availableDays: ["2026-12-01"], preferredStart: "19:00", preferredEnd: "23:00" }).success).toBe(true);
+    expect(
+      applySessionSchema.safeParse({ availableDays: ["2026-12-01"], preferredStart: "19:00" })
+        .success,
+    ).toBe(false);
+    expect(
+      applySessionSchema.safeParse({
+        availableDays: ["2026-12-01"],
+        preferredStart: "23:00",
+        preferredEnd: "19:00",
+      }).success,
+    ).toBe(false);
+    expect(
+      applySessionSchema.safeParse({
+        availableDays: ["2026-12-01"],
+        preferredStart: "19:00",
+        preferredEnd: "23:00",
+      }).success,
+    ).toBe(true);
   });
   it("rejeita hora inválida", () => {
-    expect(applySessionSchema.safeParse({ availableDays: ["2026-12-01"], preferredStart: "25:00", preferredEnd: "26:00" }).success).toBe(false);
+    expect(
+      applySessionSchema.safeParse({
+        availableDays: ["2026-12-01"],
+        preferredStart: "25:00",
+        preferredEnd: "26:00",
+      }).success,
+    ).toBe(false);
   });
 });
 
 describe("updateSessionSchema", () => {
   it("aceita confirm com scheduledAt e default de duração", () => {
-    const r = updateSessionSchema.safeParse({ action: "confirm", scheduledAt: "2026-12-02T19:00:00.000Z" });
+    const r = updateSessionSchema.safeParse({
+      action: "confirm",
+      scheduledAt: "2026-12-02T19:00:00.000Z",
+    });
     expect(r.success).toBe(true);
     if (r.success && r.data.action === "confirm") expect(r.data.durationMinutes).toBe(240);
   });
@@ -295,7 +336,13 @@ describe("updateSessionSchema", () => {
   });
   it("rejeita action desconhecida e duração fora dos limites", () => {
     expect(updateSessionSchema.safeParse({ action: "delete" }).success).toBe(false);
-    expect(updateSessionSchema.safeParse({ action: "confirm", scheduledAt: "2026-12-02T19:00:00.000Z", durationMinutes: 10 }).success).toBe(false);
+    expect(
+      updateSessionSchema.safeParse({
+        action: "confirm",
+        scheduledAt: "2026-12-02T19:00:00.000Z",
+        durationMinutes: 10,
+      }).success,
+    ).toBe(false);
   });
 });
 
@@ -383,10 +430,12 @@ Run: `npx vitest run src/lib/validators/__tests__/sessions.test.ts`
 ### Task 3: Utilitários de data
 
 **Files:**
+
 - Create: `src/lib/utils/session-dates.ts`
 - Test: `src/lib/utils/__tests__/session-dates.test.ts`
 
 **Interfaces:**
+
 - Produz (usado pelas Tasks 7-12): `toLocalDateISO(date: Date): string`, `getMonthGrid(year: number, monthIndex: number): Date[]` (42 células, semana começa segunda), `getWeekDays(date: Date): Date[]` (7, segunda-first), `eachDayISO(start: Date, end: Date): string[]`, `isSameDay(a: Date, b: Date): boolean`, `addDays/addWeeks/addMonths(date, n): Date`, `formatMonthYear(date): string` (Intl pt-BR, ex.: "novembro de 2026").
 
 - [ ] **Step 1: Testes (falham primeiro)**
@@ -432,7 +481,9 @@ describe("session-dates", () => {
 
   it("eachDayISO inclui o primeiro e o último dia", () => {
     expect(eachDayISO(new Date(2026, 10, 1), new Date(2026, 10, 3, 23, 59, 59))).toEqual([
-      "2026-11-01", "2026-11-02", "2026-11-03",
+      "2026-11-01",
+      "2026-11-02",
+      "2026-11-03",
     ]);
   });
 
@@ -525,6 +576,7 @@ Run: `npx vitest run src/lib/utils/__tests__/session-dates.test.ts`
 ### Task 4: Serviço — lançamento, contexto e listagens do mestre
 
 **Files:**
+
 - Create: `src/lib/server/session-service.ts`
 - Create: `src/app/api/sessions/route.ts` (POST; GET fica na Task 5)
 - Create: `src/app/api/sessions/master/route.ts` (GET)
@@ -533,6 +585,7 @@ Run: `npx vitest run src/lib/utils/__tests__/session-dates.test.ts`
 - Test: `src/app/api/sessions/__tests__/sessions-launch.test.ts`
 
 **Interfaces:**
+
 - Consome: schema (Task 1), validadores (Task 2).
 - Produz (usado por Tasks 5, 8-12):
 
@@ -593,11 +646,7 @@ Criar `session-service.ts` com imports (`db`, schema: `campaigns, campaignSessio
 
 ```ts
 async function requireCampaignMaster(campaignId: string, masterId: string) {
-  const [campaign] = await db
-    .select()
-    .from(campaigns)
-    .where(eq(campaigns.id, campaignId))
-    .limit(1);
+  const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, campaignId)).limit(1);
   if (!campaign) throw new Error("Campanha não encontrada");
   if (campaign.masterId !== masterId) {
     throw new Error("Apenas o Mestre pode gerenciar sessões desta campanha");
@@ -609,11 +658,24 @@ async function buildSummary(
   row: typeof campaignSessions.$inferSelect,
   viewerId?: string,
 ): Promise<SessionSummary> {
-  const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, row.campaignId)).limit(1);
+  const [campaign] = await db
+    .select()
+    .from(campaigns)
+    .where(eq(campaigns.id, row.campaignId))
+    .limit(1);
   const [master] = await db
-    .select({ displayName: users.displayName, masterName: users.masterName, masterAvatar: users.masterAvatar })
-    .from(users).where(eq(users.id, row.masterId)).limit(1);
-  const candidates = await db.select().from(sessionCandidates).where(eq(sessionCandidates.sessionId, row.id));
+    .select({
+      displayName: users.displayName,
+      masterName: users.masterName,
+      masterAvatar: users.masterAvatar,
+    })
+    .from(users)
+    .where(eq(users.id, row.masterId))
+    .limit(1);
+  const candidates = await db
+    .select()
+    .from(sessionCandidates)
+    .where(eq(sessionCandidates.sessionId, row.id));
   const acceptedCount = candidates.filter((c) => c.status === "accepted").length;
   const interestedCount = candidates.filter((c) => c.status === "interested").length;
   const mine = viewerId ? candidates.find((c) => c.userId === viewerId) : undefined;
@@ -672,18 +734,27 @@ export async function getEnrolledPlayers(campaignId: string): Promise<EnrolledPl
   for (const r of rows) {
     if (r.userId && !seen.has(r.userId)) {
       seen.add(r.userId);
-      result.push({ userId: r.userId, displayName: r.displayName || "Jogador", characterName: r.characterName });
+      result.push({
+        userId: r.userId,
+        displayName: r.displayName || "Jogador",
+        characterName: r.characterName,
+      });
     }
   }
   return result;
 }
 
-export async function getSessionContext(campaignId: string, masterId: string): Promise<SessionContext> {
+export async function getSessionContext(
+  campaignId: string,
+  masterId: string,
+): Promise<SessionContext> {
   const campaign = await requireCampaignMaster(campaignId, masterId);
   const [countRow] = await db
     .select({ count: sql<number>`count(*)` })
     .from(campaignSessions)
-    .where(and(eq(campaignSessions.campaignId, campaignId), ne(campaignSessions.status, "cancelled")));
+    .where(
+      and(eq(campaignSessions.campaignId, campaignId), ne(campaignSessions.status, "cancelled")),
+    );
   return {
     isFirstSession: Number(countRow?.count ?? 0) === 0,
     oneShot: campaign.oneShot,
@@ -698,13 +769,18 @@ NOTA: verificar no schema que `characters.ownerId` é notNull (é — usado assi
 - [ ] **Step 2: `launchSession` + `listMasterSessions`**
 
 ```ts
-export async function launchSession(masterId: string, input: LaunchSessionInput): Promise<SessionSummary> {
+export async function launchSession(
+  masterId: string,
+  input: LaunchSessionInput,
+): Promise<SessionSummary> {
   const campaign = await requireCampaignMaster(input.campaignId, masterId);
 
   const [countRow] = await db
     .select({ count: sql<number>`count(*)` })
     .from(campaignSessions)
-    .where(and(eq(campaignSessions.campaignId, campaign.id), ne(campaignSessions.status, "cancelled")));
+    .where(
+      and(eq(campaignSessions.campaignId, campaign.id), ne(campaignSessions.status, "cancelled")),
+    );
   const isFirstSession = Number(countRow?.count ?? 0) === 0;
   const needsConfig = isFirstSession || campaign.oneShot === null || campaign.maxPlayers === null;
 
@@ -712,7 +788,11 @@ export async function launchSession(masterId: string, input: LaunchSessionInput)
     throw new Error("Tipo de sessão e vagas são obrigatórios na primeira sessão");
   }
 
-  const sessionType = needsConfig ? input.sessionType! : campaign.oneShot ? "one_shot" : "continuing";
+  const sessionType = needsConfig
+    ? input.sessionType!
+    : campaign.oneShot
+      ? "one_shot"
+      : "continuing";
   const maxSlots = needsConfig ? input.maxSlots! : campaign.maxPlayers!;
 
   const created = await db.transaction(async (tx) => {
@@ -741,15 +821,18 @@ export async function launchSession(masterId: string, input: LaunchSessionInput)
       const enrolled = await getEnrolledPlayers(campaign.id);
       const toAccept = enrolled.filter((p) => p.userId !== masterId).slice(0, maxSlots);
       if (toAccept.length > 0) {
-        await tx.insert(sessionCandidates).values(
-          toAccept.map((p) => ({
-            sessionId: row.id,
-            userId: p.userId,
-            availableDays: [],
-            allDay: true,
-            status: "accepted",
-          })),
-        ).onConflictDoNothing();
+        await tx
+          .insert(sessionCandidates)
+          .values(
+            toAccept.map((p) => ({
+              sessionId: row.id,
+              userId: p.userId,
+              availableDays: [],
+              allDay: true,
+              status: "accepted",
+            })),
+          )
+          .onConflictDoNothing();
       }
     }
     return row;
@@ -784,21 +867,31 @@ import { logger } from "@/lib/logger";
 export async function POST(request: NextRequest) {
   try {
     const session = await requireAuth();
-    if (!session) return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
+    if (!session)
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     const body = await request.json();
     const parsed = launchSessionSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ success: false, error: "Dados inválidos", issues: parsed.error.issues }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "Dados inválidos", issues: parsed.error.issues },
+        { status: 400 },
+      );
     }
     const created = await launchSession(session.user.id, parsed.data);
     return NextResponse.json({ success: true, data: created }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
-    if (message === "Campanha não encontrada") return NextResponse.json({ success: false, error: message }, { status: 404 });
-    if (message.includes("Apenas o Mestre")) return NextResponse.json({ success: false, error: message }, { status: 403 });
-    if (message.includes("obrigatórios na primeira sessão")) return NextResponse.json({ success: false, error: message }, { status: 400 });
+    if (message === "Campanha não encontrada")
+      return NextResponse.json({ success: false, error: message }, { status: 404 });
+    if (message.includes("Apenas o Mestre"))
+      return NextResponse.json({ success: false, error: message }, { status: 403 });
+    if (message.includes("obrigatórios na primeira sessão"))
+      return NextResponse.json({ success: false, error: message }, { status: 400 });
     logger.error({ err: error }, "Erro ao lançar sessão");
-    return NextResponse.json({ success: false, error: "Erro interno do servidor" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "Erro interno do servidor" },
+      { status: 500 },
+    );
   }
 }
 ```
@@ -810,6 +903,7 @@ export async function POST(request: NextRequest) {
 - [ ] **Step 4: Testes de rota `sessions-launch.test.ts`**
 
 Padrão de mocks (requireAuth/session-service/logger). Casos:
+
 - POST 401 sem sessão; 400 body inválido (descrição curta); 201 com `data.id`; 403 "Apenas o Mestre..."; 400 "Tipo de sessão e vagas são obrigatórios na primeira sessão"; 404 "Campanha não encontrada".
 - GET master 200/401; GET session-context 200 com `isFirstSession`/401/403; GET enrolled-players 200.
 
@@ -818,7 +912,9 @@ Exemplo:
 ```ts
 it("retorna 400 quando a primeira sessão não informa tipo/vagas", async () => {
   vi.mocked(requireAuth).mockResolvedValue({ user: { id: "m-1" } } as never);
-  vi.mocked(launchSession).mockRejectedValue(new Error("Tipo de sessão e vagas são obrigatórios na primeira sessão"));
+  vi.mocked(launchSession).mockRejectedValue(
+    new Error("Tipo de sessão e vagas são obrigatórios na primeira sessão"),
+  );
   const req = new NextRequest("http://localhost/api/sessions", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -843,6 +939,7 @@ Run: `npx vitest run src/app/api/sessions/__tests__ src/lib/validators/__tests__
 ### Task 5: Serviço — feed, candidaturas, decisão, confirmação e calendário do jogador
 
 **Files:**
+
 - Modify: `src/lib/server/session-service.ts`, `src/app/api/sessions/route.ts` (adicionar GET)
 - Create: `src/app/api/sessions/[id]/route.ts` (GET, PATCH)
 - Create: `src/app/api/sessions/[id]/candidates/route.ts` (GET, POST)
@@ -851,6 +948,7 @@ Run: `npx vitest run src/app/api/sessions/__tests__ src/lib/validators/__tests__
 - Test: `src/app/api/sessions/__tests__/sessions-flow.test.ts`
 
 **Interfaces:**
+
 - Consome: tipos/helpers da Task 4 (`buildSummary`, `requireCampaignMaster`).
 - Produz (usado pelas Tasks 9-12):
 
@@ -900,7 +998,9 @@ export async function getSessionFeed(userId: string, page = 1) {
   const rows = await db
     .select()
     .from(campaignSessions)
-    .where(and(eq(campaignSessions.status, "proposed"), gte(campaignSessions.proposedEnd, new Date())))
+    .where(
+      and(eq(campaignSessions.status, "proposed"), gte(campaignSessions.proposedEnd, new Date())),
+    )
     .orderBy(campaignSessions.proposedStart)
     .limit(limit + 1)
     .offset((page - 1) * limit);
@@ -914,7 +1014,11 @@ export async function getSessionFeed(userId: string, page = 1) {
 }
 
 export async function getSessionDetail(sessionId: string, userId: string): Promise<SessionSummary> {
-  const [row] = await db.select().from(campaignSessions).where(eq(campaignSessions.id, sessionId)).limit(1);
+  const [row] = await db
+    .select()
+    .from(campaignSessions)
+    .where(eq(campaignSessions.id, sessionId))
+    .limit(1);
   if (!row) throw new Error("Sessão não encontrada");
   return buildSummary(row, userId);
 }
@@ -928,19 +1032,32 @@ NOTA: o filtro `remainingSlots > 0` pós-query pode reduzir a página; aceitáve
 
 ```ts
 async function requireSessionMaster(sessionId: string, masterId: string) {
-  const [row] = await db.select().from(campaignSessions).where(eq(campaignSessions.id, sessionId)).limit(1);
+  const [row] = await db
+    .select()
+    .from(campaignSessions)
+    .where(eq(campaignSessions.id, sessionId))
+    .limit(1);
   if (!row) throw new Error("Sessão não encontrada");
-  if (row.masterId !== masterId) throw new Error("Apenas o Mestre pode gerenciar sessões desta campanha");
+  if (row.masterId !== masterId)
+    throw new Error("Apenas o Mestre pode gerenciar sessões desta campanha");
   return row;
 }
 
-async function buildCandidateDetail(row: typeof sessionCandidates.$inferSelect): Promise<CandidateDetail> {
+async function buildCandidateDetail(
+  row: typeof sessionCandidates.$inferSelect,
+): Promise<CandidateDetail> {
   const [user] = await db
     .select({ displayName: users.displayName, masterAvatar: users.masterAvatar })
-    .from(users).where(eq(users.id, row.userId)).limit(1);
+    .from(users)
+    .where(eq(users.id, row.userId))
+    .limit(1);
   let characterName: string | null = null;
   if (row.characterId) {
-    const [ch] = await db.select({ name: characters.name }).from(characters).where(eq(characters.id, row.characterId)).limit(1);
+    const [ch] = await db
+      .select({ name: characters.name })
+      .from(characters)
+      .where(eq(characters.id, row.characterId))
+      .limit(1);
     characterName = ch?.name ?? null;
   }
   return {
@@ -958,18 +1075,37 @@ async function buildCandidateDetail(row: typeof sessionCandidates.$inferSelect):
   };
 }
 
-export async function applyToSession(sessionId: string, userId: string, input: ApplySessionInput): Promise<CandidateDetail> {
+export async function applyToSession(
+  sessionId: string,
+  userId: string,
+  input: ApplySessionInput,
+): Promise<CandidateDetail> {
   const result = await db.transaction(async (tx) => {
-    const [row] = await tx.select().from(campaignSessions).where(eq(campaignSessions.id, sessionId)).for("update").limit(1);
+    const [row] = await tx
+      .select()
+      .from(campaignSessions)
+      .where(eq(campaignSessions.id, sessionId))
+      .for("update")
+      .limit(1);
     if (!row) throw new Error("Sessão não encontrada");
-    if (row.status !== "proposed") throw new Error("Esta sessão não está mais aberta a candidaturas");
-    if (row.masterId === userId) throw new Error("O mestre não pode candidatar-se à própria sessão");
+    if (row.status !== "proposed")
+      throw new Error("Esta sessão não está mais aberta a candidaturas");
+    if (row.masterId === userId)
+      throw new Error("O mestre não pode candidatar-se à própria sessão");
 
-    const accepted = await tx.select({ id: sessionCandidates.id }).from(sessionCandidates)
-      .where(and(eq(sessionCandidates.sessionId, sessionId), eq(sessionCandidates.status, "accepted")));
-    const [existing] = await tx.select().from(sessionCandidates)
-      .where(and(eq(sessionCandidates.sessionId, sessionId), eq(sessionCandidates.userId, userId))).limit(1);
-    if (accepted.length >= row.maxSlots && existing?.status !== "accepted") throw new Error("Vagas esgotadas");
+    const accepted = await tx
+      .select({ id: sessionCandidates.id })
+      .from(sessionCandidates)
+      .where(
+        and(eq(sessionCandidates.sessionId, sessionId), eq(sessionCandidates.status, "accepted")),
+      );
+    const [existing] = await tx
+      .select()
+      .from(sessionCandidates)
+      .where(and(eq(sessionCandidates.sessionId, sessionId), eq(sessionCandidates.userId, userId)))
+      .limit(1);
+    if (accepted.length >= row.maxSlots && existing?.status !== "accepted")
+      throw new Error("Vagas esgotadas");
 
     const startDay = new Date(row.proposedStart);
     const endDay = new Date(row.proposedEnd);
@@ -1000,9 +1136,14 @@ export async function applyToSession(sessionId: string, userId: string, input: A
   return buildCandidateDetail(result);
 }
 
-export async function listSessionCandidates(sessionId: string, masterId: string): Promise<CandidateDetail[]> {
+export async function listSessionCandidates(
+  sessionId: string,
+  masterId: string,
+): Promise<CandidateDetail[]> {
   await requireSessionMaster(sessionId, masterId);
-  const rows = await db.select().from(sessionCandidates)
+  const rows = await db
+    .select()
+    .from(sessionCandidates)
     .where(eq(sessionCandidates.sessionId, sessionId))
     .orderBy(sessionCandidates.appliedAt);
   const details: CandidateDetail[] = [];
@@ -1011,22 +1152,50 @@ export async function listSessionCandidates(sessionId: string, masterId: string)
 }
 
 export async function decideCandidate(
-  sessionId: string, masterId: string, candidateUserId: string, decision: "accepted" | "rejected",
+  sessionId: string,
+  masterId: string,
+  candidateUserId: string,
+  decision: "accepted" | "rejected",
 ): Promise<CandidateDetail> {
   const updated = await db.transaction(async (tx) => {
-    const [row] = await tx.select().from(campaignSessions).where(eq(campaignSessions.id, sessionId)).for("update").limit(1);
+    const [row] = await tx
+      .select()
+      .from(campaignSessions)
+      .where(eq(campaignSessions.id, sessionId))
+      .for("update")
+      .limit(1);
     if (!row) throw new Error("Sessão não encontrada");
-    if (row.masterId !== masterId) throw new Error("Apenas o Mestre pode gerenciar sessões desta campanha");
-    const [candidate] = await tx.select().from(sessionCandidates)
-      .where(and(eq(sessionCandidates.sessionId, sessionId), eq(sessionCandidates.userId, candidateUserId))).limit(1);
+    if (row.masterId !== masterId)
+      throw new Error("Apenas o Mestre pode gerenciar sessões desta campanha");
+    const [candidate] = await tx
+      .select()
+      .from(sessionCandidates)
+      .where(
+        and(
+          eq(sessionCandidates.sessionId, sessionId),
+          eq(sessionCandidates.userId, candidateUserId),
+        ),
+      )
+      .limit(1);
     if (!candidate) throw new Error("Candidatura não encontrada");
     if (decision === "accepted" && candidate.status !== "accepted") {
-      const accepted = await tx.select({ id: sessionCandidates.id }).from(sessionCandidates)
-        .where(and(eq(sessionCandidates.sessionId, sessionId), eq(sessionCandidates.status, "accepted")));
+      const accepted = await tx
+        .select({ id: sessionCandidates.id })
+        .from(sessionCandidates)
+        .where(
+          and(eq(sessionCandidates.sessionId, sessionId), eq(sessionCandidates.status, "accepted")),
+        );
       if (accepted.length >= row.maxSlots) throw new Error("Vagas esgotadas");
     }
-    const [u] = await tx.update(sessionCandidates).set({ status: decision })
-      .where(and(eq(sessionCandidates.sessionId, sessionId), eq(sessionCandidates.userId, candidateUserId)))
+    const [u] = await tx
+      .update(sessionCandidates)
+      .set({ status: decision })
+      .where(
+        and(
+          eq(sessionCandidates.sessionId, sessionId),
+          eq(sessionCandidates.userId, candidateUserId),
+        ),
+      )
       .returning();
     return u;
   });
@@ -1038,20 +1207,36 @@ export async function decideCandidate(
 
 ```ts
 export async function confirmSession(
-  sessionId: string, masterId: string, scheduledAt: string, durationMinutes = 240,
+  sessionId: string,
+  masterId: string,
+  scheduledAt: string,
+  durationMinutes = 240,
 ): Promise<SessionSummary> {
   const row = await db.transaction(async (tx) => {
-    const [s] = await tx.select().from(campaignSessions).where(eq(campaignSessions.id, sessionId)).for("update").limit(1);
+    const [s] = await tx
+      .select()
+      .from(campaignSessions)
+      .where(eq(campaignSessions.id, sessionId))
+      .for("update")
+      .limit(1);
     if (!s) throw new Error("Sessão não encontrada");
-    if (s.masterId !== masterId) throw new Error("Apenas o Mestre pode gerenciar sessões desta campanha");
+    if (s.masterId !== masterId)
+      throw new Error("Apenas o Mestre pode gerenciar sessões desta campanha");
     if (s.status !== "proposed") throw new Error("Sessão já confirmada ou cancelada");
     const when = new Date(scheduledAt);
-    if (when < s.proposedStart || when > s.proposedEnd) throw new Error("Data final fora do período proposto");
-    const [updated] = await tx.update(campaignSessions)
+    if (when < s.proposedStart || when > s.proposedEnd)
+      throw new Error("Data final fora do período proposto");
+    const [updated] = await tx
+      .update(campaignSessions)
       .set({ status: "confirmed", scheduledAt: when, durationMinutes, updatedAt: new Date() })
-      .where(eq(campaignSessions.id, sessionId)).returning();
-    await tx.update(sessionCandidates).set({ status: "rejected" })
-      .where(and(eq(sessionCandidates.sessionId, sessionId), eq(sessionCandidates.status, "interested")));
+      .where(eq(campaignSessions.id, sessionId))
+      .returning();
+    await tx
+      .update(sessionCandidates)
+      .set({ status: "rejected" })
+      .where(
+        and(eq(sessionCandidates.sessionId, sessionId), eq(sessionCandidates.status, "interested")),
+      );
     return updated;
   });
   return buildSummary(row, masterId);
@@ -1059,10 +1244,15 @@ export async function confirmSession(
 
 export async function cancelSession(sessionId: string, masterId: string): Promise<void> {
   await requireSessionMaster(sessionId, masterId);
-  const [row] = await db.select({ status: campaignSessions.status }).from(campaignSessions)
-    .where(eq(campaignSessions.id, sessionId)).limit(1);
+  const [row] = await db
+    .select({ status: campaignSessions.status })
+    .from(campaignSessions)
+    .where(eq(campaignSessions.id, sessionId))
+    .limit(1);
   if (row.status === "cancelled") return;
-  await db.update(campaignSessions).set({ status: "cancelled", updatedAt: new Date() })
+  await db
+    .update(campaignSessions)
+    .set({ status: "cancelled", updatedAt: new Date() })
     .where(eq(campaignSessions.id, sessionId));
 }
 
@@ -1120,32 +1310,34 @@ Run: `npx vitest run src/app/api/sessions/__tests__ && npx tsc --noEmit`
 ### Task 6: Eventos Socket.IO `session:*`
 
 **Files:**
+
 - Modify: `server.js` (após o bloco `chat:member-removed`, ~linha 393)
 - Modify: `src/context/SocketContext.tsx` (interface ~linha 226, implementações após o bloco chat ~linha 1100, value ~linha 1165)
 
 **Interfaces:**
+
 - Produz (Tasks 11-12): `sendSessionPublish/sendSessionApply/sendSessionConfirm/sendSessionCancel(payload: Record<string, unknown>)`; `subscribeSessionPublished/Applied/Confirmed/Cancelled(cb: (payload: Record<string, unknown>) => void): () => void`. Eventos: cliente emite `session:publish|apply|confirm|cancel` → sala `campaign:${campaignId}` recebe `session:published|applied|confirmed|cancelled`.
 
 - [ ] **Step 1: server.js**
 
 ```js
-        // Sessões agendadas em tempo real (Issue #63)
-        socket.on("session:publish", (payload) => {
-          if (!payload || !payload.campaignId) return;
-          io.to(`campaign:${payload.campaignId}`).emit("session:published", payload);
-        });
-        socket.on("session:apply", (payload) => {
-          if (!payload || !payload.campaignId) return;
-          io.to(`campaign:${payload.campaignId}`).emit("session:applied", payload);
-        });
-        socket.on("session:confirm", (payload) => {
-          if (!payload || !payload.campaignId) return;
-          io.to(`campaign:${payload.campaignId}`).emit("session:confirmed", payload);
-        });
-        socket.on("session:cancel", (payload) => {
-          if (!payload || !payload.campaignId) return;
-          io.to(`campaign:${payload.campaignId}`).emit("session:cancelled", payload);
-        });
+// Sessões agendadas em tempo real (Issue #63)
+socket.on("session:publish", (payload) => {
+  if (!payload || !payload.campaignId) return;
+  io.to(`campaign:${payload.campaignId}`).emit("session:published", payload);
+});
+socket.on("session:apply", (payload) => {
+  if (!payload || !payload.campaignId) return;
+  io.to(`campaign:${payload.campaignId}`).emit("session:applied", payload);
+});
+socket.on("session:confirm", (payload) => {
+  if (!payload || !payload.campaignId) return;
+  io.to(`campaign:${payload.campaignId}`).emit("session:confirmed", payload);
+});
+socket.on("session:cancel", (payload) => {
+  if (!payload || !payload.campaignId) return;
+  io.to(`campaign:${payload.campaignId}`).emit("session:cancelled", payload);
+});
 ```
 
 - [ ] **Step 2: SocketContext**
@@ -1161,10 +1353,12 @@ Run: `npx tsc --noEmit`
 ### Task 7: `CalendarGrid`
 
 **Files:**
+
 - Create: `src/components/calendar/CalendarGrid.tsx`
 - Test: `src/components/calendar/__tests__/CalendarGrid.test.tsx`
 
 **Interfaces:**
+
 - Consome: utils da Task 3.
 - Produz (Tasks 11-12):
 
@@ -1254,6 +1448,7 @@ Run → FAIL.
 - [ ] **Step 2: Implementar `CalendarGrid.tsx`**
 
 Estrutura completa ("use client"):
+
 - Header: `formatMonthYear(cursor)` (month) ou range da semana (week: `dd – dd de mês`) ou data completa (day: Intl weekday+day+month); botões `calendar-prev`/`calendar-next` (ChevronLeft/Right; month→`addMonths(cursor, ±1)`, week→`addWeeks`, day→`addDays`), `calendar-today` (`onNavigate(new Date())`), trio `calendar-view-month|week|day` (pills com classe ativa `bg-accent text-white`).
 - Month: `getMonthGrid(cursor.getFullYear(), cursor.getMonth())` → grid `grid grid-cols-7 gap-px`; cabeçalho seg..dom (`["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"]`); cada célula: botão `data-testid={`calendar-day-${toLocalDateISO(d)}`}`, altura `min-h-16 md:min-h-24`, dia fora do mês `opacity-40`, hoje com `ring-1 ring-accent`; número do dia; eventos do dia (`events.filter(e => e.date === iso)`) como blocos `data-testid={`calendar-event-${e.id}`}` (`stopPropagation` no clique → `onEventClick`); mobile: blocos `hidden md:flex` e linha de pontos coloridos `md:hidden` (1 ponto por evento, máx 3, +N); tons: accent=`bg-accent/20 text-accent border-accent/40`, success=`bg-green-900/40 text-green-300 border-green-700/50`, muted=`bg-secondary-input text-secondary-muted border-secondary-border line-through`.
 - Week: `getWeekDays(cursor)` → 7 colunas (`grid grid-cols-7`), cada uma com label do dia + lista vertical de eventos (mesmos blocos, sempre visíveis).
@@ -1270,10 +1465,12 @@ Run: `npx vitest run src/components/calendar/__tests__/CalendarGrid.test.tsx && 
 ### Task 8: `SessionLaunchModal`
 
 **Files:**
+
 - Create: `src/components/sessions/SessionLaunchModal.tsx`
 - Test: `src/components/sessions/__tests__/SessionLaunchModal.test.tsx`
 
 **Interfaces:**
+
 - Consome: `GET /api/campaigns` (`{ success, data: [{ id, name, ... }] }`), `GET /api/campaigns/[id]/session-context` (Task 4), `POST /api/sessions` (Task 4), `SessionSummary`/`SessionContext`.
 - Produz (Task 11): `SessionLaunchModal({ isOpen, onClose, onLaunched }: { isOpen: boolean; onClose: () => void; onLaunched: (session: SessionSummary) => void })` — o socket emit é responsabilidade do pai.
 
@@ -1282,6 +1479,7 @@ Run: `npx vitest run src/components/calendar/__tests__/CalendarGrid.test.tsx && 
 Mock fetch por URL: `/api/campaigns` → `{ success: true, data: [{ id: "c-1", name: "Strahd" }] }`; `/api/campaigns/c-1/session-context` → configurável (`isFirstSession: true, oneShot: null, maxPlayers: null, enrolledPlayers: []` ou `isFirstSession: false, oneShot: false, maxPlayers: 5, enrolledPlayers: [{ userId: "u-2", displayName: "Maria", characterName: "Artemis" }]`); POST `/api/sessions` → `{ success: true, data: { id: "s-1" } }`.
 
 Casos:
+
 1. Abre, seleciona campanha "Strahd" (select `data-testid="launch-campaign-select"`), contexto 1ª sessão → radios `launch-type-one-shot`/`launch-type-continuing` e input `launch-max-slots` visíveis.
 2. Contexto continuada → radios/inputs ausentes; badge "Campanha continuada · 5 vagas" e nome "Maria" (inscritos) visíveis.
 3. Submit 1ª sessão preenchendo descrição (`launch-description`), datas (`launch-start-date` = "2026-12-01", `launch-end-date` = "2026-12-03"), tipo one-shot, vagas 4 → POST chamado com body `{ campaignId: "c-1", description, proposedStart: new Date("2026-12-01T00:00:00").toISOString(), proposedEnd: new Date("2026-12-03T23:59:59").toISOString(), sessionType: "one_shot", maxSlots: 4 }` e `onLaunched` chamado.
@@ -1305,10 +1503,12 @@ Casos:
 ### Task 9: `SessionDetailDrawer` + `ConfirmSessionModal`
 
 **Files:**
+
 - Create: `src/components/sessions/SessionDetailDrawer.tsx`, `src/components/sessions/ConfirmSessionModal.tsx`
 - Test: `src/components/sessions/__tests__/SessionDetailDrawer.test.tsx`
 
 **Interfaces:**
+
 - Consome: `SessionSummary`/`CandidateDetail` (Tasks 4-5); rotas candidates GET/PATCH, PATCH sessions.
 - Produz (Task 11):
 
@@ -1328,6 +1528,7 @@ ConfirmSessionModal({ isOpen, session, onClose, onConfirm }: {
 `SessionSummary` fixture completa (status proposed, maxSlots 5, acceptedCount 1, remainingSlots 4, período 2026-12-01..03). Mock fetch: GET candidates → `{ success: true, data: [CandidateDetail fixture userId "u-2" interested, availableDays ["2026-12-01","2026-12-02"], allDay false, preferredStart "19:00", preferredEnd "23:00"] }`; PATCH candidates/u-2 → `{ success: true, data: { ...candidate, status: "accepted" } }`; PATCH sessions → `{ success: true, data: { ...session, status: "confirmed", scheduledAt: "..." } }`.
 
 Casos:
+
 1. `isMaster` → busca candidates e renderiza "Maria" + dias + "19:00 – 23:00"; botão `candidate-accept-u-2` → PATCH decide `{ decision: "accepted" }`.
 2. Botão `confirm-session-button` abre ConfirmSessionModal; preencher `confirm-datetime` (input datetime-local) + `confirm-duration` → submit → PATCH sessions com `{ action: "confirm", scheduledAt: ISO, durationMinutes }` → `onConfirmed`.
 3. `cancel-session-button` → confirmação inline `confirm-cancel-session` → PATCH `{ action: "cancel" }` → `onCancelled(session.id)`.
@@ -1353,10 +1554,12 @@ Modal simples: input `datetime-local` (`confirm-datetime`) com min/max derivados
 ### Task 10: Feed de convites + candidatura
 
 **Files:**
+
 - Create: `src/components/sessions/SessionInviteCard.tsx`, `SessionInviteFeed.tsx`, `SessionInviteDetail.tsx`, `ApplySessionModal.tsx`
 - Test: `src/components/sessions/__tests__/SessionInviteFeed.test.tsx`, `ApplySessionModal.test.tsx`
 
 **Interfaces:**
+
 - Consome: `GET /api/sessions?page=` (Task 5), `GET /api/characters` (`{ success, data: [...] }` — verificar formato no arquivo), `POST /api/sessions/[id]/candidates`, utils Task 3, `SessionSummary`.
 - Produz (Task 12):
 
@@ -1374,13 +1577,14 @@ Mock GET `/api/sessions` → `{ success: true, data: { items: [SessionSummary fi
 
 - [ ] **Step 2: Implementar `SessionInviteCard` + `SessionInviteFeed` + `SessionInviteDetail`**
 
-- **Card** (estilo X, `data-testid={`session-invite-${id}`}"): banner (`coverImageUrl` ou gradiente `from-accent/30 to-dominant-deep` com inicial), linha avatar+nome do mestre + data relativa do período, sinopse `line-clamp-2`, metadados inline (vagas restantes, XP se houver, período `dd/mm – dd/mm`), badges One-shot/Campanha; botão/card clicável → `onOpen(session)`.
+- **Card** (estilo X, `data-testid={`session-invite-${id}`}"): banner (`coverImageUrl`ou gradiente`from-accent/30 to-dominant-deep`com inicial), linha avatar+nome do mestre + data relativa do período, sinopse`line-clamp-2`, metadados inline (vagas restantes, XP se houver, período `dd/mm – dd/mm`), badges One-shot/Campanha; botão/card clicável → `onOpen(session)`.
 - **Feed**: fetch page 1 ao montar; lista de cards; botão `load-more-invites` se `hasMore` (append page+1); estados loading/empty/error; `onApplied` repassado ao modal.
 - **Detail** (Modal): infos completas + `userApplication` (status/dias/horário) ou botão `apply-interest-button` → abre `ApplySessionModal`.
 
 - [ ] **Step 3: Testes do ApplySessionModal (falham primeiro)**
 
 Fixture sessão período 2026-12-01..03. Mock `/api/characters` → `{ success: true, data: [{ id: "ch-1", name: "Artemis" }] }`; POST candidates → `{ success: true, data: {} }`. Casos:
+
 1. Renderiza pills dos 3 dias (`apply-day-2026-12-01` etc.); toggle `apply-all-day` ligado por padrão; selecionar dia 1+2, desligar allDay, preencher `apply-time-start` "19:00" / `apply-time-end` "23:00", personagem "Artemis" → POST body `{ characterId: "ch-1", availableDays: ["2026-12-01","2026-12-02"], preferredStart: "19:00", preferredEnd: "23:00" }` → `onApplied(campaignId, sessionId)`.
 2. Sem horário (allDay ligado) → body sem preferredStart/End.
 3. Nenhum dia selecionado → erro inline, sem POST.
@@ -1397,17 +1601,20 @@ Fixture sessão período 2026-12-01..03. Mock `/api/characters` → `{ success: 
 ### Task 11: `MasterSessionCalendar` + aba no `MasterCommunityView`
 
 **Files:**
+
 - Create: `src/components/sessions/MasterSessionCalendar.tsx`
 - Modify: `src/components/community/MasterCommunityView.tsx`
 - Test: `src/components/sessions/__tests__/MasterSessionCalendar.test.tsx`; estender `src/components/community/__tests__/MasterCommunityView.test.tsx`
 
 **Interfaces:**
+
 - Consome: CalendarGrid (T7), SessionLaunchModal (T8), SessionDetailDrawer (T9), `GET /api/sessions/master`, socket `sendSessionPublish/Confirm/Cancel` + `subscribeSessionApplied/Confirmed/Cancelled`, `Toast` de `@/components/ui/Toast`.
 - Produz: aba `tab-master-calendar` no mestre.
 
 - [ ] **Step 1: Testes (falham primeiro)**
 
 Mock fetch `/api/sessions/master` → `{ success: true, data: [SessionSummary fixture proposed] }`; mock `useSocket` (parcial: sends como vi.fn(), subscribes retornando vi.fn()); mock dos 3 componentes filhos (CalendarGrid capturando props, LaunchModal/Drawer simplificados). Casos:
+
 1. Renderiza CalendarGrid com 1 evento (tone accent, date = proposedStart local) e botão `launch-session-button`.
 2. Abrir launch modal → `onLaunched(session)` → `sendSessionPublish({ campaignId, session })` + refetch.
 3. Clique em evento → drawer; `onConfirmed` → `sendSessionConfirm` + refetch; `onCancelled` → `sendSessionCancel` + refetch.
@@ -1438,17 +1645,20 @@ Run: `npx vitest run src/components/sessions/__tests__ src/components/community/
 ### Task 12: Hub do jogador + calendário pessoal + deep-link
 
 **Files:**
+
 - Create: `src/components/sessions/PlayerCommunityHub.tsx`, `src/components/sessions/PlayerSessionCalendar.tsx`
 - Modify: `src/components/player/PlayerDashboard.tsx` (bloco community ~linha 897; deep-link), `src/app/player/page.tsx` (Suspense)
 - Test: `src/components/sessions/__tests__/PlayerCommunityHub.test.tsx`; estender testes do PlayerDashboard se quebrarem
 
 **Interfaces:**
+
 - Consome: CampaignChat existente, CalendarGrid, SessionInviteFeed (T10), `GET /api/player/calendar`, `GET /api/player/campaigns` (formato: verificar no arquivo — usado em PlayerDashboard.tsx:148), socket join/leaveCampaign + sendSessionApply + subscribeSessionPublished/Confirmed/Cancelled.
 - Produz: `PlayerCommunityHub({ currentUser }: { currentUser: { id: string; displayName: string | null; avatarUrl?: string | null } })`.
 
 - [ ] **Step 1: Testes do hub (falham primeiro)**
 
 Mocks: CampaignChat/CalendarGrid/SessionInviteFeed/PlayerSessionCalendar como stubs com testids; fetch `/api/player/campaigns` → `{ success: true, data: [{ id: "c-1" }] }` (confirmar formato real antes); useSocket mockado (joinCampaign/leaveCampaign vi.fn()). Casos:
+
 1. Renderiza 3 sub-abas (`hub-tab-groups`, `hub-tab-calendar`, `hub-tab-invites`); Groups ativo por default → CampaignChat visível.
 2. Clique `hub-tab-invites` → feed visível; localStorage `libmork.communityHubTab` = "invites"; remontagem restaura a aba.
 3. Mount → `joinCampaign` chamado com `{ campaignId: "c-1", role: "player" }`; unmount → `leaveCampaign("c-1")`.

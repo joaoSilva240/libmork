@@ -36,7 +36,7 @@ const ATTRIBUTE_ALIASES: Record<string, AttributeKey> = {
 /** Normaliza uma fórmula do Plano A, substituindo tokens @atributo por modificadores. */
 export function normalizeFormulaWithAttributes(
   expression: string | number | null | undefined,
-  modifiers: Record<string, number>
+  modifiers: Record<string, number>,
 ): string | null {
   if (expression === null || expression === undefined) return "1d20";
   const str = String(expression).trim();
@@ -49,14 +49,17 @@ export function normalizeFormulaWithAttributes(
   }
 
   let invalid = false;
-  const result = str.replace(/@([a-zA-ZáéíóúãõâêîôûçÁÉÍÓÚÃÕÂÊÎÔÛÇ]+)/g, (token, rawName: string) => {
-    const key = ATTRIBUTE_ALIASES[rawName.toLowerCase()];
-    if (!key) {
-      invalid = true;
-      return token;
-    }
-    return String(modifiers[key] ?? 0);
-  });
+  const result = str.replace(
+    /@([a-zA-ZáéíóúãõâêîôûçÁÉÍÓÚÃÕÂÊÎÔÛÇ]+)/g,
+    (token, rawName: string) => {
+      const key = ATTRIBUTE_ALIASES[rawName.toLowerCase()];
+      if (!key) {
+        invalid = true;
+        return token;
+      }
+      return String(modifiers[key] ?? 0);
+    },
+  );
 
   // @ é reservado para atributos: se sobrou @ ou se houve token desconhecido, retorna null
   if (result.includes("@") || invalid) return null;
@@ -66,7 +69,7 @@ export function normalizeFormulaWithAttributes(
 /** Compatibilidade com fórmulas antigas de perícias (atributos sem @). */
 export function normalizeSkillExpression(
   expression: string | number | null | undefined,
-  modifiers: Record<string, number>
+  modifiers: Record<string, number>,
 ): string | null {
   if (expression === null || expression === undefined) return "1d20";
   const str = String(expression).trim();
@@ -117,11 +120,15 @@ export function getExpression(value: unknown): string | number | null {
 export type RolledDie = { sides: number; value: number };
 
 /** Rola apenas expressões seguras no formato NdM (+/- inteiros). */
-export function rollExpression(expression: unknown, fallback = 0, options?: {
-  luckModifier?: number;
-  rng?: LuckRng;
-  modifiers?: Record<string, number>;
-}): {
+export function rollExpression(
+  expression: unknown,
+  fallback = 0,
+  options?: {
+    luckModifier?: number;
+    rng?: LuckRng;
+    modifiers?: Record<string, number>;
+  },
+): {
   formula: string;
   total: number;
   detail: string;
@@ -150,13 +157,32 @@ export function rollExpression(expression: unknown, fallback = 0, options?: {
   const missing = normalized === null;
   const formula = missing ? String(fallback) : String(normalized);
   if (typeof normalized === "number") {
-    return { formula, total: normalized, detail: `${formula} = ${normalized}`, missing: false, valid: true };
+    return {
+      formula,
+      total: normalized,
+      detail: `${formula} = ${normalized}`,
+      missing: false,
+      valid: true,
+    };
   }
   if (!/^[0-9dD+\-\s]+$/.test(formula)) {
-    return { formula, total: fallback, detail: `Fórmula inválida; fallback seguro: ${fallback}`, missing, valid: false };
+    return {
+      formula,
+      total: fallback,
+      detail: `Fórmula inválida; fallback seguro: ${fallback}`,
+      missing,
+      valid: false,
+    };
   }
   const parts = formula.match(/[+-]?\s*(?:\d+[dD]\d+|\d+)/g) ?? [];
-  if (!parts.length) return { formula, total: fallback, detail: `Fórmula ausente; fallback seguro: ${fallback}`, missing: true, valid: false };
+  if (!parts.length)
+    return {
+      formula,
+      total: fallback,
+      detail: `Fórmula ausente; fallback seguro: ${fallback}`,
+      missing: true,
+      valid: false,
+    };
   let total = 0;
   const details: string[] = [];
   const luckDetails: LuckRollResult[] = [];
@@ -204,7 +230,7 @@ export function rollExpression(expression: unknown, fallback = 0, options?: {
 export function rollD20WithModifier(
   modifier: number,
   luckModifier?: number,
-  rng: LuckRng = Math.random
+  rng: LuckRng = Math.random,
 ): {
   die: number;
   modifier: number;
@@ -230,7 +256,7 @@ export function rollD20WithModifier(
  */
 export function rollDualD20Sum(
   luckModifier?: number,
-  rng: LuckRng = Math.random
+  rng: LuckRng = Math.random,
 ): {
   dice: [number, number];
   total: number;
@@ -257,7 +283,7 @@ export function rollDualD20Sum(
  */
 export function rollWithAdvantage(
   luckModifier?: number,
-  rng: LuckRng = Math.random
+  rng: LuckRng = Math.random,
 ): {
   dice: [number, number];
   result: number;
@@ -281,7 +307,7 @@ export function rollWithAdvantage(
  */
 export function rollWithDisadvantage(
   luckModifier?: number,
-  rng: LuckRng = Math.random
+  rng: LuckRng = Math.random,
 ): {
   dice: [number, number];
   result: number;
@@ -332,17 +358,13 @@ export function resolveTest(
       const roll = rollWithAdvantage(luckModifier, rng);
       die = roll.result;
       luckActivated = Boolean(roll.luckActivated);
-      const luckText = roll.luckActivated
-        ? ` (Sorte: [${roll.luckRoll?.rolls.join(", ")}])`
-        : "";
+      const luckText = roll.luckActivated ? ` (Sorte: [${roll.luckRoll?.rolls.join(", ")}])` : "";
       details = `2d20 (vantagem) [${roll.dice[0]}, ${roll.dice[1]}] → ${roll.luckRoll?.original ?? die}${luckText} + ${modifier}`;
     } else {
       const roll = rollD20WithModifier(modifier, luckModifier, rng);
       die = roll.die;
       luckActivated = Boolean(roll.luckActivated);
-      const luckText = roll.luckActivated
-        ? ` (Sorte: [${roll.luckRoll?.rolls.join(", ")}])`
-        : "";
+      const luckText = roll.luckActivated ? ` (Sorte: [${roll.luckRoll?.rolls.join(", ")}])` : "";
       details = `1d20 [${roll.luckRoll?.original ?? die}]${luckText} + ${modifier}`;
     }
 
@@ -377,7 +399,7 @@ export function resolveTest(
 export function rollDeathSave(
   vigorModifier: number,
   luckModifier?: number,
-  rng: LuckRng = Math.random
+  rng: LuckRng = Math.random,
 ): {
   success: boolean;
   die: number;

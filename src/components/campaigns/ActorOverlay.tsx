@@ -6,7 +6,13 @@ import { getModifier, getBlockValue } from "@/lib/engine/attributes";
 import { getDefenseValue } from "@/lib/engine/combat";
 import type { CombatSessionState, Combatant } from "@/lib/engine";
 import { TargetSelectionModal } from "@/components/combat/TargetSelectionModal";
-import { spendSpell, spendCombatActions, applyResolvedDamage, applyHealing, rollExpression as rollExpressionFn } from "@/lib/engine";
+import {
+  spendSpell,
+  spendCombatActions,
+  applyResolvedDamage,
+  applyHealing,
+  rollExpression as rollExpressionFn,
+} from "@/lib/engine";
 import { resolveNpcPinAttack, doubleDamageDice, type NpcPinAttack } from "@/lib/engine/npc-attack";
 import { d20s, showDice3D, type Dice3DDie } from "@/lib/dice3d";
 
@@ -105,7 +111,13 @@ export type NpcFullData = {
   manaPointsMax: number;
 };
 
-export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatState }: ActorOverlayProps) {
+export function ActorOverlay({
+  campaignId,
+  actor,
+  onClose,
+  onChanged,
+  combatState,
+}: ActorOverlayProps) {
   const { updateActorStatus, rollDice, updateCombatState, requestDefenseReaction } = useSocket();
   const [panel, setPanel] = useState<Panel>("inventory");
   const [isBusy, setIsBusy] = useState(false);
@@ -153,16 +165,19 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
     const loadAll = async () => {
       try {
         const categories: ContentCategory[] = ["items", "spells", "skills"];
-        
+
         // 1. Conteúdos da campanha
         const managedPromises = categories.map((cat) =>
-          fetch(`/api/campaigns/${campaignId}/content/${cat}`).then((r) => r.json())
+          fetch(`/api/campaigns/${campaignId}/content/${cat}`).then((r) => r.json()),
         );
 
         // 2. Inventário do personagem do DB se for character
-        const inventoryPromises = actor.kind === "character"
-          ? categories.map((cat) => fetch(`/api/characters/${actor.id}/content/${cat}`).then((r) => r.json()))
-          : [];
+        const inventoryPromises =
+          actor.kind === "character"
+            ? categories.map((cat) =>
+                fetch(`/api/characters/${actor.id}/content/${cat}`).then((r) => r.json()),
+              )
+            : [];
 
         const [managedResults, inventoryResults] = await Promise.all([
           Promise.all(managedPromises),
@@ -176,14 +191,16 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
         categories.forEach((cat, idx) => {
           const resData = managedResults[idx];
           if (resData && resData.success && Array.isArray(resData.data)) {
-            resData.data.forEach((item: { id: string; name: string; description?: string | null }) => {
-              allManaged.push({
-                id: item.id,
-                name: item.name,
-                category: cat,
-                description: item.description ?? null,
-              });
-            });
+            resData.data.forEach(
+              (item: { id: string; name: string; description?: string | null }) => {
+                allManaged.push({
+                  id: item.id,
+                  name: item.name,
+                  category: cat,
+                  description: item.description ?? null,
+                });
+              },
+            );
           }
         });
         setManagedContents(allManaged);
@@ -264,7 +281,11 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
     setInventoryItems((prev) => [...prev, item]);
   };
 
-  const handleRemoveFromInventory = async (itemId: string, category: ContentCategory, junctionId?: string) => {
+  const handleRemoveFromInventory = async (
+    itemId: string,
+    category: ContentCategory,
+    junctionId?: string,
+  ) => {
     if (actor.kind === "character" && junctionId) {
       try {
         await fetch(`/api/characters/${actor.id}/content/${category}/${junctionId}`, {
@@ -295,9 +316,7 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
     if (conditionsLoaded || actor.kind !== "character") return;
 
     try {
-      const campaignResponse = await fetch(
-        `/api/campaigns/${campaignId}/content/conditions`
-      );
+      const campaignResponse = await fetch(`/api/campaigns/${campaignId}/content/conditions`);
       const campaignData = await campaignResponse.json();
       const merged: ConditionOption[] = [];
 
@@ -306,7 +325,7 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
           ...(campaignData.data as ConditionOption[]).map((condition) => ({
             id: condition.id,
             name: condition.name,
-          }))
+          })),
         );
       }
 
@@ -403,7 +422,7 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
       });
 
       setSuccess(
-        `Rolagem (${isManual ? "Manual" : "Digital"}) concluída: ${finalResult} (${detailText})`
+        `Rolagem (${isManual ? "Manual" : "Digital"}) concluída: ${finalResult} (${detailText})`,
       );
     } catch {
       setError("Erro ao executar rolagem. Tente novamente.");
@@ -460,10 +479,14 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
       setModifyReason("");
       setSuccess(`Elementos de ${actor.name} atualizados.`);
       const updatedActor = data.data;
-      const currentHp = actor.kind === "character" ? updatedActor.hitPointsCurrent : updatedActor.hitPoints;
-      const currentMana = actor.kind === "character" ? updatedActor.manaPointsCurrent : updatedActor.manaPoints;
-      const maxHp = actor.kind === "character" ? updatedActor.hitPointsMax : updatedActor.hitPointsMax;
-      const maxMana = actor.kind === "character" ? updatedActor.manaPointsMax : updatedActor.manaPointsMax;
+      const currentHp =
+        actor.kind === "character" ? updatedActor.hitPointsCurrent : updatedActor.hitPoints;
+      const currentMana =
+        actor.kind === "character" ? updatedActor.manaPointsCurrent : updatedActor.manaPoints;
+      const maxHp =
+        actor.kind === "character" ? updatedActor.hitPointsMax : updatedActor.hitPointsMax;
+      const maxMana =
+        actor.kind === "character" ? updatedActor.manaPointsMax : updatedActor.manaPointsMax;
 
       // Notificar a sala por WebSocket (RF-025, RF-049)
       updateActorStatus({
@@ -487,7 +510,11 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
     const isInCombat = combatState && combatState.active;
     if (isInCombat) {
       const attacker = combatState.combatants[combatState.currentTurnIndex];
-      const isMyTurn = attacker && (matchActorId(attacker.id, actor.id) || matchActorId(attacker.npcId, actor.id) || matchActorId(attacker.characterId, actor.id));
+      const isMyTurn =
+        attacker &&
+        (matchActorId(attacker.id, actor.id) ||
+          matchActorId(attacker.npcId, actor.id) ||
+          matchActorId(attacker.characterId, actor.id));
       if (!isMyTurn) {
         setError("Este NPC não está no turno atual do combate.");
         return;
@@ -496,7 +523,11 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
 
     const name = pin.label;
     const desc = pin.label.toLowerCase();
-    const isHealing = desc.includes("cura") || desc.includes("poção") || desc.includes("healer") || desc.includes("recupera");
+    const isHealing =
+      desc.includes("cura") ||
+      desc.includes("poção") ||
+      desc.includes("healer") ||
+      desc.includes("recupera");
 
     // Dano configurado (issue #90): resolve via módulo puro; nunca inventa dano.
     const resolved: NpcPinAttack = resolveNpcPinAttack(pin);
@@ -526,12 +557,11 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
       // de dano dobrados.
       const attack = rollExpressionFn(attackExpr, 1);
       const isCritical = (attack.rolledDice ?? []).some(
-        (die) => die.sides === 20 && die.value === 20
+        (die) => die.sides === 20 && die.value === 20,
       );
       const outCritExpr = isCritical ? doubleDamageDice(damageExpr) : undefined;
-      const damage = (outCritExpr ?? damageExpr)
-        ? rollExpressionFn(outCritExpr ?? damageExpr, 0)
-        : null;
+      const damage =
+        (outCritExpr ?? damageExpr) ? rollExpressionFn(outCritExpr ?? damageExpr, 0) : null;
       showDice3D([...(attack.rolledDice ?? []), ...(damage?.rolledDice ?? [])]);
       const die = attack.total;
       const formula = damage
@@ -555,10 +585,14 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
       });
       if (isAttackWithoutDamage) {
         setError(
-          "Ataque sem dano configurado — nenhum dano será aplicado. Configure o dano no atalho do NPC."
+          "Ataque sem dano configurado — nenhum dano será aplicado. Configure o dano no atalho do NPC.",
         );
       } else {
-        setSuccess(damage ? `Rolou ${pin.label}: ${attack.detail}. Dano: ${damage.detail}` : `Rolou ${pin.label}: ${attack.detail}`);
+        setSuccess(
+          damage
+            ? `Rolou ${pin.label}: ${attack.detail}. Dano: ${damage.detail}`
+            : `Rolou ${pin.label}: ${attack.detail}`,
+        );
       }
     }
   };
@@ -567,7 +601,12 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
     if (!selectedActionItem || !combatState || !campaignId) return;
 
     const attacker = combatState.combatants[combatState.currentTurnIndex];
-    if (!attacker || (!matchActorId(attacker.id, actor.id) && !matchActorId(attacker.npcId, actor.id) && !matchActorId(attacker.characterId, actor.id))) {
+    if (
+      !attacker ||
+      (!matchActorId(attacker.id, actor.id) &&
+        !matchActorId(attacker.npcId, actor.id) &&
+        !matchActorId(attacker.characterId, actor.id))
+    ) {
       setError("Este NPC não está no turno atual do combate.");
       return;
     }
@@ -575,9 +614,16 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
     const hydratedCombatState = { ...combatState };
     const isSpell = selectedActionItem.pinType === "spell";
 
-    const spent = isSpell && selectedActionItem.circle
-      ? spendSpell(hydratedCombatState, attacker.id, selectedActionItem.circle, selectedActionItem.manaCost ?? 0, null)
-      : spendCombatActions(hydratedCombatState, attacker.id, 1);
+    const spent =
+      isSpell && selectedActionItem.circle
+        ? spendSpell(
+            hydratedCombatState,
+            attacker.id,
+            selectedActionItem.circle,
+            selectedActionItem.manaCost ?? 0,
+            null,
+          )
+        : spendCombatActions(hydratedCombatState, attacker.id, 1);
 
     if (!spent.success) {
       setError(spent.message);
@@ -603,7 +649,9 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           hitPointsCurrent: updatedAttacker.hpCurrent,
-          ...(updatedAttacker.manaCurrent == null ? {} : { manaPointsCurrent: updatedAttacker.manaCurrent }),
+          ...(updatedAttacker.manaCurrent == null
+            ? {}
+            : { manaPointsCurrent: updatedAttacker.manaCurrent }),
           reason: "combate",
         }),
       });
@@ -616,7 +664,9 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
       showDice3D(healed.rolledDice ?? []);
       const healAmount = Math.max(0, healed.total);
 
-      const currentTarget = spent.session.combatants.find((combatant) => combatant.id === target.id);
+      const currentTarget = spent.session.combatants.find(
+        (combatant) => combatant.id === target.id,
+      );
       if (!currentTarget) {
         setError("Alvo não está mais no combate ativo.");
         return;
@@ -625,7 +675,9 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
       const healedTarget = applyHealing(currentTarget, healAmount);
       const healedState = {
         ...spent.session,
-        combatants: spent.session.combatants.map((combatant) => combatant.id === healedTarget.id ? healedTarget : combatant),
+        combatants: spent.session.combatants.map((combatant) =>
+          combatant.id === healedTarget.id ? healedTarget : combatant,
+        ),
       };
 
       updateCombatState(healedState);
@@ -666,17 +718,15 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
       // amplia a faixa. Crítico dobra apenas os DADOS do dano (modificador
       // único): 2d6+5 → 4d6+5.
       const natural20 = (attack.rolledDice ?? []).some(
-        (die) => die.sides === 20 && die.value === 20
+        (die) => die.sides === 20 && die.value === 20,
       );
       const withinCritRange =
         selectedActionItem.criticalRange &&
         (attack.rolledDice ?? []).some(
-          (die) => die.sides === 20 && die.value >= selectedActionItem.criticalRange!
+          (die) => die.sides === 20 && die.value >= selectedActionItem.criticalRange!,
         );
       const isCritical = Boolean(natural20 || withinCritRange);
-      const critExpr = isCritical
-        ? doubleDamageDice(selectedActionItem.damageExpr)
-        : undefined;
+      const critExpr = isCritical ? doubleDamageDice(selectedActionItem.damageExpr) : undefined;
       let damage = rollExpressionFn(critExpr ?? selectedActionItem.damageExpr, 0);
       if (isCritical && critExpr) {
         damage = {
@@ -687,14 +737,23 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
       showDice3D([...(attack.rolledDice ?? []), ...(damage.rolledDice ?? [])]);
       const damageConfigured = !damage.missing && damage.valid;
 
-      const currentTarget = spent.session.combatants.find((combatant) => combatant.id === target.id);
+      const currentTarget = spent.session.combatants.find(
+        (combatant) => combatant.id === target.id,
+      );
       if (!currentTarget) {
         setError("Alvo não está mais no combate ativo.");
         return;
       }
 
       if (currentTarget.type === "npc" && !damage.missing && damage.valid) {
-        const resolved = applyResolvedDamage(spent.session, currentTarget.id, Math.max(0, damage.total), attack.total, currentTarget.defenseReaction ?? "dodge", selectedActionItem.isPhysical);
+        const resolved = applyResolvedDamage(
+          spent.session,
+          currentTarget.id,
+          Math.max(0, damage.total),
+          attack.total,
+          currentTarget.defenseReaction ?? "dodge",
+          selectedActionItem.isPhysical,
+        );
         updateCombatState(resolved.session);
 
         const updatedTarget = resolved.session.combatants.find((c) => c.id === currentTarget.id);
@@ -720,7 +779,8 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
         setSuccess(`Ataque contra ${target.name}: ${resolved.result.details}`);
         await onChanged();
       } else if (currentTarget.type !== "npc" && damageConfigured) {
-        const sanitizedTargetId = currentTarget.characterId ?? currentTarget.id.replace(/^character:/, "");
+        const sanitizedTargetId =
+          currentTarget.characterId ?? currentTarget.id.replace(/^character:/, "");
         // Envia requisição de reação defensiva ativa para o jogador alvo.
         // A rolagem/dano NÃO são publicados aqui: o jogador só os vê depois de
         // escolher esquivar ou bloquear (issue #90). O log/3D sai do próprio
@@ -737,7 +797,9 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
           isPhysical: selectedActionItem.isPhysical,
           actionName: selectedActionItem.name,
         });
-        setSuccess(`Solicitada reação defensiva a ${target.name} (Ataque: ${attack.total}, Dano bruto: ${damage.total})`);
+        setSuccess(
+          `Solicitada reação defensiva a ${target.name} (Ataque: ${attack.total}, Dano bruto: ${damage.total})`,
+        );
         setSelectedActionItem(null);
         return;
       }
@@ -769,9 +831,7 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
-          currentlyApplied
-            ? { conditionsRemove: [conditionId] }
-            : { conditionsAdd: [conditionId] }
+          currentlyApplied ? { conditionsRemove: [conditionId] } : { conditionsAdd: [conditionId] },
         ),
       });
 
@@ -840,7 +900,7 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
   };
 
   const appliedConditionIds = new Set(
-    (actor.conditions ?? []).map((condition) => condition.conditionId)
+    (actor.conditions ?? []).map((condition) => condition.conditionId),
   );
 
   const categoryLabel = (cat: ContentCategory) => {
@@ -898,9 +958,13 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
                 <div className="flex gap-2 text-xs text-gray-400">
                   <span>Nível {actor.level}</span>
                   <span>•</span>
-                  <span className="text-rose-400 font-bold">HP {actor.hitPoints}/{actor.hitPointsMax}</span>
+                  <span className="text-rose-400 font-bold">
+                    HP {actor.hitPoints}/{actor.hitPointsMax}
+                  </span>
                   <span>•</span>
-                  <span className="text-blue-400 font-bold">Mana {actor.manaPoints}/{actor.manaPointsMax}</span>
+                  <span className="text-blue-400 font-bold">
+                    Mana {actor.manaPoints}/{actor.manaPointsMax}
+                  </span>
                 </div>
               </div>
             </div>
@@ -918,14 +982,18 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
             {/* Status & Defesas Derivadas */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               <div className="rounded-xl border border-gray-800 bg-gray-950 p-2.5 text-center">
-                <div className="text-[10px] font-bold text-gray-400 uppercase">Defesa Estática (Esquiva)</div>
+                <div className="text-[10px] font-bold text-gray-400 uppercase">
+                  Defesa Estática (Esquiva)
+                </div>
                 <div className="text-sm font-extrabold text-amber-300 mt-0.5">
                   {getDefenseValue(npcFullData?.attributes?.destreza ?? 10)}
                 </div>
               </div>
 
               <div className="rounded-xl border border-gray-800 bg-gray-950 p-2.5 text-center">
-                <div className="text-[10px] font-bold text-gray-400 uppercase">Mitigação Bloqueio</div>
+                <div className="text-[10px] font-bold text-gray-400 uppercase">
+                  Mitigação Bloqueio
+                </div>
                 <div className="text-sm font-extrabold text-blue-300 mt-0.5">
                   {getBlockValue(npcFullData?.attributes?.vigor ?? 10, actor.level)}
                 </div>
@@ -939,7 +1007,9 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
               </div>
 
               <div className="rounded-xl border border-gray-800 bg-gray-950 p-2.5 text-center">
-                <div className="text-[10px] font-bold text-gray-400 uppercase">Nível do Inimigo</div>
+                <div className="text-[10px] font-bold text-gray-400 uppercase">
+                  Nível do Inimigo
+                </div>
                 <div className="text-sm font-extrabold text-gray-200 mt-0.5">
                   Nível {actor.level}
                 </div>
@@ -948,7 +1018,9 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
 
             {/* Atributos do NPC */}
             <div className="rounded-xl border border-gray-800 bg-gray-950 p-3 space-y-2">
-              <h4 className="text-xs font-bold text-gray-300 uppercase tracking-wider">Atributos do Inimigo</h4>
+              <h4 className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+                Atributos do Inimigo
+              </h4>
               <div className="grid grid-cols-5 gap-2 text-center text-xs">
                 {[
                   ["forca", "Força", "⚔️"],
@@ -960,10 +1032,17 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
                   const val = npcFullData?.attributes?.[attrKey] ?? 10;
                   const mod = getModifier(val);
                   return (
-                    <div key={attrKey} className="rounded-lg border border-gray-800 bg-gray-900 p-2">
-                      <div className="text-[10px] text-gray-400">{icon} {label}</div>
+                    <div
+                      key={attrKey}
+                      className="rounded-lg border border-gray-800 bg-gray-900 p-2"
+                    >
+                      <div className="text-[10px] text-gray-400">
+                        {icon} {label}
+                      </div>
                       <div className="text-sm font-bold text-white mt-0.5">{val}</div>
-                      <div className="text-[10px] text-purple-300 font-semibold">{mod >= 0 ? `+${mod}` : mod}</div>
+                      <div className="text-[10px] text-purple-300 font-semibold">
+                        {mod >= 0 ? `+${mod}` : mod}
+                      </div>
                     </div>
                   );
                 })}
@@ -996,7 +1075,10 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {npcFullData.pins.map((pin) => (
-                    <div key={pin.id} className="flex items-center justify-between rounded-xl border border-gray-800 bg-gray-900 p-2.5 text-xs">
+                    <div
+                      key={pin.id}
+                      className="flex items-center justify-between rounded-xl border border-gray-800 bg-gray-900 p-2.5 text-xs"
+                    >
                       <div>
                         <div className="font-bold text-white">{pin.label}</div>
                         <div
@@ -1028,28 +1110,43 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
 
             {/* Alteração Rápida de HP / Mana */}
             <div className="rounded-xl border border-gray-800 bg-gray-950 p-3 space-y-2">
-              <h4 className="text-xs font-bold text-gray-300 uppercase tracking-wider">Ajuste Rápido de Vida / Mana</h4>
+              <h4 className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+                Ajuste Rápido de Vida / Mana
+              </h4>
               <div className="flex flex-wrap gap-2">
                 {DELTA_QUICK.map((d) => (
                   <button
                     key={d}
                     type="button"
                     onClick={() => {
-                       void (async () => {
-                         const response = await fetch(actorEndpoint(), {
-                           method: "PATCH",
-                           headers: { "Content-Type": "application/json" },
-                           body: JSON.stringify({ hpDelta: d }),
-                         });
-                         const data = await response.json();
-                         if (!response.ok) {
-                           setError(data.error || "Erro ao modificar HP");
-                           return;
-                         }
-                         const updatedActor = data.data;
-                         updateActorStatus({ campaignId, actorId: actor.id, currentHp: actor.kind === "character" ? updatedActor.hitPointsCurrent : updatedActor.hitPoints, currentMana: actor.kind === "character" ? updatedActor.manaPointsCurrent : updatedActor.manaPoints, maxHp: updatedActor.hitPointsMax, maxMana: updatedActor.manaPointsMax });
-                         await onChanged();
-                       })().catch(() => setError("Erro de conexão."));
+                      void (async () => {
+                        const response = await fetch(actorEndpoint(), {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ hpDelta: d }),
+                        });
+                        const data = await response.json();
+                        if (!response.ok) {
+                          setError(data.error || "Erro ao modificar HP");
+                          return;
+                        }
+                        const updatedActor = data.data;
+                        updateActorStatus({
+                          campaignId,
+                          actorId: actor.id,
+                          currentHp:
+                            actor.kind === "character"
+                              ? updatedActor.hitPointsCurrent
+                              : updatedActor.hitPoints,
+                          currentMana:
+                            actor.kind === "character"
+                              ? updatedActor.manaPointsCurrent
+                              : updatedActor.manaPoints,
+                          maxHp: updatedActor.hitPointsMax,
+                          maxMana: updatedActor.manaPointsMax,
+                        });
+                        await onChanged();
+                      })().catch(() => setError("Erro de conexão."));
                     }}
                     className={`rounded-lg px-2.5 py-1 text-xs font-bold transition border ${
                       d > 0
@@ -1116,9 +1213,13 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
               <div className="flex gap-2 text-xs text-gray-400">
                 <span>Nível {actor.level}</span>
                 <span>•</span>
-                <span className="text-rose-400 font-bold">HP {actor.hitPoints}/{actor.hitPointsMax}</span>
+                <span className="text-rose-400 font-bold">
+                  HP {actor.hitPoints}/{actor.hitPointsMax}
+                </span>
                 <span>•</span>
-                <span className="text-blue-400 font-bold">Mana {actor.manaPoints}/{actor.manaPointsMax}</span>
+                <span className="text-blue-400 font-bold">
+                  Mana {actor.manaPoints}/{actor.manaPointsMax}
+                </span>
               </div>
             </div>
           </div>
@@ -1133,7 +1234,7 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
 
         {/* Corpo principal com 2 colunas para Jogadores */}
         <div className="flex flex-1 gap-4 overflow-hidden">
-            {/* Corpo principal com 2 colunas para Jogadores */}
+          {/* Corpo principal com 2 colunas para Jogadores */}
           {/* Coluna Esquerda: Ações & Inventário do Personagem */}
           <div className="flex flex-1 flex-col overflow-hidden">
             {/* Abas */}
@@ -1192,7 +1293,8 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
                     <span className="mb-1 text-2xl">🎒</span>
                     Inventário vazio.
                     <br />
-                    Arraste itens, magias, habilidades ou perícias do painel da direita para este personagem.
+                    Arraste itens, magias, habilidades ou perícias do painel da direita para este
+                    personagem.
                   </div>
                 ) : (
                   <div className="flex-1 space-y-1.5 overflow-y-auto">
@@ -1213,7 +1315,9 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
                           )}
                         </div>
                         <button
-                          onClick={() => handleRemoveFromInventory(item.id, item.category, item.junctionId)}
+                          onClick={() =>
+                            handleRemoveFromInventory(item.id, item.category, item.junctionId)
+                          }
                           className="ml-2 rounded text-gray-500 hover:text-red-400"
                           title="Remover do personagem"
                         >
@@ -1314,10 +1418,16 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
                   onClick={requestRoll}
                   disabled={isBusy}
                   className={`w-full rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-50 ${
-                    rollMode === "manual" ? "bg-amber-600 hover:bg-amber-700" : "bg-purple-600 hover:bg-purple-700"
+                    rollMode === "manual"
+                      ? "bg-amber-600 hover:bg-amber-700"
+                      : "bg-purple-600 hover:bg-purple-700"
                   }`}
                 >
-                  {isBusy ? "..." : rollMode === "manual" ? "Enviar Resultado Físico" : "Rolar Dados (Digital)"}
+                  {isBusy
+                    ? "..."
+                    : rollMode === "manual"
+                      ? "Enviar Resultado Físico"
+                      : "Rolar Dados (Digital)"}
                 </button>
               </div>
             )}

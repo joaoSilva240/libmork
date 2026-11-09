@@ -42,7 +42,9 @@ export function TargetSelectionModal({
   if (!isOpen) return null;
 
   // Se for cura, mostra todos aliados/combatentes. Se for ataque, foca nos inimigos/outros combatentes.
-  const targets = combatants.filter((c) => (isHealing ? true : c.id !== myCharacterId && c.characterId !== myCharacterId));
+  const targets = combatants.filter((c) =>
+    isHealing ? true : c.id !== myCharacterId && c.characterId !== myCharacterId,
+  );
 
   const handleConfirm = () => {
     const target = targets.find((t) => t.id === selectedId || t.characterId === selectedId);
@@ -62,16 +64,20 @@ export function TargetSelectionModal({
           </div>
         </div>
       )}
-      
+
       <div className="w-full max-w-md rounded-3xl border border-purple-800 bg-gray-950 p-6 text-gray-100 shadow-2xl space-y-5">
         <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
           <div className="flex items-center gap-3">
-            <div className={`rounded-xl p-2.5 border ${isHealing ? "bg-emerald-950 border-emerald-800 text-emerald-300" : "bg-rose-950 border-rose-800 text-rose-300"}`}>
+            <div
+              className={`rounded-xl p-2.5 border ${isHealing ? "bg-emerald-950 border-emerald-800 text-emerald-300" : "bg-rose-950 border-rose-800 text-rose-300"}`}
+            >
               {isHealing ? <Heart className="h-5 w-5" /> : <Crosshair className="h-5 w-5" />}
             </div>
             <div>
               <h3 className="text-base font-bold text-white">Selecione o Alvo</h3>
-              <p className="text-xs text-purple-300">Ação: <strong>{actionName}</strong></p>
+              <p className="text-xs text-purple-300">
+                Ação: <strong>{actionName}</strong>
+              </p>
               {damagePreview && (
                 <p className="text-xs text-rose-300" data-testid="target-damage-preview">
                   Dano configurado: <strong className="font-mono">{damagePreview}</strong>
@@ -88,8 +94,8 @@ export function TargetSelectionModal({
               )}
             </div>
           </div>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             disabled={isRolling}
             className="text-gray-400 hover:text-white disabled:opacity-50"
           >
@@ -99,7 +105,9 @@ export function TargetSelectionModal({
 
         <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
           {targets.length === 0 ? (
-            <p className="text-center text-xs text-gray-400 py-4">Nenhum alvo válido encontrado no combate ativo.</p>
+            <p className="text-center text-xs text-gray-400 py-4">
+              Nenhum alvo válido encontrado no combate ativo.
+            </p>
           ) : (
             targets.map((c) => {
               const isSelected = selectedId === c.id || selectedId === c.characterId;
@@ -120,7 +128,11 @@ export function TargetSelectionModal({
                     <div className="h-9 w-9 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center font-bold text-xs overflow-hidden">
                       {c.avatarUrl ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
-                        <img src={c.avatarUrl} alt={c.name} className="h-full w-full object-cover" />
+                        <img
+                          src={c.avatarUrl}
+                          alt={c.name}
+                          className="h-full w-full object-cover"
+                        />
                       ) : (
                         c.name.charAt(0)
                       )}
@@ -128,7 +140,9 @@ export function TargetSelectionModal({
                     <div>
                       <div className="text-xs font-bold flex items-center gap-1.5">
                         <span>{c.name}</span>
-                        <span className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${c.type === "npc" ? "bg-red-950 text-red-300" : "bg-purple-950 text-purple-300"}`}>
+                        <span
+                          className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${c.type === "npc" ? "bg-red-950 text-red-300" : "bg-purple-950 text-purple-300"}`}
+                        >
                           {c.type === "npc" ? "Inimigo" : "Jogador"}
                         </span>
                       </div>
@@ -139,7 +153,9 @@ export function TargetSelectionModal({
                   </div>
 
                   {isSelected && (
-                    <span className={`text-xs font-bold ${isHealing ? "text-emerald-400" : "text-rose-400"}`}>
+                    <span
+                      className={`text-xs font-bold ${isHealing ? "text-emerald-400" : "text-rose-400"}`}
+                    >
                       ✓ Selecionado
                     </span>
                   )}

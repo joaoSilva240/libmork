@@ -448,13 +448,17 @@ export function MissingHabitantSheet({
                 Regras de Sobrevivência — Equipamentos
               </div>
               <p className="leading-relaxed">
-                • Cada habitante possui exatamente 3 post-its analógicos para carregar ferramentas e objetos vitais.
+                • Cada habitante possui exatamente 3 post-its analógicos para carregar ferramentas e
+                objetos vitais.
               </p>
               <p className="leading-relaxed">
-                • Role 2d6 na tabela oficial para obter itens quando encontrar suprimentos na escuridão.
+                • Role 2d6 na tabela oficial para obter itens quando encontrar suprimentos na
+                escuridão.
               </p>
               <p className="leading-relaxed">
-                • Durante encontros de horror e perigo extremo, equipamentos podem ser sacrificados ou destruídos, marcando o slot permanentemente como <strong className="text-zinc-200">INUTILIZADO / PERDIDO</strong>.
+                • Durante encontros de horror e perigo extremo, equipamentos podem ser sacrificados
+                ou destruídos, marcando o slot permanentemente como{" "}
+                <strong className="text-zinc-200">INUTILIZADO / PERDIDO</strong>.
               </p>
             </div>
           </div>

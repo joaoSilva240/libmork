@@ -29,7 +29,7 @@ export function normalizeKavitaUrl(urlStr: string): string {
 
 export function getKavitaConfig(): KavitaConfig {
   const baseUrl = normalizeKavitaUrl(process.env.KAVITA_URL || DEFAULT_KAVITA_URL);
-  const apiKey = (process.env.KAVITA_OPDS_KEY?.trim() || "");
+  const apiKey = process.env.KAVITA_OPDS_KEY?.trim() || "";
 
   return {
     baseUrl,
@@ -42,7 +42,11 @@ export function getKavitaConfig(): KavitaConfig {
  * SSRF & URL safety validator
  * Rejects non-HTTP(S), invalid hostnames, AWS metadata, and local loops unless explicitly targeting configured host.
  */
-export function validateKavitaTargetUrl(targetUrlStr: string): { valid: boolean; error?: string; url?: URL } {
+export function validateKavitaTargetUrl(targetUrlStr: string): {
+  valid: boolean;
+  error?: string;
+  url?: URL;
+} {
   try {
     let sanitized = (targetUrlStr || "").trim();
     if (/^https?:[^\/]/i.test(sanitized)) {
@@ -107,7 +111,7 @@ export function validateKavitaTargetUrl(targetUrlStr: string): { valid: boolean;
 export async function safeFetchKavita(
   urlStr: string,
   options: RequestInit = {},
-  timeoutMs: number = KAVITA_TIMEOUT_MS
+  timeoutMs: number = KAVITA_TIMEOUT_MS,
 ): Promise<Response> {
   const check = validateKavitaTargetUrl(urlStr);
   if (!check.valid || !check.url) {
@@ -126,7 +130,10 @@ export async function safeFetchKavita(
   } catch (err: unknown) {
     // Redact any potential API key from error message or logs
     const msg = err instanceof Error ? err.message : String(err);
-    logger.warn({ error: msg.replace(/[a-zA-Z0-9]{20,}/g, "[REDACTED]") }, "Falha ao conectar com servidor Kavita");
+    logger.warn(
+      { error: msg.replace(/[a-zA-Z0-9]{20,}/g, "[REDACTED]") },
+      "Falha ao conectar com servidor Kavita",
+    );
     throw err;
   } finally {
     clearTimeout(timer);

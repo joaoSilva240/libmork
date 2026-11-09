@@ -16,7 +16,11 @@ import { Toast } from "@/components/ui/Toast";
 import { generateUUID } from "@/lib/utils/uuid";
 import { HeartAwakeningModal } from "@/components/characters/HeartAwakeningModal";
 import type { HeartAwakeningResult } from "@/components/characters/HeartAwakeningModal";
-import { useClassesQuery, useContentByTypeQuery, useRacesQuery } from "@/hooks/queries/useMetadataQueries";
+import {
+  useClassesQuery,
+  useContentByTypeQuery,
+  useRacesQuery,
+} from "@/hooks/queries/useMetadataQueries";
 
 // =============================================================================
 // Types
@@ -137,35 +141,35 @@ function getRaceThemeColors(raceName: string): { from: string; via: string; to: 
   const normalized = normalizeRaceName(raceName);
 
   const themeMap: Record<string, { from: string; via: string; to: string }> = {
-    anao:       { from: "#78350f", via: "#854d0e", to: "#431407" },
-    dwarf:      { from: "#78350f", via: "#854d0e", to: "#431407" },
-    elfo:       { from: "#064e3b", via: "#166534", to: "#042f2e" },
-    elf:        { from: "#064e3b", via: "#166534", to: "#042f2e" },
-    gnomo:      { from: "#4c1d95", via: "#6b21a8", to: "#4a044e" },
-    gnome:      { from: "#4c1d95", via: "#6b21a8", to: "#4a044e" },
-    goblin:     { from: "#365314", via: "#15803d", to: "#422006" },
-    halfling:   { from: "#9a3412", via: "#b45309", to: "#713f12" },
-    pequenino:  { from: "#9a3412", via: "#b45309", to: "#713f12" },
-    humano:     { from: "#1e293b", via: "#374151", to: "#18181b" },
-    human:      { from: "#1e293b", via: "#374151", to: "#18181b" },
-    leshy:      { from: "#14532d", via: "#065f46", to: "#1a2e05" },
-    orc:        { from: "#7f1d1d", via: "#9f1239", to: "#450a0a" },
+    anao: { from: "#78350f", via: "#854d0e", to: "#431407" },
+    dwarf: { from: "#78350f", via: "#854d0e", to: "#431407" },
+    elfo: { from: "#064e3b", via: "#166534", to: "#042f2e" },
+    elf: { from: "#064e3b", via: "#166534", to: "#042f2e" },
+    gnomo: { from: "#4c1d95", via: "#6b21a8", to: "#4a044e" },
+    gnome: { from: "#4c1d95", via: "#6b21a8", to: "#4a044e" },
+    goblin: { from: "#365314", via: "#15803d", to: "#422006" },
+    halfling: { from: "#9a3412", via: "#b45309", to: "#713f12" },
+    pequenino: { from: "#9a3412", via: "#b45309", to: "#713f12" },
+    humano: { from: "#1e293b", via: "#374151", to: "#18181b" },
+    human: { from: "#1e293b", via: "#374151", to: "#18181b" },
+    leshy: { from: "#14532d", via: "#065f46", to: "#1a2e05" },
+    orc: { from: "#7f1d1d", via: "#9f1239", to: "#450a0a" },
     "meio-orc": { from: "#991b1b", via: "#44403c", to: "#1f2937" },
     "half-orc": { from: "#991b1b", via: "#44403c", to: "#1f2937" },
-    catfolk:    { from: "#92400e", via: "#c2410c", to: "#713f12" },
-    "povo-gato":{ from: "#92400e", via: "#c2410c", to: "#713f12" },
-    kobold:     { from: "#713f12", via: "#92400e", to: "#431407" },
-    ratfolk:    { from: "#292524", via: "#374151", to: "#1c1917" },
-    "povo-rato":{ from: "#292524", via: "#374151", to: "#1c1917" },
-    tengu:      { from: "#0c4a6e", via: "#1e40af", to: "#1e1b4b" },
-    automaton:  { from: "#164e63", via: "#115e59", to: "#1e3a5f" },
-    automato:   { from: "#164e63", via: "#115e59", to: "#1e3a5f" },
-    fetchling:  { from: "#111827", via: "#1e293b", to: "#0a0a0a" },
+    catfolk: { from: "#92400e", via: "#c2410c", to: "#713f12" },
+    "povo-gato": { from: "#92400e", via: "#c2410c", to: "#713f12" },
+    kobold: { from: "#713f12", via: "#92400e", to: "#431407" },
+    ratfolk: { from: "#292524", via: "#374151", to: "#1c1917" },
+    "povo-rato": { from: "#292524", via: "#374151", to: "#1c1917" },
+    tengu: { from: "#0c4a6e", via: "#1e40af", to: "#1e1b4b" },
+    automaton: { from: "#164e63", via: "#115e59", to: "#1e3a5f" },
+    automato: { from: "#164e63", via: "#115e59", to: "#1e3a5f" },
+    fetchling: { from: "#111827", via: "#1e293b", to: "#0a0a0a" },
     dragonborn: { from: "#991b1b", via: "#c2410c", to: "#92400e" },
-    draconato:  { from: "#991b1b", via: "#c2410c", to: "#92400e" },
-    "meio-elfo":{ from: "#065f46", via: "#0f766e", to: "#14532d" },
+    draconato: { from: "#991b1b", via: "#c2410c", to: "#92400e" },
+    "meio-elfo": { from: "#065f46", via: "#0f766e", to: "#14532d" },
     "half-elf": { from: "#065f46", via: "#0f766e", to: "#14532d" },
-    tiefling:   { from: "#881337", via: "#9f1239", to: "#581c87" },
+    tiefling: { from: "#881337", via: "#9f1239", to: "#581c87" },
   };
 
   return themeMap[normalized] ?? { from: "#1f2937", via: "#374151", to: "#111827" };
@@ -195,33 +199,33 @@ function getImageUrl(race: RaceData): string | null {
 function getClassThemeColors(className: string): { from: string; via: string; to: string } {
   const normalized = normalizeRaceName(className); // reuse existing normalizer
   const themeMap: Record<string, { from: string; via: string; to: string }> = {
-    guerreiro:   { from: "#991b1b", via: "#b91c1c", to: "#7f1d1d" },
-    warrior:     { from: "#991b1b", via: "#b91c1c", to: "#7f1d1d" },
-    fighter:     { from: "#991b1b", via: "#b91c1c", to: "#7f1d1d" },
-    mago:        { from: "#1e3a8a", via: "#1d4ed8", to: "#1e1b4b" },
-    wizard:      { from: "#1e3a8a", via: "#1d4ed8", to: "#1e1b4b" },
-    ladrao:      { from: "#365314", via: "#4d7c0f", to: "#1a2e05" },
-    rogue:       { from: "#365314", via: "#4d7c0f", to: "#1a2e05" },
-    clerigo:     { from: "#713f12", via: "#ca8a04", to: "#78350f" },
-    cleric:      { from: "#713f12", via: "#ca8a04", to: "#78350f" },
-    ranger:      { from: "#064e3b", via: "#047857", to: "#022c22" },
+    guerreiro: { from: "#991b1b", via: "#b91c1c", to: "#7f1d1d" },
+    warrior: { from: "#991b1b", via: "#b91c1c", to: "#7f1d1d" },
+    fighter: { from: "#991b1b", via: "#b91c1c", to: "#7f1d1d" },
+    mago: { from: "#1e3a8a", via: "#1d4ed8", to: "#1e1b4b" },
+    wizard: { from: "#1e3a8a", via: "#1d4ed8", to: "#1e1b4b" },
+    ladrao: { from: "#365314", via: "#4d7c0f", to: "#1a2e05" },
+    rogue: { from: "#365314", via: "#4d7c0f", to: "#1a2e05" },
+    clerigo: { from: "#713f12", via: "#ca8a04", to: "#78350f" },
+    cleric: { from: "#713f12", via: "#ca8a04", to: "#78350f" },
+    ranger: { from: "#064e3b", via: "#047857", to: "#022c22" },
     patrulheiro: { from: "#064e3b", via: "#047857", to: "#022c22" },
-    bardo:       { from: "#581c87", via: "#7c3aed", to: "#4c1d95" },
-    bard:        { from: "#581c87", via: "#7c3aed", to: "#4c1d95" },
-    druida:      { from: "#14532d", via: "#15803d", to: "#052e16" },
-    druid:       { from: "#14532d", via: "#15803d", to: "#052e16" },
-    paladino:    { from: "#78350f", via: "#d97706", to: "#451a03" },
-    paladin:     { from: "#78350f", via: "#d97706", to: "#451a03" },
-    barbaro:     { from: "#7f1d1d", via: "#dc2626", to: "#450a0a" },
-    barbarian:   { from: "#7f1d1d", via: "#dc2626", to: "#450a0a" },
-    monge:       { from: "#713f12", via: "#a16207", to: "#422006" },
-    monk:        { from: "#713f12", via: "#a16207", to: "#422006" },
-    feiticeiro:  { from: "#4c1d95", via: "#6d28d9", to: "#2e1065" },
-    sorcerer:    { from: "#4c1d95", via: "#6d28d9", to: "#2e1065" },
-    bruxo:       { from: "#1e1b4b", via: "#4338ca", to: "#0c0a2e" },
-    warlock:     { from: "#1e1b4b", via: "#4338ca", to: "#0c0a2e" },
-    artifice:    { from: "#164e63", via: "#0891b2", to: "#083344" },
-    artificer:   { from: "#164e63", via: "#0891b2", to: "#083344" },
+    bardo: { from: "#581c87", via: "#7c3aed", to: "#4c1d95" },
+    bard: { from: "#581c87", via: "#7c3aed", to: "#4c1d95" },
+    druida: { from: "#14532d", via: "#15803d", to: "#052e16" },
+    druid: { from: "#14532d", via: "#15803d", to: "#052e16" },
+    paladino: { from: "#78350f", via: "#d97706", to: "#451a03" },
+    paladin: { from: "#78350f", via: "#d97706", to: "#451a03" },
+    barbaro: { from: "#7f1d1d", via: "#dc2626", to: "#450a0a" },
+    barbarian: { from: "#7f1d1d", via: "#dc2626", to: "#450a0a" },
+    monge: { from: "#713f12", via: "#a16207", to: "#422006" },
+    monk: { from: "#713f12", via: "#a16207", to: "#422006" },
+    feiticeiro: { from: "#4c1d95", via: "#6d28d9", to: "#2e1065" },
+    sorcerer: { from: "#4c1d95", via: "#6d28d9", to: "#2e1065" },
+    bruxo: { from: "#1e1b4b", via: "#4338ca", to: "#0c0a2e" },
+    warlock: { from: "#1e1b4b", via: "#4338ca", to: "#0c0a2e" },
+    artifice: { from: "#164e63", via: "#0891b2", to: "#083344" },
+    artificer: { from: "#164e63", via: "#0891b2", to: "#083344" },
   };
   return themeMap[normalized] ?? { from: "#1f2937", via: "#374151", to: "#111827" };
 }
@@ -236,12 +240,12 @@ function getClassBackgroundStyle(name: string): React.CSSProperties {
 // Skill theme colors by keyAttribute
 function getSkillThemeColors(keyAttribute: string): { from: string; via: string; to: string } {
   const attrMap: Record<string, { from: string; via: string; to: string }> = {
-    forca:        { from: "#991b1b", via: "#b91c1c", to: "#7f1d1d" },
-    destreza:     { from: "#065f46", via: "#059669", to: "#022c22" },
-    vigor:        { from: "#9a3412", via: "#c2410c", to: "#7c2d12" },
+    forca: { from: "#991b1b", via: "#b91c1c", to: "#7f1d1d" },
+    destreza: { from: "#065f46", via: "#059669", to: "#022c22" },
+    vigor: { from: "#9a3412", via: "#c2410c", to: "#7c2d12" },
     inteligencia: { from: "#1e3a8a", via: "#2563eb", to: "#1e1b4b" },
-    empatia:      { from: "#581c87", via: "#7c3aed", to: "#4c1d95" },
-    sorte:        { from: "#854d0e", via: "#eab308", to: "#713f12" },
+    empatia: { from: "#581c87", via: "#7c3aed", to: "#4c1d95" },
+    sorte: { from: "#854d0e", via: "#eab308", to: "#713f12" },
   };
   return attrMap[keyAttribute] ?? { from: "#1f2937", via: "#374151", to: "#111827" };
 }
@@ -298,7 +302,9 @@ export function CharacterWizard() {
   const [currentStep, setCurrentStep] = useState(0);
   const [wizardData, setWizardData] = useState<WizardData>(() => getInitialWizardData(campaignId));
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [toasts, setToasts] = useState<Array<{ id: string; message: string; type?: "error" | "success" | "info" | "warning" }>>([]);
+  const [toasts, setToasts] = useState<
+    Array<{ id: string; message: string; type?: "error" | "success" | "info" | "warning" }>
+  >([]);
   const [hydrated, setHydrated] = useState(false);
   const [showAwakeningModal, setShowAwakeningModal] = useState(false);
   const { data: classesResponse } = useClassesQuery();
@@ -316,62 +322,64 @@ export function CharacterWizard() {
     };
   }, [pendingImagePreview]);
 
-  const addToast = useCallback((message: string, type: "error" | "success" | "info" | "warning" = "error") => {
-    const id = generateUUID();
-    setToasts((prev) => [...prev, { id, message, type }]);
-  }, []);
+  const addToast = useCallback(
+    (message: string, type: "error" | "success" | "info" | "warning" = "error") => {
+      const id = generateUUID();
+      setToasts((prev) => [...prev, { id, message, type }]);
+    },
+    [],
+  );
 
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const handleAwakeningComplete = useCallback((result: HeartAwakeningResult) => {
-    let matchedClassId: string | null = null;
-    if (result.suggestedClass) {
-      const suggestedLower = result.suggestedClass.trim().toLowerCase();
-      const foundClass = classes.find(
-        (c) => c.name.trim().toLowerCase() === suggestedLower
+  const handleAwakeningComplete = useCallback(
+    (result: HeartAwakeningResult) => {
+      let matchedClassId: string | null = null;
+      if (result.suggestedClass) {
+        const suggestedLower = result.suggestedClass.trim().toLowerCase();
+        const foundClass = classes.find((c) => c.name.trim().toLowerCase() === suggestedLower);
+        if (foundClass) {
+          matchedClassId = foundClass.id;
+        }
+      }
+
+      let matchedRaceId: string | null = null;
+      if (result.suggestedRace) {
+        const suggestedRaceLower = result.suggestedRace.trim().toLowerCase();
+        const foundRace = races.find((r) => r.name.trim().toLowerCase() === suggestedRaceLower);
+        if (foundRace) {
+          matchedRaceId = foundRace.id;
+        }
+      }
+
+      setWizardData((prev) => {
+        let newDescription = prev.description;
+        if (result.prophecy) {
+          newDescription = prev.description
+            ? `${prev.description}\n\n${result.prophecy}`
+            : result.prophecy;
+        }
+
+        return {
+          ...prev,
+          attributes: { ...prev.attributes, ...result.attributes },
+          description: newDescription,
+          ...(matchedClassId ? { classId: matchedClassId } : {}),
+          ...(matchedRaceId ? { raceId: matchedRaceId } : {}),
+        };
+      });
+
+      addToast(
+        "O ritual despertou o seu destino! Suas opções foram selecionadas e você avançou para a revisão final.",
+        "info",
       );
-      if (foundClass) {
-        matchedClassId = foundClass.id;
-      }
-    }
-
-    let matchedRaceId: string | null = null;
-    if (result.suggestedRace) {
-      const suggestedRaceLower = result.suggestedRace.trim().toLowerCase();
-      const foundRace = races.find(
-        (r) => r.name.trim().toLowerCase() === suggestedRaceLower
-      );
-      if (foundRace) {
-        matchedRaceId = foundRace.id;
-      }
-    }
-
-    setWizardData((prev) => {
-      let newDescription = prev.description;
-      if (result.prophecy) {
-        newDescription = prev.description
-          ? `${prev.description}\n\n${result.prophecy}`
-          : result.prophecy;
-      }
-
-      return {
-        ...prev,
-        attributes: { ...prev.attributes, ...result.attributes },
-        description: newDescription,
-        ...(matchedClassId ? { classId: matchedClassId } : {}),
-        ...(matchedRaceId ? { raceId: matchedRaceId } : {}),
-      };
-    });
-
-    addToast(
-      "O ritual despertou o seu destino! Suas opções foram selecionadas e você avançou para a revisão final.",
-      "info"
-    );
-    setCurrentStep(6);
-    setShowAwakeningModal(false);
-  }, [classes, races, addToast]);
+      setCurrentStep(6);
+      setShowAwakeningModal(false);
+    },
+    [classes, races, addToast],
+  );
 
   // Clear legacy localStorage draft if present
   useEffect(() => {
@@ -415,40 +423,47 @@ export function CharacterWizard() {
     setWizardData((prev) => ({ ...prev, ...partial }));
   }, []);
 
-  const validateStep = useCallback((step: number): boolean => {
-    switch (step) {
-      case 0: // Básico
-        if (!wizardData.name || wizardData.name.trim().length < 2) {
-          addToast("Nome deve ter no mínimo 2 caracteres.", "warning");
-          return false;
+  const validateStep = useCallback(
+    (step: number): boolean => {
+      switch (step) {
+        case 0: // Básico
+          if (!wizardData.name || wizardData.name.trim().length < 2) {
+            addToast("Nome deve ter no mínimo 2 caracteres.", "warning");
+            return false;
+          }
+          if (wizardData.name.length > 100) {
+            addToast("Nome deve ter no máximo 100 caracteres.", "warning");
+            return false;
+          }
+          return true;
+        case 1: // Raça — opcional
+          return true;
+        case 2: // Classe — opcional
+          return true;
+        case 3: {
+          // Atributos
+          const sum = ATTRIBUTES.reduce((acc, attr) => acc + wizardData.attributes[attr], 0);
+          if (sum !== ATTRIBUTE_CREATION_TOTAL) {
+            addToast(
+              `Distribua todos os pontos de atributo. Soma atual: ${sum}, esperado: ${ATTRIBUTE_CREATION_TOTAL}.`,
+              "warning",
+            );
+            return false;
+          }
+          return true;
         }
-        if (wizardData.name.length > 100) {
-          addToast("Nome deve ter no máximo 100 caracteres.", "warning");
-          return false;
-        }
-        return true;
-      case 1: // Raça — opcional
-        return true;
-      case 2: // Classe — opcional
-        return true;
-      case 3: { // Atributos
-        const sum = ATTRIBUTES.reduce((acc, attr) => acc + wizardData.attributes[attr], 0);
-        if (sum !== ATTRIBUTE_CREATION_TOTAL) {
-          addToast(`Distribua todos os pontos de atributo. Soma atual: ${sum}, esperado: ${ATTRIBUTE_CREATION_TOTAL}.`, "warning");
-          return false;
-        }
-        return true;
+        case 4: // Perícias
+          return true;
+        case 5: // Magias
+          return true;
+        case 6: // Revisão
+          return true;
+        default:
+          return true;
       }
-      case 4: // Perícias
-        return true;
-      case 5: // Magias
-        return true;
-      case 6: // Revisão
-        return true;
-      default:
-        return true;
-    }
-  }, [wizardData, addToast]);
+    },
+    [wizardData, addToast],
+  );
 
   const goNext = useCallback(() => {
     if (!validateStep(currentStep)) return;
@@ -512,7 +527,11 @@ export function CharacterWizard() {
       }
 
       // Limpar draft do localStorage
-      try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        /* ignore */
+      }
 
       addToast("Personagem criado com sucesso!", "success");
       router.push(`/player/characters/${data.data.id}`);
@@ -550,7 +569,12 @@ export function CharacterWizard() {
       {/* Cabeçalho e Stepper Fixos no Topo */}
       <div className="sticky top-0 z-30 bg-gray-950/95 backdrop-blur-md pt-4 pb-3 border-b border-purple-900/30 mb-6">
         <h2 className="mb-4 text-2xl font-bold text-white font-serif">Criar Personagem</h2>
-        <WizardStepper currentStep={currentStep} onStepClick={setCurrentStep} wizardData={wizardData} validateStep={validateStep} />
+        <WizardStepper
+          currentStep={currentStep}
+          onStepClick={setCurrentStep}
+          wizardData={wizardData}
+          validateStep={validateStep}
+        />
       </div>
 
       {/* Conteúdo com Rolagem Independente */}
@@ -577,21 +601,11 @@ export function CharacterWizard() {
               }}
             />
           )}
-          {currentStep === 1 && (
-            <WizardStepRace data={wizardData} updateData={updateData} />
-          )}
-          {currentStep === 2 && (
-            <WizardStepClass data={wizardData} updateData={updateData} />
-          )}
-          {currentStep === 3 && (
-            <WizardStepAttributes data={wizardData} updateData={updateData} />
-          )}
-          {currentStep === 4 && (
-            <WizardStepSkills data={wizardData} updateData={updateData} />
-          )}
-          {currentStep === 5 && (
-            <WizardStepSpells data={wizardData} updateData={updateData} />
-          )}
+          {currentStep === 1 && <WizardStepRace data={wizardData} updateData={updateData} />}
+          {currentStep === 2 && <WizardStepClass data={wizardData} updateData={updateData} />}
+          {currentStep === 3 && <WizardStepAttributes data={wizardData} updateData={updateData} />}
+          {currentStep === 4 && <WizardStepSkills data={wizardData} updateData={updateData} />}
+          {currentStep === 5 && <WizardStepSpells data={wizardData} updateData={updateData} />}
           {currentStep === 6 && (
             <WizardStepReview data={wizardData} pendingImagePreview={pendingImagePreview} />
           )}
@@ -599,7 +613,7 @@ export function CharacterWizard() {
       </div>
 
       {/* Barra de Navegação Fixa na Parte Inferior */}
-<div
+      <div
         className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4"
         style={{ paddingBottom: `max(0.75rem, env(safe-area-inset-bottom, 0px))` }}
       >
@@ -827,15 +841,87 @@ function WizardStepBasicInfo({
               strokeWidth="1.5"
               strokeLinejoin="round"
             />
-            <line x1="50" y1="4" x2="30" y2="36" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
-            <line x1="50" y1="4" x2="70" y2="36" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
-            <line x1="92" y1="26" x2="70" y2="36" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
-            <line x1="92" y1="74" x2="70" y2="36" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
-            <line x1="92" y1="74" x2="50" y2="70" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
-            <line x1="50" y1="96" x2="50" y2="70" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
-            <line x1="8" y1="74" x2="50" y2="70" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
-            <line x1="8" y1="74" x2="30" y2="36" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
-            <line x1="8" y1="26" x2="30" y2="36" stroke="url(#d20-gold-gradient)" strokeWidth="1.2" strokeOpacity="0.85" />
+            <line
+              x1="50"
+              y1="4"
+              x2="30"
+              y2="36"
+              stroke="url(#d20-gold-gradient)"
+              strokeWidth="1.2"
+              strokeOpacity="0.85"
+            />
+            <line
+              x1="50"
+              y1="4"
+              x2="70"
+              y2="36"
+              stroke="url(#d20-gold-gradient)"
+              strokeWidth="1.2"
+              strokeOpacity="0.85"
+            />
+            <line
+              x1="92"
+              y1="26"
+              x2="70"
+              y2="36"
+              stroke="url(#d20-gold-gradient)"
+              strokeWidth="1.2"
+              strokeOpacity="0.85"
+            />
+            <line
+              x1="92"
+              y1="74"
+              x2="70"
+              y2="36"
+              stroke="url(#d20-gold-gradient)"
+              strokeWidth="1.2"
+              strokeOpacity="0.85"
+            />
+            <line
+              x1="92"
+              y1="74"
+              x2="50"
+              y2="70"
+              stroke="url(#d20-gold-gradient)"
+              strokeWidth="1.2"
+              strokeOpacity="0.85"
+            />
+            <line
+              x1="50"
+              y1="96"
+              x2="50"
+              y2="70"
+              stroke="url(#d20-gold-gradient)"
+              strokeWidth="1.2"
+              strokeOpacity="0.85"
+            />
+            <line
+              x1="8"
+              y1="74"
+              x2="50"
+              y2="70"
+              stroke="url(#d20-gold-gradient)"
+              strokeWidth="1.2"
+              strokeOpacity="0.85"
+            />
+            <line
+              x1="8"
+              y1="74"
+              x2="30"
+              y2="36"
+              stroke="url(#d20-gold-gradient)"
+              strokeWidth="1.2"
+              strokeOpacity="0.85"
+            />
+            <line
+              x1="8"
+              y1="26"
+              x2="30"
+              y2="36"
+              stroke="url(#d20-gold-gradient)"
+              strokeWidth="1.2"
+              strokeOpacity="0.85"
+            />
 
             {/* Número 20 Gravado no Centro */}
             <text
@@ -879,7 +965,8 @@ function WizardStepBasicInfo({
 
       <div className="space-y-1.5">
         <label className="block text-sm font-medium text-gray-300">
-          Descrição / Background <span className="text-xs font-normal text-gray-400">(opcional)</span>
+          Descrição / Background{" "}
+          <span className="text-xs font-normal text-gray-400">(opcional)</span>
         </label>
         <div className="relative rounded-lg border border-gray-700/80 bg-gray-900/90 p-1.5 focus-within:border-purple-500 focus-within:ring-1 focus-within:ring-purple-500/50 transition-all">
           <textarea
@@ -892,7 +979,11 @@ function WizardStepBasicInfo({
           />
           <div className="flex justify-end pt-1 pb-0.5 px-2 border-t border-gray-800/80">
             <span className="text-[11px] font-medium text-gray-400">
-              <span className={data.description.length >= 480 ? "text-amber-400 font-bold" : "text-gray-400"}>
+              <span
+                className={
+                  data.description.length >= 480 ? "text-amber-400 font-bold" : "text-gray-400"
+                }
+              >
                 {data.description.length}
               </span>
               /500 caracteres
@@ -907,14 +998,16 @@ function WizardStepBasicInfo({
         </label>
         <div className="flex items-center gap-4">
           {/* Preview */}
-          {(pendingImagePreview || data.imageUrl) ? (
+          {pendingImagePreview || data.imageUrl ? (
             <div className="relative shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={pendingImagePreview || data.imageUrl!}
                 alt="Preview"
                 className="h-16 w-16 rounded-full border-2 border-purple-500 object-cover shadow-[0_0_10px_rgba(168,85,247,0.3)]"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = "none";
+                }}
               />
               <button
                 type="button"
@@ -951,7 +1044,7 @@ function WizardStepBasicInfo({
               onClick={() => fileInputRef.current?.click()}
               className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs font-medium text-gray-300 hover:border-purple-500 hover:text-purple-300 transition-all"
             >
-              {(pendingImagePreview || data.imageUrl) ? "Trocar imagem" : "Enviar imagem"}
+              {pendingImagePreview || data.imageUrl ? "Trocar imagem" : "Enviar imagem"}
             </button>
             <p className="mt-1 text-[10px] text-gray-500">JPG, PNG ou WEBP · máx. 5MB</p>
           </div>
@@ -980,14 +1073,13 @@ function WizardStepRace({
     if (!search.trim()) return races;
     const q = search.toLowerCase();
     return races.filter(
-      (r) => r.name.toLowerCase().includes(q) || (r.description && r.description.toLowerCase().includes(q))
+      (r) =>
+        r.name.toLowerCase().includes(q) ||
+        (r.description && r.description.toLowerCase().includes(q)),
     );
   }, [races, search]);
 
-  const selectedRace = useMemo(
-    () => races.find((r) => r.id === data.raceId),
-    [races, data.raceId]
-  );
+  const selectedRace = useMemo(() => races.find((r) => r.id === data.raceId), [races, data.raceId]);
 
   return (
     <div className="relative overflow-hidden space-y-4 rounded-xl border border-gray-800 bg-gray-900/60 p-5">
@@ -1078,7 +1170,8 @@ function WizardStepRace({
                       <div
                         className="absolute inset-0"
                         style={{
-                          background: "linear-gradient(to top, rgb(17 24 39), rgb(17 24 39 / 0.8), transparent)",
+                          background:
+                            "linear-gradient(to top, rgb(17 24 39), rgb(17 24 39 / 0.8), transparent)",
                         }}
                       />
                     </div>
@@ -1125,7 +1218,9 @@ function WizardStepRace({
 
         {selectedRace && (
           <div className="mt-4 rounded-lg border border-purple-800/50 bg-purple-950/30 p-3 text-xs text-purple-200">
-            <span className="font-bold text-purple-300">Bônus da Raça selecionada ({selectedRace.name}):</span>{" "}
+            <span className="font-bold text-purple-300">
+              Bônus da Raça selecionada ({selectedRace.name}):
+            </span>{" "}
             +{selectedRace.hitPointsBonus} HP base máximo.
           </div>
         )}
@@ -1153,13 +1248,15 @@ function WizardStepClass({
     if (!search.trim()) return classes;
     const q = search.toLowerCase();
     return classes.filter(
-      (c) => c.name.toLowerCase().includes(q) || (c.description && c.description.toLowerCase().includes(q))
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        (c.description && c.description.toLowerCase().includes(q)),
     );
   }, [classes, search]);
 
   const selectedClass = useMemo(
     () => classes.find((c) => c.id === data.classId),
-    [classes, data.classId]
+    [classes, data.classId],
   );
 
   return (
@@ -1215,25 +1312,25 @@ function WizardStepClass({
                   style={{ ...getClassBackgroundStyle(cls.name), opacity: 0.3 }}
                 />
                 <div className="relative z-10">
-                <div className="flex items-start justify-between gap-2">
-                  <h4 className="font-bold text-white text-sm">{cls.name}</h4>
-                  {isSelected && (
-                    <span className="rounded bg-purple-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                      Selecionada
-                    </span>
-                  )}
-                </div>
-
-                {cls.description && (
-                  <p className="mt-1 text-xs text-gray-400 line-clamp-2">{cls.description}</p>
-                )}
-
-                {cls.initialItems && cls.initialItems.length > 0 && (
-                  <div className="mt-2 text-[10px] text-gray-400">
-                    <span className="font-semibold text-purple-300">Equipamentos da classe:</span>{" "}
-                    {cls.initialItems.map((i) => i.name).join(", ")}
+                  <div className="flex items-start justify-between gap-2">
+                    <h4 className="font-bold text-white text-sm">{cls.name}</h4>
+                    {isSelected && (
+                      <span className="rounded bg-purple-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                        Selecionada
+                      </span>
+                    )}
                   </div>
-                )}
+
+                  {cls.description && (
+                    <p className="mt-1 text-xs text-gray-400 line-clamp-2">{cls.description}</p>
+                  )}
+
+                  {cls.initialItems && cls.initialItems.length > 0 && (
+                    <div className="mt-2 text-[10px] text-gray-400">
+                      <span className="font-semibold text-purple-300">Equipamentos da classe:</span>{" "}
+                      {cls.initialItems.map((i) => i.name).join(", ")}
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -1243,7 +1340,10 @@ function WizardStepClass({
 
       {selectedClass && (
         <div className="mt-4 rounded-lg border border-purple-800/50 bg-purple-950/30 p-3 text-xs text-purple-200">
-          <span className="font-bold text-purple-300">Classe Selecionada: {selectedClass.name}</span>. Os itens iniciais desta classe serão concedidos automaticamente ao inventário!
+          <span className="font-bold text-purple-300">
+            Classe Selecionada: {selectedClass.name}
+          </span>
+          . Os itens iniciais desta classe serão concedidos automaticamente ao inventário!
         </div>
       )}
     </div>
@@ -1263,7 +1363,7 @@ function WizardStepAttributes({
 }) {
   const spentPoints = useMemo(
     () => ATTRIBUTES.reduce((sum, attr) => sum + (data.attributes[attr] - ATTRIBUTE_BASE_VALUE), 0),
-    [data.attributes]
+    [data.attributes],
   );
 
   const remainingPoints = ATTRIBUTE_FREE_POINTS - spentPoints;
@@ -1318,12 +1418,8 @@ function WizardStepAttributes({
               className="flex items-center justify-between rounded-xl border border-gray-800 bg-gray-900 px-4 py-3"
             >
               <div>
-                <span className="text-sm font-semibold text-white">
-                  {ATTRIBUTE_LABELS[attr]}
-                </span>
-                <span className="ml-2 text-xs text-gray-400">
-                  mod {mod >= 0 ? `+${mod}` : mod}
-                </span>
+                <span className="text-sm font-semibold text-white">{ATTRIBUTE_LABELS[attr]}</span>
+                <span className="ml-2 text-xs text-gray-400">mod {mod >= 0 ? `+${mod}` : mod}</span>
               </div>
 
               <div className="flex items-center gap-3">
@@ -1377,7 +1473,7 @@ function WizardStepSkills({
     return skills.filter(
       (s) =>
         s.name.toLowerCase().includes(q) ||
-        (s.description && s.description.toLowerCase().includes(q))
+        (s.description && s.description.toLowerCase().includes(q)),
     );
   }, [skills, search]);
 
@@ -1456,7 +1552,9 @@ function WizardStepSkills({
                   key={skill.id}
                   onClick={() => !isDisabled && toggleSkill(skill.id)}
                   className={`relative overflow-hidden flex items-start gap-3 rounded-xl border p-3.5 transition-all ${
-                    isDisabled ? "opacity-40 cursor-not-allowed border-gray-800 bg-gray-950" : "cursor-pointer"
+                    isDisabled
+                      ? "opacity-40 cursor-not-allowed border-gray-800 bg-gray-950"
+                      : "cursor-pointer"
                   } ${
                     isSelected
                       ? "border-purple-500 bg-purple-950/40 shadow-md shadow-purple-950/40"
@@ -1468,30 +1566,32 @@ function WizardStepSkills({
                     style={{ ...getSkillBackgroundStyle(skill.keyAttribute), opacity: 0.3 }}
                   />
                   <div className="relative z-10 flex items-start gap-3 w-full">
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={() => {}}
-                    disabled={isDisabled}
-                    className="mt-1 h-4 w-4 rounded border-gray-700 bg-gray-900 text-purple-600 focus:ring-purple-500"
-                  />
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => {}}
+                      disabled={isDisabled}
+                      className="mt-1 h-4 w-4 rounded border-gray-700 bg-gray-900 text-purple-600 focus:ring-purple-500"
+                    />
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-bold text-white text-xs truncate">{skill.name}</h4>
-                      <span className="rounded bg-purple-950/80 border border-purple-800/60 px-1.5 py-0.5 text-[9px] text-purple-300 font-bold uppercase">
-                        {ATTRIBUTE_LABELS[skill.keyAttribute]}
-                      </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-bold text-white text-xs truncate">{skill.name}</h4>
+                        <span className="rounded bg-purple-950/80 border border-purple-800/60 px-1.5 py-0.5 text-[9px] text-purple-300 font-bold uppercase">
+                          {ATTRIBUTE_LABELS[skill.keyAttribute]}
+                        </span>
+                      </div>
+                      {skill.description && (
+                        <p className="mt-1 text-[11px] text-gray-400 line-clamp-2">
+                          {skill.description}
+                        </p>
+                      )}
+                      {skill.rollExpression && (
+                        <span className="mt-1 inline-block text-[10px] text-purple-400 font-mono">
+                          {skill.rollExpression}
+                        </span>
+                      )}
                     </div>
-                    {skill.description && (
-                      <p className="mt-1 text-[11px] text-gray-400 line-clamp-2">{skill.description}</p>
-                    )}
-                    {skill.rollExpression && (
-                      <span className="mt-1 inline-block text-[10px] text-purple-400 font-mono">
-                        {skill.rollExpression}
-                      </span>
-                    )}
-                  </div>
                   </div>
                 </div>
               );
@@ -1508,7 +1608,9 @@ function WizardStepSkills({
               Anterior
             </button>
             <span>
-              Página <strong className="text-white">{currentPage}</strong> de <strong className="text-white">{totalPages}</strong> ({filteredSkills.length} {filteredSkills.length === 1 ? "item" : "itens"})
+              Página <strong className="text-white">{currentPage}</strong> de{" "}
+              <strong className="text-white">{totalPages}</strong> ({filteredSkills.length}{" "}
+              {filteredSkills.length === 1 ? "item" : "itens"})
             </span>
             <button
               type="button"
@@ -1552,7 +1654,7 @@ function WizardStepSpells({
     return level1Spells.filter(
       (s) =>
         s.name.toLowerCase().includes(q) ||
-        (s.description && s.description.toLowerCase().includes(q))
+        (s.description && s.description.toLowerCase().includes(q)),
     );
   }, [level1Spells, search]);
 
@@ -1615,7 +1717,9 @@ function WizardStepSpells({
           <Spinner size="md" />
         </div>
       ) : filteredSpells.length === 0 ? (
-        <p className="text-xs text-gray-500 py-6 text-center">Nenhuma magia de 1º Círculo encontrada.</p>
+        <p className="text-xs text-gray-500 py-6 text-center">
+          Nenhuma magia de 1º Círculo encontrada.
+        </p>
       ) : (
         <>
           <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -1629,7 +1733,9 @@ function WizardStepSpells({
                   key={spell.id}
                   onClick={() => !isDisabled && toggleSpell(spell.id)}
                   className={`relative overflow-hidden flex items-start gap-3 rounded-xl border p-3.5 transition-all ${
-                    isDisabled ? "opacity-40 cursor-not-allowed border-gray-800 bg-gray-950" : "cursor-pointer"
+                    isDisabled
+                      ? "opacity-40 cursor-not-allowed border-gray-800 bg-gray-950"
+                      : "cursor-pointer"
                   } ${
                     isSelected
                       ? "border-purple-500 bg-purple-950/40 shadow-md shadow-purple-950/40"
@@ -1641,31 +1747,33 @@ function WizardStepSpells({
                     style={{ ...getSpellBackgroundStyle(spell.circle), opacity: 0.3 }}
                   />
                   <div className="relative z-10 flex items-start gap-3 w-full">
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={() => {}}
-                    disabled={isDisabled}
-                    className="mt-1 h-4 w-4 rounded border-gray-700 bg-gray-900 text-purple-600 focus:ring-purple-500"
-                  />
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => {}}
+                      disabled={isDisabled}
+                      className="mt-1 h-4 w-4 rounded border-gray-700 bg-gray-900 text-purple-600 focus:ring-purple-500"
+                    />
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-bold text-white text-xs truncate">{spell.name}</h4>
-                      <span className="rounded bg-blue-950 border border-blue-800/60 px-1.5 py-0.5 text-[9px] text-blue-300 font-bold">
-                        {spell.manaCost} MP
-                      </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-bold text-white text-xs truncate">{spell.name}</h4>
+                        <span className="rounded bg-blue-950 border border-blue-800/60 px-1.5 py-0.5 text-[9px] text-blue-300 font-bold">
+                          {spell.manaCost} MP
+                        </span>
+                      </div>
+
+                      {spell.description && (
+                        <p className="mt-1 text-[11px] text-gray-400 line-clamp-2">
+                          {spell.description}
+                        </p>
+                      )}
+
+                      <div className="mt-2 flex items-center gap-2 text-[10px] text-gray-400">
+                        <span>⚡ {actionCost} ação(ões)</span>
+                        {spell.useType && <span className="capitalize">• {spell.useType}</span>}
+                      </div>
                     </div>
-
-                    {spell.description && (
-                      <p className="mt-1 text-[11px] text-gray-400 line-clamp-2">{spell.description}</p>
-                    )}
-
-                    <div className="mt-2 flex items-center gap-2 text-[10px] text-gray-400">
-                      <span>⚡ {actionCost} ação(ões)</span>
-                      {spell.useType && <span className="capitalize">• {spell.useType}</span>}
-                    </div>
-                  </div>
                   </div>
                 </div>
               );
@@ -1682,7 +1790,9 @@ function WizardStepSpells({
               Anterior
             </button>
             <span>
-              Página <strong className="text-white">{currentPage}</strong> de <strong className="text-white">{totalPages}</strong> ({filteredSpells.length} {filteredSpells.length === 1 ? "item" : "itens"})
+              Página <strong className="text-white">{currentPage}</strong> de{" "}
+              <strong className="text-white">{totalPages}</strong> ({filteredSpells.length}{" "}
+              {filteredSpells.length === 1 ? "item" : "itens"})
             </span>
             <button
               type="button"
@@ -1703,7 +1813,13 @@ function WizardStepSpells({
 // Step 6: Revisão & Confirmação
 // =============================================================================
 
-function WizardStepReview({ data, pendingImagePreview }: { data: WizardData; pendingImagePreview?: string | null }) {
+function WizardStepReview({
+  data,
+  pendingImagePreview,
+}: {
+  data: WizardData;
+  pendingImagePreview?: string | null;
+}) {
   const { data: racesResponse } = useRacesQuery();
   const { data: classesResponse } = useClassesQuery();
   const races = racesResponse?.data ?? [];
@@ -1715,10 +1831,7 @@ function WizardStepReview({ data, pendingImagePreview }: { data: WizardData; pen
   const initialItemsList = selectedClass?.initialItems ?? [];
   const raceHpBonus = selectedRace?.hitPointsBonus ?? 0;
 
-  const derived = useMemo(
-    () => getDerivedStats(data.attributes, 1),
-    [data.attributes]
-  );
+  const derived = useMemo(() => getDerivedStats(data.attributes, 1), [data.attributes]);
 
   const totalHpMax = derived.hitPointsMax + raceHpBonus;
 
@@ -1731,7 +1844,7 @@ function WizardStepReview({ data, pendingImagePreview }: { data: WizardData; pen
 
       {/* Resumo do Personagem */}
       <div className="flex items-center gap-4 rounded-xl border border-purple-900/60 bg-purple-950/30 p-4">
-        {(pendingImagePreview || data.imageUrl) ? (
+        {pendingImagePreview || data.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={pendingImagePreview || data.imageUrl!}
@@ -1807,7 +1920,9 @@ function WizardStepReview({ data, pendingImagePreview }: { data: WizardData; pen
           <span>🎒 Itens Iniciais da Classe (Concedidos Automáticos)</span>
         </h5>
         {initialItemsList.length === 0 ? (
-          <p className="text-xs text-gray-500 italic">Nenhum item inicial padrão para a classe selecionada.</p>
+          <p className="text-xs text-gray-500 italic">
+            Nenhum item inicial padrão para a classe selecionada.
+          </p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {initialItemsList.map((item, idx) => (

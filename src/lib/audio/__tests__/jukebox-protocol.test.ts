@@ -68,7 +68,7 @@ describe("audioTrackAddSchema", () => {
         campaignId: "",
         actorName: "Mestre",
         track: VALID_TRACK,
-      }).success
+      }).success,
     ).toBe(false);
   });
 
@@ -78,7 +78,7 @@ describe("audioTrackAddSchema", () => {
         campaignId: "camp-1",
         actorName: "Mestre",
         track: { ...VALID_TRACK, id: "abcdefghij" },
-      }).success
+      }).success,
     ).toBe(false);
   });
 });
@@ -120,21 +120,26 @@ describe("audioTrackPauseSchema", () => {
 describe("audioTrackLoopSchema", () => {
   it("aceita loop true e false (booleanos)", () => {
     expect(
-      audioTrackLoopSchema.safeParse({ campaignId: "camp-1", trackId: "dQw4w9WgXcQ", loop: true }).success
+      audioTrackLoopSchema.safeParse({ campaignId: "camp-1", trackId: "dQw4w9WgXcQ", loop: true })
+        .success,
     ).toBe(true);
     expect(
-      audioTrackLoopSchema.safeParse({ campaignId: "camp-1", trackId: "dQw4w9WgXcQ", loop: false }).success
+      audioTrackLoopSchema.safeParse({ campaignId: "camp-1", trackId: "dQw4w9WgXcQ", loop: false })
+        .success,
     ).toBe(true);
   });
 
-  it("rejeita loop como string \"true\"", () => {
+  it('rejeita loop como string "true"', () => {
     expect(
-      audioTrackLoopSchema.safeParse({ campaignId: "camp-1", trackId: "dQw4w9WgXcQ", loop: "true" }).success
+      audioTrackLoopSchema.safeParse({ campaignId: "camp-1", trackId: "dQw4w9WgXcQ", loop: "true" })
+        .success,
     ).toBe(false);
   });
 
   it("rejeita trackId ausente", () => {
-    expect(audioTrackLoopSchema.safeParse({ campaignId: "camp-1", loop: true }).success).toBe(false);
+    expect(audioTrackLoopSchema.safeParse({ campaignId: "camp-1", loop: true }).success).toBe(
+      false,
+    );
   });
 });
 

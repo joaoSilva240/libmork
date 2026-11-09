@@ -70,7 +70,10 @@ describe("CampaignDetail — contenção do grid do escudo", () => {
           this.pointerId = init.pointerId ?? 0;
         }
       }
-      Object.defineProperty(globalThis, "PointerEvent", { value: TestPointerEvent, configurable: true });
+      Object.defineProperty(globalThis, "PointerEvent", {
+        value: TestPointerEvent,
+        configurable: true,
+      });
     }
     clientWidthSpy = vi
       .spyOn(HTMLElement.prototype, "clientWidth", "get")
@@ -83,7 +86,9 @@ describe("CampaignDetail — contenção do grid do escudo", () => {
       }
       return Promise.resolve({
         ok: true,
-        json: async () => ({ data: { id: "camp-1", name: "Test Campaign", rulesEngine: "d20_mod" } }),
+        json: async () => ({
+          data: { id: "camp-1", name: "Test Campaign", rulesEngine: "d20_mod" },
+        }),
       });
     }) as unknown as typeof fetch;
   });

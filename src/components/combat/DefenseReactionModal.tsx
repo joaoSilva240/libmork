@@ -111,13 +111,16 @@ export function DefenseReactionModal({
               className="w-full rounded-2xl border border-blue-500/60 bg-blue-950/60 p-4 text-left shadow-lg hover:bg-blue-900/60 transition-all group"
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-blue-200 group-hover:text-white">💨 Esquivar</span>
+                <span className="text-sm font-bold text-blue-200 group-hover:text-white">
+                  💨 Esquivar
+                </span>
                 <span className="rounded-lg bg-blue-900/80 px-2 py-0.5 text-xs font-bold text-blue-300">
                   Defesa: {defenseStatic}
                 </span>
               </div>
               <p className="mt-1 text-[11px] text-blue-300/80">
-                Compara a rolagem do ataque contra sua defesa estática ({defenseStatic}). Se esquivar, sofre 0 dano!
+                Compara a rolagem do ataque contra sua defesa estática ({defenseStatic}). Se
+                esquivar, sofre 0 dano!
               </p>
             </button>
 
@@ -129,7 +132,9 @@ export function DefenseReactionModal({
               className="w-full rounded-2xl border border-emerald-500/60 bg-emerald-950/60 p-4 text-left shadow-lg hover:bg-emerald-900/60 transition-all group"
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-emerald-200 group-hover:text-white">🛡️ Bloquear</span>
+                <span className="text-sm font-bold text-emerald-200 group-hover:text-white">
+                  🛡️ Bloquear
+                </span>
                 <span className="rounded-lg bg-emerald-900/80 px-2 py-0.5 text-xs font-bold text-emerald-300">
                   Redução: -{blockValue}
                 </span>
@@ -142,10 +147,7 @@ export function DefenseReactionModal({
             </button>
           </div>
 
-          <button
-            onClick={onClose}
-            className="text-xs text-gray-500 hover:text-gray-300 pt-2"
-          >
+          <button onClick={onClose} className="text-xs text-gray-500 hover:text-gray-300 pt-2">
             Ignorar / Escolher depois
           </button>
         </div>
@@ -163,7 +165,9 @@ export function DefenseReactionModal({
           <h3 className="text-xl font-black text-white">
             {isDodge ? "VOCÊ ESQUIVOU!" : "VOCÊ BLOQUEOU!"}
           </h3>
-          <p className="text-xs text-purple-300">Resultado da reação de {requestPayload.attackerName}:</p>
+          <p className="text-xs text-purple-300">
+            Resultado da reação de {requestPayload.attackerName}:
+          </p>
         </div>
 
         <div

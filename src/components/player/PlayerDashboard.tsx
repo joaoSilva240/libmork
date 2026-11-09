@@ -578,70 +578,70 @@ export function PlayerDashboard() {
       }
     >
       {!isCommunityFullscreen && (
-      <header className="fixed inset-x-0 top-0 z-30 border-x-0 border-t-0 border-b border-secondary-border bg-secondary-card shadow-md pt-[calc(1rem+env(safe-area-inset-top,0px))]">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 pb-3">
-          <div>
-            <h1 className="text-xl font-bold text-secondary-pure">{displayName}</h1>
-            <p className="text-xs text-secondary-muted">Gerencie seus heróis e campanhas</p>
-          </div>
-          <LogoutButton />
-        </div>
-
-        {activeTab === "settings" && (
-          <div className="border-t border-secondary-border bg-secondary-card/95 backdrop-blur-md px-4 py-2">
-            <div className="mx-auto max-w-7xl">
-              <nav
-                className="grid grid-cols-3 gap-2"
-                role="tablist"
-                aria-label="Configurações do Tema e Interface"
-              >
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={settingsSubTab === "themes_colors"}
-                  onClick={() => setSettingsSubTab("themes_colors")}
-                  className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
-                    settingsSubTab === "themes_colors"
-                      ? "bg-accent text-white shadow-sm ring-1 ring-accent"
-                      : "text-secondary-muted hover:text-secondary-pure hover:bg-dominant-container/50"
-                  }`}
-                >
-                  <span className="text-sm">🎨</span>
-                  <span className="truncate">Temas</span>
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={settingsSubTab === "fonts"}
-                  onClick={() => setSettingsSubTab("fonts")}
-                  className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
-                    settingsSubTab === "fonts"
-                      ? "bg-accent text-white shadow-sm ring-1 ring-accent"
-                      : "text-secondary-muted hover:text-secondary-pure hover:bg-dominant-container/50"
-                  }`}
-                >
-                  <span className="text-sm">✍️</span>
-                  <span className="truncate">Tipografia</span>
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={settingsSubTab === "ui_details"}
-                  onClick={() => setSettingsSubTab("ui_details")}
-                  className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
-                    settingsSubTab === "ui_details"
-                      ? "bg-accent text-white shadow-sm ring-1 ring-accent"
-                      : "text-secondary-muted hover:text-secondary-pure hover:bg-dominant-container/50"
-                  }`}
-                >
-                  <span className="text-sm">📐</span>
-                  <span className="truncate">Detalhes</span>
-                </button>
-              </nav>
+        <header className="fixed inset-x-0 top-0 z-30 border-x-0 border-t-0 border-b border-secondary-border bg-secondary-card shadow-md pt-[calc(1rem+env(safe-area-inset-top,0px))]">
+          <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 pb-3">
+            <div>
+              <h1 className="text-xl font-bold text-secondary-pure">{displayName}</h1>
+              <p className="text-xs text-secondary-muted">Gerencie seus heróis e campanhas</p>
             </div>
+            <LogoutButton />
           </div>
-        )}
-      </header>
+
+          {activeTab === "settings" && (
+            <div className="border-t border-secondary-border bg-secondary-card/95 backdrop-blur-md px-4 py-2">
+              <div className="mx-auto max-w-7xl">
+                <nav
+                  className="grid grid-cols-3 gap-2"
+                  role="tablist"
+                  aria-label="Configurações do Tema e Interface"
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={settingsSubTab === "themes_colors"}
+                    onClick={() => setSettingsSubTab("themes_colors")}
+                    className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
+                      settingsSubTab === "themes_colors"
+                        ? "bg-accent text-white shadow-sm ring-1 ring-accent"
+                        : "text-secondary-muted hover:text-secondary-pure hover:bg-dominant-container/50"
+                    }`}
+                  >
+                    <span className="text-sm">🎨</span>
+                    <span className="truncate">Temas</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={settingsSubTab === "fonts"}
+                    onClick={() => setSettingsSubTab("fonts")}
+                    className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
+                      settingsSubTab === "fonts"
+                        ? "bg-accent text-white shadow-sm ring-1 ring-accent"
+                        : "text-secondary-muted hover:text-secondary-pure hover:bg-dominant-container/50"
+                    }`}
+                  >
+                    <span className="text-sm">✍️</span>
+                    <span className="truncate">Tipografia</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={settingsSubTab === "ui_details"}
+                    onClick={() => setSettingsSubTab("ui_details")}
+                    className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
+                      settingsSubTab === "ui_details"
+                        ? "bg-accent text-white shadow-sm ring-1 ring-accent"
+                        : "text-secondary-muted hover:text-secondary-pure hover:bg-dominant-container/50"
+                    }`}
+                  >
+                    <span className="text-sm">📐</span>
+                    <span className="truncate">Detalhes</span>
+                  </button>
+                </nav>
+              </div>
+            </div>
+          )}
+        </header>
       )}
 
       {activeTab === "characters" && (
@@ -781,7 +781,11 @@ export function PlayerDashboard() {
         {/* Conteúdo da Aba 2: Campanhas */}
         {activeTab === "campaigns" && (
           <div className="motion-page">
-            <div className="mb-4 flex items-center gap-2" role="tablist" aria-label="Campanhas e sessões">
+            <div
+              className="mb-4 flex items-center gap-2"
+              role="tablist"
+              aria-label="Campanhas e sessões"
+            >
               <button
                 type="button"
                 role="tab"
@@ -823,188 +827,188 @@ export function PlayerDashboard() {
             {campaignsView === "sessoes" ? (
               <SessionInviteFeed currentUserId={userId} onApplied={handleSessionApplied} />
             ) : (
-            <>
-            {isLoadingCampaigns ? (
-              <div className="flex min-h-[300px] items-center justify-center py-12">
-                <Spinner size="lg" />
-              </div>
-            ) : campaignsError ? (
-              <div className="rounded-lg border border-accent-vibrant/40 bg-accent-dark/30 p-4 text-secondary-pure">
-                {campaignsError}
-              </div>
-            ) : campaigns.length === 0 ? (
-              <div className="rounded-xl border border-gray-800 bg-gray-900/60 py-16 text-center">
-                <p className="text-secondary-muted text-base">
-                  Você ainda não foi convidado para nenhuma campanha.
-                </p>
-                <p className="mt-2 text-xs text-gray-500">
-                  Peça ao seu Mestre para convidar o seu usuário pelo Escudo do Mestre.
-                </p>
-              </div>
-            ) : (
-              <div className="motion-stagger grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {campaigns.map((campaign) => (
-                  <div
-                    key={campaign.id}
-                    className="motion-lift group relative overflow-hidden flex flex-col justify-between rounded-xl border border-secondary-border bg-secondary-card p-5 transition-all hover:border-accent hover:shadow-[0_0_20px_rgba(147,51,234,0.25)] cursor-pointer"
-                    style={
-                      campaign.coverImageUrl
-                        ? {
-                            backgroundImage: `url(${campaign.coverImageUrl})`,
-                            backgroundSize: "cover",
-                            backgroundPosition: "center",
+              <>
+                {isLoadingCampaigns ? (
+                  <div className="flex min-h-[300px] items-center justify-center py-12">
+                    <Spinner size="lg" />
+                  </div>
+                ) : campaignsError ? (
+                  <div className="rounded-lg border border-accent-vibrant/40 bg-accent-dark/30 p-4 text-secondary-pure">
+                    {campaignsError}
+                  </div>
+                ) : campaigns.length === 0 ? (
+                  <div className="rounded-xl border border-gray-800 bg-gray-900/60 py-16 text-center">
+                    <p className="text-secondary-muted text-base">
+                      Você ainda não foi convidado para nenhuma campanha.
+                    </p>
+                    <p className="mt-2 text-xs text-gray-500">
+                      Peça ao seu Mestre para convidar o seu usuário pelo Escudo do Mestre.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="motion-stagger grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {campaigns.map((campaign) => (
+                      <div
+                        key={campaign.id}
+                        className="motion-lift group relative overflow-hidden flex flex-col justify-between rounded-xl border border-secondary-border bg-secondary-card p-5 transition-all hover:border-accent hover:shadow-[0_0_20px_rgba(147,51,234,0.25)] cursor-pointer"
+                        style={
+                          campaign.coverImageUrl
+                            ? {
+                                backgroundImage: `url(${campaign.coverImageUrl})`,
+                                backgroundSize: "cover",
+                                backgroundPosition: "center",
+                              }
+                            : undefined
+                        }
+                        onClick={() => setSelectedCampaign(campaign)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setSelectedCampaign(campaign);
                           }
-                        : undefined
-                    }
-                    onClick={() => setSelectedCampaign(campaign)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        setSelectedCampaign(campaign);
-                      }
-                    }}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`Ver detalhes da campanha ${campaign.name}`}
-                  >
-                    {campaign.coverImageUrl && (
-                      <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/85 to-gray-950/65 group-hover:via-gray-950/75 transition-colors pointer-events-none" />
-                    )}
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Ver detalhes da campanha ${campaign.name}`}
+                      >
+                        {campaign.coverImageUrl && (
+                          <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/85 to-gray-950/65 group-hover:via-gray-950/75 transition-colors pointer-events-none" />
+                        )}
 
-                    <div className="relative z-10 flex flex-col justify-between h-full space-y-3">
-                      <div>
-                        {/* Topo do Card: Nome e Tags no canto superior direito (PvP + Mapa) */}
-                        <div className="flex items-start justify-between gap-2">
-                          <h3 className="text-lg font-bold text-secondary-pure drop-shadow-md group-hover:text-purple-200 transition-colors truncate">
-                            {campaign.name}
-                          </h3>
-                          <div className="flex shrink-0 items-center gap-1.5">
-                            {campaign.pvpEnabled && (
-                              <span className="rounded bg-accent-dark/90 border border-accent-vibrant/50 px-2 py-0.5 text-[10px] font-semibold text-secondary-pure drop-shadow">
-                                PvP
-                              </span>
-                            )}
-                            {campaign.worldMapUrl && (
-                              <span className="rounded-full bg-emerald-950/90 border border-emerald-700/60 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 drop-shadow">
-                                🗺️ Mapa
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Mestre */}
-                        <p className="mt-1 text-xs text-gray-300 drop-shadow-sm">
-                          Mestre:{" "}
-                          <span className="font-medium text-white">
-                            {campaign.master.displayName}
-                          </span>
-                        </p>
-
-                        {/* Tags de Regras */}
-                        <div className="mt-3 flex flex-wrap gap-2 text-xs text-secondary-muted">
-                          <span className="inline-flex items-center gap-1 rounded bg-dominant-dark/90 border border-dominant-border px-2 py-1 text-white text-[11px] drop-shadow-sm">
-                            {campaign.rulesEngine === "d20_mod" ? (
-                              /* eslint-disable-next-line @next/next/no-img-element */
-                              <img
-                                src="/DD-Logo.png"
-                                alt="D&D"
-                                className="h-4 w-auto object-contain inline-block"
-                              />
-                            ) : campaign.rulesEngine === "missing_zero" ? (
-                              <span className="text-red-300 font-semibold font-mono">
-                                MISSING — Edição ZERO
-                              </span>
-                            ) : (
-                              "2d20 somado"
-                            )}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Personagens da Campanha (Avatar Stack) */}
-                      <div className="border-t border-secondary-border/60 pt-3">
-                        {(() => {
-                          const rosterItems =
-                            campaign.roster && campaign.roster.length > 0
-                              ? campaign.roster
-                              : campaign.characters.map((c) => ({
-                                  id: c.id,
-                                  name: c.name,
-                                  imageUrl: c.imageUrl,
-                                  isMine: true,
-                                }));
-
-                          if (rosterItems.length === 0) {
-                            return (
-                              <div className="flex items-center gap-2 py-1 text-xs text-gray-500">
-                                <span className="inline-block h-2 w-2 rounded-full bg-gray-700" />
-                                <span>Nenhum personagem vinculado</span>
-                              </div>
-                            );
-                          }
-
-                          // Ordenar: primeiro os do jogador (isMine === true), depois os outros
-                          const sortedRoster = [...rosterItems].sort((a, b) => {
-                            if (a.isMine === b.isMine) return 0;
-                            return a.isMine ? -1 : 1;
-                          });
-
-                          const maxVisible = 5;
-                          const visibleChars = sortedRoster.slice(0, maxVisible);
-                          const overflowCount = sortedRoster.length - maxVisible;
-
-                          return (
-                            <div className="flex items-center">
-                              <div className="flex items-center -space-x-2">
-                                {visibleChars.map((char) => (
-                                  <div
-                                    key={char.id}
-                                    title={`${char.name}${char.isMine ? " (Seu personagem)" : ""}`}
-                                    className={`relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-transform hover:scale-110 hover:z-30 ${
-                                      char.isMine
-                                        ? "ring-2 ring-purple-500 z-20 shadow-md"
-                                        : "ring-2 ring-gray-900 z-10"
-                                    }`}
-                                  >
-                                    {char.imageUrl ? (
-                                      // eslint-disable-next-line @next/next/no-img-element
-                                      <img
-                                        src={char.imageUrl}
-                                        alt={char.name}
-                                        className="h-full w-full rounded-full object-cover"
-                                      />
-                                    ) : (
-                                      <div
-                                        className={`flex h-full w-full items-center justify-center rounded-full uppercase ${
-                                          char.isMine
-                                            ? "bg-purple-950 text-purple-200 border border-purple-600/60"
-                                            : "bg-gray-800 text-gray-300 border border-gray-700"
-                                        }`}
-                                      >
-                                        {char.name.charAt(0) || "?"}
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                                {overflowCount > 0 && (
-                                  <div
-                                    title={`+${overflowCount} outros personagens`}
-                                    className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-800 text-[11px] font-bold text-gray-300 ring-2 ring-gray-900 z-0"
-                                  >
-                                    +{overflowCount}
-                                  </div>
+                        <div className="relative z-10 flex flex-col justify-between h-full space-y-3">
+                          <div>
+                            {/* Topo do Card: Nome e Tags no canto superior direito (PvP + Mapa) */}
+                            <div className="flex items-start justify-between gap-2">
+                              <h3 className="text-lg font-bold text-secondary-pure drop-shadow-md group-hover:text-purple-200 transition-colors truncate">
+                                {campaign.name}
+                              </h3>
+                              <div className="flex shrink-0 items-center gap-1.5">
+                                {campaign.pvpEnabled && (
+                                  <span className="rounded bg-accent-dark/90 border border-accent-vibrant/50 px-2 py-0.5 text-[10px] font-semibold text-secondary-pure drop-shadow">
+                                    PvP
+                                  </span>
+                                )}
+                                {campaign.worldMapUrl && (
+                                  <span className="rounded-full bg-emerald-950/90 border border-emerald-700/60 px-2 py-0.5 text-[10px] font-semibold text-emerald-300 drop-shadow">
+                                    🗺️ Mapa
+                                  </span>
                                 )}
                               </div>
                             </div>
-                          );
-                        })()}
+
+                            {/* Mestre */}
+                            <p className="mt-1 text-xs text-gray-300 drop-shadow-sm">
+                              Mestre:{" "}
+                              <span className="font-medium text-white">
+                                {campaign.master.displayName}
+                              </span>
+                            </p>
+
+                            {/* Tags de Regras */}
+                            <div className="mt-3 flex flex-wrap gap-2 text-xs text-secondary-muted">
+                              <span className="inline-flex items-center gap-1 rounded bg-dominant-dark/90 border border-dominant-border px-2 py-1 text-white text-[11px] drop-shadow-sm">
+                                {campaign.rulesEngine === "d20_mod" ? (
+                                  /* eslint-disable-next-line @next/next/no-img-element */
+                                  <img
+                                    src="/DD-Logo.png"
+                                    alt="D&D"
+                                    className="h-4 w-auto object-contain inline-block"
+                                  />
+                                ) : campaign.rulesEngine === "missing_zero" ? (
+                                  <span className="text-red-300 font-semibold font-mono">
+                                    MISSING — Edição ZERO
+                                  </span>
+                                ) : (
+                                  "2d20 somado"
+                                )}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Personagens da Campanha (Avatar Stack) */}
+                          <div className="border-t border-secondary-border/60 pt-3">
+                            {(() => {
+                              const rosterItems =
+                                campaign.roster && campaign.roster.length > 0
+                                  ? campaign.roster
+                                  : campaign.characters.map((c) => ({
+                                      id: c.id,
+                                      name: c.name,
+                                      imageUrl: c.imageUrl,
+                                      isMine: true,
+                                    }));
+
+                              if (rosterItems.length === 0) {
+                                return (
+                                  <div className="flex items-center gap-2 py-1 text-xs text-gray-500">
+                                    <span className="inline-block h-2 w-2 rounded-full bg-gray-700" />
+                                    <span>Nenhum personagem vinculado</span>
+                                  </div>
+                                );
+                              }
+
+                              // Ordenar: primeiro os do jogador (isMine === true), depois os outros
+                              const sortedRoster = [...rosterItems].sort((a, b) => {
+                                if (a.isMine === b.isMine) return 0;
+                                return a.isMine ? -1 : 1;
+                              });
+
+                              const maxVisible = 5;
+                              const visibleChars = sortedRoster.slice(0, maxVisible);
+                              const overflowCount = sortedRoster.length - maxVisible;
+
+                              return (
+                                <div className="flex items-center">
+                                  <div className="flex items-center -space-x-2">
+                                    {visibleChars.map((char) => (
+                                      <div
+                                        key={char.id}
+                                        title={`${char.name}${char.isMine ? " (Seu personagem)" : ""}`}
+                                        className={`relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-transform hover:scale-110 hover:z-30 ${
+                                          char.isMine
+                                            ? "ring-2 ring-purple-500 z-20 shadow-md"
+                                            : "ring-2 ring-gray-900 z-10"
+                                        }`}
+                                      >
+                                        {char.imageUrl ? (
+                                          // eslint-disable-next-line @next/next/no-img-element
+                                          <img
+                                            src={char.imageUrl}
+                                            alt={char.name}
+                                            className="h-full w-full rounded-full object-cover"
+                                          />
+                                        ) : (
+                                          <div
+                                            className={`flex h-full w-full items-center justify-center rounded-full uppercase ${
+                                              char.isMine
+                                                ? "bg-purple-950 text-purple-200 border border-purple-600/60"
+                                                : "bg-gray-800 text-gray-300 border border-gray-700"
+                                            }`}
+                                          >
+                                            {char.name.charAt(0) || "?"}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
+                                    {overflowCount > 0 && (
+                                      <div
+                                        title={`+${overflowCount} outros personagens`}
+                                        className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-800 text-[11px] font-bold text-gray-300 ring-2 ring-gray-900 z-0"
+                                      >
+                                        +{overflowCount}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-            </>
+                )}
+              </>
             )}
           </div>
         )}
@@ -1059,37 +1063,37 @@ export function PlayerDashboard() {
         />
 
         {!isCommunityFullscreen && (
-        <BottomNav
-          activeId={activeTab}
-          onChange={(id) => setActiveTab(id as typeof activeTab)}
-          tabs={[
-            {
-              id: "characters",
-              label: "Meus Personagens",
-              icon: <CharactersFilledIcon className="h-6 w-6" />,
-            },
-            {
-              id: "campaigns",
-              label: "Campanhas",
-              icon: <CampaignsFilledIcon className="h-6 w-6" />,
-            },
-            {
-              id: "community",
-              label: "Comunidade",
-              icon: <MessageSquare className="h-6 w-6" />,
-            },
-            {
-              id: "wealth",
-              label: "Tesouraria",
-              icon: <TreasuryIcon className="h-6 w-6" />,
-            },
-            {
-              id: "settings",
-              label: "Configurações",
-              icon: <SettingsFilledIcon className="h-6 w-6" />,
-            },
-          ]}
-        />
+          <BottomNav
+            activeId={activeTab}
+            onChange={(id) => setActiveTab(id as typeof activeTab)}
+            tabs={[
+              {
+                id: "characters",
+                label: "Meus Personagens",
+                icon: <CharactersFilledIcon className="h-6 w-6" />,
+              },
+              {
+                id: "campaigns",
+                label: "Campanhas",
+                icon: <CampaignsFilledIcon className="h-6 w-6" />,
+              },
+              {
+                id: "community",
+                label: "Comunidade",
+                icon: <MessageSquare className="h-6 w-6" />,
+              },
+              {
+                id: "wealth",
+                label: "Tesouraria",
+                icon: <TreasuryIcon className="h-6 w-6" />,
+              },
+              {
+                id: "settings",
+                label: "Configurações",
+                icon: <SettingsFilledIcon className="h-6 w-6" />,
+              },
+            ]}
+          />
         )}
 
         {/* Overlay de Detalhes da Campanha */}

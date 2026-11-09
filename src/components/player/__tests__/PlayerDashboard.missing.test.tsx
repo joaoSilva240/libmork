@@ -91,7 +91,13 @@ describe("PlayerDashboard - MISSING Habitants Integration", () => {
       equipments: [
         { id: "eq-1", slot: 1, name: "Lanterna Antiga", notes: "Luz amarelada", status: "active" },
         { id: "eq-2", slot: 2, name: "Gravador de Rolo", notes: "Sem fita", status: "active" },
-        { id: "eq-3", slot: 3, name: "Caderno Pautado", notes: "Anotações ilegíveis", status: "lost" },
+        {
+          id: "eq-3",
+          slot: 3,
+          name: "Caderno Pautado",
+          notes: "Anotações ilegíveis",
+          status: "lost",
+        },
       ],
       createdAt: "2026-01-01T00:00:00.000Z",
       updatedAt: "2026-01-01T00:00:00.000Z",
@@ -250,7 +256,10 @@ describe("PlayerDashboard - MISSING Habitants Integration", () => {
         return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: [] }) });
       }
       if (url === "/api/systems/missing/habitants") {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: [currentHabitant] }) });
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ data: [currentHabitant] }),
+        });
       }
       if (url === "/api/player/campaigns") {
         return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: [] }) });
@@ -258,7 +267,10 @@ describe("PlayerDashboard - MISSING Habitants Integration", () => {
       if (url === "/api/player/wealth") {
         return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: null }) });
       }
-      if (url === `/api/systems/missing/habitants/${mockHabitants[0].id}/erase` && init?.method === "POST") {
+      if (
+        url === `/api/systems/missing/habitants/${mockHabitants[0].id}/erase` &&
+        init?.method === "POST"
+      ) {
         const body = JSON.parse(init.body as string);
         currentHabitant = {
           ...currentHabitant,
@@ -266,7 +278,10 @@ describe("PlayerDashboard - MISSING Habitants Integration", () => {
             l.id === body.lineId ? { ...l, isErased: true, erasedReason: body.reason } : l,
           ),
         };
-        return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: currentHabitant }) });
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ data: currentHabitant }),
+        });
       }
       return Promise.resolve({ ok: false });
     });
@@ -306,7 +321,10 @@ describe("PlayerDashboard - MISSING Habitants Integration", () => {
         return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: [] }) });
       }
       if (url === "/api/systems/missing/habitants") {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: [currentHabitant] }) });
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ data: [currentHabitant] }),
+        });
       }
       if (url === "/api/player/campaigns") {
         return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: [] }) });
@@ -314,7 +332,10 @@ describe("PlayerDashboard - MISSING Habitants Integration", () => {
       if (url === "/api/player/wealth") {
         return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: null }) });
       }
-      if (url === `/api/systems/missing/habitants/${mockHabitants[0].id}` && init?.method === "PATCH") {
+      if (
+        url === `/api/systems/missing/habitants/${mockHabitants[0].id}` &&
+        init?.method === "PATCH"
+      ) {
         const body = JSON.parse(init.body as string);
         if (body.addLine) {
           currentHabitant = {
@@ -330,7 +351,10 @@ describe("PlayerDashboard - MISSING Habitants Integration", () => {
             ],
           };
         }
-        return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: currentHabitant }) });
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ data: currentHabitant }),
+        });
       }
       return Promise.resolve({ ok: false });
     });

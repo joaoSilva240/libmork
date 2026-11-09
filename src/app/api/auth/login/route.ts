@@ -61,23 +61,20 @@ export async function POST(request: NextRequest) {
         request.url,
       );
     } else {
-      return NextResponse.json(
-        { success: false, error: "Dados inválidos" },
-        { status: 400 },
-      );
+      return NextResponse.json({ success: false, error: "Dados inválidos" }, { status: 400 });
     }
 
-      const validation = loginSchema.safeParse(body);
+    const validation = loginSchema.safeParse(body);
 
     if (!validation.success) {
-       if (!isJson) return formErrorResponse(request, redirect);
+      if (!isJson) return formErrorResponse(request, redirect);
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: "Dados inválidos",
-          errors: validation.error.issues 
+          errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -87,11 +84,7 @@ export async function POST(request: NextRequest) {
     // Busca o usuário
     let user: typeof users.$inferSelect | undefined;
     try {
-      [user] = await db
-        .select()
-        .from(users)
-        .where(ilike(users.email, lookupEmail))
-        .limit(1);
+      [user] = await db.select().from(users).where(ilike(users.email, lookupEmail)).limit(1);
     } catch {
       logOperationalFailure("lookup");
       if (!isJson) return formErrorResponse(request, redirect);
@@ -105,7 +98,7 @@ export async function POST(request: NextRequest) {
       if (!isJson) return formErrorResponse(request, redirect);
       return NextResponse.json(
         { success: false, error: "E-mail ou senha incorretos" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -127,7 +120,7 @@ export async function POST(request: NextRequest) {
       if (!isJson) return formErrorResponse(request, redirect);
       return NextResponse.json(
         { success: false, error: "E-mail ou senha incorretos" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -135,10 +128,7 @@ export async function POST(request: NextRequest) {
     stage = "session_create";
     if (!isJson) {
       const destination = redirect || "/";
-      const response = NextResponse.redirect(
-        new URL(destination, getPublicOrigin(request)),
-        303,
-      );
+      const response = NextResponse.redirect(new URL(destination, getPublicOrigin(request)), 303);
       response.headers.set("Cache-Control", "no-store");
       try {
         await createSession(user.id, request, response);
@@ -177,16 +167,13 @@ export async function POST(request: NextRequest) {
     if (!isJson) return formErrorResponse(request, redirect);
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function GET(request: NextRequest) {
-  const response = NextResponse.redirect(
-    new URL("/login", getPublicOrigin(request)),
-    303,
-  );
+  const response = NextResponse.redirect(new URL("/login", getPublicOrigin(request)), 303);
   response.headers.set("Cache-Control", "no-store");
   return response;
 }

@@ -94,7 +94,7 @@ describe("CommunityFeed Component", () => {
     // Aguarda carregar e exibe contagem
     await waitFor(() => {
       expect(screen.getByText(/criações compartilhadas/i)).toHaveTextContent(
-        "Mostrando 2 criações compartilhadas"
+        "Mostrando 2 criações compartilhadas",
       );
     });
   });
@@ -180,25 +180,30 @@ describe("CommunityFeed Component", () => {
   });
 
   it("alterna likes ao clicar no botão de curtir", async () => {
-    global.fetch = vi.fn().mockImplementation((url: string | URL | Request, options?: RequestInit) => {
-      const urlStr = url.toString();
-      if (urlStr.startsWith("/api/community/posts?") || urlStr === "/api/community/posts") {
+    global.fetch = vi
+      .fn()
+      .mockImplementation((url: string | URL | Request, options?: RequestInit) => {
+        const urlStr = url.toString();
+        if (urlStr.startsWith("/api/community/posts?") || urlStr === "/api/community/posts") {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ data: [mockPosts[0]], page: 1, limit: 12 }),
+          });
+        }
+        if (
+          urlStr === `/api/community/posts/${mockPosts[0].id}/like` &&
+          options?.method === "POST"
+        ) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ isLiked: true, likesCount: 11 }),
+          });
+        }
         return Promise.resolve({
           ok: true,
-          json: async () => ({ data: [mockPosts[0]], page: 1, limit: 12 }),
+          json: async () => ({ data: [] }),
         });
-      }
-      if (urlStr === `/api/community/posts/${mockPosts[0].id}/like` && options?.method === "POST") {
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({ isLiked: true, likesCount: 11 }),
-        });
-      }
-      return Promise.resolve({
-        ok: true,
-        json: async () => ({ data: [] }),
       });
-    });
 
     render(<CommunityFeed />);
 
@@ -237,11 +242,13 @@ describe("CommunityFeed Component", () => {
     await waitFor(() => {
       expect(screen.getByText("Nenhuma criação encontrada")).toBeInTheDocument();
       expect(
-        screen.getByText(/Não encontramos publicações com esses filtros/i)
+        screen.getByText(/Não encontramos publicações com esses filtros/i),
       ).toBeInTheDocument();
     });
 
-    expect(screen.getByRole("button", { name: /\+ Criar Primeira Publicação/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /\+ Criar Primeira Publicação/i }),
+    ).toBeInTheDocument();
   });
 
   it("abre o modal de criação ao clicar em '+ Publicar Criação'", async () => {
@@ -335,7 +342,7 @@ describe("CommunityFeed Component", () => {
       Promise.resolve({
         ok: true,
         json: async () => ({ data: [], page: 1, limit: 12 }),
-      })
+      }),
     );
 
     const currentUser = {

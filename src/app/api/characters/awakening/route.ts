@@ -34,7 +34,7 @@ interface AwakeningResponse {
 function calculateFallback(
   body: HeartAwakeningInput,
   dbClasses: DbClassItem[],
-  dbRaces: DbRaceItem[]
+  dbRaces: DbRaceItem[],
 ): AwakeningResponse {
   // Base attributes: 8 each (total 40) + 8 bonus points = 48 total
   const attrs = {
@@ -88,15 +88,15 @@ function calculateFallback(
       highest === "forca"
         ? ["guerreiro", "bárbaro", "paladino", "fighter", "barbarian"]
         : highest === "destreza"
-        ? ["ladino", "patrulheiro", "caçador", "rogue", "ranger"]
-        : highest === "vigor"
-        ? ["guardião", "defensor", "guardian", "paladino"]
-        : highest === "inteligencia"
-        ? ["mago", "místico", "feiticeiro", "wizard", "sorcerer", "alquimista"]
-        : ["bardo", "clérigo", "bard", "cleric"];
+          ? ["ladino", "patrulheiro", "caçador", "rogue", "ranger"]
+          : highest === "vigor"
+            ? ["guardião", "defensor", "guardian", "paladino"]
+            : highest === "inteligencia"
+              ? ["mago", "místico", "feiticeiro", "wizard", "sorcerer", "alquimista"]
+              : ["bardo", "clérigo", "bard", "cleric"];
 
     const found = dbClasses.find((c) =>
-      desiredKeyword.some((kw) => c.name.toLowerCase().includes(kw))
+      desiredKeyword.some((kw) => c.name.toLowerCase().includes(kw)),
     );
     suggestedClass = found ? found.name : dbClasses[0].name;
   } else {
@@ -115,11 +115,11 @@ function calculateFallback(
       body.q2Impulse === "floresta"
         ? ["elfo", "elf", "silvestre"]
         : body.q2Impulse === "colina"
-        ? ["anão", "dwarf", "humano"]
-        : ["humano", "human", "tritão", "marino"];
+          ? ["anão", "dwarf", "humano"]
+          : ["humano", "human", "tritão", "marino"];
 
     const foundRace = dbRaces.find((r) =>
-      desiredRaceKeyword.some((kw) => r.name.toLowerCase().includes(kw))
+      desiredRaceKeyword.some((kw) => r.name.toLowerCase().includes(kw)),
     );
     suggestedRace = foundRace ? foundRace.name : dbRaces[0].name;
   }
@@ -129,22 +129,22 @@ function calculateFallback(
     body.q1Origin === "carta"
       ? "Nascido sob o signo das palavras não ditas e cartas esquecidas"
       : body.q1Origin === "moeda"
-      ? "Marcado pela troca do destino e pela moeda do viajante"
-      : "Protegido por amuletos de eras ancestrais";
+        ? "Marcado pela troca do destino e pela moeda do viajante"
+        : "Protegido por amuletos de eras ancestrais";
 
   const impulseText =
     body.q2Impulse === "colina"
       ? "teu espírito busca os picos inabaláveis sob o firmamento"
       : body.q2Impulse === "floresta"
-      ? "teus passos ressoam nos segredos sussurrados pelas árvores"
-      : "tua alma anseia pelas marés e pelo mistério dos abismos profundos";
+        ? "teus passos ressoam nos segredos sussurrados pelas árvores"
+        : "tua alma anseia pelas marés e pelo mistério dos abismos profundos";
 
   const endText =
     body.q3End === "luzes"
       ? "Guia-te pelas luzes distantes que cortam a escuridão da noite."
       : body.q3End === "cidade"
-      ? "Encontrarás teu verdadeiro propósito entre as pedras e o ruído da cidade."
-      : "Forjarás teu poder no fogo do rancor, transformando dor em força indomável.";
+        ? "Encontrarás teu verdadeiro propósito entre as pedras e o ruído da cidade."
+        : "Forjarás teu poder no fogo do rancor, transformando dor em força indomável.";
 
   const relicText = `Ao escolher o ${body.chosenRelic} e abrir mão do ${body.sacrificedRelic}, teu destino foi selado.`;
 
@@ -169,7 +169,7 @@ export async function POST(request: Request) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Dados inválidos", details: parsed.error.format() },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -187,9 +187,7 @@ export async function POST(request: Request) {
     // Format classes and races for AI context
     const classesFormatted =
       dbClasses.length > 0
-        ? dbClasses
-            .map((c) => `- ${c.name}${c.description ? `: ${c.description}` : ""}`)
-            .join("\n")
+        ? dbClasses.map((c) => `- ${c.name}${c.description ? `: ${c.description}` : ""}`).join("\n")
         : "Nenhuma classe cadastrada no momento.";
 
     const racesFormatted =
@@ -236,7 +234,8 @@ Retorne APENAS o JSON válido no seguinte formato:
         responseFormatJson: true,
       });
 
-      const jsonMatch = aiResponseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/i)?.[1] ?? aiResponseText;
+      const jsonMatch =
+        aiResponseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/i)?.[1] ?? aiResponseText;
       const parsedAi = JSON.parse(jsonMatch.trim()) as AwakeningResponse;
 
       // Validate attributes sum is exactly 48
@@ -275,7 +274,10 @@ Retorne APENAS o JSON válido no seguinte formato:
       logger.warn("Soma de atributos da IA diferente de 48 ou formato inválido. Usando fallback.");
       return NextResponse.json(calculateFallback(inputData, dbClasses, dbRaces));
     } catch (aiErr) {
-      logger.warn({ err: aiErr }, "Erro ao chamar IA 9Router no Despertar do Coração. Usando fallback.");
+      logger.warn(
+        { err: aiErr },
+        "Erro ao chamar IA 9Router no Despertar do Coração. Usando fallback.",
+      );
       return NextResponse.json(calculateFallback(inputData, dbClasses, dbRaces));
     }
   } catch (error) {

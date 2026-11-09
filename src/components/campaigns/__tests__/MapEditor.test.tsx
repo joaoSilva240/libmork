@@ -50,34 +50,32 @@ describe("MapEditor Component", () => {
   });
 
   it("renderiza o cabeçalho confidencial e a moldura de dossiê quando isMissing=true", async () => {
-    const { container } = render(
-      <MapEditor worldId="world-1" isMissing={true} />
-    );
+    const { container } = render(<MapEditor worldId="world-1" isMissing={true} />);
 
     await waitFor(() => {
       expect(
-        screen.getByText("[ MAPA DE CAMPO // TOPOGRAFIA DE INVESTIGAÇÃO — CONFIDENCIAL ]")
+        screen.getByText("[ MAPA DE CAMPO // TOPOGRAFIA DE INVESTIGAÇÃO — CONFIDENCIAL ]"),
       ).toBeInTheDocument();
     });
 
     expect(screen.getByText("Salvar Posições")).toBeInTheDocument();
-    expect(screen.getByText(/Topografia de campo: arraste para escanear a área/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Topografia de campo: arraste para escanear a área/),
+    ).toBeInTheDocument();
 
     const rootWrapper = container.firstChild as HTMLElement;
     expect(rootWrapper.className).toContain("border-2 border-zinc-700 bg-[#0d0e11]");
   });
 
   it("renderiza a interface padrão de mapa d20 quando isMissing=false", async () => {
-    const { container } = render(
-      <MapEditor worldId="world-1" isMissing={false} />
-    );
+    const { container } = render(<MapEditor worldId="world-1" isMissing={false} />);
 
     await waitFor(() => {
       expect(screen.getByText("Salvar Mapa")).toBeInTheDocument();
     });
 
     expect(
-      screen.queryByText("[ MAPA DE CAMPO // TOPOGRAFIA DE INVESTIGAÇÃO — CONFIDENCIAL ]")
+      screen.queryByText("[ MAPA DE CAMPO // TOPOGRAFIA DE INVESTIGAÇÃO — CONFIDENCIAL ]"),
     ).not.toBeInTheDocument();
 
     const rootWrapper = container.firstChild as HTMLElement;

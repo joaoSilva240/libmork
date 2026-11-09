@@ -46,13 +46,16 @@ type ItemRollApi = {
  * Normaliza a fórmula de teste de ataque de um item usando a nova API (hitRoll)
  * com fallback para rollExpression legado. Integra atributos do personagem.
  */
-function normalizeItemHitRoll(content: ItemRollApi, modifiers: Record<string, number> = {}): string | null {
+function normalizeItemHitRoll(
+  content: ItemRollApi,
+  modifiers: Record<string, number> = {},
+): string | null {
   // Prioridade 1: hitRoll (nova API)
   if (content.hitRoll !== undefined && content.hitRoll !== null) {
     const candidate = String(content.hitRoll).trim();
     if (!candidate) return null;
     // Se contém @atributo, normaliza via engine
-    if (candidate.includes('@')) {
+    if (candidate.includes("@")) {
       return normalizeFormulaWithAttributes(candidate, modifiers);
     }
     // Senão valida como fórmula fixa
@@ -79,13 +82,16 @@ function normalizeItemHitRoll(content: ItemRollApi, modifiers: Record<string, nu
  * Normaliza a fórmula de dano de um item usando a nova API (damageRoll)
  * com fallback para damage legado. Integra atributos do personagem.
  */
-function normalizeItemDamageRoll(content: ItemRollApi, modifiers: Record<string, number> = {}): string | null {
+function normalizeItemDamageRoll(
+  content: ItemRollApi,
+  modifiers: Record<string, number> = {},
+): string | null {
   // Prioridade 1: damageRoll (nova API)
   if (content.damageRoll !== undefined && content.damageRoll !== null) {
     const candidate = String(content.damageRoll).trim();
     if (!candidate) return null;
     // Se contém @atributo, normaliza via engine
-    if (candidate.includes('@')) {
+    if (candidate.includes("@")) {
       return normalizeFormulaWithAttributes(candidate, modifiers);
     }
     // Senão valida como fórmula fixa
@@ -150,7 +156,21 @@ function explicitFormula(value: unknown): string | number | null {
     return null;
   }
   const record = value as Record<string, unknown>;
-  for (const key of ["formula", "expression", "rollExpression", "value", "damage", "amount", "data", "effect", "effects", "result", "system", "sourceData", "translation"]) {
+  for (const key of [
+    "formula",
+    "expression",
+    "rollExpression",
+    "value",
+    "damage",
+    "amount",
+    "data",
+    "effect",
+    "effects",
+    "result",
+    "system",
+    "sourceData",
+    "translation",
+  ]) {
     const result = explicitFormula(record[key]);
     if (result !== null) return result;
   }
@@ -181,9 +201,14 @@ function normalizeActionDamage(content: Record<string, unknown>): string | numbe
   return null;
 }
 
-export function getContentName(content: Record<string, unknown> | null | undefined, fallback = ""): string {
+export function getContentName(
+  content: Record<string, unknown> | null | undefined,
+  fallback = "",
+): string {
   if (!content) return fallback;
-  const translation = (content.translation && typeof content.translation === "object" ? content.translation : null) as Record<string, unknown> | null;
+  const translation = (
+    content.translation && typeof content.translation === "object" ? content.translation : null
+  ) as Record<string, unknown> | null;
   if (typeof translation?.name === "string" && translation.name.trim()) {
     return translation.name.trim();
   }
@@ -193,32 +218,53 @@ export function getContentName(content: Record<string, unknown> | null | undefin
   return fallback;
 }
 
-export function getContentDescription(content: Record<string, unknown> | null | undefined, fallback = ""): string {
+export function getContentDescription(
+  content: Record<string, unknown> | null | undefined,
+  fallback = "",
+): string {
   if (!content) return fallback;
-  const translation = (content.translation && typeof content.translation === "object" ? content.translation : null) as Record<string, unknown> | null;
+  const translation = (
+    content.translation && typeof content.translation === "object" ? content.translation : null
+  ) as Record<string, unknown> | null;
   if (typeof translation?.description === "string" && translation.description.trim()) {
     return translation.description.trim();
   }
-  const transSystem = (translation?.system && typeof translation.system === "object" ? translation.system : null) as Record<string, unknown> | null;
-  const transSysDesc = transSystem?.description && typeof transSystem.description === "object" ? (transSystem.description as Record<string, unknown>).value : null;
+  const transSystem = (
+    translation?.system && typeof translation.system === "object" ? translation.system : null
+  ) as Record<string, unknown> | null;
+  const transSysDesc =
+    transSystem?.description && typeof transSystem.description === "object"
+      ? (transSystem.description as Record<string, unknown>).value
+      : null;
   if (typeof transSysDesc === "string" && transSysDesc.trim()) {
     return transSysDesc.trim();
   }
   if (typeof content.description === "string" && content.description.trim()) {
     return content.description.trim();
   }
-  const sourceData = (content.sourceData && typeof content.sourceData === "object" ? content.sourceData : null) as Record<string, unknown> | null;
-  const sourceSystem = (sourceData?.system && typeof sourceData.system === "object" ? sourceData.system : null) as Record<string, unknown> | null;
-  const sourceDesc = sourceSystem?.description && typeof sourceSystem.description === "object" ? (sourceSystem.description as Record<string, unknown>).value : null;
+  const sourceData = (
+    content.sourceData && typeof content.sourceData === "object" ? content.sourceData : null
+  ) as Record<string, unknown> | null;
+  const sourceSystem = (
+    sourceData?.system && typeof sourceData.system === "object" ? sourceData.system : null
+  ) as Record<string, unknown> | null;
+  const sourceDesc =
+    sourceSystem?.description && typeof sourceSystem.description === "object"
+      ? (sourceSystem.description as Record<string, unknown>).value
+      : null;
   if (typeof sourceDesc === "string" && sourceDesc.trim()) {
     return sourceDesc.trim();
   }
   return fallback;
 }
 
-export function getContentExtraEffect(content: Record<string, unknown> | null | undefined): string | null {
+export function getContentExtraEffect(
+  content: Record<string, unknown> | null | undefined,
+): string | null {
   if (!content) return null;
-  const translation = (content.translation && typeof content.translation === "object" ? content.translation : null) as Record<string, unknown> | null;
+  const translation = (
+    content.translation && typeof content.translation === "object" ? content.translation : null
+  ) as Record<string, unknown> | null;
   if (typeof translation?.extraEffect === "string" && translation.extraEffect.trim()) {
     return translation.extraEffect.trim();
   }
@@ -243,7 +289,12 @@ type CharacterContentProps = {
   onCombatStateChange?: (state: CombatSessionState) => void;
   onPersistActorStatus?: (actor: Combatant, hp: number, mana?: number) => Promise<void>;
   onActorStatusChange?: (actor: Combatant) => void;
-  onActionResult?: (result: { title: string; formula: string; result: number; detail: string }) => void;
+  onActionResult?: (result: {
+    title: string;
+    formula: string;
+    result: number;
+    detail: string;
+  }) => void;
   characterManaCurrent?: number | null;
   characterManaMax?: number | null;
   characterHpCurrent?: number | null;
@@ -279,52 +330,56 @@ export type RaceFeatureItem = {
 
 export function parseClassBenefits(data: unknown): ClassBenefitItem[] {
   if (!Array.isArray(data)) return [];
-  return data.map((raw: unknown) => {
-    const b = (raw || {}) as Record<string, unknown>;
-    const ben = (b.benefits || {}) as Record<string, unknown>;
-    const translation = (ben.translation && typeof ben.translation === "object"
-      ? ben.translation
-      : b.translation && typeof b.translation === "object"
-      ? b.translation
-      : null) as Record<string, unknown> | null;
+  return data
+    .map((raw: unknown) => {
+      const b = (raw || {}) as Record<string, unknown>;
+      const ben = (b.benefits || {}) as Record<string, unknown>;
+      const translation = (
+        ben.translation && typeof ben.translation === "object"
+          ? ben.translation
+          : b.translation && typeof b.translation === "object"
+            ? b.translation
+            : null
+      ) as Record<string, unknown> | null;
 
-    let name = "";
-    if (Array.isArray(translation?.advantages) && translation.advantages.length > 0) {
-      name = translation.advantages.map(String).join(", ");
-    } else if (typeof translation?.advantages === "string" && translation.advantages.trim()) {
-      name = translation.advantages.trim();
-    } else if (typeof translation?.name === "string" && translation.name.trim()) {
-      name = translation.name.trim();
-    } else if (typeof translation?.description === "string" && translation.description.trim()) {
-      name = translation.description.trim().slice(0, 35);
-    } else if (Array.isArray(ben.advantages) && ben.advantages.length > 0) {
-      name = ben.advantages.map(String).join(", ");
-    } else if (typeof ben.advantages === "string" && ben.advantages.trim()) {
-      name = ben.advantages.trim();
-    } else if (typeof ben.name === "string" && ben.name.trim()) {
-      name = ben.name.trim();
-    } else if (typeof ben.description === "string" && ben.description.trim()) {
-      name = ben.description.trim().slice(0, 35);
-    } else {
-      name = `Habilidade Nv. ${b.level}`;
-    }
+      let name = "";
+      if (Array.isArray(translation?.advantages) && translation.advantages.length > 0) {
+        name = translation.advantages.map(String).join(", ");
+      } else if (typeof translation?.advantages === "string" && translation.advantages.trim()) {
+        name = translation.advantages.trim();
+      } else if (typeof translation?.name === "string" && translation.name.trim()) {
+        name = translation.name.trim();
+      } else if (typeof translation?.description === "string" && translation.description.trim()) {
+        name = translation.description.trim().slice(0, 35);
+      } else if (Array.isArray(ben.advantages) && ben.advantages.length > 0) {
+        name = ben.advantages.map(String).join(", ");
+      } else if (typeof ben.advantages === "string" && ben.advantages.trim()) {
+        name = ben.advantages.trim();
+      } else if (typeof ben.name === "string" && ben.name.trim()) {
+        name = ben.name.trim();
+      } else if (typeof ben.description === "string" && ben.description.trim()) {
+        name = ben.description.trim().slice(0, 35);
+      } else {
+        name = `Habilidade Nv. ${b.level}`;
+      }
 
-    const description =
-      typeof translation?.description === "string" && translation.description.trim()
-        ? translation.description.trim()
-        : typeof ben.description === "string"
-        ? ben.description
-        : "";
+      const description =
+        typeof translation?.description === "string" && translation.description.trim()
+          ? translation.description.trim()
+          : typeof ben.description === "string"
+            ? ben.description
+            : "";
 
-    return {
-      id: (typeof b.id === "string" && b.id) || `feat-${b.level}`,
-      level: Number(b.level) || 1,
-      name,
-      description,
-      hpBonus: Number(ben.hp_bonus) || 0,
-      manaBonus: Number(ben.mana_bonus) || 0,
-    };
-  }).sort((a: ClassBenefitItem, b: ClassBenefitItem) => a.level - b.level);
+      return {
+        id: (typeof b.id === "string" && b.id) || `feat-${b.level}`,
+        level: Number(b.level) || 1,
+        name,
+        description,
+        hpBonus: Number(ben.hp_bonus) || 0,
+        manaBonus: Number(ben.mana_bonus) || 0,
+      };
+    })
+    .sort((a: ClassBenefitItem, b: ClassBenefitItem) => a.level - b.level);
 }
 
 function ContentImageIcon({
@@ -357,7 +412,9 @@ function ContentImageIcon({
   }
 
   if (type === "conditions") {
-    return <span className={iconClassName || "text-3xl select-none leading-none text-rose-400"}>⚡</span>;
+    return (
+      <span className={iconClassName || "text-3xl select-none leading-none text-rose-400"}>⚡</span>
+    );
   }
 
   return <SpellFilledIcon className={iconClassName || "h-8 w-8 shrink-0 text-purple-400"} />;
@@ -389,7 +446,9 @@ export function CharacterContent({
   onCharacterUpdate,
 }: CharacterContentProps) {
   const queryClient = useQueryClient();
-  const isGalleryMode = Boolean(allowedTypes?.includes("items") && allowedTypes?.includes("spells"));
+  const isGalleryMode = Boolean(
+    allowedTypes?.includes("items") && allowedTypes?.includes("spells"),
+  );
   const [activeType, setActiveType] = useState<ContentType>(defaultType);
   const [selectedClassBenefit, setSelectedClassBenefit] = useState<ClassBenefitItem | null>(null);
   const [selectedRaceFeature, setSelectedRaceFeature] = useState<RaceFeatureItem | null>(null);
@@ -419,7 +478,7 @@ export function CharacterContent({
   // Derive data from queries
   const data = isGalleryMode
     ? { linked: [], available: [] }
-    : contentQuery.data?.data ?? { linked: [], available: [] };
+    : (contentQuery.data?.data ?? { linked: [], available: [] });
 
   const galleryData = isGalleryMode
     ? {
@@ -429,35 +488,37 @@ export function CharacterContent({
       }
     : { spells: [], items: [], conditions: [] };
 
-  const classBenefits = isGalleryMode && classBenefitsQuery.data?.data
-    ? parseClassBenefits(classBenefitsQuery.data.data)
-    : [];
+  const classBenefits =
+    isGalleryMode && classBenefitsQuery.data?.data
+      ? parseClassBenefits(classBenefitsQuery.data.data)
+      : [];
 
   const raceData = isGalleryMode && raceDetailsQuery.data?.data ? raceDetailsQuery.data.data : null;
-  const raceFeatures: RaceFeatureItem[] = isGalleryMode && raceData
-    ? [
-        ...(Array.isArray(raceData.traits)
-          ? raceData.traits.map((t, idx) => ({
-              id: `trait-${idx}`,
-              name: t.name,
-              description: t.description || "",
-              category: "trait" as const,
-            }))
-          : []),
-        ...(Array.isArray(raceData.heritages)
-          ? raceData.heritages.map((h, idx) => ({
-              id: `heritage-${idx}`,
-               name: h.name,
-               description: h.description || "",
-               category: "heritage" as const,
-               speed: h.speed,
-               size: h.size,
-               hitPointsBonus: h.hitPointsBonus ?? 0,
-               attributeBonuses: h.attributeBonuses ?? {},
-            }))
-          : []),
-      ]
-    : [];
+  const raceFeatures: RaceFeatureItem[] =
+    isGalleryMode && raceData
+      ? [
+          ...(Array.isArray(raceData.traits)
+            ? raceData.traits.map((t, idx) => ({
+                id: `trait-${idx}`,
+                name: t.name,
+                description: t.description || "",
+                category: "trait" as const,
+              }))
+            : []),
+          ...(Array.isArray(raceData.heritages)
+            ? raceData.heritages.map((h, idx) => ({
+                id: `heritage-${idx}`,
+                name: h.name,
+                description: h.description || "",
+                category: "heritage" as const,
+                speed: h.speed,
+                size: h.size,
+                hitPointsBonus: h.hitPointsBonus ?? 0,
+                attributeBonuses: h.attributeBonuses ?? {},
+              }))
+            : []),
+        ]
+      : [];
 
   const isLoading = isGalleryMode
     ? galleryQueries.spells.isLoading ||
@@ -493,7 +554,9 @@ export function CharacterContent({
     row: LinkedRow;
     type: "spells" | "items" | "conditions";
   } | null>(null);
-  const [toasts, setToasts] = useState<Array<{ id: string; message: string; type?: "error" | "success" | "info" | "warning" }>>([]);
+  const [toasts, setToasts] = useState<
+    Array<{ id: string; message: string; type?: "error" | "success" | "info" | "warning" }>
+  >([]);
   const [isBusy, setIsBusy] = useState(false);
   const {
     rollDice,
@@ -527,12 +590,19 @@ export function CharacterContent({
   // Error handling for queries
   useEffect(() => {
     if (isGalleryMode) {
-      if (galleryQueries.spells.isError || galleryQueries.items.isError || galleryQueries.conditions.isError) {
+      if (
+        galleryQueries.spells.isError ||
+        galleryQueries.items.isError ||
+        galleryQueries.conditions.isError
+      ) {
         showToast("Erro ao carregar conteúdo");
       }
     } else {
       if (contentQuery.isError) {
-        const errorMsg = contentQuery.error instanceof Error ? contentQuery.error.message : "Erro ao carregar conteúdo";
+        const errorMsg =
+          contentQuery.error instanceof Error
+            ? contentQuery.error.message
+            : "Erro ao carregar conteúdo";
         showToast(errorMsg || "Erro ao carregar conteúdo");
       }
     }
@@ -588,7 +658,7 @@ export function CharacterContent({
         combatants: combatState.combatants.map((combatant) =>
           combatant.id === attacker.id
             ? hydrateCombatantMana(combatant, characterManaCurrent, characterManaMax)
-            : combatant
+            : combatant,
         ),
       };
 
@@ -602,10 +672,17 @@ export function CharacterContent({
       const updatedAttacker = spent.session.combatants.find((c) => c.id === attacker.id);
       if (updatedAttacker) {
         onActorStatusChange?.(updatedAttacker);
-        void onPersistActorStatus?.(updatedAttacker, updatedAttacker.hpCurrent, updatedAttacker.manaCurrent);
+        void onPersistActorStatus?.(
+          updatedAttacker,
+          updatedAttacker.hpCurrent,
+          updatedAttacker.manaCurrent,
+        );
       }
 
-      showToast(isCurrentlyEquipped ? "Item desequipado (-1 ação)" : "Item equipado (-1 ação)", "success");
+      showToast(
+        isCurrentlyEquipped ? "Item desequipado (-1 ação)" : "Item equipado (-1 ação)",
+        "success",
+      );
     } else {
       showToast(isCurrentlyEquipped ? "Item desequipado" : "Item equipado", "success");
     }
@@ -632,7 +709,10 @@ export function CharacterContent({
       next = activeHeritages.filter((h) => h !== heritageName);
     } else {
       if (activeHeritages.length >= 2) {
-        showToast("Limite de 2 heranças ativas atingido. Desative uma herança primeiro.", "warning");
+        showToast(
+          "Limite de 2 heranças ativas atingido. Desative uma herança primeiro.",
+          "warning",
+        );
         return;
       }
       next = [...activeHeritages, heritageName];
@@ -658,7 +738,7 @@ export function CharacterContent({
         isNowActive
           ? `Herança "${heritageName}" ativada com sucesso!`
           : `Herança "${heritageName}" desativada.`,
-        "success"
+        "success",
       );
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Erro ao atualizar heranças";
@@ -676,8 +756,14 @@ export function CharacterContent({
     }
 
     if (rowType === "items") {
-      const hitRoll = normalizeItemHitRoll(buildEffectiveItemContent(row), characterAttributeModifiers ?? {});
-      const damageRoll = normalizeItemDamageRoll(buildEffectiveItemContent(row), characterAttributeModifiers ?? {});
+      const hitRoll = normalizeItemHitRoll(
+        buildEffectiveItemContent(row),
+        characterAttributeModifiers ?? {},
+      );
+      const damageRoll = normalizeItemDamageRoll(
+        buildEffectiveItemContent(row),
+        characterAttributeModifiers ?? {},
+      );
 
       if (!hitRoll && !damageRoll) {
         showToast("Este item não possui fórmulas de rolagem.");
@@ -693,11 +779,17 @@ export function CharacterContent({
     }
 
     const name = getContentName(row.content, rowType === "spells" ? "Magia" : "Item");
-    const currentActor = combatants.find((actor) => actor.characterId === characterId || actor.id === characterId);
+    const currentActor = combatants.find(
+      (actor) => actor.characterId === characterId || actor.id === characterId,
+    );
     const newMana = Math.max(0, currentMana - manaCost);
     if (rowType === "spells" && manaCost > 0) {
       const actor: Combatant = currentActor
-        ? { ...currentActor, manaCurrent: newMana, manaMax: characterManaMax ?? currentActor.manaMax }
+        ? {
+            ...currentActor,
+            manaCurrent: newMana,
+            manaMax: characterManaMax ?? currentActor.manaMax,
+          }
         : {
             id: characterId,
             characterId,
@@ -725,27 +817,32 @@ export function CharacterContent({
         });
       }
     }
-    const itemContent = rowType === "items" ? buildEffectiveItemContent(row) : (row.content as ItemRollApi);
-    const normalizedHitRoll = rowType === "items"
-      ? normalizeItemHitRoll(itemContent, characterAttributeModifiers ?? {})
-      : null;
-    const rawExpr = rowType === "items" ? normalizedHitRoll : getExpression(row.content.rollExpression);
+    const itemContent =
+      rowType === "items" ? buildEffectiveItemContent(row) : (row.content as ItemRollApi);
+    const normalizedHitRoll =
+      rowType === "items"
+        ? normalizeItemHitRoll(itemContent, characterAttributeModifiers ?? {})
+        : null;
+    const rawExpr =
+      rowType === "items" ? normalizedHitRoll : getExpression(row.content.rollExpression);
     const expr = rawExpr !== null ? String(rawExpr) : "1d20";
     const luckModifier = characterAttributeModifiers?.sorte ?? 0;
     const rollResult = rollExpression(expr, 1, { luckModifier });
     // Crítico no natural 20 (issue #90 follow-up): dados de dano dobrados,
     // modificador preservado — vale para jogadores e NPCs.
     const isCritical = (rollResult.rolledDice ?? []).some(
-      (die) => die.sides === 20 && die.value === 20
+      (die) => die.sides === 20 && die.value === 20,
     );
-    const damageValue = rowType === "items"
-      ? normalizeItemDamageRoll(itemContent, characterAttributeModifiers ?? {})
-      : normalizeActionDamage(row.content);
-    const damageExpr = damageValue !== null
-      ? isCritical
-        ? doubleDamageDice(String(damageValue))
-        : String(damageValue)
-      : null;
+    const damageValue =
+      rowType === "items"
+        ? normalizeItemDamageRoll(itemContent, characterAttributeModifiers ?? {})
+        : normalizeActionDamage(row.content);
+    const damageExpr =
+      damageValue !== null
+        ? isCritical
+          ? doubleDamageDice(String(damageValue))
+          : String(damageValue)
+        : null;
     const damageResult = damageExpr ? rollExpression(damageExpr, 0, { luckModifier }) : null;
     const rolledDice = [...(rollResult.rolledDice ?? []), ...(damageResult?.rolledDice ?? [])];
     showDice3D(rolledDice);
@@ -789,13 +886,13 @@ export function CharacterContent({
 
       const name = getContentName(row.content, "Perícia");
       const rawExpression = getExpression(row.content.rollExpression);
-      const expr = normalizeSkillExpression(rawExpression, characterAttributeModifiers ?? {}) ?? "1d20";
+      const expr =
+        normalizeSkillExpression(rawExpression, characterAttributeModifiers ?? {}) ?? "1d20";
       const luckModifier = characterAttributeModifiers?.sorte ?? 0;
       const rollResult = rollExpression(expr, 1, { luckModifier });
       showDice3D(rollResult.rolledDice ?? []);
 
       setTimeout(() => {
-
         if (campaignId) {
           rollDice({
             campaignId,
@@ -832,8 +929,14 @@ export function CharacterContent({
       }
 
       // Plano A: Itens sem fórmulas de rolagem não devem permitir ação de combate
-      const hitRoll = normalizeItemHitRoll(buildEffectiveItemContent(row), characterAttributeModifiers ?? {});
-      const damageRoll = normalizeItemDamageRoll(buildEffectiveItemContent(row), characterAttributeModifiers ?? {});
+      const hitRoll = normalizeItemHitRoll(
+        buildEffectiveItemContent(row),
+        characterAttributeModifiers ?? {},
+      );
+      const damageRoll = normalizeItemDamageRoll(
+        buildEffectiveItemContent(row),
+        characterAttributeModifiers ?? {},
+      );
       if (!hitRoll && !damageRoll) {
         showToast("Este item não possui fórmulas de combate configuradas.");
         return;
@@ -851,8 +954,12 @@ export function CharacterContent({
     }
     const name = getContentName(row.content, "Ação");
     const desc = getContentDescription(row.content).toLowerCase();
-    const isHealing = name.toLowerCase().includes("cura") || name.toLowerCase().includes("poção") || desc.includes("cura") || desc.includes("recupera");
-    
+    const isHealing =
+      name.toLowerCase().includes("cura") ||
+      name.toLowerCase().includes("poção") ||
+      desc.includes("cura") ||
+      desc.includes("recupera");
+
     // Plano A: Itens usam hitRoll/damageRoll com fallback legado
     const isSpell = rowType === "spells";
     let expr: string | undefined;
@@ -861,7 +968,10 @@ export function CharacterContent({
     if (rowType === "items") {
       const effectiveContent = buildEffectiveItemContent(row);
       const hitRoll = normalizeItemHitRoll(effectiveContent, characterAttributeModifiers ?? {});
-      const damageRoll = normalizeItemDamageRoll(effectiveContent, characterAttributeModifiers ?? {});
+      const damageRoll = normalizeItemDamageRoll(
+        effectiveContent,
+        characterAttributeModifiers ?? {},
+      );
       expr = hitRoll ?? undefined;
       damageExpr = damageRoll ?? undefined;
     } else {
@@ -877,10 +987,13 @@ export function CharacterContent({
       isHealing,
       rollExpr: expr,
       damageExpr,
-      isPhysical: !String(row.content.damageType || "").toLowerCase().match(/magic|mágic|mental|fire|fogo|cold|gelo/),
+      isPhysical: !String(row.content.damageType || "")
+        .toLowerCase()
+        .match(/magic|mágic|mental|fire|fogo|cold|gelo/),
       manaCost: Number(row.content.manaCost) || undefined,
       circle: Number(row.content.circle) || undefined,
-      actionCostOverride: typeof row.content.actionCostOverride === "number" ? row.content.actionCostOverride : null,
+      actionCostOverride:
+        typeof row.content.actionCostOverride === "number" ? row.content.actionCostOverride : null,
       isSpell,
     });
   };
@@ -893,11 +1006,25 @@ export function CharacterContent({
       return;
     }
 
-    const hydratedCombatState = { ...combatState, combatants: combatState.combatants.map((combatant) => combatant.id === attacker.id ? hydrateCombatantMana(combatant, characterManaCurrent, characterManaMax) : combatant) };
-    const isSpell = selectedActionItem.isSpell ?? (activeType === "spells");
-    const spent = isSpell && selectedActionItem.circle
-      ? spendSpell(hydratedCombatState, attacker.id, selectedActionItem.circle, selectedActionItem.manaCost ?? 0, selectedActionItem.actionCostOverride)
-      : spendCombatActions(hydratedCombatState, attacker.id, 1);
+    const hydratedCombatState = {
+      ...combatState,
+      combatants: combatState.combatants.map((combatant) =>
+        combatant.id === attacker.id
+          ? hydrateCombatantMana(combatant, characterManaCurrent, characterManaMax)
+          : combatant,
+      ),
+    };
+    const isSpell = selectedActionItem.isSpell ?? activeType === "spells";
+    const spent =
+      isSpell && selectedActionItem.circle
+        ? spendSpell(
+            hydratedCombatState,
+            attacker.id,
+            selectedActionItem.circle,
+            selectedActionItem.manaCost ?? 0,
+            selectedActionItem.actionCostOverride,
+          )
+        : spendCombatActions(hydratedCombatState, attacker.id, 1);
     if (!spent.success) {
       showToast(spent.message);
       return;
@@ -906,7 +1033,11 @@ export function CharacterContent({
     const updatedAttacker = spent.session.combatants.find((c) => c.id === attacker.id);
     if (updatedAttacker) {
       onActorStatusChange?.(updatedAttacker);
-      void onPersistActorStatus?.(updatedAttacker, updatedAttacker.hpCurrent, updatedAttacker.manaCurrent);
+      void onPersistActorStatus?.(
+        updatedAttacker,
+        updatedAttacker.hpCurrent,
+        updatedAttacker.manaCurrent,
+      );
     }
 
     const luckModifier = characterAttributeModifiers?.sorte ?? 0;
@@ -914,7 +1045,9 @@ export function CharacterContent({
       const healed = rollExpression(selectedActionItem.rollExpr, 0, { luckModifier });
       showDice3D(healed.rolledDice ?? []);
       const healAmount = Math.max(0, healed.total);
-      const currentTarget = spent.session.combatants.find((combatant) => combatant.id === target.id);
+      const currentTarget = spent.session.combatants.find(
+        (combatant) => combatant.id === target.id,
+      );
       if (!currentTarget) {
         showToast("Alvo não está mais no combate ativo.");
         return;
@@ -922,7 +1055,9 @@ export function CharacterContent({
       const healedTarget = applyHealing(currentTarget, healAmount);
       const healedState = {
         ...spent.session,
-        combatants: spent.session.combatants.map((combatant) => combatant.id === healedTarget.id ? healedTarget : combatant),
+        combatants: spent.session.combatants.map((combatant) =>
+          combatant.id === healedTarget.id ? healedTarget : combatant,
+        ),
       };
       onCombatStateChange?.(healedState);
       updateActorStatus({
@@ -932,7 +1067,8 @@ export function CharacterContent({
         maxHp: healedTarget.hpMax,
       });
       onActorStatusChange?.(healedTarget);
-      if (healedTarget.type === "npc") void onPersistActorStatus?.(healedTarget, healedTarget.hpCurrent);
+      if (healedTarget.type === "npc")
+        void onPersistActorStatus?.(healedTarget, healedTarget.hpCurrent);
 
       rollDice({
         campaignId: campaignId!,
@@ -945,14 +1081,23 @@ export function CharacterContent({
         senderRole: "player",
         rolledDice: healed.rolledDice ?? [],
       });
-      onActionResult?.({ title: selectedActionItem.name, formula: healed.formula, result: healAmount, detail: `${healed.detail}; Curou +${healAmount} HP em ${target.name}` });
+      onActionResult?.({
+        title: selectedActionItem.name,
+        formula: healed.formula,
+        result: healAmount,
+        detail: `${healed.detail}; Curou +${healAmount} HP em ${target.name}`,
+      });
     } else {
-      const attack = rollExpression((selectedActionItem.rollExpr || "1d20") as string, 1, { luckModifier });
+      const attack = rollExpression((selectedActionItem.rollExpr || "1d20") as string, 1, {
+        luckModifier,
+      });
       // Crítico no natural 20 (issue #90 follow-up): dados de dano dobrados.
       const isCritical = (attack.rolledDice ?? []).some(
-        (die) => die.sides === 20 && die.value === 20
+        (die) => die.sides === 20 && die.value === 20,
       );
-      const critExpr = isCritical ? doubleDamageDice(selectedActionItem.damageExpr ?? undefined) : undefined;
+      const critExpr = isCritical
+        ? doubleDamageDice(selectedActionItem.damageExpr ?? undefined)
+        : undefined;
       let damage = rollExpression(critExpr ?? selectedActionItem.damageExpr, 0, { luckModifier });
       if (isCritical && critExpr) {
         damage = { ...damage, detail: `CRÍTICO! ${damage.detail} (dados dobrados)` };
@@ -961,9 +1106,13 @@ export function CharacterContent({
       const damageConfigured = !damage.missing && damage.valid;
       const damageNotice = damage.missing
         ? "Dano não configurado (nenhuma fórmula foi encontrada)."
-        : damage.valid ? "" : "Fórmula de dano inválida; nenhum dano foi aplicado.";
+        : damage.valid
+          ? ""
+          : "Fórmula de dano inválida; nenhum dano foi aplicado.";
 
-      const currentTarget = spent.session.combatants.find((combatant) => combatant.id === target.id);
+      const currentTarget = spent.session.combatants.find(
+        (combatant) => combatant.id === target.id,
+      );
       if (!currentTarget) {
         showToast("Alvo não está mais no combate ativo.");
         return;
@@ -971,34 +1120,60 @@ export function CharacterContent({
       if (currentTarget.type === "npc" && !damageConfigured && damageConfigured) {
         // unreachable guard
       } else if (currentTarget.type === "npc" && !damage.missing && damage.valid) {
-        const resolved = applyResolvedDamage(spent.session, currentTarget.id, Math.max(0, damage.total), attack.total, currentTarget.defenseReaction ?? "dodge", selectedActionItem.isPhysical);
+        const resolved = applyResolvedDamage(
+          spent.session,
+          currentTarget.id,
+          Math.max(0, damage.total),
+          attack.total,
+          currentTarget.defenseReaction ?? "dodge",
+          selectedActionItem.isPhysical,
+        );
         onCombatStateChange?.(resolved.session);
-         const updatedTarget = resolved.session.combatants.find((c) => c.id === currentTarget.id);
-          if (updatedTarget) {
-            updateActorStatus({
-              campaignId,
-              actorId: actorSocketId(updatedTarget),
-              currentHp: updatedTarget.hpCurrent,
-              maxHp: updatedTarget.hpMax,
-            });
-            onActorStatusChange?.(updatedTarget);
-            if (updatedTarget.type === "npc") void onPersistActorStatus?.(updatedTarget, updatedTarget.hpCurrent);
-          }
-          onActionResult?.({ title: selectedActionItem.name, formula: `${attack.formula} · dano ${damage.formula}`, result: resolved.result.damageTaken, detail: `${attack.detail}; ${damage.detail}; ${resolved.result.details}${damageNotice}` });
-      } else if (currentTarget.type !== "npc" && damageConfigured) requestDefenseReaction({
-        campaignId,
-        id: `react_${Date.now()}`,
-        attackerId: attacker.id,
-        attackerName: "Jogador",
-        targetId: currentTarget.id,
-        targetName: currentTarget.name,
-        rawDamage: Math.max(0, damage.total),
-        attackRoll: attack.total,
-        isPhysical: selectedActionItem.isPhysical,
-        actionName: selectedActionItem.name,
-      });
-      if (currentTarget.type !== "npc") onActionResult?.({ title: selectedActionItem.name, formula: `${attack.formula} · dano ${damage.formula}`, result: damageConfigured ? damage.total : 0, detail: `${attack.detail}; ${damageConfigured ? `dano bruto ${damage.total} enviado para reação defensiva.` : "nenhum dano aplicado."} ${damageNotice}` });
-      if (currentTarget.type === "npc" && !damageConfigured) onActionResult?.({ title: selectedActionItem.name, formula: attack.formula, result: 0, detail: `${attack.detail}; ${damageNotice}` });
+        const updatedTarget = resolved.session.combatants.find((c) => c.id === currentTarget.id);
+        if (updatedTarget) {
+          updateActorStatus({
+            campaignId,
+            actorId: actorSocketId(updatedTarget),
+            currentHp: updatedTarget.hpCurrent,
+            maxHp: updatedTarget.hpMax,
+          });
+          onActorStatusChange?.(updatedTarget);
+          if (updatedTarget.type === "npc")
+            void onPersistActorStatus?.(updatedTarget, updatedTarget.hpCurrent);
+        }
+        onActionResult?.({
+          title: selectedActionItem.name,
+          formula: `${attack.formula} · dano ${damage.formula}`,
+          result: resolved.result.damageTaken,
+          detail: `${attack.detail}; ${damage.detail}; ${resolved.result.details}${damageNotice}`,
+        });
+      } else if (currentTarget.type !== "npc" && damageConfigured)
+        requestDefenseReaction({
+          campaignId,
+          id: `react_${Date.now()}`,
+          attackerId: attacker.id,
+          attackerName: "Jogador",
+          targetId: currentTarget.id,
+          targetName: currentTarget.name,
+          rawDamage: Math.max(0, damage.total),
+          attackRoll: attack.total,
+          isPhysical: selectedActionItem.isPhysical,
+          actionName: selectedActionItem.name,
+        });
+      if (currentTarget.type !== "npc")
+        onActionResult?.({
+          title: selectedActionItem.name,
+          formula: `${attack.formula} · dano ${damage.formula}`,
+          result: damageConfigured ? damage.total : 0,
+          detail: `${attack.detail}; ${damageConfigured ? `dano bruto ${damage.total} enviado para reação defensiva.` : "nenhum dano aplicado."} ${damageNotice}`,
+        });
+      if (currentTarget.type === "npc" && !damageConfigured)
+        onActionResult?.({
+          title: selectedActionItem.name,
+          formula: attack.formula,
+          result: 0,
+          detail: `${attack.detail}; ${damageNotice}`,
+        });
 
       rollDice({
         campaignId: campaignId!,
@@ -1019,10 +1194,13 @@ export function CharacterContent({
   const handleUnlink = async (junctionId: string, rowType: ContentType = activeType) => {
     setIsBusy(true);
     try {
-      const response = await fetch(`/api/characters/${characterId}/content/${rowType}/${junctionId}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
+      const response = await fetch(
+        `/api/characters/${characterId}/content/${rowType}/${junctionId}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        },
+      );
 
       if (!response.ok) {
         const result = await response.json();
@@ -1038,7 +1216,12 @@ export function CharacterContent({
         notifyCharacterInventoryChange({
           campaignId,
           characterId,
-          changeType: rowType === "items" ? "item-removed" : rowType === "spells" ? "spell-removed" : "skill-removed",
+          changeType:
+            rowType === "items"
+              ? "item-removed"
+              : rowType === "spells"
+                ? "spell-removed"
+                : "skill-removed",
           contentType: rowType as "items" | "spells" | "skills",
           contentId: junctionId,
           junctionId,
@@ -1051,7 +1234,9 @@ export function CharacterContent({
     }
   };
 
-  const displayTypes = allowedTypes ? TYPE_ORDER.filter((t) => allowedTypes.includes(t)) : TYPE_ORDER;
+  const displayTypes = allowedTypes
+    ? TYPE_ORDER.filter((t) => allowedTypes.includes(t))
+    : TYPE_ORDER;
 
   return (
     <>
@@ -1075,23 +1260,38 @@ export function CharacterContent({
                 🔮 Magias ({galleryData.spells.length})
               </h4>
               {galleryData.spells.length === 0 ? (
-                <p className="py-2 text-xs text-gray-500 italic">
-                  Nenhuma magia vinculada
-                </p>
+                <p className="py-2 text-xs text-gray-500 italic">Nenhuma magia vinculada</p>
               ) : (
                 <div className="flex gap-2 overflow-x-auto pb-2 pt-1 scroll-smooth scrollbar-hide snap-x">
                   {galleryData.spells.map((row) => {
-                    const actionCost = Math.min(3, Math.max(1, getSpellActionCost(Number(row.content.circle) || 1, row.content.actionCostOverride != null ? Number(row.content.actionCostOverride) : null)));
+                    const actionCost = Math.min(
+                      3,
+                      Math.max(
+                        1,
+                        getSpellActionCost(
+                          Number(row.content.circle) || 1,
+                          row.content.actionCostOverride != null
+                            ? Number(row.content.actionCostOverride)
+                            : null,
+                        ),
+                      ),
+                    );
                     const spellName = getContentName(row.content, "Magia");
                     return (
                       <div
                         key={row.junction.id}
-                        onClick={() => (!isBusy ? setSelectedDetailItem({ row, type: "spells" }) : undefined)}
+                        onClick={() =>
+                          !isBusy ? setSelectedDetailItem({ row, type: "spells" }) : undefined
+                        }
                         className="w-[28%] min-w-[92px] max-w-[110px] aspect-square shrink-0 rounded-xl border border-purple-900/40 bg-gray-950 p-2 snap-start relative overflow-hidden flex flex-col justify-end items-center text-center group cursor-pointer hover:border-purple-600 hover:bg-purple-950/20 transition-all active:scale-[0.98]"
                       >
                         {/* Background Icon / Image */}
                         <div className="absolute inset-0 z-0 flex items-center justify-center opacity-60 pointer-events-none overflow-hidden">
-                          <ContentImageIcon src={row.content.imageUrl} type="spells" iconClassName="h-16 w-16 text-purple-400/80" />
+                          <ContentImageIcon
+                            src={row.content.imageUrl}
+                            type="spells"
+                            iconClassName="h-16 w-16 text-purple-400/80"
+                          />
                         </div>
 
                         {/* Shadow degradê de baixo para cima */}
@@ -1117,7 +1317,10 @@ export function CharacterContent({
 
                         {/* Detalhes do Card */}
                         <div className="relative z-20 flex flex-col items-center justify-end w-full min-w-0">
-                          <p className="text-[11px] font-bold text-white truncate w-full" title={spellName}>
+                          <p
+                            className="text-[11px] font-bold text-white truncate w-full"
+                            title={spellName}
+                          >
                             {spellName}
                           </p>
                           <span className="mt-0.5 text-[10px] text-purple-300 font-medium truncate w-full leading-tight">
@@ -1140,21 +1343,29 @@ export function CharacterContent({
                 🎒 Itens ({galleryData.items.length})
               </h4>
               {galleryData.items.length === 0 ? (
-                <p className="py-2 text-xs text-gray-500 italic">
-                  Nenhum item no inventário
-                </p>
+                <p className="py-2 text-xs text-gray-500 italic">Nenhum item no inventário</p>
               ) : (
                 <div className="flex gap-2 overflow-x-auto pb-2 pt-1 scroll-smooth scrollbar-hide snap-x">
                   {galleryData.items.map((row) => {
                     const itemId = String(row.content.id || row.junction.id);
                     const isEquipped = equippedItemIds.includes(itemId);
                     const qty = row.junction.quantity ?? 1;
-                    const actionCost = Math.min(3, Math.max(1, typeof row.content.actionCostOverride === "number" ? row.content.actionCostOverride : 1));
+                    const actionCost = Math.min(
+                      3,
+                      Math.max(
+                        1,
+                        typeof row.content.actionCostOverride === "number"
+                          ? row.content.actionCostOverride
+                          : 1,
+                      ),
+                    );
                     const itemName = getContentName(row.content, "Item");
                     return (
                       <div
                         key={row.junction.id}
-                        onClick={() => (!isBusy ? setSelectedDetailItem({ row, type: "items" }) : undefined)}
+                        onClick={() =>
+                          !isBusy ? setSelectedDetailItem({ row, type: "items" }) : undefined
+                        }
                         className={`w-[28%] min-w-[92px] max-w-[110px] aspect-square shrink-0 rounded-xl border ${
                           isEquipped
                             ? "border-emerald-500/60 ring-1 ring-emerald-500/40 bg-gray-950"
@@ -1163,7 +1374,11 @@ export function CharacterContent({
                       >
                         {/* Background Icon / Image */}
                         <div className="absolute inset-0 z-0 flex items-center justify-center opacity-60 pointer-events-none overflow-hidden">
-                          <ContentImageIcon src={row.content.imageUrl} type="items" iconClassName="h-16 w-16 text-amber-400/80" />
+                          <ContentImageIcon
+                            src={row.content.imageUrl}
+                            type="items"
+                            iconClassName="h-16 w-16 text-amber-400/80"
+                          />
                         </div>
 
                         {/* Shadow degradê de baixo para cima */}
@@ -1189,7 +1404,10 @@ export function CharacterContent({
 
                         {/* Detalhes do Card */}
                         <div className="relative z-20 flex flex-col items-center justify-end w-full min-w-0">
-                          <p className="text-[11px] font-bold text-white truncate w-full" title={itemName}>
+                          <p
+                            className="text-[11px] font-bold text-white truncate w-full"
+                            title={itemName}
+                          >
                             {itemName}
                           </p>
                           <div className="mt-0.5 flex items-center justify-center gap-1 flex-wrap">
@@ -1216,23 +1434,31 @@ export function CharacterContent({
                 ⚡ Condições ({galleryData.conditions.length})
               </h4>
               {galleryData.conditions.length === 0 ? (
-                <p className="py-2 text-xs text-gray-500 italic">
-                  Nenhuma condição ativa
-                </p>
+                <p className="py-2 text-xs text-gray-500 italic">Nenhuma condição ativa</p>
               ) : (
                 <div className="flex gap-2 overflow-x-auto pb-2 pt-1 scroll-smooth scrollbar-hide snap-x">
                   {galleryData.conditions.map((row) => {
-                    const actionCost = typeof row.content.actionCostOverride === "number" && row.content.actionCostOverride > 0 ? Math.min(3, row.content.actionCostOverride) : null;
+                    const actionCost =
+                      typeof row.content.actionCostOverride === "number" &&
+                      row.content.actionCostOverride > 0
+                        ? Math.min(3, row.content.actionCostOverride)
+                        : null;
                     const conditionName = getContentName(row.content, "Condição");
                     return (
                       <div
                         key={row.junction.id}
-                        onClick={() => (!isBusy ? setSelectedDetailItem({ row, type: "conditions" }) : undefined)}
+                        onClick={() =>
+                          !isBusy ? setSelectedDetailItem({ row, type: "conditions" }) : undefined
+                        }
                         className="w-[28%] min-w-[92px] max-w-[110px] aspect-square shrink-0 rounded-xl border border-rose-900/40 bg-gray-950 p-2 snap-start relative overflow-hidden flex flex-col justify-end items-center text-center group cursor-pointer hover:border-rose-600 hover:bg-rose-950/20 transition-all active:scale-[0.98]"
                       >
                         {/* Background Icon / Image */}
                         <div className="absolute inset-0 z-0 flex items-center justify-center opacity-60 pointer-events-none overflow-hidden">
-                          <ContentImageIcon src={row.content.imageUrl} type="conditions" iconClassName="text-4xl text-rose-400/80" />
+                          <ContentImageIcon
+                            src={row.content.imageUrl}
+                            type="conditions"
+                            iconClassName="text-4xl text-rose-400/80"
+                          />
                         </div>
 
                         {/* Shadow degradê de baixo para cima */}
@@ -1260,7 +1486,10 @@ export function CharacterContent({
 
                         {/* Detalhes do Card */}
                         <div className="relative z-20 flex flex-col items-center justify-end w-full min-w-0">
-                          <p className="text-[11px] font-bold text-white truncate w-full" title={conditionName}>
+                          <p
+                            className="text-[11px] font-bold text-white truncate w-full"
+                            title={conditionName}
+                          >
                             {conditionName}
                           </p>
                           {"permanent" in row.junction && row.junction.permanent ? (
@@ -1296,12 +1525,15 @@ export function CharacterContent({
               <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center justify-between">
                 <span>⭐ Habilidades de Classe</span>
                 <span className="text-[10px] text-gray-400 font-normal">
-                  ({classBenefits.filter((b) => (characterLevel ?? 1) >= b.level).length}/{classBenefits.length} desbloqueadas)
+                  ({classBenefits.filter((b) => (characterLevel ?? 1) >= b.level).length}/
+                  {classBenefits.length} desbloqueadas)
                 </span>
               </h4>
               {classBenefits.length === 0 ? (
                 <p className="py-2 text-xs text-gray-500 italic">
-                  {characterClassId ? "Nenhuma habilidade cadastrada para esta classe" : "Nenhuma classe vinculada ao personagem"}
+                  {characterClassId
+                    ? "Nenhuma habilidade cadastrada para esta classe"
+                    : "Nenhuma classe vinculada ao personagem"}
                 </p>
               ) : (
                 <div className="flex gap-2 overflow-x-auto pb-2 pt-1 scroll-smooth scrollbar-hide snap-x">
@@ -1346,10 +1578,15 @@ export function CharacterContent({
 
                         {/* Detalhes do Card */}
                         <div className="relative z-20 flex flex-col items-center justify-end w-full min-w-0">
-                          <p className="text-[11px] font-bold text-white truncate w-full" title={feat.name}>
+                          <p
+                            className="text-[11px] font-bold text-white truncate w-full"
+                            title={feat.name}
+                          >
                             {feat.name}
                           </p>
-                          <span className={`mt-0.5 text-[9px] font-medium truncate w-full leading-tight ${isUnlocked ? "text-indigo-300" : "text-gray-500"}`}>
+                          <span
+                            className={`mt-0.5 text-[9px] font-medium truncate w-full leading-tight ${isUnlocked ? "text-indigo-300" : "text-gray-500"}`}
+                          >
                             {isUnlocked ? "Desbloqueada" : `Bloqueada (Nv. ${feat.level})`}
                           </span>
                         </div>
@@ -1371,7 +1608,9 @@ export function CharacterContent({
               </h4>
               {raceFeatures.length === 0 ? (
                 <p className="py-2 text-xs text-gray-500 italic">
-                  {characterRaceId ? "Nenhuma característica cadastrada para esta raça" : "Nenhuma raça vinculada ao personagem"}
+                  {characterRaceId
+                    ? "Nenhuma característica cadastrada para esta raça"
+                    : "Nenhuma raça vinculada ao personagem"}
                 </p>
               ) : (
                 <div className="flex gap-2 overflow-x-auto pb-2 pt-1 scroll-smooth scrollbar-hide snap-x">
@@ -1380,7 +1619,8 @@ export function CharacterContent({
                     const isActive = isHeritage && activeHeritages.includes(rf.name);
                     const isLocked = isHeritage && !isActive && activeHeritages.length >= 2;
 
-                    let cardStyle = "border border-emerald-900/40 bg-gray-950 hover:border-emerald-600 hover:bg-emerald-950/20";
+                    let cardStyle =
+                      "border border-emerald-900/40 bg-gray-950 hover:border-emerald-600 hover:bg-emerald-950/20";
                     let badgeStyle = "bg-emerald-950/80 border-emerald-700/60 text-emerald-300";
                     let badgeLabel = "Traço";
                     let subtitleStyle = "text-emerald-300";
@@ -1389,17 +1629,20 @@ export function CharacterContent({
                     if (isHeritage) {
                       subtitleLabel = "Linhagem";
                       if (isActive) {
-                        cardStyle = "border border-teal-500 bg-teal-950/40 shadow-[0_0_12px_rgba(20,184,166,0.3)] hover:border-teal-400";
+                        cardStyle =
+                          "border border-teal-500 bg-teal-950/40 shadow-[0_0_12px_rgba(20,184,166,0.3)] hover:border-teal-400";
                         badgeStyle = "bg-teal-900/90 border-teal-400 text-teal-200";
                         badgeLabel = "✓ Ativa";
                         subtitleStyle = "text-teal-200 font-semibold";
                       } else if (isLocked) {
-                        cardStyle = "border border-gray-800 bg-gray-950 opacity-60 grayscale-[40%] hover:border-gray-700";
+                        cardStyle =
+                          "border border-gray-800 bg-gray-950 opacity-60 grayscale-[40%] hover:border-gray-700";
                         badgeStyle = "bg-gray-900 border-gray-700 text-gray-400";
                         badgeLabel = "🔒 Travada (2/2)";
                         subtitleStyle = "text-gray-500";
                       } else {
-                        cardStyle = "border border-teal-900/40 bg-gray-950 hover:border-teal-600 hover:bg-teal-950/20";
+                        cardStyle =
+                          "border border-teal-900/40 bg-gray-950 hover:border-teal-600 hover:bg-teal-950/20";
                         badgeStyle = "bg-teal-950/80 border-teal-700/60 text-teal-300";
                         badgeLabel = "Herança";
                         subtitleStyle = "text-teal-300";
@@ -1423,16 +1666,23 @@ export function CharacterContent({
                         <div className="absolute inset-0 z-10 bg-gradient-to-t from-gray-950 via-gray-950/80 to-transparent pointer-events-none" />
 
                         {/* Badge de Categoria */}
-                        <div className={`absolute top-1.5 right-1.5 z-20 flex items-center rounded-full px-1.5 py-0.2 border text-[8px] font-bold ${badgeStyle}`}>
+                        <div
+                          className={`absolute top-1.5 right-1.5 z-20 flex items-center rounded-full px-1.5 py-0.2 border text-[8px] font-bold ${badgeStyle}`}
+                        >
                           {badgeLabel}
                         </div>
 
                         {/* Detalhes do Card */}
                         <div className="relative z-20 flex flex-col items-center justify-end w-full min-w-0">
-                          <p className="text-[11px] font-bold text-white truncate w-full" title={rf.name}>
+                          <p
+                            className="text-[11px] font-bold text-white truncate w-full"
+                            title={rf.name}
+                          >
                             {rf.name}
                           </p>
-                          <span className={`mt-0.5 text-[9px] font-medium truncate w-full leading-tight ${subtitleStyle}`}>
+                          <span
+                            className={`mt-0.5 text-[9px] font-medium truncate w-full leading-tight ${subtitleStyle}`}
+                          >
                             {subtitleLabel}
                           </span>
                         </div>
@@ -1444,23 +1694,28 @@ export function CharacterContent({
             </div>
           </div>
         ) : (
-          <div className={`flex-1 flex flex-col ${activeType === "skills" ? "" : "overflow-y-auto max-h-[60vh]"}`}>
+          <div
+            className={`flex-1 flex flex-col ${activeType === "skills" ? "" : "overflow-y-auto max-h-[60vh]"}`}
+          >
             <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-400">
               {activeType === "skills" ? "Todas as Perícias" : `Na ficha (${data.linked.length})`}
             </h4>
             {(() => {
               // Para perícias, exibir todas (linked + available que não estão em linked)
-              const displayRows = activeType === "skills"
-                ? [
-                    ...data.linked,
-                    ...data.available
-                      .filter((avail) => !data.linked.some((linked) => linked.content.id === avail.id))
-                      .map((avail) => ({
-                        junction: { id: `available-${avail.id}`, trained: false },
-                        content: avail,
-                      })),
-                  ]
-                : data.linked;
+              const displayRows =
+                activeType === "skills"
+                  ? [
+                      ...data.linked,
+                      ...data.available
+                        .filter(
+                          (avail) => !data.linked.some((linked) => linked.content.id === avail.id),
+                        )
+                        .map((avail) => ({
+                          junction: { id: `available-${avail.id}`, trained: false },
+                          content: avail,
+                        })),
+                    ]
+                  : data.linked;
 
               if (displayRows.length === 0) {
                 return (
@@ -1473,7 +1728,8 @@ export function CharacterContent({
               return (
                 <div className="space-y-2 pb-2">
                   {displayRows.map((row) => {
-                    const isClickable = activeType === "skills" || activeType === "spells" || activeType === "items";
+                    const isClickable =
+                      activeType === "skills" || activeType === "spells" || activeType === "items";
                     const isLocked = activeType === "skills" ? false : isTurnLocked;
                     const rowName = getContentName(row.content, "Item");
 
@@ -1485,28 +1741,38 @@ export function CharacterContent({
                           if (activeType === "skills") {
                             handleActionClick(row, "skills");
                           } else {
-                            setSelectedDetailItem({ row, type: activeType as "spells" | "items" | "conditions" });
+                            setSelectedDetailItem({
+                              row,
+                              type: activeType as "spells" | "items" | "conditions",
+                            });
                           }
                         }}
                         className={`flex items-center justify-between rounded-xl border border-gray-800 bg-gray-950 p-3 shadow-sm ${
                           isClickable
-                            ? "cursor-pointer hover:border-purple-600 hover:bg-purple-950/20 transition-all active:scale-[0.98]" 
+                            ? "cursor-pointer hover:border-purple-600 hover:bg-purple-950/20 transition-all active:scale-[0.98]"
                             : ""
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           {(activeType === "spells" || activeType === "items") && (
                             <div className="h-8 w-8 shrink-0 rounded-md overflow-hidden flex items-center justify-center bg-gray-900 border border-purple-500/40">
-                              <ContentImageIcon src={row.content.imageUrl} type={activeType} iconClassName="h-5 w-5 text-purple-400" />
+                              <ContentImageIcon
+                                src={row.content.imageUrl}
+                                type={activeType}
+                                iconClassName="h-5 w-5 text-purple-400"
+                              />
                             </div>
                           )}
                           <div className="min-w-0">
-                            <p className="text-xs font-bold text-secondary-pure truncate" title={rowName}>
+                            <p
+                              className="text-xs font-bold text-secondary-pure truncate"
+                              title={rowName}
+                            >
                               {rowName}
                             </p>
                             <div className="mt-1 flex flex-wrap gap-2">
-                              {activeType === "skills" && (
-                                row.junction.trained ? (
+                              {activeType === "skills" &&
+                                (row.junction.trained ? (
                                   <span className="rounded border border-accent/40 bg-accent-glow px-2 py-0.5 text-[10px] font-bold text-accent-vibrant [data-theme-mode=light]:bg-accent/15 [data-theme-mode=light]:border-accent/40 [data-theme-mode=light]:text-accent-dark">
                                     ★ Treinada
                                   </span>
@@ -1514,32 +1780,36 @@ export function CharacterContent({
                                   <span className="rounded border border-secondary-border bg-dominant-container/60 px-2 py-0.5 text-[10px] font-medium text-secondary-muted">
                                     Não Treinada
                                   </span>
-                                )
-                              )}
-                              {activeType === "items" && "quantity" in row.junction && (() => {
-                                const itemId = String(row.content.id || row.junction.id);
-                                const isEquipped = equippedItemIds.includes(itemId);
-                                return (
-                                  <div className="flex items-center gap-1.5 flex-wrap">
-                                    {isEquipped && (
-                                      <span className="rounded bg-emerald-950 px-1.5 py-0.2 text-[10px] font-bold text-emerald-300 border border-emerald-800/60">
-                                        Equipado
+                                ))}
+                              {activeType === "items" &&
+                                "quantity" in row.junction &&
+                                (() => {
+                                  const itemId = String(row.content.id || row.junction.id);
+                                  const isEquipped = equippedItemIds.includes(itemId);
+                                  return (
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      {isEquipped && (
+                                        <span className="rounded bg-emerald-950 px-1.5 py-0.2 text-[10px] font-bold text-emerald-300 border border-emerald-800/60">
+                                          Equipado
+                                        </span>
+                                      )}
+                                      <span className="text-[11px] text-gray-400 font-medium">
+                                        Quantidade: {row.junction.quantity || 1}
                                       </span>
-                                    )}
-                                    <span className="text-[11px] text-gray-400 font-medium">
-                                      Quantidade: {row.junction.quantity || 1}
-                                    </span>
-                                  </div>
-                                );
-                              })()}
-                              {activeType === "conditions" && "permanent" in row.junction && row.junction.permanent && (
-                                <span className="rounded bg-red-950 px-2 py-0.5 text-[10px] font-bold text-red-300 border border-red-800/60">
-                                  Permanente
-                                </span>
-                              )}
+                                    </div>
+                                  );
+                                })()}
+                              {activeType === "conditions" &&
+                                "permanent" in row.junction &&
+                                row.junction.permanent && (
+                                  <span className="rounded bg-red-950 px-2 py-0.5 text-[10px] font-bold text-red-300 border border-red-800/60">
+                                    Permanente
+                                  </span>
+                                )}
                               {activeType === "spells" && (
                                 <span className="text-[11px] text-purple-300 font-medium">
-                                  Círculo {String(row.content.circle)} · {String(row.content.manaCost)} Mana
+                                  Círculo {String(row.content.circle)} ·{" "}
+                                  {String(row.content.manaCost)} Mana
                                 </span>
                               )}
                             </div>
@@ -1568,188 +1838,146 @@ export function CharacterContent({
           </div>
         )}
 
-        {selectedDetailItem && (() => {
-          const { row, type } = selectedDetailItem;
-          const detailItemId = String(row.content.id || row.junction.id);
-          const isItemEquipped = equippedItemIds.includes(detailItemId);
+        {selectedDetailItem &&
+          (() => {
+            const { row, type } = selectedDetailItem;
+            const detailItemId = String(row.content.id || row.junction.id);
+            const isItemEquipped = equippedItemIds.includes(detailItemId);
 
-          const detailActionCost =
-            type === "spells"
-              ? Math.min(
-                  3,
-                  Math.max(
-                    1,
-                    getSpellActionCost(
-                      Number(row.content.circle) || 1,
-                      row.content.actionCostOverride != null ? Number(row.content.actionCostOverride) : null
+            const detailActionCost =
+              type === "spells"
+                ? Math.min(
+                    3,
+                    Math.max(
+                      1,
+                      getSpellActionCost(
+                        Number(row.content.circle) || 1,
+                        row.content.actionCostOverride != null
+                          ? Number(row.content.actionCostOverride)
+                          : null,
+                      ),
+                    ),
+                  )
+                : type === "items"
+                  ? Math.min(
+                      3,
+                      Math.max(
+                        1,
+                        typeof row.content.actionCostOverride === "number"
+                          ? row.content.actionCostOverride
+                          : 1,
+                      ),
                     )
-                  )
-                )
-              : type === "items"
-              ? Math.min(
-                  3,
-                  Math.max(
-                    1,
-                    typeof row.content.actionCostOverride === "number" ? row.content.actionCostOverride : 1
-                  )
-                )
-              : typeof row.content.actionCostOverride === "number" && row.content.actionCostOverride > 0
-              ? Math.min(3, row.content.actionCostOverride)
-              : null;
+                  : typeof row.content.actionCostOverride === "number" &&
+                      row.content.actionCostOverride > 0
+                    ? Math.min(3, row.content.actionCostOverride)
+                    : null;
 
-          const effectiveItemContent = type === "items" ? buildEffectiveItemContent(row) : null;
-          const testExpr = type === "items"
-            ? normalizeItemHitRoll(effectiveItemContent!, characterAttributeModifiers ?? {})
-            : getExpression(row.content.rollExpression) ?? (type === "spells" ? "1d20" : null);
-          const damageValue = type === "items"
-            ? normalizeItemDamageRoll(effectiveItemContent!, characterAttributeModifiers ?? {})
-            : normalizeActionDamage(row.content);
-          const damageExpr = damageValue !== null ? String(damageValue) : null;
-          const hasItemRollFormula = type !== "items" || Boolean(testExpr || damageExpr);
-          const name = getContentName(row.content, type === "spells" ? "Magia" : type === "items" ? "Item" : "Condição");
-          const description = getContentDescription(row.content);
-          const extraEffect = getContentExtraEffect(row.content);
-          const categoryLabel = type === "spells" ? "Magia" : type === "items" ? "Item" : "Condição";
-          const equipButtonLabel = `${isItemEquipped ? "🛡️ Desequipar" : "🗡️ Equipar"}${combatState?.active ? " (1 ação)" : ""}`;
+            const effectiveItemContent = type === "items" ? buildEffectiveItemContent(row) : null;
+            const testExpr =
+              type === "items"
+                ? normalizeItemHitRoll(effectiveItemContent!, characterAttributeModifiers ?? {})
+                : (getExpression(row.content.rollExpression) ??
+                  (type === "spells" ? "1d20" : null));
+            const damageValue =
+              type === "items"
+                ? normalizeItemDamageRoll(effectiveItemContent!, characterAttributeModifiers ?? {})
+                : normalizeActionDamage(row.content);
+            const damageExpr = damageValue !== null ? String(damageValue) : null;
+            const hasItemRollFormula = type !== "items" || Boolean(testExpr || damageExpr);
+            const name = getContentName(
+              row.content,
+              type === "spells" ? "Magia" : type === "items" ? "Item" : "Condição",
+            );
+            const description = getContentDescription(row.content);
+            const extraEffect = getContentExtraEffect(row.content);
+            const categoryLabel =
+              type === "spells" ? "Magia" : type === "items" ? "Item" : "Condição";
+            const equipButtonLabel = `${isItemEquipped ? "🛡️ Desequipar" : "🗡️ Equipar"}${combatState?.active ? " (1 ação)" : ""}`;
 
-          return (
-            <div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
-              onClick={() => setSelectedDetailItem(null)}
-              role="dialog"
-              aria-modal="true"
-              aria-label={name}
-            >
+            return (
               <div
-                className="relative w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl border border-gray-800 bg-gray-950 shadow-2xl overflow-hidden"
-                onClick={(e) => e.stopPropagation()}
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+                onClick={() => setSelectedDetailItem(null)}
+                role="dialog"
+                aria-modal="true"
+                aria-label={name}
               >
-                {/* Cabeçalho */}
-                <div className="flex items-center justify-between border-b border-gray-800 p-4">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-gray-900 border border-gray-800 flex items-center justify-center">
-                      <ContentImageIcon
-                        src={row.content.imageUrl}
-                        type={type}
-                        iconClassName={
-                          type === "spells"
-                            ? "h-6 w-6 text-purple-400"
-                            : type === "items"
-                            ? "h-6 w-6 text-amber-400"
-                            : "text-2xl text-rose-400"
-                        }
-                      />
+                <div
+                  className="relative w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl border border-gray-800 bg-gray-950 shadow-2xl overflow-hidden"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Cabeçalho */}
+                  <div className="flex items-center justify-between border-b border-gray-800 p-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-gray-900 border border-gray-800 flex items-center justify-center">
+                        <ContentImageIcon
+                          src={row.content.imageUrl}
+                          type={type}
+                          iconClassName={
+                            type === "spells"
+                              ? "h-6 w-6 text-purple-400"
+                              : type === "items"
+                                ? "h-6 w-6 text-amber-400"
+                                : "text-2xl text-rose-400"
+                          }
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-bold text-white truncate" title={name}>
+                          {name}
+                        </h3>
+                        <span className="text-[11px] font-medium text-gray-400">
+                          {categoryLabel}
+                        </span>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <h3 className="text-sm font-bold text-white truncate" title={name}>
-                        {name}
-                      </h3>
-                      <span className="text-[11px] font-medium text-gray-400">{categoryLabel}</span>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedDetailItem(null)}
+                      aria-label="Fechar"
+                      className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors cursor-pointer"
+                    >
+                      ✕
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDetailItem(null)}
-                    aria-label="Fechar"
-                    className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors cursor-pointer"
-                  >
-                    ✕
-                  </button>
-                </div>
 
-                {/* Corpo com Scroll */}
-                <div className="overflow-y-auto p-4 space-y-4 max-h-[60vh]">
-                  {/* Grid de Metadados */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {type === "spells" && (
-                      <>
-                        <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
-                          <span className="text-[10px] uppercase tracking-wider text-gray-400 block">Círculo</span>
-                          <span className="text-xs font-bold text-purple-300">
-                            Círculo {String(row.content.circle ?? 1)}
-                          </span>
-                        </div>
-                        <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
-                          <span className="text-[10px] uppercase tracking-wider text-gray-400 block">Custo de Mana</span>
-                          <span className="text-xs font-bold text-blue-400">
-                            {String(row.content.manaCost ?? 0)} Mana
-                          </span>
-                        </div>
-                        <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
-                          <span className="text-[10px] uppercase tracking-wider text-gray-400 block">Custo em Ações</span>
-                          <div className="flex items-center justify-center gap-1 mt-1">
-                            <span className="text-xs font-bold text-amber-400 mr-1">{detailActionCost}</span>
-                            <div className="flex gap-0.5 items-center">
-                              {[1, 2, 3].map((dot) => (
-                                <span
-                                  key={dot}
-                                  className={`h-1.5 w-1.5 rounded-full ${
-                                    dot <= (detailActionCost ?? 0)
-                                      ? "bg-amber-400 shadow-[0_0_4px_rgba(251,191,36,0.8)]"
-                                      : "bg-gray-700/60"
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </>
-                    )}
-
-                    {type === "items" && (
-                      <>
-                        <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
-                          <span className="text-[10px] uppercase tracking-wider text-gray-400 block">Quantidade</span>
-                          <span className="text-xs font-bold text-gray-200">
-                            {String(row.junction.quantity ?? 1)}
-                          </span>
-                        </div>
-                        <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
-                          <span className="text-[10px] uppercase tracking-wider text-gray-400 block">Status</span>
-                          <span className={`text-xs font-bold ${isItemEquipped ? "text-emerald-400" : "text-gray-400"}`}>
-                            {isItemEquipped ? "Equipado" : "Na mochila"}
-                          </span>
-                        </div>
-                        <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
-                          <span className="text-[10px] uppercase tracking-wider text-gray-400 block">Custo em Ações</span>
-                          <div className="flex items-center justify-center gap-1 mt-1">
-                            <span className="text-xs font-bold text-amber-400 mr-1">{detailActionCost}</span>
-                            <div className="flex gap-0.5 items-center">
-                              {[1, 2, 3].map((dot) => (
-                                <span
-                                  key={dot}
-                                  className={`h-1.5 w-1.5 rounded-full ${
-                                    dot <= (detailActionCost ?? 0)
-                                      ? "bg-amber-400 shadow-[0_0_4px_rgba(251,191,36,0.8)]"
-                                      : "bg-gray-700/60"
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </>
-                    )}
-
-                    {type === "conditions" && (
-                      <>
-                        <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
-                          <span className="text-[10px] uppercase tracking-wider text-gray-400 block">Tipo</span>
-                          <span className="text-xs font-bold text-rose-300">
-                            {row.junction.permanent ? "Permanente" : "Ativa"}
-                          </span>
-                        </div>
-                        {detailActionCost !== null && (
+                  {/* Corpo com Scroll */}
+                  <div className="overflow-y-auto p-4 space-y-4 max-h-[60vh]">
+                    {/* Grid de Metadados */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {type === "spells" && (
+                        <>
                           <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
-                            <span className="text-[10px] uppercase tracking-wider text-gray-400 block">Custo em Ações</span>
+                            <span className="text-[10px] uppercase tracking-wider text-gray-400 block">
+                              Círculo
+                            </span>
+                            <span className="text-xs font-bold text-purple-300">
+                              Círculo {String(row.content.circle ?? 1)}
+                            </span>
+                          </div>
+                          <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
+                            <span className="text-[10px] uppercase tracking-wider text-gray-400 block">
+                              Custo de Mana
+                            </span>
+                            <span className="text-xs font-bold text-blue-400">
+                              {String(row.content.manaCost ?? 0)} Mana
+                            </span>
+                          </div>
+                          <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
+                            <span className="text-[10px] uppercase tracking-wider text-gray-400 block">
+                              Custo em Ações
+                            </span>
                             <div className="flex items-center justify-center gap-1 mt-1">
-                              <span className="text-xs font-bold text-amber-400 mr-1">{detailActionCost}</span>
+                              <span className="text-xs font-bold text-amber-400 mr-1">
+                                {detailActionCost}
+                              </span>
                               <div className="flex gap-0.5 items-center">
                                 {[1, 2, 3].map((dot) => (
                                   <span
                                     key={dot}
                                     className={`h-1.5 w-1.5 rounded-full ${
-                                      dot <= detailActionCost
+                                      dot <= (detailActionCost ?? 0)
                                         ? "bg-amber-400 shadow-[0_0_4px_rgba(251,191,36,0.8)]"
                                         : "bg-gray-700/60"
                                     }`}
@@ -1758,467 +1986,631 @@ export function CharacterContent({
                               </div>
                             </div>
                           </div>
-                        )}
+                        </>
+                      )}
+
+                      {type === "items" && (
+                        <>
+                          <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
+                            <span className="text-[10px] uppercase tracking-wider text-gray-400 block">
+                              Quantidade
+                            </span>
+                            <span className="text-xs font-bold text-gray-200">
+                              {String(row.junction.quantity ?? 1)}
+                            </span>
+                          </div>
+                          <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
+                            <span className="text-[10px] uppercase tracking-wider text-gray-400 block">
+                              Status
+                            </span>
+                            <span
+                              className={`text-xs font-bold ${isItemEquipped ? "text-emerald-400" : "text-gray-400"}`}
+                            >
+                              {isItemEquipped ? "Equipado" : "Na mochila"}
+                            </span>
+                          </div>
+                          <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
+                            <span className="text-[10px] uppercase tracking-wider text-gray-400 block">
+                              Custo em Ações
+                            </span>
+                            <div className="flex items-center justify-center gap-1 mt-1">
+                              <span className="text-xs font-bold text-amber-400 mr-1">
+                                {detailActionCost}
+                              </span>
+                              <div className="flex gap-0.5 items-center">
+                                {[1, 2, 3].map((dot) => (
+                                  <span
+                                    key={dot}
+                                    className={`h-1.5 w-1.5 rounded-full ${
+                                      dot <= (detailActionCost ?? 0)
+                                        ? "bg-amber-400 shadow-[0_0_4px_rgba(251,191,36,0.8)]"
+                                        : "bg-gray-700/60"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {type === "conditions" && (
+                        <>
+                          <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
+                            <span className="text-[10px] uppercase tracking-wider text-gray-400 block">
+                              Tipo
+                            </span>
+                            <span className="text-xs font-bold text-rose-300">
+                              {row.junction.permanent ? "Permanente" : "Ativa"}
+                            </span>
+                          </div>
+                          {detailActionCost !== null && (
+                            <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
+                              <span className="text-[10px] uppercase tracking-wider text-gray-400 block">
+                                Custo em Ações
+                              </span>
+                              <div className="flex items-center justify-center gap-1 mt-1">
+                                <span className="text-xs font-bold text-amber-400 mr-1">
+                                  {detailActionCost}
+                                </span>
+                                <div className="flex gap-0.5 items-center">
+                                  {[1, 2, 3].map((dot) => (
+                                    <span
+                                      key={dot}
+                                      className={`h-1.5 w-1.5 rounded-full ${
+                                        dot <= detailActionCost
+                                          ? "bg-amber-400 shadow-[0_0_4px_rgba(251,191,36,0.8)]"
+                                          : "bg-gray-700/60"
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    {/* Fórmulas */}
+                    {Boolean(testExpr || damageExpr) && (
+                      <div className="rounded-lg bg-gray-900/60 border border-gray-800 p-3 space-y-1.5">
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">
+                          Fórmulas
+                        </span>
+                        <div className="flex flex-wrap gap-4 text-xs">
+                          {testExpr && (
+                            <div>
+                              <span className="text-gray-400">Teste: </span>
+                              <span className="font-mono font-semibold text-purple-300">
+                                {String(testExpr)}
+                              </span>
+                            </div>
+                          )}
+                          {damageExpr && (
+                            <div>
+                              <span className="text-gray-400">Dano: </span>
+                              <span className="font-mono font-semibold text-rose-300">
+                                {String(damageExpr)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Descrição */}
+                    {Boolean(description) && (
+                      <div className="space-y-1">
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">
+                          Descrição
+                        </span>
+                        <div className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap rounded-lg bg-gray-900/40 p-3 border border-gray-800/60">
+                          {description}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Efeito Extra */}
+                    {Boolean(extraEffect) && (
+                      <div className="space-y-1">
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-purple-400 block">
+                          Efeito Extra
+                        </span>
+                        <div className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap rounded-lg bg-purple-950/20 p-3 border border-purple-800/40">
+                          {extraEffect}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Rodapé de Ações */}
+                  <div className="border-t border-gray-800 p-4 flex flex-wrap gap-2 justify-end bg-gray-900/50">
+                    {type === "conditions" && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const jId = row.junction.id;
+                          setSelectedDetailItem(null);
+                          void handleUnlink(jId, "conditions");
+                        }}
+                        disabled={isBusy}
+                        className="rounded-lg border border-rose-800/80 bg-rose-950/60 px-3 py-1.5 text-xs font-bold text-rose-300 hover:bg-rose-900 hover:text-white transition-colors disabled:opacity-50 cursor-pointer"
+                      >
+                        Remover Condição
+                      </button>
+                    )}
+
+                    {type === "items" && (
+                      <button
+                        type="button"
+                        onClick={() => handleToggleEquip(detailItemId)}
+                        disabled={isBusy}
+                        className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer ${
+                          isItemEquipped
+                            ? "border-emerald-700/80 bg-emerald-950/60 text-emerald-300 hover:bg-emerald-900/80 hover:text-white"
+                            : "border-amber-700/80 bg-amber-950/60 text-amber-300 hover:bg-amber-900/80 hover:text-white"
+                        }`}
+                      >
+                        {equipButtonLabel}
+                      </button>
+                    )}
+
+                    {(type === "spells" ||
+                      (type === "items" && isItemEquipped && hasItemRollFormula)) && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedDetailItem(null);
+                            handleFreeRoll(row, type);
+                          }}
+                          disabled={isBusy}
+                          className="rounded-lg border border-blue-700/80 bg-blue-950/60 px-3 py-1.5 text-xs font-bold text-blue-300 hover:bg-blue-900/80 hover:text-white transition-colors disabled:opacity-50 cursor-pointer"
+                        >
+                          🎲 Sem combate
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedDetailItem(null);
+                            handleActionClick(row, type);
+                          }}
+                          disabled={isBusy}
+                          className="rounded-lg border border-purple-700/80 bg-purple-950/60 px-3 py-1.5 text-xs font-bold text-purple-300 hover:bg-purple-900/80 hover:text-white transition-colors disabled:opacity-50 cursor-pointer"
+                        >
+                          ⚔️ Em combate
+                        </button>
                       </>
                     )}
                   </div>
-
-                  {/* Fórmulas */}
-                  {Boolean(testExpr || damageExpr) && (
-                    <div className="rounded-lg bg-gray-900/60 border border-gray-800 p-3 space-y-1.5">
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">Fórmulas</span>
-                      <div className="flex flex-wrap gap-4 text-xs">
-                        {testExpr && (
-                          <div>
-                            <span className="text-gray-400">Teste: </span>
-                            <span className="font-mono font-semibold text-purple-300">{String(testExpr)}</span>
-                          </div>
-                        )}
-                        {damageExpr && (
-                          <div>
-                            <span className="text-gray-400">Dano: </span>
-                            <span className="font-mono font-semibold text-rose-300">{String(damageExpr)}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Descrição */}
-                  {Boolean(description) && (
-                    <div className="space-y-1">
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">Descrição</span>
-                      <div className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap rounded-lg bg-gray-900/40 p-3 border border-gray-800/60">
-                        {description}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Efeito Extra */}
-                  {Boolean(extraEffect) && (
-                    <div className="space-y-1">
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-purple-400 block">Efeito Extra</span>
-                      <div className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap rounded-lg bg-purple-950/20 p-3 border border-purple-800/40">
-                        {extraEffect}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Rodapé de Ações */}
-                <div className="border-t border-gray-800 p-4 flex flex-wrap gap-2 justify-end bg-gray-900/50">
-                  {type === "conditions" && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const jId = row.junction.id;
-                        setSelectedDetailItem(null);
-                        void handleUnlink(jId, "conditions");
-                      }}
-                      disabled={isBusy}
-                      className="rounded-lg border border-rose-800/80 bg-rose-950/60 px-3 py-1.5 text-xs font-bold text-rose-300 hover:bg-rose-900 hover:text-white transition-colors disabled:opacity-50 cursor-pointer"
-                    >
-                      Remover Condição
-                    </button>
-                  )}
-
-                  {type === "items" && (
-                    <button
-                      type="button"
-                      onClick={() => handleToggleEquip(detailItemId)}
-                      disabled={isBusy}
-                      className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer ${
-                        isItemEquipped
-                          ? "border-emerald-700/80 bg-emerald-950/60 text-emerald-300 hover:bg-emerald-900/80 hover:text-white"
-                          : "border-amber-700/80 bg-amber-950/60 text-amber-300 hover:bg-amber-900/80 hover:text-white"
-                      }`}
-                    >
-                      {equipButtonLabel}
-                    </button>
-                  )}
-
-                  {(type === "spells" || (type === "items" && isItemEquipped && hasItemRollFormula)) && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedDetailItem(null);
-                          handleFreeRoll(row, type);
-                        }}
-                        disabled={isBusy}
-                        className="rounded-lg border border-blue-700/80 bg-blue-950/60 px-3 py-1.5 text-xs font-bold text-blue-300 hover:bg-blue-900/80 hover:text-white transition-colors disabled:opacity-50 cursor-pointer"
-                      >
-                        🎲 Sem combate
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedDetailItem(null);
-                          handleActionClick(row, type);
-                        }}
-                        disabled={isBusy}
-                        className="rounded-lg border border-purple-700/80 bg-purple-950/60 px-3 py-1.5 text-xs font-bold text-purple-300 hover:bg-purple-900/80 hover:text-white transition-colors disabled:opacity-50 cursor-pointer"
-                      >
-                        ⚔️ Em combate
-                      </button>
-                    </>
-                  )}
                 </div>
               </div>
-            </div>
-          );
-        })()}
+            );
+          })()}
 
-        {selectedClassBenefit && (() => {
-          const isUnlocked = (characterLevel ?? 1) >= selectedClassBenefit.level;
-          return (
-            <div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
-              onClick={() => setSelectedClassBenefit(null)}
-              role="dialog"
-              aria-modal="true"
-              aria-label={selectedClassBenefit.name}
-            >
+        {selectedClassBenefit &&
+          (() => {
+            const isUnlocked = (characterLevel ?? 1) >= selectedClassBenefit.level;
+            return (
               <div
-                className="relative w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl border border-gray-800 bg-gray-950 shadow-2xl overflow-hidden"
-                onClick={(e) => e.stopPropagation()}
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+                onClick={() => setSelectedClassBenefit(null)}
+                role="dialog"
+                aria-modal="true"
+                aria-label={selectedClassBenefit.name}
               >
-                {/* Cabeçalho */}
-                <div className="flex items-center justify-between border-b border-gray-800 p-4">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-gray-900 border border-indigo-500/40 flex items-center justify-center">
-                      <span className="font-dings text-2xl text-indigo-400 select-none">U</span>
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="text-sm font-bold text-white truncate" title={selectedClassBenefit.name}>
-                        {selectedClassBenefit.name}
-                      </h3>
-                      <span className="text-[11px] font-medium text-gray-400">
-                        Habilidade de Classe · Nível {selectedClassBenefit.level}
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedClassBenefit(null)}
-                    aria-label="Fechar"
-                    className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors cursor-pointer"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                {/* Corpo com Scroll */}
-                <div className="overflow-y-auto p-4 space-y-4 max-h-[60vh]">
-                  {/* Status do Desbloqueio */}
-                  {isUnlocked ? (
-                    <div className="rounded-lg bg-emerald-950/40 border border-emerald-800/60 p-3 flex items-center gap-3">
-                      <span className="text-emerald-400 text-lg select-none">✓</span>
-                      <div>
-                        <p className="text-xs font-bold text-emerald-300">Habilidade Desbloqueada</p>
-                        <p className="text-[11px] text-emerald-400/80">
-                          Disponível para seu personagem (Nível {characterLevel ?? 1} ≥ {selectedClassBenefit.level}).
-                        </p>
+                <div
+                  className="relative w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl border border-gray-800 bg-gray-950 shadow-2xl overflow-hidden"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Cabeçalho */}
+                  <div className="flex items-center justify-between border-b border-gray-800 p-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-gray-900 border border-indigo-500/40 flex items-center justify-center">
+                        <span className="font-dings text-2xl text-indigo-400 select-none">U</span>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="rounded-lg bg-gray-900/80 border border-amber-800/40 p-3 flex items-center gap-3">
-                      <span className="font-fantasy text-amber-400 text-lg select-none">🔒</span>
-                      <div>
-                        <p className="text-xs font-bold text-amber-300">Habilidade Bloqueada</p>
-                        <p className="text-[11px] text-gray-400">
-                          Requer que o personagem alcance o nível {selectedClassBenefit.level} (Nível atual: {characterLevel ?? 1}).
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Metadados / Bônus */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
-                      <span className="text-[10px] uppercase tracking-wider text-gray-400 block">Nível Exigido</span>
-                      <span className="text-xs font-bold text-indigo-300">Nível {selectedClassBenefit.level}</span>
-                    </div>
-                    {selectedClassBenefit.hpBonus > 0 && (
-                      <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
-                        <span className="text-[10px] uppercase tracking-wider text-gray-400 block">Bônus de HP</span>
-                        <span className="text-xs font-bold text-emerald-400">+{selectedClassBenefit.hpBonus} HP</span>
-                      </div>
-                    )}
-                    {selectedClassBenefit.manaBonus > 0 && (
-                      <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
-                        <span className="text-[10px] uppercase tracking-wider text-gray-400 block">Bônus de Mana</span>
-                        <span className="text-xs font-bold text-blue-400">+{selectedClassBenefit.manaBonus} Mana</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Descrição Completa */}
-                  {Boolean(selectedClassBenefit.description) && (
-                    <div className="space-y-1">
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">Descrição</span>
-                      <div className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap rounded-lg bg-gray-900/40 p-3 border border-gray-800/60">
-                        {selectedClassBenefit.description}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Rodapé */}
-                <div className="border-t border-gray-800 p-4 flex justify-end bg-gray-900/50">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedClassBenefit(null)}
-                    className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-1.5 text-xs font-bold text-gray-200 hover:bg-gray-700 hover:text-white transition-colors cursor-pointer"
-                  >
-                    Fechar
-                  </button>
-                </div>
-              </div>
-            </div>
-          );
-        })()}
-
-        {selectedRaceFeature && raceData && (() => {
-          const isHeritage = selectedRaceFeature.category === "heritage";
-          const isHeritageActive = isHeritage && activeHeritages.includes(selectedRaceFeature.name);
-          const isHeritageLocked = isHeritage && !isHeritageActive && activeHeritages.length >= 2;
-          const heritageAttributeBonuses = selectedRaceFeature.attributeBonuses ?? {};
-          const hasHeritageBonuses = (selectedRaceFeature.hitPointsBonus ?? 0) > 0
-            || Object.values(heritageAttributeBonuses).some((bonus) => bonus !== 0);
-          const hasHeritageMovementSize = selectedRaceFeature.speed !== undefined || Boolean(selectedRaceFeature.size);
-          return (
-            <div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
-              onClick={() => setSelectedRaceFeature(null)}
-              role="dialog"
-              aria-modal="true"
-              aria-label={selectedRaceFeature.name}
-            >
-              <div
-                className="relative w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl border border-gray-800 bg-gray-950 shadow-2xl overflow-hidden"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {/* Cabeçalho */}
-                <div className="flex items-center justify-between border-b border-gray-800 p-4">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className={`h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-gray-900 border flex items-center justify-center ${
-                      isHeritage ? "border-teal-500/40" : "border-emerald-500/40"
-                    }`}>
-                      <span className="text-2xl select-none leading-none">
-                        {isHeritage ? "🌳" : "🧬"}
-                      </span>
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="text-sm font-bold text-white truncate" title={selectedRaceFeature.name}>
-                        {selectedRaceFeature.name}
-                      </h3>
-                      <span className={`text-[11px] font-medium ${isHeritage ? "text-teal-300" : "text-emerald-300"}`}>
-                        {raceData.name} · {isHeritage ? "Herança / Linhagem" : "Traço Racial"}
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedRaceFeature(null)}
-                    aria-label="Fechar"
-                    className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors cursor-pointer"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                {/* Corpo com Scroll */}
-                <div className="overflow-y-auto p-4 space-y-4 max-h-[60vh]">
-                  {/* Status / Origem */}
-                  <div className={`rounded-lg border p-3 flex items-center gap-3 ${
-                    isHeritage
-                      ? isHeritageActive
-                        ? "bg-teal-950/40 border-teal-800/60"
-                        : "bg-gray-900/60 border-gray-800"
-                      : "bg-emerald-950/40 border-emerald-800/60"
-                  }`}>
-                    <span className="text-lg select-none">
-                      {isHeritage ? (isHeritageActive ? "✓" : "🔒") : "🧬"}
-                    </span>
-                    <div>
-                      <p className={`text-xs font-bold ${
-                        isHeritage
-                          ? isHeritageActive
-                            ? "text-teal-300"
-                            : "text-gray-300"
-                          : "text-emerald-300"
-                      }`}>
-                        {isHeritage
-                          ? isHeritageActive
-                            ? "Herança Ativa"
-                            : "Herança Inativa"
-                          : "Traço Racial Ativo"}
-                      </p>
-                      <p className="text-[11px] text-gray-400">
-                        Vinculado à raça {raceData.name}.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Bloco de Ativação / Desativação de Herança */}
-                  {isHeritage && (
-                    <div className="rounded-xl border border-teal-900/50 bg-teal-950/20 p-3.5 space-y-2">
-                      <div className="flex items-center justify-between text-xs font-bold text-teal-300">
-                        <span>Estado da Herança</span>
-                        <span className="text-[11px] text-gray-400 font-normal">
-                          {activeHeritages.length}/2 ativas
+                      <div className="min-w-0">
+                        <h3
+                          className="text-sm font-bold text-white truncate"
+                          title={selectedClassBenefit.name}
+                        >
+                          {selectedClassBenefit.name}
+                        </h3>
+                        <span className="text-[11px] font-medium text-gray-400">
+                          Habilidade de Classe · Nível {selectedClassBenefit.level}
                         </span>
                       </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedClassBenefit(null)}
+                      aria-label="Fechar"
+                      className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
 
-                      {isHeritageActive ? (
-                        <div className="space-y-2">
-                          <p className="text-xs text-teal-200/80">
-                            Esta herança está ativa na ficha do seu personagem.
+                  {/* Corpo com Scroll */}
+                  <div className="overflow-y-auto p-4 space-y-4 max-h-[60vh]">
+                    {/* Status do Desbloqueio */}
+                    {isUnlocked ? (
+                      <div className="rounded-lg bg-emerald-950/40 border border-emerald-800/60 p-3 flex items-center gap-3">
+                        <span className="text-emerald-400 text-lg select-none">✓</span>
+                        <div>
+                          <p className="text-xs font-bold text-emerald-300">
+                            Habilidade Desbloqueada
                           </p>
-                          <button
-                            type="button"
-                            disabled={isBusy}
-                            onClick={() => handleToggleHeritage(selectedRaceFeature.name)}
-                            className="w-full rounded-lg border border-amber-700/60 bg-amber-950/40 hover:bg-amber-900/50 text-amber-200 px-3 py-2 text-xs font-bold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {isBusy ? "Salvando..." : "✕ Desativar Herança"}
-                          </button>
+                          <p className="text-[11px] text-emerald-400/80">
+                            Disponível para seu personagem (Nível {characterLevel ?? 1} ≥{" "}
+                            {selectedClassBenefit.level}).
+                          </p>
                         </div>
-                      ) : isHeritageLocked ? (
-                        <div className="space-y-2">
-                          <p className="text-xs text-amber-300/90 bg-amber-950/30 border border-amber-900/40 rounded-lg p-2.5">
-                            Limite de 2 heranças ativas atingido. Desative outra herança para ativar esta.
+                      </div>
+                    ) : (
+                      <div className="rounded-lg bg-gray-900/80 border border-amber-800/40 p-3 flex items-center gap-3">
+                        <span className="font-fantasy text-amber-400 text-lg select-none">🔒</span>
+                        <div>
+                          <p className="text-xs font-bold text-amber-300">Habilidade Bloqueada</p>
+                          <p className="text-[11px] text-gray-400">
+                            Requer que o personagem alcance o nível {selectedClassBenefit.level}{" "}
+                            (Nível atual: {characterLevel ?? 1}).
                           </p>
-                          <button
-                            type="button"
-                            disabled={true}
-                            className="w-full rounded-lg border border-gray-800 bg-gray-900/50 text-gray-500 px-3 py-2 text-xs font-bold cursor-not-allowed"
-                          >
-                            🔒 Travada (2/2 em uso)
-                          </button>
                         </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <p className="text-xs text-gray-300">
-                            Ative esta herança para conceder suas características e bônus à ficha.
-                          </p>
-                          <button
-                            type="button"
-                            disabled={isBusy}
-                            onClick={() => handleToggleHeritage(selectedRaceFeature.name)}
-                            className="w-full rounded-lg border border-teal-500/80 bg-teal-600 hover:bg-teal-500 text-white shadow-[0_0_12px_rgba(20,184,166,0.25)] px-3 py-2 text-xs font-bold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {isBusy
-                              ? "Salvando..."
-                              : `✨ Ativar Herança (Slot livre: ${2 - activeHeritages.length}/2)`}
-                          </button>
+                      </div>
+                    )}
+
+                    {/* Metadados / Bônus */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
+                        <span className="text-[10px] uppercase tracking-wider text-gray-400 block">
+                          Nível Exigido
+                        </span>
+                        <span className="text-xs font-bold text-indigo-300">
+                          Nível {selectedClassBenefit.level}
+                        </span>
+                      </div>
+                      {selectedClassBenefit.hpBonus > 0 && (
+                        <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
+                          <span className="text-[10px] uppercase tracking-wider text-gray-400 block">
+                            Bônus de HP
+                          </span>
+                          <span className="text-xs font-bold text-emerald-400">
+                            +{selectedClassBenefit.hpBonus} HP
+                          </span>
+                        </div>
+                      )}
+                      {selectedClassBenefit.manaBonus > 0 && (
+                        <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
+                          <span className="text-[10px] uppercase tracking-wider text-gray-400 block">
+                            Bônus de Mana
+                          </span>
+                          <span className="text-xs font-bold text-blue-400">
+                            +{selectedClassBenefit.manaBonus} Mana
+                          </span>
                         </div>
                       )}
                     </div>
-                  )}
 
-                  {isHeritage && hasHeritageBonuses && (
-                    <div className="space-y-1">
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">Bônus desta Herança</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {(selectedRaceFeature.hitPointsBonus ?? 0) > 0 && (
-                          <span className="rounded-md bg-gray-900 px-2 py-0.5 text-[11px] font-bold text-teal-400 border border-gray-800">
-                            +{selectedRaceFeature.hitPointsBonus} HP
-                          </span>
-                        )}
-                        {Object.entries(heritageAttributeBonuses).filter(([, bonus]) => bonus !== 0).map(([attr, bonus]) => (
-                          <span key={attr} className="rounded-md bg-gray-900 px-2 py-0.5 text-[11px] font-bold text-teal-400 border border-gray-800">
-                            {attr.toUpperCase()}: {bonus > 0 ? `+${bonus}` : bonus}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {isHeritage && hasHeritageMovementSize && (
-                    <div className="space-y-1">
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">Dados desta Herança</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {selectedRaceFeature.speed !== undefined && <span className="rounded-md bg-gray-900 px-2 py-0.5 text-[11px] font-bold text-indigo-300 border border-gray-800">Desloc. {selectedRaceFeature.speed}m</span>}
-                        {selectedRaceFeature.size && <span className="rounded-md bg-gray-900 px-2 py-0.5 text-[11px] font-bold text-indigo-300 border border-gray-800">Tamanho {selectedRaceFeature.size}</span>}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Metadados da raça */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
-                      <span className="text-[10px] uppercase tracking-wider text-gray-400 block">Velocidade</span>
-                      <span className="text-xs font-bold text-emerald-300">{raceData.speed}m</span>
-                    </div>
-                    {Boolean(raceData.size) && (
-                      <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
-                        <span className="text-[10px] uppercase tracking-wider text-gray-400 block">Tamanho</span>
-                        <span className="text-xs font-bold text-gray-200">{raceData.size}</span>
-                      </div>
-                    )}
-                    {!isHeritage && raceData.hitPointsBonus > 0 && (
-                      <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
-                        <span className="text-[10px] uppercase tracking-wider text-gray-400 block">Bônus de HP</span>
-                        <span className="text-xs font-bold text-emerald-400">+{raceData.hitPointsBonus} HP</span>
+                    {/* Descrição Completa */}
+                    {Boolean(selectedClassBenefit.description) && (
+                      <div className="space-y-1">
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">
+                          Descrição
+                        </span>
+                        <div className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap rounded-lg bg-gray-900/40 p-3 border border-gray-800/60">
+                          {selectedClassBenefit.description}
+                        </div>
                       </div>
                     )}
                   </div>
 
-                  {/* Bônus de Atributos */}
-                  {!isHeritage && raceData.attributeBonuses && Object.keys(raceData.attributeBonuses).length > 0 && (
-                    <div className="space-y-1">
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">Bônus de Atributos</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {Object.entries(raceData.attributeBonuses).map(([attr, bonus]) => (
-                          <span
-                            key={attr}
-                            className="rounded-md bg-gray-900 px-2 py-0.5 text-[11px] font-bold text-emerald-400 border border-gray-800"
-                          >
-                            {attr.toUpperCase()}: {bonus > 0 ? `+${bonus}` : bonus}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Idiomas */}
-                  {Array.isArray(raceData.languages) && raceData.languages.length > 0 && (
-                    <div className="space-y-1">
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">Idiomas</span>
-                      <p className="text-xs text-gray-300">
-                        {raceData.languages.join(", ")}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Descrição Completa */}
-                  {Boolean(selectedRaceFeature.description) && (
-                    <div className="space-y-1">
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">Descrição do Traço</span>
-                      <div className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap rounded-lg bg-gray-900/40 p-3 border border-gray-800/60">
-                        {selectedRaceFeature.description}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Rodapé */}
-                <div className="border-t border-gray-800 p-4 flex justify-end bg-gray-900/50">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedRaceFeature(null)}
-                    className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-1.5 text-xs font-bold text-gray-200 hover:bg-gray-700 hover:text-white transition-colors cursor-pointer"
-                  >
-                    Fechar
-                  </button>
+                  {/* Rodapé */}
+                  <div className="border-t border-gray-800 p-4 flex justify-end bg-gray-900/50">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedClassBenefit(null)}
+                      className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-1.5 text-xs font-bold text-gray-200 hover:bg-gray-700 hover:text-white transition-colors cursor-pointer"
+                    >
+                      Fechar
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })()}
+            );
+          })()}
+
+        {selectedRaceFeature &&
+          raceData &&
+          (() => {
+            const isHeritage = selectedRaceFeature.category === "heritage";
+            const isHeritageActive =
+              isHeritage && activeHeritages.includes(selectedRaceFeature.name);
+            const isHeritageLocked = isHeritage && !isHeritageActive && activeHeritages.length >= 2;
+            const heritageAttributeBonuses = selectedRaceFeature.attributeBonuses ?? {};
+            const hasHeritageBonuses =
+              (selectedRaceFeature.hitPointsBonus ?? 0) > 0 ||
+              Object.values(heritageAttributeBonuses).some((bonus) => bonus !== 0);
+            const hasHeritageMovementSize =
+              selectedRaceFeature.speed !== undefined || Boolean(selectedRaceFeature.size);
+            return (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+                onClick={() => setSelectedRaceFeature(null)}
+                role="dialog"
+                aria-modal="true"
+                aria-label={selectedRaceFeature.name}
+              >
+                <div
+                  className="relative w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl border border-gray-800 bg-gray-950 shadow-2xl overflow-hidden"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Cabeçalho */}
+                  <div className="flex items-center justify-between border-b border-gray-800 p-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className={`h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-gray-900 border flex items-center justify-center ${
+                          isHeritage ? "border-teal-500/40" : "border-emerald-500/40"
+                        }`}
+                      >
+                        <span className="text-2xl select-none leading-none">
+                          {isHeritage ? "🌳" : "🧬"}
+                        </span>
+                      </div>
+                      <div className="min-w-0">
+                        <h3
+                          className="text-sm font-bold text-white truncate"
+                          title={selectedRaceFeature.name}
+                        >
+                          {selectedRaceFeature.name}
+                        </h3>
+                        <span
+                          className={`text-[11px] font-medium ${isHeritage ? "text-teal-300" : "text-emerald-300"}`}
+                        >
+                          {raceData.name} · {isHeritage ? "Herança / Linhagem" : "Traço Racial"}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedRaceFeature(null)}
+                      aria-label="Fechar"
+                      className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* Corpo com Scroll */}
+                  <div className="overflow-y-auto p-4 space-y-4 max-h-[60vh]">
+                    {/* Status / Origem */}
+                    <div
+                      className={`rounded-lg border p-3 flex items-center gap-3 ${
+                        isHeritage
+                          ? isHeritageActive
+                            ? "bg-teal-950/40 border-teal-800/60"
+                            : "bg-gray-900/60 border-gray-800"
+                          : "bg-emerald-950/40 border-emerald-800/60"
+                      }`}
+                    >
+                      <span className="text-lg select-none">
+                        {isHeritage ? (isHeritageActive ? "✓" : "🔒") : "🧬"}
+                      </span>
+                      <div>
+                        <p
+                          className={`text-xs font-bold ${
+                            isHeritage
+                              ? isHeritageActive
+                                ? "text-teal-300"
+                                : "text-gray-300"
+                              : "text-emerald-300"
+                          }`}
+                        >
+                          {isHeritage
+                            ? isHeritageActive
+                              ? "Herança Ativa"
+                              : "Herança Inativa"
+                            : "Traço Racial Ativo"}
+                        </p>
+                        <p className="text-[11px] text-gray-400">
+                          Vinculado à raça {raceData.name}.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Bloco de Ativação / Desativação de Herança */}
+                    {isHeritage && (
+                      <div className="rounded-xl border border-teal-900/50 bg-teal-950/20 p-3.5 space-y-2">
+                        <div className="flex items-center justify-between text-xs font-bold text-teal-300">
+                          <span>Estado da Herança</span>
+                          <span className="text-[11px] text-gray-400 font-normal">
+                            {activeHeritages.length}/2 ativas
+                          </span>
+                        </div>
+
+                        {isHeritageActive ? (
+                          <div className="space-y-2">
+                            <p className="text-xs text-teal-200/80">
+                              Esta herança está ativa na ficha do seu personagem.
+                            </p>
+                            <button
+                              type="button"
+                              disabled={isBusy}
+                              onClick={() => handleToggleHeritage(selectedRaceFeature.name)}
+                              className="w-full rounded-lg border border-amber-700/60 bg-amber-950/40 hover:bg-amber-900/50 text-amber-200 px-3 py-2 text-xs font-bold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {isBusy ? "Salvando..." : "✕ Desativar Herança"}
+                            </button>
+                          </div>
+                        ) : isHeritageLocked ? (
+                          <div className="space-y-2">
+                            <p className="text-xs text-amber-300/90 bg-amber-950/30 border border-amber-900/40 rounded-lg p-2.5">
+                              Limite de 2 heranças ativas atingido. Desative outra herança para
+                              ativar esta.
+                            </p>
+                            <button
+                              type="button"
+                              disabled={true}
+                              className="w-full rounded-lg border border-gray-800 bg-gray-900/50 text-gray-500 px-3 py-2 text-xs font-bold cursor-not-allowed"
+                            >
+                              🔒 Travada (2/2 em uso)
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <p className="text-xs text-gray-300">
+                              Ative esta herança para conceder suas características e bônus à ficha.
+                            </p>
+                            <button
+                              type="button"
+                              disabled={isBusy}
+                              onClick={() => handleToggleHeritage(selectedRaceFeature.name)}
+                              className="w-full rounded-lg border border-teal-500/80 bg-teal-600 hover:bg-teal-500 text-white shadow-[0_0_12px_rgba(20,184,166,0.25)] px-3 py-2 text-xs font-bold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {isBusy
+                                ? "Salvando..."
+                                : `✨ Ativar Herança (Slot livre: ${2 - activeHeritages.length}/2)`}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {isHeritage && hasHeritageBonuses && (
+                      <div className="space-y-1">
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">
+                          Bônus desta Herança
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {(selectedRaceFeature.hitPointsBonus ?? 0) > 0 && (
+                            <span className="rounded-md bg-gray-900 px-2 py-0.5 text-[11px] font-bold text-teal-400 border border-gray-800">
+                              +{selectedRaceFeature.hitPointsBonus} HP
+                            </span>
+                          )}
+                          {Object.entries(heritageAttributeBonuses)
+                            .filter(([, bonus]) => bonus !== 0)
+                            .map(([attr, bonus]) => (
+                              <span
+                                key={attr}
+                                className="rounded-md bg-gray-900 px-2 py-0.5 text-[11px] font-bold text-teal-400 border border-gray-800"
+                              >
+                                {attr.toUpperCase()}: {bonus > 0 ? `+${bonus}` : bonus}
+                              </span>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {isHeritage && hasHeritageMovementSize && (
+                      <div className="space-y-1">
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">
+                          Dados desta Herança
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {selectedRaceFeature.speed !== undefined && (
+                            <span className="rounded-md bg-gray-900 px-2 py-0.5 text-[11px] font-bold text-indigo-300 border border-gray-800">
+                              Desloc. {selectedRaceFeature.speed}m
+                            </span>
+                          )}
+                          {selectedRaceFeature.size && (
+                            <span className="rounded-md bg-gray-900 px-2 py-0.5 text-[11px] font-bold text-indigo-300 border border-gray-800">
+                              Tamanho {selectedRaceFeature.size}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Metadados da raça */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
+                        <span className="text-[10px] uppercase tracking-wider text-gray-400 block">
+                          Velocidade
+                        </span>
+                        <span className="text-xs font-bold text-emerald-300">
+                          {raceData.speed}m
+                        </span>
+                      </div>
+                      {Boolean(raceData.size) && (
+                        <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
+                          <span className="text-[10px] uppercase tracking-wider text-gray-400 block">
+                            Tamanho
+                          </span>
+                          <span className="text-xs font-bold text-gray-200">{raceData.size}</span>
+                        </div>
+                      )}
+                      {!isHeritage && raceData.hitPointsBonus > 0 && (
+                        <div className="rounded-lg bg-gray-900/80 border border-gray-800/80 p-2 text-center">
+                          <span className="text-[10px] uppercase tracking-wider text-gray-400 block">
+                            Bônus de HP
+                          </span>
+                          <span className="text-xs font-bold text-emerald-400">
+                            +{raceData.hitPointsBonus} HP
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Bônus de Atributos */}
+                    {!isHeritage &&
+                      raceData.attributeBonuses &&
+                      Object.keys(raceData.attributeBonuses).length > 0 && (
+                        <div className="space-y-1">
+                          <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">
+                            Bônus de Atributos
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {Object.entries(raceData.attributeBonuses).map(([attr, bonus]) => (
+                              <span
+                                key={attr}
+                                className="rounded-md bg-gray-900 px-2 py-0.5 text-[11px] font-bold text-emerald-400 border border-gray-800"
+                              >
+                                {attr.toUpperCase()}: {bonus > 0 ? `+${bonus}` : bonus}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                    {/* Idiomas */}
+                    {Array.isArray(raceData.languages) && raceData.languages.length > 0 && (
+                      <div className="space-y-1">
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">
+                          Idiomas
+                        </span>
+                        <p className="text-xs text-gray-300">{raceData.languages.join(", ")}</p>
+                      </div>
+                    )}
+
+                    {/* Descrição Completa */}
+                    {Boolean(selectedRaceFeature.description) && (
+                      <div className="space-y-1">
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">
+                          Descrição do Traço
+                        </span>
+                        <div className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap rounded-lg bg-gray-900/40 p-3 border border-gray-800/60">
+                          {selectedRaceFeature.description}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Rodapé */}
+                  <div className="border-t border-gray-800 p-4 flex justify-end bg-gray-900/50">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedRaceFeature(null)}
+                      className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-1.5 text-xs font-bold text-gray-200 hover:bg-gray-700 hover:text-white transition-colors cursor-pointer"
+                    >
+                      Fechar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
         {selectedActionItem && (
           <TargetSelectionModal

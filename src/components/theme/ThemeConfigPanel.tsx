@@ -45,7 +45,9 @@ export function ThemeConfigPanel({
   } = useTheme();
 
   const [filterMode, setFilterMode] = useState<"all" | "dark" | "light">("all");
-  const [internalSubTab, setInternalSubTab] = useState<"themes_colors" | "fonts" | "ui_details">("themes_colors");
+  const [internalSubTab, setInternalSubTab] = useState<"themes_colors" | "fonts" | "ui_details">(
+    "themes_colors",
+  );
 
   const activeSubTab = externalSubTab ?? internalSubTab;
   const setActiveSubTab = onSubTabChange ?? setInternalSubTab;
@@ -119,7 +121,8 @@ export function ThemeConfigPanel({
                   Temas Calibrados AAA ({filteredPresets.length})
                 </h4>
                 <p className="text-xs text-secondary-muted">
-                  Cada card reflete fielmente as cores dominantes, superfícies e tipografia do tema correspondente.
+                  Cada card reflete fielmente as cores dominantes, superfícies e tipografia do tema
+                  correspondente.
                 </p>
               </div>
 
@@ -361,7 +364,8 @@ export function ThemeConfigPanel({
                   Personalização das Cores do Sistema (60-30-10)
                 </h4>
                 <p className="text-xs text-secondary-muted">
-                  Ajuste fino dos valores hexadecimais com calibração automática de superfície e contraste WCAG AAA.
+                  Ajuste fino dos valores hexadecimais com calibração automática de superfície e
+                  contraste WCAG AAA.
                 </p>
               </div>
 
@@ -659,7 +663,8 @@ export function ThemeConfigPanel({
 
                       {isSelected ? (
                         <span className="flex items-center gap-1 text-[10px] font-bold text-accent-hover bg-accent/20 px-2 py-0.5 rounded-full border border-accent/40">
-                          <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" /> Ativo
+                          <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />{" "}
+                          Ativo
                         </span>
                       ) : (
                         <span className="text-[10px] text-secondary-muted hover:text-secondary-pure">
@@ -732,9 +737,7 @@ export function ThemeConfigPanel({
                 </label>
                 <select
                   value={theme.fonts.headingId}
-                  onChange={(e) =>
-                    setFonts(e.target.value as FontFamilyId, theme.fonts.bodyId)
-                  }
+                  onChange={(e) => setFonts(e.target.value as FontFamilyId, theme.fonts.bodyId)}
                   className="w-full rounded-lg border border-secondary-border bg-dominant-deep px-3 py-2 text-xs text-secondary-pure outline-none focus:ring-2 focus:ring-accent"
                 >
                   <optgroup label="⚔️ Clássicas de RPG & D&D (Locais)">
@@ -775,9 +778,7 @@ export function ThemeConfigPanel({
                 </label>
                 <select
                   value={theme.fonts.bodyId}
-                  onChange={(e) =>
-                    setFonts(theme.fonts.headingId, e.target.value as FontFamilyId)
-                  }
+                  onChange={(e) => setFonts(theme.fonts.headingId, e.target.value as FontFamilyId)}
                   className="w-full rounded-lg border border-secondary-border bg-dominant-deep px-3 py-2 text-xs text-secondary-pure outline-none focus:ring-2 focus:ring-accent"
                 >
                   <optgroup label="⚔️ Clássicas de RPG & D&D (Locais)">
@@ -828,7 +829,9 @@ export function ThemeConfigPanel({
                 className="text-xs text-secondary-muted leading-relaxed transition-all"
                 style={{ fontFamily: theme.fonts.body }}
               >
-                Corpo & Leitura: “Nas profundezas da cripta esquecida, os glifos sussurram segredos esquecidos pelos deuses. Role 1d20 + modificador de Sabedoria para decifrar a inscrição rúnica.”
+                Corpo & Leitura: “Nas profundezas da cripta esquecida, os glifos sussurram segredos
+                esquecidos pelos deuses. Role 1d20 + modificador de Sabedoria para decifrar a
+                inscrição rúnica.”
               </div>
             </div>
           </div>
@@ -972,7 +975,9 @@ export function ThemeConfigPanel({
                         <span className={`text-base transition-transform ${opt.iconSize}`}>🛡️</span>
                       </div>
                       <span className="text-xs font-bold text-secondary-pure">{opt.label}</span>
-                      <span className="text-[10px] font-mono text-secondary-muted">{opt.scale}</span>
+                      <span className="text-[10px] font-mono text-secondary-muted">
+                        {opt.scale}
+                      </span>
                     </button>
                   );
                 })}

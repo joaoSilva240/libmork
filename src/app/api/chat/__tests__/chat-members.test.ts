@@ -68,7 +68,9 @@ describe("PATCH /api/chat/groups/:groupId/members/:userId", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ canWrite: false }),
     });
-    const res = await patchMember(req, { params: Promise.resolve({ groupId: "g-1", userId: "u-2" }) });
+    const res = await patchMember(req, {
+      params: Promise.resolve({ groupId: "g-1", userId: "u-2" }),
+    });
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.data.canWrite).toBe(false);
@@ -81,7 +83,9 @@ describe("PATCH /api/chat/groups/:groupId/members/:userId", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({}),
     });
-    const res = await patchMember(req, { params: Promise.resolve({ groupId: "g-1", userId: "u-2" }) });
+    const res = await patchMember(req, {
+      params: Promise.resolve({ groupId: "g-1", userId: "u-2" }),
+    });
     expect(res.status).toBe(400);
   });
 
@@ -95,7 +99,9 @@ describe("PATCH /api/chat/groups/:groupId/members/:userId", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ canWrite: false }),
     });
-    const res = await patchMember(req, { params: Promise.resolve({ groupId: "g-1", userId: "u-2" }) });
+    const res = await patchMember(req, {
+      params: Promise.resolve({ groupId: "g-1", userId: "u-2" }),
+    });
     expect(res.status).toBe(403);
   });
 });
@@ -109,7 +115,9 @@ describe("DELETE /api/chat/groups/:groupId/members/:userId", () => {
     const req = new NextRequest("http://localhost/api/chat/groups/g-1/members/u-2", {
       method: "DELETE",
     });
-    const res = await deleteMember(req, { params: Promise.resolve({ groupId: "g-1", userId: "u-2" }) });
+    const res = await deleteMember(req, {
+      params: Promise.resolve({ groupId: "g-1", userId: "u-2" }),
+    });
     expect(res.status).toBe(200);
     expect(removeGroupMember).toHaveBeenCalledWith("g-1", "user-1", "u-2");
   });
@@ -122,7 +130,9 @@ describe("DELETE /api/chat/groups/:groupId/members/:userId", () => {
     const req = new NextRequest("http://localhost/api/chat/groups/g-1/members/u-2", {
       method: "DELETE",
     });
-    const res = await deleteMember(req, { params: Promise.resolve({ groupId: "g-1", userId: "u-2" }) });
+    const res = await deleteMember(req, {
+      params: Promise.resolve({ groupId: "g-1", userId: "u-2" }),
+    });
     expect(res.status).toBe(403);
   });
 
@@ -132,7 +142,9 @@ describe("DELETE /api/chat/groups/:groupId/members/:userId", () => {
     const req = new NextRequest("http://localhost/api/chat/groups/g-1/members/u-9", {
       method: "DELETE",
     });
-    const res = await deleteMember(req, { params: Promise.resolve({ groupId: "g-1", userId: "u-9" }) });
+    const res = await deleteMember(req, {
+      params: Promise.resolve({ groupId: "g-1", userId: "u-9" }),
+    });
     expect(res.status).toBe(404);
   });
 });

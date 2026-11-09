@@ -42,7 +42,7 @@ async function importSinglePf2eClass(def: Pf2eClassDefinition, translateWithLLM:
         const translated = await translateContentWithLLM(
           "class",
           payloadToTranslate,
-          `Você é um especialista em Pathfinder 2e (PF2e) e tradução para RPG de mesa. Traduza os nomes, termos, descrições e itens para Português do Brasil (pt-BR). Mantenha estritamente a mesma estrutura JSON.`
+          `Você é um especialista em Pathfinder 2e (PF2e) e tradução para RPG de mesa. Traduza os nomes, termos, descrições e itens para Português do Brasil (pt-BR). Mantenha estritamente a mesma estrutura JSON.`,
         );
 
         if (typeof translated.name === "string" && translated.name) {
@@ -54,14 +54,24 @@ async function importSinglePf2eClass(def: Pf2eClassDefinition, translateWithLLM:
         if (translated.proficiencies && typeof translated.proficiencies === "object") {
           const tp = translated.proficiencies as Record<string, unknown>;
           finalProficiencies = {
-            weapons: Array.isArray(tp.weapons) ? (tp.weapons as string[]) : def.proficiencies.weapons,
+            weapons: Array.isArray(tp.weapons)
+              ? (tp.weapons as string[])
+              : def.proficiencies.weapons,
             armor: Array.isArray(tp.armor) ? (tp.armor as string[]) : def.proficiencies.armor,
-            languages: Array.isArray(tp.languages) ? (tp.languages as string[]) : def.proficiencies.languages,
+            languages: Array.isArray(tp.languages)
+              ? (tp.languages as string[])
+              : def.proficiencies.languages,
             tools: Array.isArray(tp.tools) ? (tp.tools as string[]) : def.proficiencies.tools,
           };
         }
         if (Array.isArray(translated.initialItems)) {
-          finalInitialItems = (translated.initialItems as Array<{ name?: string; quantity?: number; description?: string }>).map((item, idx) => ({
+          finalInitialItems = (
+            translated.initialItems as Array<{
+              name?: string;
+              quantity?: number;
+              description?: string;
+            }>
+          ).map((item, idx) => ({
             item_id: null,
             name: item.name || def.initialItems[idx]?.name || "Item",
             quantity: Number(item.quantity) || def.initialItems[idx]?.quantity || 1,
@@ -71,7 +81,11 @@ async function importSinglePf2eClass(def: Pf2eClassDefinition, translateWithLLM:
           }));
         }
         if (Array.isArray(translated.benefits)) {
-          const transBenefits = translated.benefits as Array<{ level?: number; advantages?: string[]; description?: string }>;
+          const transBenefits = translated.benefits as Array<{
+            level?: number;
+            advantages?: string[];
+            description?: string;
+          }>;
           finalLevels = def.levels.map((orig, idx) => {
             const tb = transBenefits[idx];
             return {
@@ -82,7 +96,10 @@ async function importSinglePf2eClass(def: Pf2eClassDefinition, translateWithLLM:
           });
         }
       } catch (err) {
-        logger.warn({ err, className: def.name }, "[importSinglePf2eClass] Falha na tradução via LLM, mantendo dados originais");
+        logger.warn(
+          { err, className: def.name },
+          "[importSinglePf2eClass] Falha na tradução via LLM, mantendo dados originais",
+        );
       }
     }
 
@@ -140,7 +157,7 @@ export async function POST(request: NextRequest) {
     if (session.user.role !== "master") {
       return NextResponse.json(
         { success: false, error: "Apenas mestres podem gerenciar classes" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -165,7 +182,7 @@ export async function POST(request: NextRequest) {
     for (let i = 0; i < targetClasses.length; i += BATCH_SIZE) {
       const batch = targetClasses.slice(i, i + BATCH_SIZE);
       const results = await Promise.all(
-        batch.map((cls) => importSinglePf2eClass(cls, translateWithLLM))
+        batch.map((cls) => importSinglePf2eClass(cls, translateWithLLM)),
       );
       for (const item of results) {
         if (item) importedClasses.push(item);
@@ -184,7 +201,7 @@ export async function POST(request: NextRequest) {
     logger.error({ err: error }, "Erro na rota de importação Pathfinder 2e");
     return NextResponse.json(
       { success: false, error: "Erro ao importar classes do Pathfinder 2e" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

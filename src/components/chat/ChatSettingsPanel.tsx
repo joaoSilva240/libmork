@@ -193,11 +193,7 @@ export function ChatSettingsPanel({
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-dominant-deep border border-secondary-border">
                     {member.avatarUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={member.avatarUrl}
-                        alt=""
-                        className="h-full w-full object-cover"
-                      />
+                      <img src={member.avatarUrl} alt="" className="h-full w-full object-cover" />
                     ) : (
                       <span className="text-xs font-bold text-accent">
                         {member.displayName.charAt(0).toUpperCase()}
@@ -215,9 +211,7 @@ export function ChatSettingsPanel({
                           Mestre
                         </span>
                       )}
-                      {isSelf && (
-                        <span className="text-[10px] text-secondary-muted">(você)</span>
-                      )}
+                      {isSelf && <span className="text-[10px] text-secondary-muted">(você)</span>}
                     </div>
                     {!isAdmin && restriction && (
                       <span className="mt-0.5 inline-block rounded bg-secondary-input px-1.5 py-0.5 text-[9px] font-semibold text-secondary-muted">

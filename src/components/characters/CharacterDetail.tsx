@@ -100,36 +100,38 @@ export function CharacterDetail() {
   const [activeTab, setActiveTab] = useState<TabType>("status");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showSkillsToast, setShowSkillsToast] = useState(false);
-const [isResting, setIsResting] = useState(false);
-const [isSavingCoins, setIsSavingCoins] = useState(false);
-const [toasts, setToasts] = useState<Array<{ id: string; message: string; type?: "error" | "success" | "info" | "warning" }>>([]);
+  const [isResting, setIsResting] = useState(false);
+  const [isSavingCoins, setIsSavingCoins] = useState(false);
+  const [toasts, setToasts] = useState<
+    Array<{ id: string; message: string; type?: "error" | "success" | "info" | "warning" }>
+  >([]);
 
-const handleCoinsChange = async (newCoins: CoinsBalance) => {
-  if (!character) return;
-  setIsSavingCoins(true);
-  // Otimista
-  setCharacter((prev) => (prev ? { ...prev, coins: newCoins } : prev));
-  try {
-    const res = await fetch(`/api/characters/${character.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ coins: newCoins }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data.data) {
-        setCharacter(data.data);
+  const handleCoinsChange = async (newCoins: CoinsBalance) => {
+    if (!character) return;
+    setIsSavingCoins(true);
+    // Otimista
+    setCharacter((prev) => (prev ? { ...prev, coins: newCoins } : prev));
+    try {
+      const res = await fetch(`/api/characters/${character.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ coins: newCoins }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.data) {
+          setCharacter(data.data);
+        }
+      } else {
+        setError("Erro ao salvar moedas do personagem.");
       }
-    } else {
-      setError("Erro ao salvar moedas do personagem.");
+    } catch {
+      setError("Erro de conexão ao atualizar moedas.");
+    } finally {
+      setIsSavingCoins(false);
     }
-  } catch {
-    setError("Erro de conexão ao atualizar moedas.");
-  } finally {
-    setIsSavingCoins(false);
-  }
-};
+  };
 
   const addToast = (message: string, type: "error" | "success" | "info" | "warning" = "info") => {
     setToasts((prev) => [...prev, { id: generateUUID(), message, type }]);
@@ -143,7 +145,8 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
   const [combatState, setCombatState] = useState<CombatSessionState | null>(null);
   const [showInitiativeModal, setShowInitiativeModal] = useState(false);
   const [manualInitiative, setManualInitiative] = useState("");
-  const [defenseRequestPayload, setDefenseRequestPayload] = useState<DefenseReactionRequestPayload | null>(null);
+  const [defenseRequestPayload, setDefenseRequestPayload] =
+    useState<DefenseReactionRequestPayload | null>(null);
 
   // Pontos de Sombra (RF-045, D-26)
   const [showShadowModal, setShowShadowModal] = useState(false);
@@ -151,7 +154,9 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
 
   // Duelo P2P (RF-069, D-45)
   const [showDuelInviteModal, setShowDuelInviteModal] = useState(false);
-  const [incomingDuelInvite, setIncomingDuelInvite] = useState<DuelInviteRequestPayload | null>(null);
+  const [incomingDuelInvite, setIncomingDuelInvite] = useState<DuelInviteRequestPayload | null>(
+    null,
+  );
   const [activeDuelState, setActiveDuelState] = useState<DuelSessionState | null>(null);
 
   // Rolagem de Dados
@@ -169,17 +174,24 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
   const syncCharacterFromCombatState = (state: CombatSessionState) => {
     const current = characterRef.current;
     if (!current) return;
-    const self = state.combatants.find((combatant) =>
-      combatant.id === current.id || combatant.characterId === current.id || combatant.npcId === current.id
+    const self = state.combatants.find(
+      (combatant) =>
+        combatant.id === current.id ||
+        combatant.characterId === current.id ||
+        combatant.npcId === current.id,
     );
     if (!self) return;
-    setCharacter((prev) => prev ? {
-      ...prev,
-      hitPointsCurrent: self.hpCurrent,
-      hitPointsMax: self.hpMax,
-      ...(self.manaCurrent == null ? {} : { manaPointsCurrent: self.manaCurrent }),
-      ...(self.manaMax == null ? {} : { manaPointsMax: self.manaMax }),
-    } : prev);
+    setCharacter((prev) =>
+      prev
+        ? {
+            ...prev,
+            hitPointsCurrent: self.hpCurrent,
+            hitPointsMax: self.hpMax,
+            ...(self.manaCurrent == null ? {} : { manaPointsCurrent: self.manaCurrent }),
+            ...(self.manaMax == null ? {} : { manaPointsMax: self.manaMax }),
+          }
+        : prev,
+    );
   };
   useEffect(() => {
     characterRef.current = character;
@@ -208,7 +220,7 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
     async function loadCharacter() {
       try {
         const response = await fetch(`/api/characters/${params.id}`, {
-          credentials: "include"
+          credentials: "include",
         });
         const data = await response.json();
 
@@ -223,7 +235,7 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
 
         // Buscar Pontos de Sombra do Usuário
         const meRes = await fetch("/api/auth/me", {
-          credentials: "include"
+          credentials: "include",
         });
         if (meRes.ok) {
           const meData = await meRes.json();
@@ -264,21 +276,33 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
     enabled: !!character?.id,
   });
 
-  const raceDetailsQuery = useRaceDetailsQuery(character?.raceId, { enabled: Boolean(character?.raceId) });
+  const raceDetailsQuery = useRaceDetailsQuery(character?.raceId, {
+    enabled: Boolean(character?.raceId),
+  });
 
   // Calcular peso total carregado
-  const totalWeight = (Array.isArray(inventoryItems) ? inventoryItems : []).reduce((sum: number, item: any) => {
-    const weight = item.content?.weight || item.content?.sourceData?.weight || 0;
-    const quantity = item.junction?.quantity || 1;
-    return sum + (parseFloat(weight) || 0) * quantity;
-  }, 0);
+  const totalWeight = (Array.isArray(inventoryItems) ? inventoryItems : []).reduce(
+    (sum: number, item: any) => {
+      const weight = item.content?.weight || item.content?.sourceData?.weight || 0;
+      const quantity = item.junction?.quantity || 1;
+      return sum + (parseFloat(weight) || 0) * quantity;
+    },
+    0,
+  );
 
   // Sincronizar configurações de dados 3D da campanha associada (Issue #74)
   useEffect(() => {
     if (!character?.campaignId) return;
 
-    const campObj = (character as unknown as { campaign?: { dice3dPlayersEnabled?: boolean; dice3dMasterEnabled?: boolean } }).campaign;
-    if (campObj && (campObj.dice3dPlayersEnabled !== undefined || campObj.dice3dMasterEnabled !== undefined)) {
+    const campObj = (
+      character as unknown as {
+        campaign?: { dice3dPlayersEnabled?: boolean; dice3dMasterEnabled?: boolean };
+      }
+    ).campaign;
+    if (
+      campObj &&
+      (campObj.dice3dPlayersEnabled !== undefined || campObj.dice3dMasterEnabled !== undefined)
+    ) {
       setCampaignDice3DSettings?.(character.campaignId, {
         dice3dPlayersEnabled: campObj.dice3dPlayersEnabled ?? true,
         dice3dMasterEnabled: campObj.dice3dMasterEnabled ?? true,
@@ -333,23 +357,57 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
 
     const unsubActorStatus = subscribeActorStatus((payload) => {
       const current = characterRef.current;
-      if (!current || payload.campaignId !== current.campaignId || payload.actorId !== current.id) return;
-      setCharacter((prev) => prev ? {
-        ...prev,
-        ...(payload.currentHp === undefined ? {} : { hitPointsCurrent: Math.max(0, Math.min(payload.maxHp ?? prev.hitPointsMax, payload.currentHp)) }),
-        ...(payload.maxHp === undefined ? {} : { hitPointsMax: Math.max(0, payload.maxHp) }),
-        ...(payload.currentMana === undefined ? {} : { manaPointsCurrent: Math.max(0, Math.min(payload.maxMana ?? prev.manaPointsMax, payload.currentMana)) }),
-        ...(payload.maxMana === undefined ? {} : { manaPointsMax: Math.max(0, payload.maxMana) }),
-      } : prev);
+      if (!current || payload.campaignId !== current.campaignId || payload.actorId !== current.id)
+        return;
+      setCharacter((prev) =>
+        prev
+          ? {
+              ...prev,
+              ...(payload.currentHp === undefined
+                ? {}
+                : {
+                    hitPointsCurrent: Math.max(
+                      0,
+                      Math.min(payload.maxHp ?? prev.hitPointsMax, payload.currentHp),
+                    ),
+                  }),
+              ...(payload.maxHp === undefined ? {} : { hitPointsMax: Math.max(0, payload.maxHp) }),
+              ...(payload.currentMana === undefined
+                ? {}
+                : {
+                    manaPointsCurrent: Math.max(
+                      0,
+                      Math.min(payload.maxMana ?? prev.manaPointsMax, payload.currentMana),
+                    ),
+                  }),
+              ...(payload.maxMana === undefined
+                ? {}
+                : { manaPointsMax: Math.max(0, payload.maxMana) }),
+            }
+          : prev,
+      );
 
       const combat = combatStateRef.current;
       if (combat && combat.active) {
-        const combatant = combat.combatants.find((c) => c.id === current.id || c.characterId === current.id);
+        const combatant = combat.combatants.find(
+          (c) => c.id === current.id || c.characterId === current.id,
+        );
         if (combatant) {
-          const nextHp = payload.currentHp !== undefined ? Math.max(0, Math.min(payload.maxHp ?? combatant.hpMax, payload.currentHp)) : combatant.hpCurrent;
-          const nextHpMax = payload.maxHp !== undefined ? Math.max(0, payload.maxHp) : combatant.hpMax;
-          const nextMana = payload.currentMana !== undefined ? Math.max(0, Math.min(payload.maxMana ?? (combatant.manaMax ?? 0), payload.currentMana)) : combatant.manaCurrent;
-          const nextManaMax = payload.maxMana !== undefined ? Math.max(0, payload.maxMana) : combatant.manaMax;
+          const nextHp =
+            payload.currentHp !== undefined
+              ? Math.max(0, Math.min(payload.maxHp ?? combatant.hpMax, payload.currentHp))
+              : combatant.hpCurrent;
+          const nextHpMax =
+            payload.maxHp !== undefined ? Math.max(0, payload.maxHp) : combatant.hpMax;
+          const nextMana =
+            payload.currentMana !== undefined
+              ? Math.max(
+                  0,
+                  Math.min(payload.maxMana ?? combatant.manaMax ?? 0, payload.currentMana),
+                )
+              : combatant.manaCurrent;
+          const nextManaMax =
+            payload.maxMana !== undefined ? Math.max(0, payload.maxMana) : combatant.manaMax;
 
           const updatedCombatants = combat.combatants.map((c) => {
             if (c.id === combatant.id) {
@@ -399,7 +457,11 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
     });
 
     const unsubDuelResponse = subscribeDuelResponse((payload) => {
-      if (characterRef.current && payload.challengerId === characterRef.current.id && payload.accepted) {
+      if (
+        characterRef.current &&
+        payload.challengerId === characterRef.current.id &&
+        payload.accepted
+      ) {
         const char = characterRef.current;
         const newDuel = createDuelSession(payload.campaignId, payload.permanentResults, [
           {
@@ -492,9 +554,9 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-      const response = await fetch("/api/auth/logout", { 
+      const response = await fetch("/api/auth/logout", {
         method: "POST",
-        credentials: "include"
+        credentials: "include",
       });
       if (!response.ok) throw new Error("logout failed");
       router.push("/login");
@@ -508,33 +570,49 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
   const handleRespondDefense = async (
     reaction: "dodge" | "block",
     details: string,
-    damageTaken: number
+    damageTaken: number,
   ) => {
     if (!character || !defenseRequestPayload) return;
 
-    const currentTarget = combatState?.combatants.find((combatant) => combatant.id === character.id);
+    const currentTarget = combatState?.combatants.find(
+      (combatant) => combatant.id === character.id,
+    );
     const updatedTarget = currentTarget ? applyHpChange(currentTarget, -damageTaken) : null;
     if (updatedTarget && combatState) {
       const nextState = {
         ...combatState,
-        combatants: combatState.combatants.map((combatant) => combatant.id === updatedTarget.id ? updatedTarget : combatant),
+        combatants: combatState.combatants.map((combatant) =>
+          combatant.id === updatedTarget.id ? updatedTarget : combatant,
+        ),
         pendingReaction: null,
       };
       // O estado realtime é a fonte da verdade; persiste o mesmo resultado uma vez.
       updateCombatState(nextState);
-      setCharacter((prev) => prev ? { ...prev, hitPointsCurrent: updatedTarget.hpCurrent } : prev);
+      setCharacter((prev) =>
+        prev ? { ...prev, hitPointsCurrent: updatedTarget.hpCurrent } : prev,
+      );
       try {
-        const response = await fetch(`/api/campaigns/${character.campaignId}/actors/${character.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ hitPointsCurrent: updatedTarget.hpCurrent, reason: "reação defensiva" }),
-          credentials: "include",
-        });
+        const response = await fetch(
+          `/api/campaigns/${character.campaignId}/actors/${character.id}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              hitPointsCurrent: updatedTarget.hpCurrent,
+              reason: "reação defensiva",
+            }),
+            credentials: "include",
+          },
+        );
         if (!response.ok) setError("HP atualizado em tempo real, mas a persistência falhou.");
       } catch {
         setError("HP atualizado em tempo real, mas a persistência falhou.");
       }
-      updateActorStatus({ campaignId: character.campaignId ?? "", actorId: character.id, currentHp: updatedTarget.hpCurrent });
+      updateActorStatus({
+        campaignId: character.campaignId ?? "",
+        actorId: character.id,
+        currentHp: updatedTarget.hpCurrent,
+      });
     }
 
     rollDice({
@@ -565,26 +643,48 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
     updateCombatState(state);
   };
 
-  const handleActorStatusChange = (actor: { characterId?: string; npcId?: string; id: string; hpCurrent: number; hpMax: number; manaCurrent?: number; manaMax?: number }) => {
-    if (actor.characterId !== character?.id && actor.npcId !== character?.id && actor.id !== character?.id) return;
-    setCharacter((prev) => prev ? {
-      ...prev,
-      hitPointsCurrent: actor.hpCurrent,
-      hitPointsMax: actor.hpMax,
-      ...(actor.manaCurrent == null ? {} : { manaPointsCurrent: actor.manaCurrent }),
-      ...(actor.manaMax == null ? {} : { manaPointsMax: actor.manaMax }),
-    } : prev);
+  const handleActorStatusChange = (actor: {
+    characterId?: string;
+    npcId?: string;
+    id: string;
+    hpCurrent: number;
+    hpMax: number;
+    manaCurrent?: number;
+    manaMax?: number;
+  }) => {
+    if (
+      actor.characterId !== character?.id &&
+      actor.npcId !== character?.id &&
+      actor.id !== character?.id
+    )
+      return;
+    setCharacter((prev) =>
+      prev
+        ? {
+            ...prev,
+            hitPointsCurrent: actor.hpCurrent,
+            hitPointsMax: actor.hpMax,
+            ...(actor.manaCurrent == null ? {} : { manaPointsCurrent: actor.manaCurrent }),
+            ...(actor.manaMax == null ? {} : { manaPointsMax: actor.manaMax }),
+          }
+        : prev,
+    );
   };
 
-  const handleActionResult = (result: { title: string; formula: string; result: number; detail: string }) => {
+  const handleActionResult = (result: {
+    title: string;
+    formula: string;
+    result: number;
+    detail: string;
+  }) => {
     setActiveRollResult(result);
   };
 
   const handleSendInitiative = (val?: number) => {
     if (!character) return;
-    
+
     setIsRollingDice(true);
-    
+
     setTimeout(() => {
       const finalVal = val ?? (Number(manualInitiative) || Math.floor(Math.random() * 20) + 1);
 
@@ -633,7 +733,9 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
 
   const handlePermanentDeath = async (shadowPoints: number) => {
     if (!character) return;
-    alert(`Personagem finalizado com Morte Definitiva. Você recebeu ${shadowPoints} Pontos de Sombra!`);
+    alert(
+      `Personagem finalizado com Morte Definitiva. Você recebeu ${shadowPoints} Pontos de Sombra!`,
+    );
     router.push("/player");
   };
 
@@ -665,7 +767,7 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
             hitPointsCurrent: result.newHp,
             manaPointsCurrent: result.newMana,
           }
-        : prev
+        : prev,
     );
 
     setIsResting(true);
@@ -690,7 +792,7 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
                 hitPointsCurrent: prevHp,
                 manaPointsCurrent: prevMana,
               }
-            : prev
+            : prev,
         );
         addToast("Falha ao salvar descanso. Tente novamente.", "error");
         return;
@@ -709,7 +811,7 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
 
         if (combatState?.active) {
           const myCombatant = combatState.combatants.find(
-            (c) => c.id === character.id || c.characterId === character.id
+            (c) => c.id === character.id || c.characterId === character.id,
           );
           if (myCombatant) {
             const nextSession: CombatSessionState = {
@@ -721,7 +823,7 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
                       hpCurrent: result.newHp,
                       manaCurrent: result.newMana,
                     }
-                  : c
+                  : c,
               ),
             };
             updateCombatState(nextSession);
@@ -731,7 +833,7 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
 
       addToast(
         `${REST_OPTIONS[restType].label}: recuperados +${result.hpRecovered} HP e +${result.manaRecovered} MP.`,
-        "success"
+        "success",
       );
     } catch {
       // Rollback se ocorrer erro de conexão
@@ -742,7 +844,7 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
               hitPointsCurrent: prevHp,
               manaPointsCurrent: prevMana,
             }
-          : prev
+          : prev,
       );
       addToast("Falha ao salvar descanso. Tente novamente.", "error");
     } finally {
@@ -751,19 +853,17 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
   };
 
   const isCombatActive = Boolean(combatState?.active && combatState.combatants.length > 0);
-  const myCombatant = isCombatActive && character
-    ? combatState?.combatants.find((c) => c.id === character.id || c.characterId === character.id)
-    : null;
+  const myCombatant =
+    isCombatActive && character
+      ? combatState?.combatants.find((c) => c.id === character.id || c.characterId === character.id)
+      : null;
   const currentCombatant = isCombatActive
     ? combatState?.combatants[combatState.currentTurnIndex]
     : null;
 
   // Bloqueio de turno: se o combate está ativo, o personagem está nele e NÃO é a vez dele
   const isTurnLocked = Boolean(
-    isCombatActive &&
-    myCombatant &&
-    currentCombatant &&
-    currentCombatant.id !== myCombatant.id
+    isCombatActive && myCombatant && currentCombatant && currentCombatant.id !== myCombatant.id,
   );
 
   const handleRollAttribute = (attr: Attribute) => {
@@ -773,7 +873,7 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
       alert("🔒 Fora do seu turno");
       return;
     }
-    
+
     // Set loading state and roll after 3 seconds
     setIsRollingDice(true);
 
@@ -786,9 +886,10 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
     setTimeout(() => {
       const total = rollRes.total;
       const label = ATTRIBUTE_LABELS[attr];
-      const luckDetail = rollRes.luckActivated && rollRes.luckRoll
-        ? ` [Sorte: ${rollRes.luckRoll.original} → ${rollRes.luckRoll.final}]`
-        : "";
+      const luckDetail =
+        rollRes.luckActivated && rollRes.luckRoll
+          ? ` [Sorte: ${rollRes.luckRoll.original} → ${rollRes.luckRoll.final}]`
+          : "";
       const formula = `1d20 + ${label} (${mod >= 0 ? `+${mod}` : mod})`;
       const detail = `Dado [${rollRes.luckRoll?.original ?? rollRes.die}]${luckDetail} ${mod >= 0 ? `+ ${mod}` : `- ${Math.abs(mod)}`} = ${total}`;
 
@@ -822,7 +923,7 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
           }
         }
       }
-      
+
       setIsRollingDice(false);
     }, DICE_ROLL_LOADING_DELAY);
   };
@@ -853,7 +954,10 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
         <div className="rounded-2xl border border-red-900/60 bg-red-950/40 p-4 text-center text-sm text-red-300">
           <p className="font-bold mb-1">Erro de Carregamento</p>
           <p>{error}</p>
-          <Link href="/player" className="mt-3 inline-block text-xs font-semibold text-purple-400 underline">
+          <Link
+            href="/player"
+            className="mt-3 inline-block text-xs font-semibold text-purple-400 underline"
+          >
             Voltar para Personagens
           </Link>
         </div>
@@ -872,7 +976,10 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
     : { speed: 0, size: "" };
   const movementLabel = raceData ? `${movementSize.speed}m` : "—";
   const sizeLabel = raceData && movementSize.size ? movementSize.size : "—";
-  const hpPercent = Math.min(100, Math.max(0, (character.hitPointsCurrent / Math.max(character.hitPointsMax, 1)) * 100));
+  const hpPercent = Math.min(
+    100,
+    Math.max(0, (character.hitPointsCurrent / Math.max(character.hitPointsMax, 1)) * 100),
+  );
 
   return (
     <div className="relative mx-auto min-h-screen max-w-md bg-gray-950 text-gray-100 pb-[calc(6rem+env(safe-area-inset-bottom))] shadow-2xl font-sans">
@@ -887,7 +994,11 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
           <ArrowLeftIcon className="h-5 w-5 text-purple-400" />
           <span>Libmork — Jogador</span>
         </Link>
-        <span aria-label={isConnected ? "Conectado à mesa" : "Desconectado da mesa"} title={isConnected ? "Conectado à mesa" : "Desconectado da mesa"} className={`h-2.5 w-2.5 rounded-full ${isConnected ? "bg-emerald-400" : "bg-red-500"}`} />
+        <span
+          aria-label={isConnected ? "Conectado à mesa" : "Desconectado da mesa"}
+          title={isConnected ? "Conectado à mesa" : "Desconectado da mesa"}
+          className={`h-2.5 w-2.5 rounded-full ${isConnected ? "bg-emerald-400" : "bg-red-500"}`}
+        />
       </header>
 
       {/* Banner de Combate Ativo */}
@@ -897,7 +1008,10 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
             ⚔️ Combate Rodada {combatState.round}
           </span>
           <span className="text-gray-300">
-            Turno: <strong className="text-white">{combatState.combatants[combatState.currentTurnIndex]?.name}</strong>
+            Turno:{" "}
+            <strong className="text-white">
+              {combatState.combatants[combatState.currentTurnIndex]?.name}
+            </strong>
           </span>
         </div>
       )}
@@ -909,7 +1023,7 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
             🔒 <span>Turno de {currentCombatant?.name}</span>
           </div>
         )}
-        
+
         {/* Loading Spinner for Dice Roll */}
         {isRollingDice && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
@@ -919,7 +1033,7 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
             </div>
           </div>
         )}
-        
+
         {/* Modal de Resultado de Rolagem de Dados */}
         {activeRollResult && (
           <div
@@ -931,9 +1045,13 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
               onClick={(e) => e.stopPropagation()}
             >
               <h4 className="text-sm font-bold text-secondary-pure">{activeRollResult.title}</h4>
-              <p className="text-xs text-accent-vibrant [data-theme-mode=light]:text-accent-dark font-semibold mb-3">{activeRollResult.formula}</p>
+              <p className="text-xs text-accent-vibrant [data-theme-mode=light]:text-accent-dark font-semibold mb-3">
+                {activeRollResult.formula}
+              </p>
               <div className="my-2 rounded-xl bg-accent-glow border border-accent/40 [data-theme-mode=light]:bg-accent/15 [data-theme-mode=light]:border-accent/30 py-4">
-                <span className="text-4xl font-black text-accent-vibrant [data-theme-mode=light]:text-accent-dark">{activeRollResult.result}</span>
+                <span className="text-4xl font-black text-accent-vibrant [data-theme-mode=light]:text-accent-dark">
+                  {activeRollResult.result}
+                </span>
               </div>
               <p className="text-[11px] text-secondary-muted mb-4">{activeRollResult.detail}</p>
               <button
@@ -965,40 +1083,52 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
               </div>
             )}
 
-              <div className="min-w-0 flex-1">
-               <div className="flex items-center gap-1.5 overflow-hidden">
-                 <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none]">
-                   <span className="inline-block rounded-md bg-purple-950/80 px-2 py-0.5 text-[10px] font-bold text-purple-300 border border-purple-800/60">
-                     Nível {character.level}
-                   </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 overflow-hidden">
+                <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none]">
+                  <span className="inline-block rounded-md bg-purple-950/80 px-2 py-0.5 text-[10px] font-bold text-purple-300 border border-purple-800/60">
+                    Nível {character.level}
+                  </span>
                   <span
                     className="inline-flex items-center gap-1 rounded-md bg-gray-900/90 px-2 py-0.5 text-[10px] font-bold text-gray-200 border border-gray-800"
                     title="Bloqueio: mitigação tática com Vigor"
                   >
                     <span className="text-gray-400 font-semibold">Bloqueio</span>
-                     <span className="text-white font-black">{stats.block}</span>
-                   </span>
-                   <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-gray-800 bg-gray-900/90 px-1.5 py-0.5 text-[10px] font-bold text-gray-200" title={`Deslocamento: ${movementLabel}`} aria-label={`Deslocamento ${movementLabel}`}>
-                     <span className="text-gray-400 font-semibold">Desloc.</span><span className="text-white font-black">{movementLabel}</span>
-                   </span>
-                   <span className="inline-flex max-w-[6.5rem] shrink-0 items-center gap-1 rounded-md border border-gray-800 bg-gray-900/90 px-1.5 py-0.5 text-[10px] font-bold text-gray-200" title={`Tamanho: ${sizeLabel}`} aria-label={`Tamanho ${sizeLabel}`}>
-                     <span className="text-gray-400 font-semibold">Tamanho</span><span className="truncate text-white font-black">{sizeLabel}</span>
-                   </span>
-                 </div>
-                 <div className="shrink-0">
-                 <RestPopover
-                  currentHp={character.hitPointsCurrent}
-                  maxHp={character.hitPointsMax}
-                  currentMana={character.manaPointsCurrent}
-                  maxMana={character.manaPointsMax}
-                  vigor={character.attributes?.vigor ?? 10}
-                  onSelectRest={handleRest}
-                   disabled={isResting}
-                 />
-                 </div>
-               </div>
+                    <span className="text-white font-black">{stats.block}</span>
+                  </span>
+                  <span
+                    className="inline-flex shrink-0 items-center gap-1 rounded-md border border-gray-800 bg-gray-900/90 px-1.5 py-0.5 text-[10px] font-bold text-gray-200"
+                    title={`Deslocamento: ${movementLabel}`}
+                    aria-label={`Deslocamento ${movementLabel}`}
+                  >
+                    <span className="text-gray-400 font-semibold">Desloc.</span>
+                    <span className="text-white font-black">{movementLabel}</span>
+                  </span>
+                  <span
+                    className="inline-flex max-w-[6.5rem] shrink-0 items-center gap-1 rounded-md border border-gray-800 bg-gray-900/90 px-1.5 py-0.5 text-[10px] font-bold text-gray-200"
+                    title={`Tamanho: ${sizeLabel}`}
+                    aria-label={`Tamanho ${sizeLabel}`}
+                  >
+                    <span className="text-gray-400 font-semibold">Tamanho</span>
+                    <span className="truncate text-white font-black">{sizeLabel}</span>
+                  </span>
+                </div>
+                <div className="shrink-0">
+                  <RestPopover
+                    currentHp={character.hitPointsCurrent}
+                    maxHp={character.hitPointsMax}
+                    currentMana={character.manaPointsCurrent}
+                    maxMana={character.manaPointsMax}
+                    vigor={character.attributes?.vigor ?? 10}
+                    onSelectRest={handleRest}
+                    disabled={isResting}
+                  />
+                </div>
+              </div>
 
-              <h2 className="mt-1 truncate text-lg font-bold text-secondary-pure tracking-tight">{character.name}</h2>
+              <h2 className="mt-1 truncate text-lg font-bold text-secondary-pure tracking-tight">
+                {character.name}
+              </h2>
               <p className="text-[11px] text-secondary-muted">{character.xp} XP total</p>
             </div>
           </div>
@@ -1039,22 +1169,30 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
                 data-testid="mana-bar-segmented"
               >
                 {Math.max(0, Math.floor(character.manaPointsMax || 0)) > 0 ? (
-                  Array.from({ length: Math.max(0, Math.floor(character.manaPointsMax || 0)) }, (_, index) => {
-                    const isFilled = index < Math.max(0, Math.min(character.manaPointsMax, character.manaPointsCurrent || 0));
-                    return (
-                      <div
-                        key={index}
-                        data-testid="mana-segment"
-                        data-filled={isFilled ? "true" : "false"}
-                        className={`h-full flex-1 rounded-sm transition-all duration-200 ${
-                          isFilled
-                            ? "bg-blue-500 shadow-[0_0_3px_rgba(59,130,246,0.6)]"
-                            : "bg-gray-900 border border-gray-800/80"
-                        }`}
-                        title={`Mana ${index + 1}/${character.manaPointsMax}: ${isFilled ? "Ativo" : "Gasto"}`}
-                      />
-                    );
-                  })
+                  Array.from(
+                    { length: Math.max(0, Math.floor(character.manaPointsMax || 0)) },
+                    (_, index) => {
+                      const isFilled =
+                        index <
+                        Math.max(
+                          0,
+                          Math.min(character.manaPointsMax, character.manaPointsCurrent || 0),
+                        );
+                      return (
+                        <div
+                          key={index}
+                          data-testid="mana-segment"
+                          data-filled={isFilled ? "true" : "false"}
+                          className={`h-full flex-1 rounded-sm transition-all duration-200 ${
+                            isFilled
+                              ? "bg-blue-500 shadow-[0_0_3px_rgba(59,130,246,0.6)]"
+                              : "bg-gray-900 border border-gray-800/80"
+                          }`}
+                          title={`Mana ${index + 1}/${character.manaPointsMax}: ${isFilled ? "Ativo" : "Gasto"}`}
+                        />
+                      );
+                    },
+                  )
                 ) : (
                   <div className="h-full w-full rounded-sm bg-gray-900 border border-gray-800/80" />
                 )}
@@ -1083,45 +1221,53 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
             {/* Atributos do Personagem com Rolagem Instantânea */}
             <div className="rounded-2xl border border-secondary-border bg-secondary-card p-4 shadow-sm">
               <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-secondary-muted">Atributos Principais</h3>
-                <span className="text-[10px] text-accent-vibrant [data-theme-mode=light]:text-accent-dark font-medium">Toque para rolar d20</span>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-secondary-muted">
+                  Atributos Principais
+                </h3>
+                <span className="text-[10px] text-accent-vibrant [data-theme-mode=light]:text-accent-dark font-medium">
+                  Toque para rolar d20
+                </span>
               </div>
 
               <div className="space-y-2">
-{ATTRIBUTES.map((attr) => {
-                   const mod = stats.modifiers[attr];
-                   const value = character.attributes[attr];
-                   return (
-                     <button
-                       key={attr}
-                       onClick={() => handleRollAttribute(attr)}
-                       disabled={isTurnLocked || isRollingDice}
-                       className={`flex w-full items-center justify-between rounded-xl border border-secondary-border bg-dominant-deep/70 p-2.5 transition-all ${
-                         isTurnLocked || isRollingDice
-                           ? "opacity-50 cursor-not-allowed border-secondary-border bg-dominant-deep/40"
-                           : "hover:border-accent/60 hover:bg-accent-glow/20 active:scale-[0.99]"
-                       }`}
-                     >
-                       <div className="flex items-center gap-2.5">
-                         <span className="text-[1.575rem] font-dings leading-none">{ATTRIBUTE_DINGS_LETTERS[attr]}</span>
-                         <span className="text-xs font-semibold text-secondary-pure">{ATTRIBUTE_LABELS[attr]}</span>
-                       </div>
+                {ATTRIBUTES.map((attr) => {
+                  const mod = stats.modifiers[attr];
+                  const value = character.attributes[attr];
+                  return (
+                    <button
+                      key={attr}
+                      onClick={() => handleRollAttribute(attr)}
+                      disabled={isTurnLocked || isRollingDice}
+                      className={`flex w-full items-center justify-between rounded-xl border border-secondary-border bg-dominant-deep/70 p-2.5 transition-all ${
+                        isTurnLocked || isRollingDice
+                          ? "opacity-50 cursor-not-allowed border-secondary-border bg-dominant-deep/40"
+                          : "hover:border-accent/60 hover:bg-accent-glow/20 active:scale-[0.99]"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-[1.575rem] font-dings leading-none">
+                          {ATTRIBUTE_DINGS_LETTERS[attr]}
+                        </span>
+                        <span className="text-xs font-semibold text-secondary-pure">
+                          {ATTRIBUTE_LABELS[attr]}
+                        </span>
+                      </div>
 
-                       <div className="flex items-center gap-2">
-                         <span className="text-xs font-bold text-secondary-pure">{value}</span>
-                         <span
-                           className={`min-w-8 rounded-md py-0.5 px-1.5 text-center text-xs font-black ${
-                             mod >= 0
-                               ? "border border-emerald-300 bg-emerald-50 text-emerald-800 [data-theme-mode=dark]:border-emerald-800/60 [data-theme-mode=dark]:bg-emerald-950 [data-theme-mode=dark]:text-emerald-400"
-                               : "border border-rose-300 bg-rose-50 text-rose-800 [data-theme-mode=dark]:border-rose-800/60 [data-theme-mode=dark]:bg-rose-950 [data-theme-mode=dark]:text-rose-400"
-                           }`}
-                         >
-                           {mod >= 0 ? `+${mod}` : mod}
-                         </span>
-                       </div>
-                     </button>
-                   );
-                 })}
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-secondary-pure">{value}</span>
+                        <span
+                          className={`min-w-8 rounded-md py-0.5 px-1.5 text-center text-xs font-black ${
+                            mod >= 0
+                              ? "border border-emerald-300 bg-emerald-50 text-emerald-800 [data-theme-mode=dark]:border-emerald-800/60 [data-theme-mode=dark]:bg-emerald-950 [data-theme-mode=dark]:text-emerald-400"
+                              : "border border-rose-300 bg-rose-50 text-rose-800 [data-theme-mode=dark]:border-rose-800/60 [data-theme-mode=dark]:bg-rose-950 [data-theme-mode=dark]:text-rose-400"
+                          }`}
+                        >
+                          {mod >= 0 ? `+${mod}` : mod}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -1134,7 +1280,9 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
               <div className="fixed top-16 left-4 right-4 z-50 mx-auto max-w-md animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="flex items-start justify-between gap-3 rounded-2xl border border-purple-600/70 bg-gray-900/95 p-3.5 shadow-2xl backdrop-blur-md">
                   <div className="flex items-start gap-2.5 min-w-0">
-                    <span className="text-base leading-none mt-0.5" aria-hidden="true">💡</span>
+                    <span className="text-base leading-none mt-0.5" aria-hidden="true">
+                      💡
+                    </span>
                     <div className="min-w-0">
                       <h4 className="text-xs font-bold uppercase tracking-wider text-purple-300">
                         Perícias & Treinamento
@@ -1165,7 +1313,9 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
               characterRaceId={character.raceId}
               characterLevel={character.level}
               characterActiveHeritages={character.activeHeritages ?? []}
-              onCharacterUpdate={(updated) => setCharacter((prev) => (prev ? { ...prev, ...updated } : prev))}
+              onCharacterUpdate={(updated) =>
+                setCharacter((prev) => (prev ? { ...prev, ...updated } : prev))
+              }
               characterAttributeModifiers={stats.modifiers}
               campaignId={character.campaignId}
               characterManaCurrent={character.manaPointsCurrent}
@@ -1183,17 +1333,27 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
               onStartRolling={() => setIsRollingDice(true)}
               onEndRolling={() => setIsRollingDice(false)}
               onPersistActorStatus={async (actor, hp, mana) => {
-                if (actor.characterId !== character.id && actor.id !== character.id && actor.type !== "npc" && !actor.npcId) return;
-                const response = await fetch(`/api/campaigns/${character.campaignId}/actors/${actor.id}`, {
-                  method: "PATCH",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    hitPointsCurrent: hp,
-                    ...(mana == null ? {} : { manaPointsCurrent: mana }),
-                    reason: "combate",
-                  }),
-                });
-                if (!response.ok) setError("Estado atualizado em tempo real, mas a persistência falhou.");
+                if (
+                  actor.characterId !== character.id &&
+                  actor.id !== character.id &&
+                  actor.type !== "npc" &&
+                  !actor.npcId
+                )
+                  return;
+                const response = await fetch(
+                  `/api/campaigns/${character.campaignId}/actors/${actor.id}`,
+                  {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      hitPointsCurrent: hp,
+                      ...(mana == null ? {} : { manaPointsCurrent: mana }),
+                      reason: "combate",
+                    }),
+                  },
+                );
+                if (!response.ok)
+                  setError("Estado atualizado em tempo real, mas a persistência falhou.");
               }}
             />
           </div>
@@ -1223,7 +1383,9 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
               characterRaceId={character.raceId}
               characterLevel={character.level}
               characterActiveHeritages={character.activeHeritages ?? []}
-              onCharacterUpdate={(updated) => setCharacter((prev) => (prev ? { ...prev, ...updated } : prev))}
+              onCharacterUpdate={(updated) =>
+                setCharacter((prev) => (prev ? { ...prev, ...updated } : prev))
+              }
               characterAttributeModifiers={stats.modifiers}
               campaignId={character.campaignId}
               characterManaCurrent={character.manaPointsCurrent}
@@ -1241,17 +1403,27 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
               onStartRolling={() => setIsRollingDice(true)}
               onEndRolling={() => setIsRollingDice(false)}
               onPersistActorStatus={async (actor, hp, mana) => {
-                if (actor.characterId !== character.id && actor.id !== character.id && actor.type !== "npc" && !actor.npcId) return;
-                const response = await fetch(`/api/campaigns/${character.campaignId}/actors/${actor.id}`, {
-                  method: "PATCH",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    hitPointsCurrent: hp,
-                    ...(mana == null ? {} : { manaPointsCurrent: mana }),
-                    reason: "combate",
-                  }),
-                });
-                if (!response.ok) setError("Estado atualizado em tempo real, mas a persistência falhou.");
+                if (
+                  actor.characterId !== character.id &&
+                  actor.id !== character.id &&
+                  actor.type !== "npc" &&
+                  !actor.npcId
+                )
+                  return;
+                const response = await fetch(
+                  `/api/campaigns/${character.campaignId}/actors/${actor.id}`,
+                  {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      hitPointsCurrent: hp,
+                      ...(mana == null ? {} : { manaPointsCurrent: mana }),
+                      reason: "combate",
+                    }),
+                  },
+                );
+                if (!response.ok)
+                  setError("Estado atualizado em tempo real, mas a persistência falhou.");
               }}
             />
           </div>
@@ -1266,11 +1438,19 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
               </h3>
 
               <div className="flex flex-col gap-2 border-b border-gray-800 pb-4">
-                <button type="button" onClick={() => setShowDuelInviteModal(true)} className="w-full rounded-xl border border-rose-800/80 bg-rose-950/40 py-2.5 text-xs font-bold text-rose-300 hover:bg-rose-900/60">
+                <button
+                  type="button"
+                  onClick={() => setShowDuelInviteModal(true)}
+                  className="w-full rounded-xl border border-rose-800/80 bg-rose-950/40 py-2.5 text-xs font-bold text-rose-300 hover:bg-rose-900/60"
+                >
                   ⚔️ Duelo P2P
                 </button>
                 {userShadowPoints > 0 && (
-                  <button type="button" onClick={() => setShowShadowModal(true)} className="w-full rounded-xl border border-purple-800/80 bg-purple-950/40 py-2.5 text-xs font-bold text-purple-300 hover:bg-purple-900/60">
+                  <button
+                    type="button"
+                    onClick={() => setShowShadowModal(true)}
+                    className="w-full rounded-xl border border-purple-800/80 bg-purple-950/40 py-2.5 text-xs font-bold text-purple-300 hover:bg-purple-900/60"
+                  >
                     🔮 Gastar Sombra ({userShadowPoints})
                   </button>
                 )}
@@ -1402,7 +1582,9 @@ const handleCoinsChange = async (newCoins: CoinsBalance) => {
           <div className="flex w-full max-w-xs flex-col rounded-3xl border border-purple-600 bg-gray-950 p-6 text-center shadow-2xl space-y-4">
             <span className="text-4xl">⚔️</span>
             <h3 className="text-lg font-bold text-white">REQUISITADO PELO MESTRE</h3>
-            <p className="text-xs text-purple-300">Role seu teste de Iniciativa para a rodada de combate!</p>
+            <p className="text-xs text-purple-300">
+              Role seu teste de Iniciativa para a rodada de combate!
+            </p>
 
             <div className="space-y-2">
               <button

@@ -16,10 +16,7 @@ export async function POST(request: NextRequest) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const body = await request.json().catch(() => null);
@@ -32,7 +29,7 @@ export async function POST(request: NextRequest) {
           error: "Dados inválidos",
           details: parsed.error.flatten(),
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -49,12 +46,7 @@ export async function POST(request: NextRequest) {
           coins: characters.coins,
         })
         .from(characters)
-        .where(
-          and(
-            eq(characters.id, sourceCharacterId),
-            eq(characters.ownerId, session.user.id)
-          )
-        )
+        .where(and(eq(characters.id, sourceCharacterId), eq(characters.ownerId, session.user.id)))
         .limit(1);
 
       if (!sourceChar) {
@@ -69,16 +61,14 @@ export async function POST(request: NextRequest) {
           coins: characters.coins,
         })
         .from(characters)
-        .where(
-          and(
-            eq(characters.id, targetCharacterId),
-            eq(characters.ownerId, session.user.id)
-          )
-        )
+        .where(and(eq(characters.id, targetCharacterId), eq(characters.ownerId, session.user.id)))
         .limit(1);
 
       if (!targetChar) {
-        return { status: 404, error: "Personagem de destino não encontrado ou não pertence a você" };
+        return {
+          status: 404,
+          error: "Personagem de destino não encontrado ou não pertence a você",
+        };
       }
 
       // 2. Normaliza moedas do personagem de origem
@@ -135,10 +125,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!result.success) {
-      return NextResponse.json(
-        { success: false, error: result.error },
-        { status: result.status }
-      );
+      return NextResponse.json({ success: false, error: result.error }, { status: result.status });
     }
 
     return NextResponse.json({
@@ -149,7 +136,7 @@ export async function POST(request: NextRequest) {
     logger.error({ err: error }, "Erro ao transferir riqueza entre personagens");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

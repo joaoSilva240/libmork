@@ -1,5 +1,5 @@
-import Redis from 'ioredis';
-import { logger } from '@/lib/logger';
+import Redis from "ioredis";
+import { logger } from "@/lib/logger";
 
 let redis: Redis | null = null;
 
@@ -9,9 +9,9 @@ if (process.env.REDIS_URL) {
       maxRetriesPerRequest: 3,
       retryStrategy: (times) => Math.min(times * 50, 2000),
     });
-    redis.on('error', (err) => logger.warn({ err }, 'Redis connection error'));
+    redis.on("error", (err) => logger.warn({ err }, "Redis connection error"));
   } catch (err) {
-    logger.warn({ err }, 'Redis initialization failed, continuing without cache');
+    logger.warn({ err }, "Redis initialization failed, continuing without cache");
   }
 }
 
@@ -34,7 +34,7 @@ export const cache = {
     try {
       await redis.setex(key, ttlSeconds, JSON.stringify(value));
     } catch (err) {
-      logger.warn({ err, key }, 'Cache set failed');
+      logger.warn({ err, key }, "Cache set failed");
     }
   },
   async del(key: string): Promise<void> {
@@ -42,7 +42,7 @@ export const cache = {
     try {
       await redis.del(key);
     } catch (err) {
-      logger.warn({ err, key }, 'Cache delete failed');
+      logger.warn({ err, key }, "Cache delete failed");
     }
   },
 };

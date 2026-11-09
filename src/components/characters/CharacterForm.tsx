@@ -169,9 +169,7 @@ export function CharacterForm() {
                 className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-900 px-3 py-2"
               >
                 <div>
-                  <span className="text-sm font-medium text-white">
-                    {ATTRIBUTE_LABELS[attr]}
-                  </span>
+                  <span className="text-sm font-medium text-white">{ATTRIBUTE_LABELS[attr]}</span>
                   <span className="ml-2 text-xs text-gray-400">
                     mod {getModifier(attributes[attr]) >= 0 ? "+" : ""}
                     {getModifier(attributes[attr])}
@@ -186,9 +184,7 @@ export function CharacterForm() {
                   >
                     −
                   </button>
-                  <span className="w-8 text-center font-bold text-white">
-                    {attributes[attr]}
-                  </span>
+                  <span className="w-8 text-center font-bold text-white">{attributes[attr]}</span>
                   <button
                     type="button"
                     onClick={() => handleIncrement(attr)}

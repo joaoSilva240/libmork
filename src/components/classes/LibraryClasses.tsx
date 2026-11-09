@@ -47,7 +47,10 @@ type LibraryClassesProps = {
   onNavigateToFeatures?: () => void;
 };
 
-export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: LibraryClassesProps = {}) {
+export function LibraryClasses({
+  onRegisterActions,
+  onNavigateToFeatures,
+}: LibraryClassesProps = {}) {
   const [classes, setClasses] = useState<RpgClass[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,15 +66,20 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
   const [detailClassId, setDetailClassId] = useState<string | null>(null);
 
   // Form de Criação Manual (Rico)
-  const [activeCreateTab, setActiveCreateTab] = useState<"geral" | "itens" | "proficiencias" | "niveis">("geral");
+  const [activeCreateTab, setActiveCreateTab] = useState<
+    "geral" | "itens" | "proficiencias" | "niveis"
+  >("geral");
   const [createName, setCreateName] = useState("");
   const [createDescription, setCreateDescription] = useState("");
   const [createDraftItems, setCreateDraftItems] = useState<DraftItem[]>([]);
-  const [createProficiencies, setCreateProficiencies] = useState<Proficiencies>(EMPTY_PROFICIENCIES);
+  const [createProficiencies, setCreateProficiencies] =
+    useState<Proficiencies>(EMPTY_PROFICIENCIES);
   const [createHpDie, setCreateHpDie] = useState<number>(8);
   const [createManaProgression, setCreateManaProgression] = useState<number>(0);
   const [createKeyAttribute, setCreateKeyAttribute] = useState<Attribute>("forca");
-  const [createLevelBenefits, setCreateLevelBenefits] = useState<Array<{ level: number; benefits: ClassLevelBenefit }>>([]);
+  const [createLevelBenefits, setCreateLevelBenefits] = useState<
+    Array<{ level: number; benefits: ClassLevelBenefit }>
+  >([]);
   const [createEditingLevel, setCreateEditingLevel] = useState<number | null>(null);
   const [createBenefitLevel, setCreateBenefitLevel] = useState("1");
   const [createBenefitAttribute, setCreateBenefitAttribute] = useState<Attribute>("forca");
@@ -84,7 +92,9 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
   const [isCreating, setIsCreating] = useState(false);
 
   // Modal de Detalhes / Edição de Classe
-  const [activeDetailTab, setActiveDetailTab] = useState<"geral" | "itens" | "proficiencias" | "niveis">("geral");
+  const [activeDetailTab, setActiveDetailTab] = useState<
+    "geral" | "itens" | "proficiencias" | "niveis"
+  >("geral");
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editItems, setEditItems] = useState<DraftItem[]>([]);
@@ -341,7 +351,9 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
       } else if (lvl === 3) {
         advantages.push("Especialização de Arquétipo");
       } else if (lvl === 5) {
-        advantages.push(mana > 0 ? "Aprimoramento Mágico Superior" : "Ataque Extra / Combate Rápido");
+        advantages.push(
+          mana > 0 ? "Aprimoramento Mágico Superior" : "Ataque Extra / Combate Rápido",
+        );
       } else if (lvl === 7) {
         advantages.push("Evasão & Defesa Aprimorada");
       } else if (lvl === 10) {
@@ -370,7 +382,7 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
           hp_bonus: hp,
           mana_bonus: manaBonus > 0 ? manaBonus : undefined,
           attribute_bonuses: attrBonus,
-          extra_trained_skills: lvl === 1 ? 2 : (lvl % 4 === 0 ? 1 : undefined),
+          extra_trained_skills: lvl === 1 ? 2 : lvl % 4 === 0 ? 1 : undefined,
           advantages: advantages.length > 0 ? advantages : undefined,
           description: descParts.join(" · "),
         },
@@ -392,7 +404,8 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
       .filter(Boolean);
 
     const benefits: ClassLevelBenefit = {
-      attribute_bonuses: attributeBonus !== 0 ? { [createBenefitAttribute]: attributeBonus } : undefined,
+      attribute_bonuses:
+        attributeBonus !== 0 ? { [createBenefitAttribute]: attributeBonus } : undefined,
       hp_bonus: Number(createBenefitHpBonus) || 0,
       mana_bonus: Number(createBenefitManaBonus) || 0,
       extra_trained_skills: Number(createBenefitExtraSkills) || 0,
@@ -490,8 +503,10 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
       setShowCreateModal(false);
       setSuccessMessage(
         `Classe "${data.data?.name || createName}" criada com sucesso${
-          createLevelBenefits.length > 0 ? ` com ${createLevelBenefits.length} níveis de progressão!` : "!"
-        }`
+          createLevelBenefits.length > 0
+            ? ` com ${createLevelBenefits.length} níveis de progressão!`
+            : "!"
+        }`,
       );
       await loadClasses();
     } catch {
@@ -600,7 +615,9 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
 
   // Excluir Classe
   const handleDeleteClass = async (classId: string) => {
-    if (!window.confirm("Deseja realmente excluir esta classe e todos os seus benefícios por nível?")) {
+    if (
+      !window.confirm("Deseja realmente excluir esta classe e todos os seus benefícios por nível?")
+    ) {
       return;
     }
 
@@ -643,7 +660,8 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
       const benefitPayload = {
         level: Number(benefitLevel),
         benefits: {
-          attribute_bonuses: attributeBonus !== 0 ? { [benefitAttribute]: attributeBonus } : undefined,
+          attribute_bonuses:
+            attributeBonus !== 0 ? { [benefitAttribute]: attributeBonus } : undefined,
           hp_bonus: Number(benefitHpBonus) || 0,
           mana_bonus: Number(benefitManaBonus) || 0,
           extra_trained_skills: Number(benefitExtraSkills) || 0,
@@ -681,7 +699,9 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
 
       resetBenefitForm();
       await loadClassBenefits(detailClassId);
-      setSuccessMessage(editingBenefitId ? "Benefício de nível atualizado!" : "Benefício de nível adicionado!");
+      setSuccessMessage(
+        editingBenefitId ? "Benefício de nível atualizado!" : "Benefício de nível adicionado!",
+      );
     } catch {
       setError("Erro ao salvar benefício de nível.");
     } finally {
@@ -777,7 +797,8 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
   };
 
   const handleImportAllDndClasses = async () => {
-    if (!window.confirm("Deseja importar TODAS as 12 classes do D&D 5e para sua biblioteca?")) return;
+    if (!window.confirm("Deseja importar TODAS as 12 classes do D&D 5e para sua biblioteca?"))
+      return;
     clearMessages();
     setIsImportingDnd(true);
 
@@ -843,7 +864,9 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
       await loadClasses();
       setShowPf2eCatalogModal(false);
       setSelectedPf2eKeys(new Set());
-      setSuccessMessage(data.message || "Classes selecionadas do Pathfinder 2e importadas com sucesso!");
+      setSuccessMessage(
+        data.message || "Classes selecionadas do Pathfinder 2e importadas com sucesso!",
+      );
     } catch {
       setError("Erro ao importar da API Pathfinder 2e.");
     } finally {
@@ -852,7 +875,12 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
   };
 
   const handleImportAllPf2eClasses = async () => {
-    if (!window.confirm(`Deseja importar TODAS as ${pf2eCatalogList.length} classes do Pathfinder 2e com progressão completa de 20 níveis?`)) return;
+    if (
+      !window.confirm(
+        `Deseja importar TODAS as ${pf2eCatalogList.length} classes do Pathfinder 2e com progressão completa de 20 níveis?`,
+      )
+    )
+      return;
     clearMessages();
     setIsImportingPf2e(true);
 
@@ -899,7 +927,7 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
   const totalPages = Math.ceil(filteredClasses.length / pageSize) || 1;
   const paginatedClasses = filteredClasses.slice(
     (currentPage - 1) * pageSize,
-    currentPage * pageSize
+    currentPage * pageSize,
   );
 
   const parentRef = useRef<HTMLDivElement>(null);
@@ -911,23 +939,29 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
   });
 
   const virtualItems = rowVirtualizer.getVirtualItems();
-  const classItemsToRender = virtualItems.length > 0
-    ? virtualItems.map((v) => ({ index: v.index, key: v.key }))
-    : paginatedClasses.map((_, index) => ({ index, key: index }));
+  const classItemsToRender =
+    virtualItems.length > 0
+      ? virtualItems.map((v) => ({ index: v.index, key: v.key }))
+      : paginatedClasses.map((_, index) => ({ index, key: index }));
 
   // Renderizadores de formulários de itens e proficiências
   const renderItemsEditor = (
     items: DraftItem[],
     onChange: (items: DraftItem[]) => void,
     disabled: boolean,
-    prefix: string
+    prefix: string,
   ) => (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <label className="text-xs font-bold text-gray-300">Itens Iniciais da Classe</label>
         <button
           type="button"
-          onClick={() => onChange([...items, { name: "", quantity: "1", description: "", hitRoll: "", damageRoll: "" }])}
+          onClick={() =>
+            onChange([
+              ...items,
+              { name: "", quantity: "1", description: "", hitRoll: "", damageRoll: "" },
+            ])
+          }
           disabled={disabled}
           className="text-xs font-semibold text-purple-400 hover:text-purple-300 transition"
         >
@@ -954,7 +988,9 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
                   placeholder="Nome do item (ex: Espada Longa)"
                   value={item.name}
                   onChange={(e) =>
-                    onChange(items.map((it, i) => (i === index ? { ...it, name: e.target.value } : it)))
+                    onChange(
+                      items.map((it, i) => (i === index ? { ...it, name: e.target.value } : it)),
+                    )
                   }
                   disabled={disabled}
                   className="flex-1 bg-gray-900 text-white"
@@ -966,7 +1002,11 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
                   min={1}
                   value={item.quantity}
                   onChange={(e) =>
-                    onChange(items.map((it, i) => (i === index ? { ...it, quantity: e.target.value } : it)))
+                    onChange(
+                      items.map((it, i) =>
+                        i === index ? { ...it, quantity: e.target.value } : it,
+                      ),
+                    )
                   }
                   disabled={disabled}
                   className="w-20 bg-gray-900 text-white"
@@ -986,7 +1026,11 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
                 placeholder="Descrição opcional do item..."
                 value={item.description}
                 onChange={(e) =>
-                  onChange(items.map((it, i) => (i === index ? { ...it, description: e.target.value } : it)))
+                  onChange(
+                    items.map((it, i) =>
+                      i === index ? { ...it, description: e.target.value } : it,
+                    ),
+                  )
                 }
                 disabled={disabled}
                 className="w-full rounded-lg border border-gray-800 bg-gray-900 px-2.5 py-1 text-xs text-gray-300 placeholder-gray-600 focus:border-purple-500 focus:outline-none transition"
@@ -997,7 +1041,9 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
                   placeholder="Rolagem de Acerto (ex: 1d20+FOR)"
                   value={item.hitRoll || ""}
                   onChange={(e) =>
-                    onChange(items.map((it, i) => (i === index ? { ...it, hitRoll: e.target.value } : it)))
+                    onChange(
+                      items.map((it, i) => (i === index ? { ...it, hitRoll: e.target.value } : it)),
+                    )
                   }
                   disabled={disabled}
                   className="w-full rounded-lg border border-gray-800 bg-gray-900 px-2.5 py-1 text-xs text-gray-300 placeholder-gray-600 focus:border-purple-500 focus:outline-none transition"
@@ -1007,7 +1053,11 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
                   placeholder="Rolagem de Dano (ex: 1d8+FOR)"
                   value={item.damageRoll || ""}
                   onChange={(e) =>
-                    onChange(items.map((it, i) => (i === index ? { ...it, damageRoll: e.target.value } : it)))
+                    onChange(
+                      items.map((it, i) =>
+                        i === index ? { ...it, damageRoll: e.target.value } : it,
+                      ),
+                    )
                   }
                   disabled={disabled}
                   className="w-full rounded-lg border border-gray-800 bg-gray-900 px-2.5 py-1 text-xs text-gray-300 placeholder-gray-600 focus:border-purple-500 focus:outline-none transition"
@@ -1024,7 +1074,7 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
     profs: Proficiencies,
     onChange: (value: Proficiencies) => void,
     disabled: boolean,
-    prefix: string
+    prefix: string,
   ) => (
     <div className="space-y-3">
       <label className="text-xs font-bold text-gray-300">Proficiências da Classe</label>
@@ -1062,13 +1112,20 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
       {error && (
         <div className="rounded-xl border border-red-800 bg-red-950/40 p-3 text-xs text-red-300 flex items-center justify-between shadow-lg">
           <span>{error}</span>
-          <button onClick={() => setError(null)} className="text-red-400 hover:text-white ml-2">✕</button>
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-white ml-2">
+            ✕
+          </button>
         </div>
       )}
       {successMessage && (
         <div className="rounded-xl border border-emerald-800 bg-emerald-950/40 p-3 text-xs text-emerald-300 flex items-center justify-between shadow-lg">
           <span>{successMessage}</span>
-          <button onClick={() => setSuccessMessage(null)} className="text-emerald-400 hover:text-white ml-2">✕</button>
+          <button
+            onClick={() => setSuccessMessage(null)}
+            className="text-emerald-400 hover:text-white ml-2"
+          >
+            ✕
+          </button>
         </div>
       )}
 
@@ -1113,7 +1170,8 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
           <div className="py-12 text-center text-sm text-gray-400 space-y-2 flex-1">
             <p>Nenhuma classe cadastrada na biblioteca ainda.</p>
             <p className="text-xs text-gray-500">
-              Clique em <strong>+ Criar Classe</strong>, <strong>Catálogo Pathfinder 2e</strong> ou <strong>Catálogo D&D 5e</strong> acima para popular.
+              Clique em <strong>+ Criar Classe</strong>, <strong>Catálogo Pathfinder 2e</strong> ou{" "}
+              <strong>Catálogo D&D 5e</strong> acima para popular.
             </p>
           </div>
         ) : (
@@ -1163,13 +1221,19 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
                           )}
 
                           {weapons.length > 0 && (
-                            <span className="rounded-md bg-gray-900 border border-gray-800 px-2 py-0.5 text-[10px] text-gray-300 truncate max-w-[140px]" title={weapons.join(", ")}>
+                            <span
+                              className="rounded-md bg-gray-900 border border-gray-800 px-2 py-0.5 text-[10px] text-gray-300 truncate max-w-[140px]"
+                              title={weapons.join(", ")}
+                            >
                               ⚔️ {weapons[0]} {weapons.length > 1 ? `+${weapons.length - 1}` : ""}
                             </span>
                           )}
 
                           {armor.length > 0 && (
-                            <span className="rounded-md bg-gray-900 border border-gray-800 px-2 py-0.5 text-[10px] text-gray-300 truncate max-w-[140px]" title={armor.join(", ")}>
+                            <span
+                              className="rounded-md bg-gray-900 border border-gray-800 px-2 py-0.5 text-[10px] text-gray-300 truncate max-w-[140px]"
+                              title={armor.join(", ")}
+                            >
                               🛡️ {armor[0]} {armor.length > 1 ? `+${armor.length - 1}` : ""}
                             </span>
                           )}
@@ -1271,9 +1335,12 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
               <div className="flex items-center gap-3">
                 <span className="text-2xl">🛡️</span>
                 <div>
-                  <h3 className="text-lg font-bold text-purple-200">{editName || "Detalhes da Classe"}</h3>
+                  <h3 className="text-lg font-bold text-purple-200">
+                    {editName || "Detalhes da Classe"}
+                  </h3>
                   <p className="text-xs text-purple-400">
-                    Gerenciamento completo da classe, equipamentos, proficiências e benefícios por nível
+                    Gerenciamento completo da classe, equipamentos, proficiências e benefícios por
+                    nível
                   </p>
                 </div>
               </div>
@@ -1315,7 +1382,11 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
                 { id: "geral", label: "Geral & Descrição", icon: "📝" },
                 { id: "itens", label: `Itens Iniciais (${editItems.length})`, icon: "🎒" },
                 { id: "proficiencias", label: "Proficiências", icon: "⚔️" },
-                { id: "niveis", label: `Progressão de Níveis (${classBenefits.length}/20)`, icon: "⭐" },
+                {
+                  id: "niveis",
+                  label: `Progressão de Níveis (${classBenefits.length}/20)`,
+                  icon: "⭐",
+                },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -1372,7 +1443,12 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
 
               {activeDetailTab === "proficiencias" && (
                 <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-4">
-                  {renderProficienciesEditor(editProficiencies, setEditProficiencies, isSavingEdit, "edit-detail")}
+                  {renderProficienciesEditor(
+                    editProficiencies,
+                    setEditProficiencies,
+                    isSavingEdit,
+                    "edit-detail",
+                  )}
                 </div>
               )}
 
@@ -1382,7 +1458,11 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
                   <div className="rounded-2xl border border-purple-900/60 bg-gray-900 p-4 shadow-lg space-y-3">
                     <div className="flex items-center justify-between border-b border-gray-800 pb-2">
                       <h4 className="text-xs font-bold text-purple-300 flex items-center gap-1.5">
-                        <span>{editingBenefitId ? "✏️ Editar Benefício de Nível" : "+ Configurar Benefício de Nível"}</span>
+                        <span>
+                          {editingBenefitId
+                            ? "✏️ Editar Benefício de Nível"
+                            : "+ Configurar Benefício de Nível"}
+                        </span>
                       </h4>
                       {editingBenefitId && (
                         <button
@@ -1397,7 +1477,9 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
                       <div>
-                        <label className="mb-1 block text-[11px] font-medium text-gray-400">Nível (1-20)</label>
+                        <label className="mb-1 block text-[11px] font-medium text-gray-400">
+                          Nível (1-20)
+                        </label>
                         <select
                           value={benefitLevel}
                           onChange={(e) => setBenefitLevel(e.target.value)}
@@ -1435,7 +1517,9 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
                       />
 
                       <div>
-                        <label className="mb-1 block text-[11px] font-medium text-gray-400">Atributo</label>
+                        <label className="mb-1 block text-[11px] font-medium text-gray-400">
+                          Atributo
+                        </label>
                         <select
                           value={benefitAttribute}
                           onChange={(e) => setBenefitAttribute(e.target.value as Attribute)}
@@ -1503,7 +1587,11 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
                         disabled={isSavingBenefit}
                         className="rounded-xl bg-purple-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-purple-500 transition disabled:opacity-50"
                       >
-                        {isSavingBenefit ? "Salvando..." : editingBenefitId ? "Atualizar Benefício" : "+ Adicionar ao Nível"}
+                        {isSavingBenefit
+                          ? "Salvando..."
+                          : editingBenefitId
+                            ? "Atualizar Benefício"
+                            : "+ Adicionar ao Nível"}
                       </button>
                     </div>
                   </div>
@@ -1534,9 +1622,13 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
                               }`}
                             >
                               <div className="flex items-center gap-3 min-w-[90px]">
-                                <span className={`text-xs font-extrabold rounded-lg px-2.5 py-1 ${
-                                  benefit ? "bg-purple-950 border border-purple-800 text-purple-300" : "bg-gray-900 text-gray-600"
-                                }`}>
+                                <span
+                                  className={`text-xs font-extrabold rounded-lg px-2.5 py-1 ${
+                                    benefit
+                                      ? "bg-purple-950 border border-purple-800 text-purple-300"
+                                      : "bg-gray-900 text-gray-600"
+                                  }`}
+                                >
                                   Nv. {lvlNum}
                                 </span>
                               </div>
@@ -1558,11 +1650,16 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
                                       ) : null}
 
                                       {benefit.benefits.attribute_bonuses &&
-                                        Object.entries(benefit.benefits.attribute_bonuses).map(([attr, val]) => (
-                                          <span key={attr} className="rounded bg-amber-950/70 border border-amber-800/60 px-1.5 py-0.5 text-amber-300 font-semibold">
-                                            +{val} {attr.toUpperCase()}
-                                          </span>
-                                        ))}
+                                        Object.entries(benefit.benefits.attribute_bonuses).map(
+                                          ([attr, val]) => (
+                                            <span
+                                              key={attr}
+                                              className="rounded bg-amber-950/70 border border-amber-800/60 px-1.5 py-0.5 text-amber-300 font-semibold"
+                                            >
+                                              +{val} {attr.toUpperCase()}
+                                            </span>
+                                          ),
+                                        )}
 
                                       {benefit.benefits.extra_trained_skills ? (
                                         <span className="rounded bg-purple-950/70 border border-purple-800/60 px-1.5 py-0.5 text-purple-300 font-semibold">
@@ -1571,7 +1668,10 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
                                       ) : null}
 
                                       {(benefit.benefits.advantages || []).map((adv) => (
-                                        <span key={adv} className="rounded bg-gray-800 px-1.5 py-0.5 text-gray-300">
+                                        <span
+                                          key={adv}
+                                          className="rounded bg-gray-800 px-1.5 py-0.5 text-gray-300"
+                                        >
                                           ⚡ {adv}
                                         </span>
                                       ))}
@@ -1584,7 +1684,9 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
                                     )}
                                   </div>
                                 ) : (
-                                  <span className="text-xs italic text-gray-600">Nenhum benefício extra configurado para este nível.</span>
+                                  <span className="text-xs italic text-gray-600">
+                                    Nenhum benefício extra configurado para este nível.
+                                  </span>
                                 )}
                               </div>
 
@@ -1673,10 +1775,13 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
                 <span className="text-2xl">🛡️</span>
                 <div>
                   <h3 className="text-lg font-bold text-purple-200">
-                    {createName.trim() ? `Criar Classe: ${createName}` : "Criar Nova Classe de Personagem"}
+                    {createName.trim()
+                      ? `Criar Classe: ${createName}`
+                      : "Criar Nova Classe de Personagem"}
                   </h3>
                   <p className="text-xs text-purple-400">
-                    Defina conceito, itens iniciais, proficiências e progressão balanceada de níveis 1 a 20
+                    Defina conceito, itens iniciais, proficiências e progressão balanceada de níveis
+                    1 a 20
                   </p>
                 </div>
               </div>
@@ -1700,7 +1805,11 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
                   label: `Proficiências (${Object.values(createProficiencies).reduce((acc, curr) => acc + (curr?.length || 0), 0)})`,
                   icon: "⚔️",
                 },
-                { id: "niveis", label: `Progressão de Níveis (${createLevelBenefits.length}/20)`, icon: "⭐" },
+                {
+                  id: "niveis",
+                  label: `Progressão de Níveis (${createLevelBenefits.length}/20)`,
+                  icon: "⭐",
+                },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -1760,7 +1869,8 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
                             Configuração de Progressão Rápida (Níveis 1 a 20)
                           </h4>
                           <p className="text-[11px] text-purple-400">
-                            Configure os parâmetros para preencher automaticamente os 20 níveis com HP, Mana, aumentos de atributo e marcos.
+                            Configure os parâmetros para preencher automaticamente os 20 níveis com
+                            HP, Mana, aumentos de atributo e marcos.
                           </p>
                         </div>
                       </div>
@@ -1810,7 +1920,9 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
                         >
                           <option value={0}>Sem Mana (0 / Foco Físico / Marcial Puro)</option>
                           <option value={2}>Meio-Conjurador (2 Mana / Paladino, Ranger)</option>
-                          <option value={4}>Conjurador Pleno (4 Mana / Mago, Clérigo, Feiticeiro)</option>
+                          <option value={4}>
+                            Conjurador Pleno (4 Mana / Mago, Clérigo, Feiticeiro)
+                          </option>
                         </select>
                       </div>
 
@@ -1839,7 +1951,8 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
 
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
                       <p className="text-[11px] text-gray-400">
-                        Aumentos de atributos serão aplicados nos níveis chave <strong>4, 8, 12, 16 e 19</strong>.
+                        Aumentos de atributos serão aplicados nos níveis chave{" "}
+                        <strong>4, 8, 12, 16 e 19</strong>.
                       </p>
 
                       <button
@@ -1863,7 +1976,12 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
 
               {activeCreateTab === "proficiencias" && (
                 <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-4">
-                  {renderProficienciesEditor(createProficiencies, setCreateProficiencies, isCreating, "create")}
+                  {renderProficienciesEditor(
+                    createProficiencies,
+                    setCreateProficiencies,
+                    isCreating,
+                    "create",
+                  )}
                 </div>
               )}
 
@@ -1892,7 +2010,9 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
                       <div>
-                        <label className="mb-1 block text-[11px] font-medium text-gray-400">Nível (1-20)</label>
+                        <label className="mb-1 block text-[11px] font-medium text-gray-400">
+                          Nível (1-20)
+                        </label>
                         <select
                           value={createBenefitLevel}
                           onChange={(e) => setCreateBenefitLevel(e.target.value)}
@@ -1930,7 +2050,9 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
                       />
 
                       <div>
-                        <label className="mb-1 block text-[11px] font-medium text-gray-400">Atributo</label>
+                        <label className="mb-1 block text-[11px] font-medium text-gray-400">
+                          Atributo
+                        </label>
                         <select
                           value={createBenefitAttribute}
                           onChange={(e) => setCreateBenefitAttribute(e.target.value as Attribute)}
@@ -2007,7 +2129,8 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <h4 className="text-xs font-bold text-gray-300">
-                        Tabela de Progressão (1 a 20) — {createLevelBenefits.length} de 20 configurados
+                        Tabela de Progressão (1 a 20) — {createLevelBenefits.length} de 20
+                        configurados
                       </h4>
 
                       <div className="flex items-center gap-2">
@@ -2073,14 +2196,16 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
                                     ) : null}
 
                                     {benefitItem.benefits.attribute_bonuses &&
-                                      Object.entries(benefitItem.benefits.attribute_bonuses).map(([attr, val]) => (
-                                        <span
-                                          key={attr}
-                                          className="rounded bg-amber-950/70 border border-amber-800/60 px-1.5 py-0.5 text-amber-300 font-semibold"
-                                        >
-                                          +{val} {attr.toUpperCase()}
-                                        </span>
-                                      ))}
+                                      Object.entries(benefitItem.benefits.attribute_bonuses).map(
+                                        ([attr, val]) => (
+                                          <span
+                                            key={attr}
+                                            className="rounded bg-amber-950/70 border border-amber-800/60 px-1.5 py-0.5 text-amber-300 font-semibold"
+                                          >
+                                            +{val} {attr.toUpperCase()}
+                                          </span>
+                                        ),
+                                      )}
 
                                     {benefitItem.benefits.extra_trained_skills ? (
                                       <span className="rounded bg-purple-950/70 border border-purple-800/60 px-1.5 py-0.5 text-purple-300 font-semibold">
@@ -2089,7 +2214,10 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
                                     ) : null}
 
                                     {(benefitItem.benefits.advantages || []).map((adv) => (
-                                      <span key={adv} className="rounded bg-gray-800 px-1.5 py-0.5 text-gray-300">
+                                      <span
+                                        key={adv}
+                                        className="rounded bg-gray-800 px-1.5 py-0.5 text-gray-300"
+                                      >
                                         ⚡ {adv}
                                       </span>
                                     ))}
@@ -2195,9 +2323,12 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
               <div className="flex items-center gap-2">
                 <span className="text-2xl">🐉</span>
                 <div>
-                  <h3 className="text-lg font-bold text-purple-200">Catálogo D&D 5e ({dndCatalogList.length} Classes)</h3>
+                  <h3 className="text-lg font-bold text-purple-200">
+                    Catálogo D&D 5e ({dndCatalogList.length} Classes)
+                  </h3>
                   <p className="text-xs text-purple-400">
-                    Importe classes oficiais do SRD D&D 5e com equipamentos, proficiências e benefícios por nível
+                    Importe classes oficiais do SRD D&D 5e com equipamentos, proficiências e
+                    benefícios por nível
                   </p>
                 </div>
               </div>
@@ -2298,7 +2429,9 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
                   disabled={selectedDndIndexes.size === 0 || isImportingDnd}
                   className="rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white hover:bg-purple-500 disabled:opacity-50 shadow-lg shadow-purple-950"
                 >
-                  {isImportingDnd ? "Importando..." : `Importar Selecionadas (${selectedDndIndexes.size})`}
+                  {isImportingDnd
+                    ? "Importando..."
+                    : `Importar Selecionadas (${selectedDndIndexes.size})`}
                 </button>
               </div>
             </div>
@@ -2322,9 +2455,12 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
               <div className="flex items-center gap-2">
                 <span className="text-2xl">⚔️</span>
                 <div>
-                  <h3 className="text-lg font-bold text-purple-200">Catálogo Pathfinder 2e ({pf2eCatalogList.length} Classes)</h3>
+                  <h3 className="text-lg font-bold text-purple-200">
+                    Catálogo Pathfinder 2e ({pf2eCatalogList.length} Classes)
+                  </h3>
                   <p className="text-xs text-purple-400">
-                    Importe classes completas do Pathfinder 2e com atributos chave, vida, proficiências e benefícios 1-20
+                    Importe classes completas do Pathfinder 2e com atributos chave, vida,
+                    proficiências e benefícios 1-20
                   </p>
                 </div>
               </div>
@@ -2362,7 +2498,9 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
                 disabled={isImportingPf2e}
                 className="w-full sm:w-auto rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white hover:bg-purple-500 transition whitespace-nowrap shadow-lg shadow-purple-950 disabled:opacity-50"
               >
-                {isImportingPf2e ? "Importando..." : `🔥 Importar Todas (${pf2eCatalogList.length})`}
+                {isImportingPf2e
+                  ? "Importando..."
+                  : `🔥 Importar Todas (${pf2eCatalogList.length})`}
               </button>
             </div>
 
@@ -2429,7 +2567,9 @@ export function LibraryClasses({ onRegisterActions, onNavigateToFeatures }: Libr
                   disabled={selectedPf2eKeys.size === 0 || isImportingPf2e}
                   className="rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white hover:bg-purple-500 disabled:opacity-50 shadow-lg shadow-purple-950"
                 >
-                  {isImportingPf2e ? "Importando..." : `Importar Selecionadas (${selectedPf2eKeys.size})`}
+                  {isImportingPf2e
+                    ? "Importando..."
+                    : `Importar Selecionadas (${selectedPf2eKeys.size})`}
                 </button>
               </div>
             </div>

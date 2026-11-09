@@ -30,10 +30,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id, worldId } = await params;
@@ -43,22 +40,15 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       if (!campaign) {
         return NextResponse.json(
           { success: false, error: "Campanha não encontrada" },
-          { status: 404 }
+          { status: 404 },
         );
       }
     }
 
-    const world = await db
-      .select()
-      .from(worlds)
-      .where(eq(worlds.id, worldId))
-      .limit(1);
+    const world = await db.select().from(worlds).where(eq(worlds.id, worldId)).limit(1);
 
     if (world.length === 0) {
-      return NextResponse.json(
-        { success: false, error: "Mundo não encontrado" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "Mundo não encontrado" }, { status: 404 });
     }
 
     const data = await db
@@ -69,10 +59,10 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 
     return NextResponse.json({ success: true, data });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao listar encontros');
+    logger.error({ err: error }, "Erro ao listar encontros");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -82,10 +72,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id, worldId } = await params;
@@ -95,22 +82,15 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       if (!campaign) {
         return NextResponse.json(
           { success: false, error: "Campanha não encontrada" },
-          { status: 404 }
+          { status: 404 },
         );
       }
     }
 
-    const world = await db
-      .select()
-      .from(worlds)
-      .where(eq(worlds.id, worldId))
-      .limit(1);
+    const world = await db.select().from(worlds).where(eq(worlds.id, worldId)).limit(1);
 
     if (world.length === 0) {
-      return NextResponse.json(
-        { success: false, error: "Mundo não encontrado" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "Mundo não encontrado" }, { status: 404 });
     }
 
     const body = await request.json();
@@ -119,7 +99,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!validation.success) {
       return NextResponse.json(
         { success: false, error: "Dados inválidos", errors: validation.error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -132,15 +112,12 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       })
       .returning();
 
-    return NextResponse.json(
-      { success: true, data: newEncounter },
-      { status: 201 }
-    );
+    return NextResponse.json({ success: true, data: newEncounter }, { status: 201 });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao criar encontro');
+    logger.error({ err: error }, "Erro ao criar encontro");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

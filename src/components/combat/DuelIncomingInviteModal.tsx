@@ -40,7 +40,8 @@ export function DuelIncomingInviteModal({ invite, onRespond }: DuelIncomingInvit
           <h3 className="text-base font-bold text-rose-200">Desafio de Duelo!</h3>
           <p className="mt-1 text-xs text-gray-300">
             <strong className="text-white">{invite.challengerName}</strong> desafiou seu personagem{" "}
-            <strong className="text-rose-300">{invite.targetCharacterName}</strong> para um duelo em tempo real!
+            <strong className="text-rose-300">{invite.targetCharacterName}</strong> para um duelo em
+            tempo real!
           </p>
         </div>
 

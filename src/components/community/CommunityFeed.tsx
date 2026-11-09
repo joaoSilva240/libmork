@@ -81,7 +81,7 @@ export default function CommunityFeed({ currentUser }: CommunityFeedProps) {
         setLoadingMore(false);
       }
     },
-    [filters]
+    [filters],
   );
 
   useEffect(() => {
@@ -93,9 +93,7 @@ export default function CommunityFeed({ currentUser }: CommunityFeedProps) {
   };
 
   const handlePostUpdate = (updatedPost: CommunityPost) => {
-    setPosts((prev) =>
-      prev.map((p) => (p.id === updatedPost.id ? updatedPost : p))
-    );
+    setPosts((prev) => prev.map((p) => (p.id === updatedPost.id ? updatedPost : p)));
     if (selectedPost && selectedPost.id === updatedPost.id) {
       setSelectedPost(updatedPost);
     }
@@ -152,10 +150,7 @@ export default function CommunityFeed({ currentUser }: CommunityFeedProps) {
       ) : (
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0 px-4 py-3 border-b border-gray-800 bg-gray-950">
           <div className="text-xs text-gray-400">
-            Mostrando{" "}
-            <span className="font-semibold text-gray-200">
-              {sortedPosts.length}
-            </span>{" "}
+            Mostrando <span className="font-semibold text-gray-200">{sortedPosts.length}</span>{" "}
             criações compartilhadas
           </div>
 
@@ -198,11 +193,10 @@ export default function CommunityFeed({ currentUser }: CommunityFeedProps) {
           <div className="mx-4 mt-8 flex flex-col items-center justify-center p-12 rounded-xl border border-gray-800 bg-gray-950/40 text-center gap-4">
             <span className="text-4xl">📜</span>
             <div>
-              <h3 className="text-base font-semibold text-gray-300">
-                Nenhuma criação encontrada
-              </h3>
+              <h3 className="text-base font-semibold text-gray-300">Nenhuma criação encontrada</h3>
               <p className="text-xs text-gray-500 mt-1 max-w-sm">
-                Não encontramos publicações com esses filtros. Seja o primeiro a compartilhar uma criação lendária!
+                Não encontramos publicações com esses filtros. Seja o primeiro a compartilhar uma
+                criação lendária!
               </p>
             </div>
             <Button

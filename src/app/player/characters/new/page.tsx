@@ -13,10 +13,14 @@ function NewCharacterContent() {
   const campaignId = searchParams.get("campaignId");
 
   const initialSystem = systemParam
-    ? (systemParam === "missing" || systemParam === "missing_zero" ? "missing_zero" : "libmork")
+    ? systemParam === "missing" || systemParam === "missing_zero"
+      ? "missing_zero"
+      : "libmork"
     : null;
 
-  const [selectedSystem, setSelectedSystem] = useState<"libmork" | "missing_zero" | null>(initialSystem);
+  const [selectedSystem, setSelectedSystem] = useState<"libmork" | "missing_zero" | null>(
+    initialSystem,
+  );
 
   if (selectedSystem === "libmork") {
     return <CharacterWizard />;
@@ -67,7 +71,8 @@ function NewCharacterContent() {
               Libmork Clássico (d20)
             </h2>
             <p className="mt-2 text-xs text-gray-400 leading-relaxed">
-              Crie seu herói com atributos clássicos (FOR, DES, CON, INT, SAB, CAR), raças e ancestralidades, classes customizadas, magias, perícias e progressão por níveis.
+              Crie seu herói com atributos clássicos (FOR, DES, CON, INT, SAB, CAR), raças e
+              ancestralidades, classes customizadas, magias, perícias e progressão por níveis.
             </p>
           </div>
           <div className="mt-6 flex items-center justify-between border-t border-gray-800/80 pt-4">
@@ -94,7 +99,8 @@ function NewCharacterContent() {
               MISSING — Edição ZERO (Horror Analógico)
             </h2>
             <p className="mt-2 text-xs text-zinc-400 leading-relaxed font-sans">
-              Sistema minimalista baseado em dados d6. Crie um Habitante com registro pautado de memórias, slots de equipamento oficiais e mecânicas de esquecimento e desaparecimento.
+              Sistema minimalista baseado em dados d6. Crie um Habitante com registro pautado de
+              memórias, slots de equipamento oficiais e mecânicas de esquecimento e desaparecimento.
             </p>
           </div>
           <div className="mt-6 flex items-center justify-between border-t border-zinc-800/80 pt-4">

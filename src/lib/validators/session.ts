@@ -32,7 +32,7 @@ export const updateActorSchema = z
       data.level !== undefined ||
       data.conditionsAdd !== undefined ||
       data.conditionsRemove !== undefined,
-    { message: "Nenhuma alteração fornecida" }
+    { message: "Nenhuma alteração fornecida" },
   );
 
 /**

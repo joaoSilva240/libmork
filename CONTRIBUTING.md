@@ -5,12 +5,14 @@ Obrigado por considerar contribuir com o **Libmork**! Este documento descreve o 
 ## 🛠️ Setup de Desenvolvimento
 
 ### Pré-requisitos
+
 - Node.js 22+
 - PostgreSQL 14+ (local ou via Docker)
 - npm 10+
 - Git
 
 ### Instalação
+
 ```bash
 git clone https://github.com/joaoSilva240/libmork.git
 cd libmork
@@ -57,6 +59,7 @@ npm run test:coverage     # Cobertura de código
 ## 🐳 Hook Pre-push
 
 O projeto usa Husky para rebuild da imagem Docker local antes de push:
+
 - Hook: `.husky/pre-push`
 - Ação: `docker compose -f docker-compose.local.yml build && up -d`
 - Para pular (não recomendado): `git push --no-verify`

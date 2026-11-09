@@ -136,9 +136,7 @@ describe("SessionDetailDrawer", () => {
     expect(body.action).toBe("confirm");
     expect(body.scheduledAt).toBe(new Date("2026-12-02T20:00").toISOString());
     expect(body.durationMinutes).toBe(180);
-    expect(onConfirmed).toHaveBeenCalledWith(
-      expect.objectContaining({ status: "confirmed" }),
-    );
+    expect(onConfirmed).toHaveBeenCalledWith(expect.objectContaining({ status: "confirmed" }));
   });
 
   it("cancela sessão em dois passos", async () => {
@@ -167,9 +165,7 @@ describe("SessionDetailDrawer", () => {
     };
     renderDrawer({ session: sessionWithApplication, isMaster: false });
 
-    await waitFor(() =>
-      expect(screen.getByText(/Candidatura enviada/i)).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByText(/Candidatura enviada/i)).toBeInTheDocument());
     expect(screen.queryByTestId("confirm-session-button")).not.toBeInTheDocument();
     expect(screen.queryByTestId("cancel-session-button")).not.toBeInTheDocument();
     expect(screen.queryByTestId("candidate-accept-u-2")).not.toBeInTheDocument();

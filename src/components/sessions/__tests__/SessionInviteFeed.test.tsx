@@ -61,9 +61,7 @@ describe("SessionInviteFeed", () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it("renderiza card com campanha, mestre, sinopse e badges", async () => {
-    feedResponses = [
-      { success: true, data: { items: [baseSession], page: 1, hasMore: false } },
-    ];
+    feedResponses = [{ success: true, data: { items: [baseSession], page: 1, hasMore: false } }];
     renderFeed();
 
     expect(await screen.findByTestId("session-invite-s-1")).toBeInTheDocument();
@@ -76,9 +74,7 @@ describe("SessionInviteFeed", () => {
   });
 
   it("clique no card abre detalhe com botão de interesse", async () => {
-    feedResponses = [
-      { success: true, data: { items: [baseSession], page: 1, hasMore: false } },
-    ];
+    feedResponses = [{ success: true, data: { items: [baseSession], page: 1, hasMore: false } }];
     renderFeed();
 
     fireEvent.click(await screen.findByTestId("session-invite-s-1"));
@@ -118,9 +114,7 @@ describe("SessionInviteFeed", () => {
   it("feed vazio mostra estado próprio", async () => {
     feedResponses = [{ success: true, data: { items: [], page: 1, hasMore: false } }];
     renderFeed();
-    expect(
-      await screen.findByText("Nenhum convite de sessão no momento."),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Nenhum convite de sessão no momento.")).toBeInTheDocument();
   });
 
   it("load-more-invites busca página 2 e anexa itens", async () => {

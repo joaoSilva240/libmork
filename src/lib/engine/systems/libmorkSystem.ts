@@ -11,7 +11,14 @@ import type {
   PhoenixRebirthResult,
 } from "../types";
 import { getModifier, getDerivedStats, getBlockValue, getTrainedSkillSlots } from "../attributes";
-import { resolveAttack, getDefenseValue, getDeathSaveDifficulty, calculatePhoenixRebirth, calculateShadowPointsGained, processDeathSaveRoll } from "../combat";
+import {
+  resolveAttack,
+  getDefenseValue,
+  getDeathSaveDifficulty,
+  calculatePhoenixRebirth,
+  calculateShadowPointsGained,
+  processDeathSaveRoll,
+} from "../combat";
 import { resolveTest } from "../dice";
 import { getSpellActionCost } from "../spells";
 
@@ -67,7 +74,7 @@ export class LibmorkSystem implements GameSystem {
     currentSuccesses: number,
     currentFailures: number,
     dieRoll: number,
-    vigorMod: number
+    vigorMod: number,
   ) {
     return processDeathSaveRoll(currentSuccesses, currentFailures, dieRoll, vigorMod);
   }
@@ -84,7 +91,10 @@ export class LibmorkSystem implements GameSystem {
     return calculateShadowPointsGained(level);
   }
 
-  getEffectiveDifficulty(baseDifficulty: number, shadowPointsDifficultyModifier: number = 0): number {
+  getEffectiveDifficulty(
+    baseDifficulty: number,
+    shadowPointsDifficultyModifier: number = 0,
+  ): number {
     return baseDifficulty + shadowPointsDifficultyModifier;
   }
 }

@@ -3,10 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSocket } from "@/context/SocketContext";
 
-const CATEGORY_CONFIG: Record<
-  string,
-  { label: string; icon: string; badgeClass: string }
-> = {
+const CATEGORY_CONFIG: Record<string, { label: string; icon: string; badgeClass: string }> = {
   handout: {
     label: "Handout",
     icon: "📜",
@@ -56,12 +53,11 @@ export function PlayerAssetOverlay() {
     return null;
   }
 
-  const categoryInfo =
-    CATEGORY_CONFIG[activeAsset.category] || {
-      label: activeAsset.category || "Handout",
-      icon: "🖼️",
-      badgeClass: "bg-gray-800 text-gray-200 border-gray-700",
-    };
+  const categoryInfo = CATEGORY_CONFIG[activeAsset.category] || {
+    label: activeAsset.category || "Handout",
+    icon: "🖼️",
+    badgeClass: "bg-gray-800 text-gray-200 border-gray-700",
+  };
 
   // Se minimizado: renderiza o chip flutuante fixo no canto inferior direito
   if (isMinimized) {

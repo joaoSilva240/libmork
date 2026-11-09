@@ -15,11 +15,7 @@ import { logger } from "@/lib/logger";
 type RouteContext = { params: Promise<{ worldId: string }> };
 
 async function isWorldMaster(worldId: string, userId: string): Promise<boolean> {
-  const [world] = await db
-    .select()
-    .from(worlds)
-    .where(eq(worlds.id, worldId))
-    .limit(1);
+  const [world] = await db.select().from(worlds).where(eq(worlds.id, worldId)).limit(1);
 
   if (!world || !world.campaignId) return false;
 
@@ -41,10 +37,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { worldId } = await params;
@@ -54,22 +47,15 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     if (!isMaster) {
       return NextResponse.json(
         { success: false, error: "Sem permissão para acessar os pins deste mapa" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     // Verifica se o mundo existe e pertence à campanha
-    const [world] = await db
-      .select()
-      .from(worlds)
-      .where(eq(worlds.id, worldId))
-      .limit(1);
+    const [world] = await db.select().from(worlds).where(eq(worlds.id, worldId)).limit(1);
 
     if (!world) {
-      return NextResponse.json(
-        { success: false, error: "Mundo não encontrado" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "Mundo não encontrado" }, { status: 404 });
     }
 
     const pins = await db
@@ -83,10 +69,10 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: pins,
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao listar pins do mapa');
+    logger.error({ err: error }, "Erro ao listar pins do mapa");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -101,10 +87,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { worldId } = await params;
@@ -114,22 +97,15 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!isMaster) {
       return NextResponse.json(
         { success: false, error: "Apenas o mestre da campanha pode gerenciar pins do mapa" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     // Verifica se o mundo existe
-    const [world] = await db
-      .select()
-      .from(worlds)
-      .where(eq(worlds.id, worldId))
-      .limit(1);
+    const [world] = await db.select().from(worlds).where(eq(worlds.id, worldId)).limit(1);
 
     if (!world) {
-      return NextResponse.json(
-        { success: false, error: "Mundo não encontrado" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "Mundo não encontrado" }, { status: 404 });
     }
 
     const body = await request.json();
@@ -138,7 +114,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!Array.isArray(pins)) {
       return NextResponse.json(
         { success: false, error: "Dados inválidos: 'pins' deve ser um array" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -173,10 +149,14 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       data: validatedPins,
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao salvar pins do mapa');
+    logger.error({ err: error }, "Erro ao salvar pins do mapa");
     return NextResponse.json(
-      { success: false, error: "Erro ao salvar pins: " + (error instanceof Error ? error.message : "Erro desconhecido") },
-      { status: 500 }
+      {
+        success: false,
+        error:
+          "Erro ao salvar pins: " + (error instanceof Error ? error.message : "Erro desconhecido"),
+      },
+      { status: 500 },
     );
   }
 }

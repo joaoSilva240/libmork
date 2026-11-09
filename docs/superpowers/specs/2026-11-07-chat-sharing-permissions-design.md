@@ -22,12 +22,12 @@ Este spec cobre quatro evoluções solicitadas:
 
 ## 2. Decisões de abordagem
 
-| Decisão | Escolha | Alternativa descartada |
-|---|---|---|
-| DMs | Estender `campaign_chat_groups` (`campaignId` nullable + `type` + `userAId`/`userBId`) | Tabelas separadas para DMs (duplicaria mensagens, membros, socket e UI) |
-| Compartilhamento | Mensagem `type: 'share'` com `payload` jsonb (snapshot congelado, padrão `communityPosts.payload`) | Guardar só ID+tipo (card quebra se a origem for apagada) |
-| Permissões | Flags booleanas em `campaign_chat_members` (`canRead`, `canWrite`, `canShare`, default `true`) | Tabela de permissões genérica (complexidade sem demanda) |
-| Migração DB | Script transacional idempotente aditivo (mesma técnica das tabelas de chat) | `db:push` (falha por drift sem TTY) / migration files (não usados no projeto) |
+| Decisão          | Escolha                                                                                            | Alternativa descartada                                                        |
+| ---------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| DMs              | Estender `campaign_chat_groups` (`campaignId` nullable + `type` + `userAId`/`userBId`)             | Tabelas separadas para DMs (duplicaria mensagens, membros, socket e UI)       |
+| Compartilhamento | Mensagem `type: 'share'` com `payload` jsonb (snapshot congelado, padrão `communityPosts.payload`) | Guardar só ID+tipo (card quebra se a origem for apagada)                      |
+| Permissões       | Flags booleanas em `campaign_chat_members` (`canRead`, `canWrite`, `canShare`, default `true`)     | Tabela de permissões genérica (complexidade sem demanda)                      |
+| Migração DB      | Script transacional idempotente aditivo (mesma técnica das tabelas de chat)                        | `db:push` (falha por drift sem TTY) / migration files (não usados no projeto) |
 
 Regras confirmadas pelo usuário:
 
@@ -112,12 +112,12 @@ PostgreSQL faz o resto. Nenhum código novo.
 
 ### Tipos e snapshots (`payload.snapshot`)
 
-| kind | Origem | Snapshot | Clique no card |
-|---|---|---|---|
+| kind           | Origem                                                                       | Snapshot                                                                                   | Clique no card                                                                                   |
+| -------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
 | `library_item` | `/api/content/[type]` (tipos do ContentManager: skills, spells, items, etc.) | `{ contentType, contentId, name, description?, imageUrl?, level?/raridade quando houver }` | Modal de detalhes do conteúdo (mesmo viewer usado pelo ContentManager, alimentado pelo snapshot) |
-| `profile` | tabela `users` | `{ userId, displayName, avatarUrl?, bio? }` | Modal de perfil com botão "Iniciar chat" (DM) |
-| `post` | tabela `community_posts` | `{ postId, title, contentType, authorName, payload }` (reusa o snapshot congelado do post) | Reusa `PostDetailModal` alimentado pelo snapshot |
-| `campaign` | campanha do mestre + `campaign_invite` novo | `{ campaignId, name, coverImageUrl?, inviteToken, masterName }` | Aceita o convite (mesmo serviço do fluxo de convite por link) e entra na campanha |
+| `profile`      | tabela `users`                                                               | `{ userId, displayName, avatarUrl?, bio? }`                                                | Modal de perfil com botão "Iniciar chat" (DM)                                                    |
+| `post`         | tabela `community_posts`                                                     | `{ postId, title, contentType, authorName, payload }` (reusa o snapshot congelado do post) | Reusa `PostDetailModal` alimentado pelo snapshot                                                 |
+| `campaign`     | campanha do mestre + `campaign_invite` novo                                  | `{ campaignId, name, coverImageUrl?, inviteToken, masterName }`                            | Aceita o convite (mesmo serviço do fluxo de convite por link) e entra na campanha                |
 
 ### Serviço
 
@@ -138,8 +138,8 @@ PostgreSQL faz o resto. Nenhum código novo.
 - `POST /api/chat/groups/[groupId]/messages` (existente) — body ganha
   `{ type: 'share', content?: string, share: { kind, id, contentType? } }`.
 - `GET /api/chat/share-catalog?groupId=...` — catálogo para o SharePicker:
-  retorna em uma chamada: abas *Biblioteca* (tipos + itens globais do usuário),
-  *Publicações* (primeira página do feed) e *Campanhas* (campanhas em que o
+  retorna em uma chamada: abas _Biblioteca_ (tipos + itens globais do usuário),
+  _Publicações_ (primeira página do feed) e _Campanhas_ (campanhas em que o
   usuário é mestre). 401 sem sessão.
 - `GET /api/chat/users?q=<termo>&groupId=<opcional>` — busca de usuários para
   o autocomplete de `@` (mín. 2 chars; membros do grupo primeiro; retorna

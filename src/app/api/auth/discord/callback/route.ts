@@ -3,7 +3,11 @@ import { db } from "@/lib/db";
 import { users, oauthAccounts } from "@/lib/db/schema";
 import { eq, and, ilike } from "drizzle-orm";
 import { createSession, getSession } from "@/lib/auth/session";
-import { validateDiscordState, validateDiscordProfile, type DiscordProfile } from "@/lib/auth/discord";
+import {
+  validateDiscordState,
+  validateDiscordProfile,
+  type DiscordProfile,
+} from "@/lib/auth/discord";
 import { getPublicOrigin } from "@/lib/auth/redirect";
 import { logger } from "@/lib/logger";
 
@@ -38,9 +42,7 @@ export async function GET(request: NextRequest) {
 
   const clientId = process.env.DISCORD_CLIENT_ID;
   const clientSecret = process.env.DISCORD_CLIENT_SECRET;
-  const callbackUrl =
-    process.env.DISCORD_CALLBACK_URL ||
-    `${origin}/api/auth/discord/callback`;
+  const callbackUrl = process.env.DISCORD_CALLBACK_URL || `${origin}/api/auth/discord/callback`;
 
   if (!clientId || !clientSecret) {
     logger.error("Discord OAuth credentials not configured");
@@ -108,8 +110,8 @@ export async function GET(request: NextRequest) {
       .where(
         and(
           eq(oauthAccounts.provider, "discord"),
-          eq(oauthAccounts.providerAccountId, validatedProfile.providerAccountId)
-        )
+          eq(oauthAccounts.providerAccountId, validatedProfile.providerAccountId),
+        ),
       )
       .limit(1);
 
@@ -162,10 +164,7 @@ export async function GET(request: NextRequest) {
     }
 
     const destination = validatedState.redirect || "/";
-    const redirectResponse = NextResponse.redirect(
-      new URL(destination, origin),
-      303
-    );
+    const redirectResponse = NextResponse.redirect(new URL(destination, origin), 303);
     redirectResponse.headers.set("Cache-Control", "no-store");
 
     await createSession(targetUserId, request, redirectResponse);

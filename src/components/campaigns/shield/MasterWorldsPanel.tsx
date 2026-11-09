@@ -147,9 +147,7 @@ export function MasterWorldsPanel({
 
           <div
             className={`grid transition-all duration-200 ${
-              isEstablishmentsExpanded
-                ? "grid-rows-[1fr] opacity-100"
-                : "grid-rows-[0fr] opacity-0"
+              isEstablishmentsExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
             }`}
           >
             <div className="overflow-hidden">

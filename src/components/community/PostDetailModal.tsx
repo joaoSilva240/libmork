@@ -5,7 +5,15 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { Toast } from "@/components/ui/Toast";
-import { ArrowBigDown, ArrowBigUp, Heart, MessageCircle, Repeat2, Download, Sparkles } from "lucide-react";
+import {
+  ArrowBigDown,
+  ArrowBigUp,
+  Heart,
+  MessageCircle,
+  Repeat2,
+  Download,
+  Sparkles,
+} from "lucide-react";
 import Link from "next/link";
 import { CONTENT_TYPE_CONFIG, CommunityPost } from "./CommunityCard";
 import ImportCustomizeModal from "./ImportCustomizeModal";
@@ -41,7 +49,10 @@ export default function PostDetailModal({ post, onClose, onCloned }: Props) {
   const [isPosting, setIsPosting] = useState(false);
   const [isVoting, setIsVoting] = useState(false);
   const [showJson, setShowJson] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error" | "info";
+  } | null>(null);
 
   const [localPost, setLocalPost] = useState(post);
 
@@ -130,7 +141,8 @@ export default function PostDetailModal({ post, onClose, onCloned }: Props) {
         score: Number(data.score),
         upvotes: Number(data.upvotes),
         downvotes: Number(data.downvotes),
-        userVote: data.userVote !== null && data.userVote !== undefined ? Number(data.userVote) : null,
+        userVote:
+          data.userVote !== null && data.userVote !== undefined ? Number(data.userVote) : null,
       });
     } catch (err) {
       // Rollback on error
@@ -242,13 +254,7 @@ export default function PostDetailModal({ post, onClose, onCloned }: Props) {
 
   return (
     <>
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {customizeImportTarget && (
         <ImportCustomizeModal
@@ -303,7 +309,9 @@ export default function PostDetailModal({ post, onClose, onCloned }: Props) {
                   >
                     {authorName}
                   </Link>
-                  <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${typeConfig.badgeClass}`}>
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${typeConfig.badgeClass}`}
+                  >
                     <span>{typeConfig.icon}</span>
                     <span>{typeConfig.label}</span>
                   </span>
@@ -361,9 +369,7 @@ export default function PostDetailModal({ post, onClose, onCloned }: Props) {
             )}
 
             {/* Timestamp */}
-            <div className="text-xs text-gray-500 pt-1">
-              {formattedDateTime}
-            </div>
+            <div className="text-xs text-gray-500 pt-1">{formattedDateTime}</div>
 
             {/* Métricas / Contadores com ícones minimalistas */}
             <div className="flex items-center gap-6 border-y border-gray-800/80 py-3 text-xs text-gray-400">
@@ -392,8 +398,8 @@ export default function PostDetailModal({ post, onClose, onCloned }: Props) {
                     localPost.userVote === 1
                       ? "text-orange-500"
                       : localPost.userVote === -1
-                      ? "text-blue-500"
-                      : "text-gray-200"
+                        ? "text-blue-500"
+                        : "text-gray-200"
                   }`}
                   aria-label={`Pontuação: ${localPost.score ?? 0}`}
                   title={`Pontuação: ${localPost.score ?? 0}`}
@@ -420,17 +426,33 @@ export default function PostDetailModal({ post, onClose, onCloned }: Props) {
                 </button>
               </div>
 
-              <div className="inline-flex items-center gap-1.5" aria-label="Curtidas" title="Curtidas">
-                <Heart className={`h-4 w-4 ${post.isLikedByMe ? "fill-rose-500 text-rose-500" : ""}`} />
-                <span><strong className="text-gray-100 font-bold">{post.likesCount}</strong></span>
+              <div
+                className="inline-flex items-center gap-1.5"
+                aria-label="Curtidas"
+                title="Curtidas"
+              >
+                <Heart
+                  className={`h-4 w-4 ${post.isLikedByMe ? "fill-rose-500 text-rose-500" : ""}`}
+                />
+                <span>
+                  <strong className="text-gray-100 font-bold">{post.likesCount}</strong>
+                </span>
               </div>
-              <div className="inline-flex items-center gap-1.5" aria-label="Comentários" title="Comentários">
+              <div
+                className="inline-flex items-center gap-1.5"
+                aria-label="Comentários"
+                title="Comentários"
+              >
                 <MessageCircle className="h-4 w-4" />
-                <span><strong className="text-gray-100 font-bold">{post.commentsCount}</strong></span>
+                <span>
+                  <strong className="text-gray-100 font-bold">{post.commentsCount}</strong>
+                </span>
               </div>
               <div className="inline-flex items-center gap-1.5" aria-label="Clones" title="Clones">
                 <Repeat2 className="h-4 w-4" />
-                <span><strong className="text-gray-100 font-bold">{post.clonesCount}</strong></span>
+                <span>
+                  <strong className="text-gray-100 font-bold">{post.clonesCount}</strong>
+                </span>
               </div>
 
               <button
@@ -497,12 +519,10 @@ export default function PostDetailModal({ post, onClose, onCloned }: Props) {
                   {comments.map((comment) => {
                     const cAuthor = comment.author?.displayName || "Mestre Anônimo";
                     const isAttachment = comment.commentType === "attachment";
-                    const payload = comment.attachmentPayload as Record<string, unknown> | undefined;
+                    const payload = comment.attachmentPayload as
+                      Record<string, unknown> | undefined;
                     const commentImg =
-                      payload?.imageUrl ||
-                      payload?.iconUrl ||
-                      payload?.mapUrl ||
-                      payload?.tokenUrl;
+                      payload?.imageUrl || payload?.iconUrl || payload?.mapUrl || payload?.tokenUrl;
 
                     if (isAttachment) {
                       return (
@@ -552,7 +572,8 @@ export default function PostDetailModal({ post, onClose, onCloned }: Props) {
                               <p className="mt-0.5 text-xs text-gray-300 leading-relaxed">
                                 {comment.content}
                               </p>
-                              {payload && (payload.description || payload.damage || payload.rarity) ? (
+                              {payload &&
+                              (payload.description || payload.damage || payload.rarity) ? (
                                 <p className="mt-1 line-clamp-2 text-[11px] text-gray-400">
                                   {String(payload.description || payload.damage || payload.rarity)}
                                 </p>

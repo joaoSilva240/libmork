@@ -77,7 +77,9 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
   const [detailRace, setDetailRace] = useState<RpgRace | null>(null);
 
   // Form Criação
-  const [activeCreateTab, setActiveCreateTab] = useState<"geral" | "atributos" | "idiomas" | "tracos" | "herancas">("geral");
+  const [activeCreateTab, setActiveCreateTab] = useState<
+    "geral" | "atributos" | "idiomas" | "tracos" | "herancas"
+  >("geral");
   const [createName, setCreateName] = useState("");
   const [createDescription, setCreateDescription] = useState("");
   const [createSpeed, setCreateSpeed] = useState("30");
@@ -85,7 +87,9 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
   const [createHitPointsBonus, setCreateHitPointsBonus] = useState("0");
   const [createImageUrl, setCreateImageUrl] = useState("");
   const [createSourceSystem, setCreateSourceSystem] = useState("custom");
-  const [createAttributes, setCreateAttributes] = useState<Record<Attribute, number>>({ ...DEFAULT_RACE_ATTRIBUTES });
+  const [createAttributes, setCreateAttributes] = useState<Record<Attribute, number>>({
+    ...DEFAULT_RACE_ATTRIBUTES,
+  });
   const [createLanguages, setCreateLanguages] = useState<string[]>(["Comum"]);
   const [createLanguageInput, setCreateLanguageInput] = useState("");
   const [createTraits, setCreateTraits] = useState<TraitItem[]>([]);
@@ -97,11 +101,15 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
   const [createHeritageSpeed, setCreateHeritageSpeed] = useState("");
   const [createHeritageSize, setCreateHeritageSize] = useState("");
   const [createHeritageHitPointsBonus, setCreateHeritageHitPointsBonus] = useState("0");
-  const [createHeritageAttributes, setCreateHeritageAttributes] = useState<Partial<Record<Exclude<Attribute, "sorte">, number>>>({});
+  const [createHeritageAttributes, setCreateHeritageAttributes] = useState<
+    Partial<Record<Exclude<Attribute, "sorte">, number>>
+  >({});
   const [isCreating, setIsCreating] = useState(false);
 
   // Form Edição
-  const [activeDetailTab, setActiveDetailTab] = useState<"geral" | "atributos" | "idiomas" | "tracos" | "herancas">("geral");
+  const [activeDetailTab, setActiveDetailTab] = useState<
+    "geral" | "atributos" | "idiomas" | "tracos" | "herancas"
+  >("geral");
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editSpeed, setEditSpeed] = useState("30");
@@ -109,7 +117,9 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
   const [editHitPointsBonus, setEditHitPointsBonus] = useState("0");
   const [editImageUrl, setEditImageUrl] = useState("");
   const [editSourceSystem, setEditSourceSystem] = useState("custom");
-  const [editAttributes, setEditAttributes] = useState<Record<Attribute, number>>({ ...DEFAULT_RACE_ATTRIBUTES });
+  const [editAttributes, setEditAttributes] = useState<Record<Attribute, number>>({
+    ...DEFAULT_RACE_ATTRIBUTES,
+  });
   const [editLanguages, setEditLanguages] = useState<string[]>([]);
   const [editLanguageInput, setEditLanguageInput] = useState("");
   const [editTraits, setEditTraits] = useState<TraitItem[]>([]);
@@ -121,7 +131,9 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
   const [editHeritageSpeed, setEditHeritageSpeed] = useState("");
   const [editHeritageSize, setEditHeritageSize] = useState("");
   const [editHeritageHitPointsBonus, setEditHeritageHitPointsBonus] = useState("0");
-  const [editHeritageAttributes, setEditHeritageAttributes] = useState<Partial<Record<Exclude<Attribute, "sorte">, number>>>({});
+  const [editHeritageAttributes, setEditHeritageAttributes] = useState<
+    Partial<Record<Exclude<Attribute, "sorte">, number>>
+  >({});
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Ações Assíncronas
@@ -286,7 +298,7 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
     setEditTraits(
       Array.isArray(race.traits)
         ? race.traits.map((t) => ({ name: t.name, description: t.description || "" }))
-        : []
+        : [],
     );
     setEditTraitName("");
     setEditTraitDesc("");
@@ -300,7 +312,7 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
             hitPointsBonus: h.hitPointsBonus ?? 0,
             attributeBonuses: h.attributeBonuses ?? {},
           }))
-        : []
+        : [],
     );
     setEditHeritageName("");
     setEditHeritageDesc("");
@@ -476,7 +488,11 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
 
   // Exclusão
   const handleDeleteRace = async (raceId: string, raceName: string) => {
-    if (!window.confirm(`Tem certeza que deseja excluir a raça "${raceName}"? Esta ação não pode ser desfeita.`)) {
+    if (
+      !window.confirm(
+        `Tem certeza que deseja excluir a raça "${raceName}"? Esta ação não pode ser desfeita.`,
+      )
+    ) {
       return;
     }
 
@@ -598,9 +614,10 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
   });
 
   const virtualRaceItems = raceVirtualizer.getVirtualItems();
-  const raceItemsToRender = virtualRaceItems.length > 0
-    ? virtualRaceItems.map((v) => ({ index: v.index, key: v.key }))
-    : paginatedRaces.map((_, index) => ({ index, key: index }));
+  const raceItemsToRender =
+    virtualRaceItems.length > 0
+      ? virtualRaceItems.map((v) => ({ index: v.index, key: v.key }))
+      : paginatedRaces.map((_, index) => ({ index, key: index }));
 
   const getSystemBadge = (system: string | null) => {
     if (system === "dnd5e") {
@@ -637,7 +654,11 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
       {error && (
         <div className="rounded-xl border border-red-800 bg-red-950/70 p-3 text-sm text-red-300 flex items-center justify-between">
           <span>{error}</span>
-          <button type="button" onClick={() => setError(null)} className="text-red-400 hover:text-red-200">
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            className="text-red-400 hover:text-red-200"
+          >
             ✕
           </button>
         </div>
@@ -648,7 +669,9 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
         {/* Header e Filtros */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-800 pb-3 mb-4">
           <div className="flex items-center gap-3">
-            <h3 className="font-semibold text-white text-sm">Raças e Ancestralidades Cadastradas</h3>
+            <h3 className="font-semibold text-white text-sm">
+              Raças e Ancestralidades Cadastradas
+            </h3>
             <span className="text-xs text-purple-400 font-bold bg-purple-950/60 border border-purple-900/60 px-2.5 py-1 rounded-lg">
               {filteredRaces.length} {filteredRaces.length === 1 ? "raça" : "raças"}
             </span>
@@ -705,7 +728,8 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
             <span className="text-4xl mb-2">🧝♂️</span>
             <p className="font-semibold text-gray-300">Nenhuma raça encontrada.</p>
             <p className="text-xs text-gray-500 max-w-sm mt-1">
-              Cadastre uma nova raça manualmente ou importe catálogos completos do Pathfinder 2e ou D&D 5e através dos botões na barra superior.
+              Cadastre uma nova raça manualmente ou importe catálogos completos do Pathfinder 2e ou
+              D&D 5e através dos botões na barra superior.
             </p>
           </div>
         ) : (
@@ -715,131 +739,132 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
                 const race = paginatedRaces[index];
                 if (!race) return null;
                 const traits = (race.traits as Array<{ name: string; description?: string }>) || [];
-                const heritages = (race.heritages as Array<{ name: string; description?: string }>) || [];
+                const heritages =
+                  (race.heritages as Array<{ name: string; description?: string }>) || [];
                 const languages = (race.languages as string[]) || [];
                 const attrBonuses = (race.attributeBonuses as Record<string, number>) || {};
 
                 return (
                   <div
                     key={race.id || key}
-                  className="group relative flex flex-col justify-between rounded-xl border border-gray-800 bg-gray-950/80 p-4 transition-all duration-200 hover:border-purple-500/50 hover:bg-gray-900 hover:shadow-lg hover:shadow-purple-950/20"
-                >
-                  <div>
-                    {/* Header do Card */}
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div>
-                        <h4 className="text-base font-bold text-white group-hover:text-purple-300 transition">
-                          {race.name}
-                        </h4>
-                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                          {getSystemBadge(race.sourceSystem)}
-                          <span className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px] text-gray-300 font-medium">
-                            📏 {race.size || "Médio"}
-                          </span>
-                          <span className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px] text-gray-300 font-medium">
-                            ⚡ {race.speed} pés
-                          </span>
-                          {race.hitPointsBonus > 0 && (
-                            <span className="rounded bg-rose-950/60 border border-rose-900/60 px-1.5 py-0.5 text-[10px] text-rose-300 font-bold">
-                              ❤️ +{race.hitPointsBonus} HP
+                    className="group relative flex flex-col justify-between rounded-xl border border-gray-800 bg-gray-950/80 p-4 transition-all duration-200 hover:border-purple-500/50 hover:bg-gray-900 hover:shadow-lg hover:shadow-purple-950/20"
+                  >
+                    <div>
+                      {/* Header do Card */}
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div>
+                          <h4 className="text-base font-bold text-white group-hover:text-purple-300 transition">
+                            {race.name}
+                          </h4>
+                          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                            {getSystemBadge(race.sourceSystem)}
+                            <span className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px] text-gray-300 font-medium">
+                              📏 {race.size || "Médio"}
                             </span>
-                          )}
+                            <span className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px] text-gray-300 font-medium">
+                              ⚡ {race.speed} pés
+                            </span>
+                            {race.hitPointsBonus > 0 && (
+                              <span className="rounded bg-rose-950/60 border border-rose-900/60 px-1.5 py-0.5 text-[10px] text-rose-300 font-bold">
+                                ❤️ +{race.hitPointsBonus} HP
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Modificadores de Atributos */}
-                    {Object.keys(attrBonuses).length > 0 && (
-                      <div className="mb-2.5 flex flex-wrap gap-1">
-                        {Object.entries(attrBonuses).map(([attr, bonus]) => {
-                          if (bonus === 0) return null;
-                          const isPos = bonus > 0;
-                          return (
-                            <span
-                              key={attr}
-                              className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${
-                                isPos
-                                  ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800/60"
-                                  : "bg-red-950/80 text-red-300 border border-red-800/60"
-                              }`}
-                            >
-                              {attr.slice(0, 3).toUpperCase()} {isPos ? `+${bonus}` : bonus}
-                            </span>
-                          );
-                        })}
+                      {/* Modificadores de Atributos */}
+                      {Object.keys(attrBonuses).length > 0 && (
+                        <div className="mb-2.5 flex flex-wrap gap-1">
+                          {Object.entries(attrBonuses).map(([attr, bonus]) => {
+                            if (bonus === 0) return null;
+                            const isPos = bonus > 0;
+                            return (
+                              <span
+                                key={attr}
+                                className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${
+                                  isPos
+                                    ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800/60"
+                                    : "bg-red-950/80 text-red-300 border border-red-800/60"
+                                }`}
+                              >
+                                {attr.slice(0, 3).toUpperCase()} {isPos ? `+${bonus}` : bonus}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Descrição Curta */}
+                      <p className="line-clamp-2 text-xs text-gray-400 mb-3 leading-relaxed">
+                        {race.description || "Nenhuma descrição informada."}
+                      </p>
+
+                      {/* Badges de Conteúdo (Traços, Heranças, Idiomas) */}
+                      <div className="flex flex-wrap gap-1.5 mb-3 text-[11px]">
+                        {traits.length > 0 && (
+                          <span className="rounded-md bg-purple-950/50 border border-purple-900/40 px-2 py-0.5 text-purple-300 font-medium">
+                            🌟 {traits.length} {traits.length === 1 ? "traço" : "traços"}
+                          </span>
+                        )}
+                        {heritages.length > 0 && (
+                          <span className="rounded-md bg-indigo-950/50 border border-indigo-900/40 px-2 py-0.5 text-indigo-300 font-medium">
+                            🌳 {heritages.length} {heritages.length === 1 ? "herança" : "heranças"}
+                          </span>
+                        )}
+                        {languages.length > 0 && (
+                          <span className="rounded-md bg-gray-800/80 px-2 py-0.5 text-gray-300 font-medium">
+                            🗣️ {languages.slice(0, 2).join(", ")}
+                            {languages.length > 2 ? ` +${languages.length - 2}` : ""}
+                          </span>
+                        )}
                       </div>
-                    )}
+                    </div>
 
-                    {/* Descrição Curta */}
-                    <p className="line-clamp-2 text-xs text-gray-400 mb-3 leading-relaxed">
-                      {race.description || "Nenhuma descrição informada."}
-                    </p>
+                    {/* Ações do Card */}
+                    <div className="mt-3 flex items-center justify-between border-t border-gray-800/80 pt-2.5 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDetailModal(race)}
+                        className="rounded-lg bg-purple-600/90 px-2.5 py-1 text-xs font-semibold text-white hover:bg-purple-500 transition shadow-sm"
+                      >
+                        Ver Detalhes
+                      </button>
 
-                    {/* Badges de Conteúdo (Traços, Heranças, Idiomas) */}
-                    <div className="flex flex-wrap gap-1.5 mb-3 text-[11px]">
-                      {traits.length > 0 && (
-                        <span className="rounded-md bg-purple-950/50 border border-purple-900/40 px-2 py-0.5 text-purple-300 font-medium">
-                          🌟 {traits.length} {traits.length === 1 ? "traço" : "traços"}
-                        </span>
-                      )}
-                      {heritages.length > 0 && (
-                        <span className="rounded-md bg-indigo-950/50 border border-indigo-900/40 px-2 py-0.5 text-indigo-300 font-medium">
-                          🌳 {heritages.length} {heritages.length === 1 ? "herança" : "heranças"}
-                        </span>
-                      )}
-                      {languages.length > 0 && (
-                        <span className="rounded-md bg-gray-800/80 px-2 py-0.5 text-gray-300 font-medium">
-                          🗣️ {languages.slice(0, 2).join(", ")}
-                          {languages.length > 2 ? ` +${languages.length - 2}` : ""}
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleTranslateRace(race.id)}
+                          disabled={translatingId === race.id}
+                          title="Traduzir raça para Português via IA (9Router)"
+                          className="rounded-lg border border-purple-800/70 bg-purple-950/70 px-2 py-1 text-xs font-medium text-purple-300 hover:bg-purple-900 transition disabled:opacity-50"
+                        >
+                          {translatingId === race.id ? <Spinner size="sm" /> : "🌐 IA"}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDuplicateRace(race.id)}
+                          disabled={duplicatingId === race.id}
+                          title="Duplicar esta raça"
+                          className="rounded-lg border border-gray-700 bg-gray-800 px-2 py-1 text-xs text-gray-300 hover:bg-gray-700 transition disabled:opacity-50"
+                        >
+                          {duplicatingId === race.id ? <Spinner size="sm" /> : "📋"}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteRace(race.id, race.name)}
+                          title="Excluir raça"
+                          className="rounded-lg border border-red-900/60 bg-red-950/60 px-2 py-1 text-xs text-red-300 hover:bg-red-900 transition"
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     </div>
                   </div>
-
-                  {/* Ações do Card */}
-                  <div className="mt-3 flex items-center justify-between border-t border-gray-800/80 pt-2.5 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleOpenDetailModal(race)}
-                      className="rounded-lg bg-purple-600/90 px-2.5 py-1 text-xs font-semibold text-white hover:bg-purple-500 transition shadow-sm"
-                    >
-                      Ver Detalhes
-                    </button>
-
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => handleTranslateRace(race.id)}
-                        disabled={translatingId === race.id}
-                        title="Traduzir raça para Português via IA (9Router)"
-                        className="rounded-lg border border-purple-800/70 bg-purple-950/70 px-2 py-1 text-xs font-medium text-purple-300 hover:bg-purple-900 transition disabled:opacity-50"
-                      >
-                        {translatingId === race.id ? <Spinner size="sm" /> : "🌐 IA"}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleDuplicateRace(race.id)}
-                        disabled={duplicatingId === race.id}
-                        title="Duplicar esta raça"
-                        className="rounded-lg border border-gray-700 bg-gray-800 px-2 py-1 text-xs text-gray-300 hover:bg-gray-700 transition disabled:opacity-50"
-                      >
-                        {duplicatingId === race.id ? <Spinner size="sm" /> : "📋"}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteRace(race.id, race.name)}
-                        title="Excluir raça"
-                        className="rounded-lg border border-red-900/60 bg-red-950/60 px-2 py-1 text-xs text-red-300 hover:bg-red-900 transition"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
             </div>
           </div>
         )}
@@ -883,7 +908,9 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
                   <span>🧝♂️</span> Criar Nova Raça / Ancestralidade
                 </h3>
-                <p className="text-xs text-gray-400">Defina atributos, traços raciais e linhagens</p>
+                <p className="text-xs text-gray-400">
+                  Defina atributos, traços raciais e linhagens
+                </p>
               </div>
               <button
                 type="button"
@@ -955,9 +982,7 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-xs font-bold text-gray-300 mb-1">
-                        Tamanho
-                      </label>
+                      <label className="block text-xs font-bold text-gray-300 mb-1">Tamanho</label>
                       <select
                         value={createSize}
                         onChange={(e) => setCreateSize(e.target.value)}
@@ -1098,7 +1123,9 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
                   <div className="rounded-xl border border-gray-800 bg-gray-950 p-3 min-h-[60px]">
                     <div className="flex flex-wrap gap-1.5">
                       {createLanguages.length === 0 ? (
-                        <span className="text-xs text-gray-500">Nenhum idioma adicionado ainda.</span>
+                        <span className="text-xs text-gray-500">
+                          Nenhum idioma adicionado ainda.
+                        </span>
                       ) : (
                         createLanguages.map((lang) => (
                           <span
@@ -1108,7 +1135,9 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
                             <span>{lang}</span>
                             <button
                               type="button"
-                              onClick={() => setCreateLanguages(createLanguages.filter((l) => l !== lang))}
+                              onClick={() =>
+                                setCreateLanguages(createLanguages.filter((l) => l !== lang))
+                              }
                               className="text-purple-400 hover:text-white text-xs"
                             >
                               ✕
@@ -1183,10 +1212,12 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
                           type="number"
                           placeholder={ATTRIBUTE_LABELS[attr].split(" ")[0]}
                           value={createHeritageAttributes[attr] ?? 0}
-                          onChange={(e) => setCreateHeritageAttributes((previous) => ({
-                            ...previous,
-                            [attr]: parseInt(e.target.value, 10) || 0,
-                          }))}
+                          onChange={(e) =>
+                            setCreateHeritageAttributes((previous) => ({
+                              ...previous,
+                              [attr]: parseInt(e.target.value, 10) || 0,
+                            }))
+                          }
                           className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none"
                         />
                       ))}
@@ -1214,7 +1245,9 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
                   {/* Lista de Traços */}
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {createTraits.length === 0 ? (
-                      <p className="text-xs text-gray-500 py-4 text-center">Nenhum traço racial cadastrado.</p>
+                      <p className="text-xs text-gray-500 py-4 text-center">
+                        Nenhum traço racial cadastrado.
+                      </p>
                     ) : (
                       createTraits.map((t, idx) => (
                         <div
@@ -1223,11 +1256,15 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
                         >
                           <div>
                             <span className="text-xs font-bold text-white">🌟 {t.name}</span>
-                            <p className="text-xs text-gray-400 mt-0.5">{t.description || "Sem descrição."}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              {t.description || "Sem descrição."}
+                            </p>
                           </div>
                           <button
                             type="button"
-                            onClick={() => setCreateTraits(createTraits.filter((_, i) => i !== idx))}
+                            onClick={() =>
+                              setCreateTraits(createTraits.filter((_, i) => i !== idx))
+                            }
                             className="text-red-400 hover:text-red-200 text-xs px-1.5 py-0.5"
                           >
                             ✕
@@ -1264,8 +1301,23 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <input type="number" min="0" max="200" placeholder="Deslocamento (opcional)" value={createHeritageSpeed} onChange={(e) => setCreateHeritageSpeed(e.target.value)} className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none" />
-                      <input type="text" maxLength={50} placeholder="Tamanho (opcional)" value={createHeritageSize} onChange={(e) => setCreateHeritageSize(e.target.value)} className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none" />
+                      <input
+                        type="number"
+                        min="0"
+                        max="200"
+                        placeholder="Deslocamento (opcional)"
+                        value={createHeritageSpeed}
+                        onChange={(e) => setCreateHeritageSpeed(e.target.value)}
+                        className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        maxLength={50}
+                        placeholder="Tamanho (opcional)"
+                        value={createHeritageSize}
+                        onChange={(e) => setCreateHeritageSize(e.target.value)}
+                        className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none"
+                      />
                     </div>
                     <div className="flex justify-end">
                       <button
@@ -1273,15 +1325,21 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
                         onClick={() => {
                           if (createHeritageName.trim()) {
                             const attributeBonuses = Object.fromEntries(
-                              Object.entries(createHeritageAttributes).filter(([, value]) => value !== 0),
+                              Object.entries(createHeritageAttributes).filter(
+                                ([, value]) => value !== 0,
+                              ),
                             ) as Partial<Record<Exclude<Attribute, "sorte">, number>>;
                             setCreateHeritages([
                               ...createHeritages,
                               {
                                 name: createHeritageName.trim(),
                                 description: createHeritageDesc.trim(),
-                                ...(createHeritageSpeed.trim() === "" ? {} : { speed: Number(createHeritageSpeed) }),
-                                ...(createHeritageSize.trim() === "" ? {} : { size: createHeritageSize.trim() }),
+                                ...(createHeritageSpeed.trim() === ""
+                                  ? {}
+                                  : { speed: Number(createHeritageSpeed) }),
+                                ...(createHeritageSize.trim() === ""
+                                  ? {}
+                                  : { size: createHeritageSize.trim() }),
                                 hitPointsBonus: parseInt(createHeritageHitPointsBonus, 10) || 0,
                                 attributeBonuses,
                               },
@@ -1304,7 +1362,9 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
                   {/* Lista de Heranças */}
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {createHeritages.length === 0 ? (
-                      <p className="text-xs text-gray-500 py-4 text-center">Nenhuma herança ou sub-raça cadastrada.</p>
+                      <p className="text-xs text-gray-500 py-4 text-center">
+                        Nenhuma herança ou sub-raça cadastrada.
+                      </p>
                     ) : (
                       createHeritages.map((h, idx) => (
                         <div
@@ -1313,19 +1373,38 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
                         >
                           <div>
                             <span className="text-xs font-bold text-indigo-200">🌳 {h.name}</span>
-                            <p className="text-xs text-gray-400 mt-0.5">{h.description || "Sem descrição."}</p>
-                            {(h.speed !== undefined || h.size) && <p className="text-[11px] text-indigo-300 mt-1">{h.speed !== undefined ? `Desloc. ${h.speed}m` : ""}{h.speed !== undefined && h.size ? " · " : ""}{h.size ? `Tamanho ${h.size}` : ""}</p>}
-                            {(h.hitPointsBonus || Object.keys(h.attributeBonuses ?? {}).length > 0) && (
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              {h.description || "Sem descrição."}
+                            </p>
+                            {(h.speed !== undefined || h.size) && (
+                              <p className="text-[11px] text-indigo-300 mt-1">
+                                {h.speed !== undefined ? `Desloc. ${h.speed}m` : ""}
+                                {h.speed !== undefined && h.size ? " · " : ""}
+                                {h.size ? `Tamanho ${h.size}` : ""}
+                              </p>
+                            )}
+                            {(h.hitPointsBonus ||
+                              Object.keys(h.attributeBonuses ?? {}).length > 0) && (
                               <p className="text-[11px] text-teal-300 mt-1">
                                 {h.hitPointsBonus ? `+${h.hitPointsBonus} HP` : ""}
-                                {h.hitPointsBonus && Object.keys(h.attributeBonuses ?? {}).length > 0 ? " · " : ""}
-                                {Object.entries(h.attributeBonuses ?? {}).map(([attribute, bonus]) => `+${bonus} ${ATTRIBUTE_LABELS[attribute as Attribute].split(" ")[0]}`).join(", ")}
+                                {h.hitPointsBonus &&
+                                Object.keys(h.attributeBonuses ?? {}).length > 0
+                                  ? " · "
+                                  : ""}
+                                {Object.entries(h.attributeBonuses ?? {})
+                                  .map(
+                                    ([attribute, bonus]) =>
+                                      `+${bonus} ${ATTRIBUTE_LABELS[attribute as Attribute].split(" ")[0]}`,
+                                  )
+                                  .join(", ")}
                               </p>
                             )}
                           </div>
                           <button
                             type="button"
-                            onClick={() => setCreateHeritages(createHeritages.filter((_, i) => i !== idx))}
+                            onClick={() =>
+                              setCreateHeritages(createHeritages.filter((_, i) => i !== idx))
+                            }
                             className="text-red-400 hover:text-red-200 text-xs px-1.5 py-0.5"
                           >
                             ✕
@@ -1456,9 +1535,7 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-xs font-bold text-gray-300 mb-1">
-                        Tamanho
-                      </label>
+                      <label className="block text-xs font-bold text-gray-300 mb-1">Tamanho</label>
                       <select
                         value={editSize}
                         onChange={(e) => setEditSize(e.target.value)}
@@ -1607,7 +1684,9 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
                             <span>{lang}</span>
                             <button
                               type="button"
-                              onClick={() => setEditLanguages(editLanguages.filter((l) => l !== lang))}
+                              onClick={() =>
+                                setEditLanguages(editLanguages.filter((l) => l !== lang))
+                              }
                               className="text-purple-400 hover:text-white text-xs"
                             >
                               ✕
@@ -1687,7 +1766,9 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
 
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {editTraits.length === 0 ? (
-                      <p className="text-xs text-gray-500 py-4 text-center">Nenhum traço racial registrado.</p>
+                      <p className="text-xs text-gray-500 py-4 text-center">
+                        Nenhum traço racial registrado.
+                      </p>
                     ) : (
                       editTraits.map((t, idx) => (
                         <div
@@ -1696,7 +1777,9 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
                         >
                           <div>
                             <span className="text-xs font-bold text-white">🌟 {t.name}</span>
-                            <p className="text-xs text-gray-400 mt-0.5">{t.description || "Sem descrição."}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              {t.description || "Sem descrição."}
+                            </p>
                           </div>
                           <button
                             type="button"
@@ -1736,8 +1819,23 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <input type="number" min="0" max="200" placeholder="Deslocamento (opcional)" value={editHeritageSpeed} onChange={(e) => setEditHeritageSpeed(e.target.value)} className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none" />
-                      <input type="text" maxLength={50} placeholder="Tamanho (opcional)" value={editHeritageSize} onChange={(e) => setEditHeritageSize(e.target.value)} className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none" />
+                      <input
+                        type="number"
+                        min="0"
+                        max="200"
+                        placeholder="Deslocamento (opcional)"
+                        value={editHeritageSpeed}
+                        onChange={(e) => setEditHeritageSpeed(e.target.value)}
+                        className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        maxLength={50}
+                        placeholder="Tamanho (opcional)"
+                        value={editHeritageSize}
+                        onChange={(e) => setEditHeritageSize(e.target.value)}
+                        className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none"
+                      />
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
                       <input
@@ -1754,10 +1852,12 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
                           type="number"
                           placeholder={ATTRIBUTE_LABELS[attr].split(" ")[0]}
                           value={editHeritageAttributes[attr] ?? 0}
-                          onChange={(e) => setEditHeritageAttributes((previous) => ({
-                            ...previous,
-                            [attr]: parseInt(e.target.value, 10) || 0,
-                          }))}
+                          onChange={(e) =>
+                            setEditHeritageAttributes((previous) => ({
+                              ...previous,
+                              [attr]: parseInt(e.target.value, 10) || 0,
+                            }))
+                          }
                           className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none"
                         />
                       ))}
@@ -1768,15 +1868,21 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
                         onClick={() => {
                           if (editHeritageName.trim()) {
                             const attributeBonuses = Object.fromEntries(
-                              Object.entries(editHeritageAttributes).filter(([, value]) => value !== 0),
+                              Object.entries(editHeritageAttributes).filter(
+                                ([, value]) => value !== 0,
+                              ),
                             ) as Partial<Record<Exclude<Attribute, "sorte">, number>>;
                             setEditHeritages([
                               ...editHeritages,
                               {
                                 name: editHeritageName.trim(),
                                 description: editHeritageDesc.trim(),
-                                ...(editHeritageSpeed.trim() === "" ? {} : { speed: Number(editHeritageSpeed) }),
-                                ...(editHeritageSize.trim() === "" ? {} : { size: editHeritageSize.trim() }),
+                                ...(editHeritageSpeed.trim() === ""
+                                  ? {}
+                                  : { speed: Number(editHeritageSpeed) }),
+                                ...(editHeritageSize.trim() === ""
+                                  ? {}
+                                  : { size: editHeritageSize.trim() }),
                                 hitPointsBonus: parseInt(editHeritageHitPointsBonus, 10) || 0,
                                 attributeBonuses,
                               },
@@ -1798,7 +1904,9 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
 
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {editHeritages.length === 0 ? (
-                      <p className="text-xs text-gray-500 py-4 text-center">Nenhuma herança registrada.</p>
+                      <p className="text-xs text-gray-500 py-4 text-center">
+                        Nenhuma herança registrada.
+                      </p>
                     ) : (
                       editHeritages.map((h, idx) => (
                         <div
@@ -1807,19 +1915,38 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
                         >
                           <div>
                             <span className="text-xs font-bold text-indigo-200">🌳 {h.name}</span>
-                            <p className="text-xs text-gray-400 mt-0.5">{h.description || "Sem descrição."}</p>
-                            {(h.speed !== undefined || h.size) && <p className="text-[11px] text-indigo-300 mt-1">{h.speed !== undefined ? `Desloc. ${h.speed}m` : ""}{h.speed !== undefined && h.size ? " · " : ""}{h.size ? `Tamanho ${h.size}` : ""}</p>}
-                            {(h.hitPointsBonus || Object.keys(h.attributeBonuses ?? {}).length > 0) && (
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              {h.description || "Sem descrição."}
+                            </p>
+                            {(h.speed !== undefined || h.size) && (
+                              <p className="text-[11px] text-indigo-300 mt-1">
+                                {h.speed !== undefined ? `Desloc. ${h.speed}m` : ""}
+                                {h.speed !== undefined && h.size ? " · " : ""}
+                                {h.size ? `Tamanho ${h.size}` : ""}
+                              </p>
+                            )}
+                            {(h.hitPointsBonus ||
+                              Object.keys(h.attributeBonuses ?? {}).length > 0) && (
                               <p className="text-[11px] text-teal-300 mt-1">
                                 {h.hitPointsBonus ? `+${h.hitPointsBonus} HP` : ""}
-                                {h.hitPointsBonus && Object.keys(h.attributeBonuses ?? {}).length > 0 ? " · " : ""}
-                                {Object.entries(h.attributeBonuses ?? {}).map(([attribute, bonus]) => `+${bonus} ${ATTRIBUTE_LABELS[attribute as Attribute].split(" ")[0]}`).join(", ")}
+                                {h.hitPointsBonus &&
+                                Object.keys(h.attributeBonuses ?? {}).length > 0
+                                  ? " · "
+                                  : ""}
+                                {Object.entries(h.attributeBonuses ?? {})
+                                  .map(
+                                    ([attribute, bonus]) =>
+                                      `+${bonus} ${ATTRIBUTE_LABELS[attribute as Attribute].split(" ")[0]}`,
+                                  )
+                                  .join(", ")}
                               </p>
                             )}
                           </div>
                           <button
                             type="button"
-                            onClick={() => setEditHeritages(editHeritages.filter((_, i) => i !== idx))}
+                            onClick={() =>
+                              setEditHeritages(editHeritages.filter((_, i) => i !== idx))
+                            }
                             className="text-red-400 hover:text-red-200 text-xs px-1.5 py-0.5"
                           >
                             ✕
@@ -1928,7 +2055,8 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
                 className="rounded border-gray-700 text-amber-600 focus:ring-amber-500"
               />
               <span className="text-xs text-gray-300">
-                🌐 <strong>Traduzir com IA via 9Router</strong> (nomes, descrições, traços e sub-raças para Português)
+                🌐 <strong>Traduzir com IA via 9Router</strong> (nomes, descrições, traços e
+                sub-raças para Português)
               </span>
             </label>
 
@@ -2071,7 +2199,8 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
                 className="rounded border-gray-700 text-cyan-600 focus:ring-cyan-500"
               />
               <span className="text-xs text-gray-300">
-                🌐 <strong>Re-traduzir / Enriquecer via IA (9Router)</strong> (dados já vêm pré-traduzidos em PT-BR)
+                🌐 <strong>Re-traduzir / Enriquecer via IA (9Router)</strong> (dados já vêm
+                pré-traduzidos em PT-BR)
               </span>
             </label>
 
@@ -2130,9 +2259,7 @@ export function LibraryRaces({ onRegisterActions }: LibraryRacesProps = {}) {
 
             {/* Rodapé do Modal */}
             <div className="flex items-center justify-between border-t border-gray-800 pt-3">
-              <span className="text-xs text-gray-400">
-                {selectedPf2eKeys.size} selecionada(s)
-              </span>
+              <span className="text-xs text-gray-400">{selectedPf2eKeys.size} selecionada(s)</span>
 
               <div className="flex gap-2">
                 <button

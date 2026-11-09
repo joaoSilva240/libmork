@@ -101,7 +101,7 @@ describe("GET /api/library/documents", () => {
     });
 
     const request = new NextRequest(
-      "http://localhost/api/library/documents?category=livro-base&q=Regras"
+      "http://localhost/api/library/documents?category=livro-base&q=Regras",
     );
     const response = await GET(request);
     const body = await response.json();
@@ -128,7 +128,8 @@ describe("GET /api/library/documents", () => {
           title: "Livro Apenas Web",
           summary: "Sem PDF direto",
           hasPdf: false,
-          webReaderUrl: "http://100.122.171.83:5150/library/4/series/56/pdf/358?incognitoMode=false",
+          webReaderUrl:
+            "http://100.122.171.83:5150/library/4/series/56/pdf/358?incognitoMode=false",
         },
         {
           id: "series-57",
@@ -151,7 +152,9 @@ describe("GET /api/library/documents", () => {
     expect(webOnly).toBeDefined();
     expect(webOnly.externalUrl).toBe("");
     expect(webOnly.pdfProxyUrl).toBeNull();
-    expect(webOnly.webReaderUrl).toBe("http://100.122.171.83:5150/library/4/series/56/pdf/358?incognitoMode=false");
+    expect(webOnly.webReaderUrl).toBe(
+      "http://100.122.171.83:5150/library/4/series/56/pdf/358?incognitoMode=false",
+    );
 
     const withPdf = body.data.find((d: any) => d.id === "kavita-series-57");
     expect(withPdf).toBeDefined();

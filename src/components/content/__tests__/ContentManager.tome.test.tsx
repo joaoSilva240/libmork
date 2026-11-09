@@ -60,7 +60,7 @@ describe("ContentManager - Tome Integration", () => {
       Promise.resolve({
         ok: true,
         json: async () => ({ data: [] }),
-      })
+      }),
     ) as any;
   });
 

@@ -50,13 +50,13 @@ export function CampaignForm() {
 
   const handleToggleNpc = (npcId: string) => {
     setSelectedNpcIds((prev) =>
-      prev.includes(npcId) ? prev.filter((id) => id !== npcId) : [...prev, npcId]
+      prev.includes(npcId) ? prev.filter((id) => id !== npcId) : [...prev, npcId],
     );
   };
 
   const handleToggleWorld = (worldId: string) => {
     setSelectedWorldIds((prev) =>
-      prev.includes(worldId) ? prev.filter((id) => id !== worldId) : [...prev, worldId]
+      prev.includes(worldId) ? prev.filter((id) => id !== worldId) : [...prev, worldId],
     );
   };
 
@@ -116,10 +116,7 @@ export function CampaignForm() {
     setInitialAssets((prev) => prev.filter((_, idx) => idx !== index));
   };
 
-  const handleFileUpload = async (
-    file: File,
-    type: "cover" | "map"
-  ) => {
+  const handleFileUpload = async (file: File, type: "cover" | "map") => {
     setUploadError(null);
     if (type === "cover") setIsUploadingCover(true);
     else setIsUploadingMap(true);
@@ -175,7 +172,8 @@ export function CampaignForm() {
           description: description || null,
           rulesEngine,
           pvpEnabled: rulesEngine === "missing_zero" ? false : pvpEnabled,
-          difficultyModifierShadowPoints: rulesEngine === "missing_zero" ? 0 : difficultyModifierShadowPoints,
+          difficultyModifierShadowPoints:
+            rulesEngine === "missing_zero" ? 0 : difficultyModifierShadowPoints,
           coverImageUrl: coverImageUrl || null,
           worldMapUrl: worldMapUrl || null,
           theme: selectedTheme,
@@ -314,7 +312,8 @@ export function CampaignForm() {
                       )}
                     </div>
                     <p className="text-[11px] text-gray-400">
-                      Curva de sino com soma direta de 2 dados d20 para resultados concentrados e épicos.
+                      Curva de sino com soma direta de 2 dados d20 para resultados concentrados e
+                      épicos.
                     </p>
                   </div>
 
@@ -344,7 +343,9 @@ export function CampaignForm() {
               {rulesEngine !== "missing_zero" && (
                 <div className="flex items-center justify-between p-3 rounded-xl border border-gray-800 bg-gray-950/60">
                   <div>
-                    <div className="text-xs font-bold text-white">Combate entre Jogadores (PvP)</div>
+                    <div className="text-xs font-bold text-white">
+                      Combate entre Jogadores (PvP)
+                    </div>
                     <div className="text-[11px] text-gray-400">
                       Permite desafios de duelo direto e ataques de alvo entre fichas de jogadores.
                     </div>
@@ -397,7 +398,8 @@ export function CampaignForm() {
                     <span>📦</span> Conteúdo Inicial
                   </h2>
                   <p className="text-[11px] text-gray-400 mt-0.5">
-                    Importe criaturas, aliados e mundos da biblioteca central para a campanha de imediato.
+                    Importe criaturas, aliados e mundos da biblioteca central para a campanha de
+                    imediato.
                   </p>
                 </div>
                 <button
@@ -526,7 +528,8 @@ export function CampaignForm() {
               </div>
 
               <p className="text-xs text-gray-400">
-                Selecione a identidade visual e atmosfera desta mesa. Todos os temas são calibrados com padrão AAA de contraste.
+                Selecione a identidade visual e atmosfera desta mesa. Todos os temas são calibrados
+                com padrão AAA de contraste.
               </p>
 
               <div
@@ -562,9 +565,7 @@ export function CampaignForm() {
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="font-bold text-xs text-white truncate">
-                              {t.label}
-                            </span>
+                            <span className="font-bold text-xs text-white truncate">{t.label}</span>
                             <span
                               className={`text-[9px] px-1.5 py-0.2 rounded font-mono ${
                                 t.mode === "dark"
@@ -580,9 +581,7 @@ export function CampaignForm() {
                           )}
                         </div>
 
-                        <p className="text-[11px] text-gray-400 line-clamp-1">
-                          {t.description}
-                        </p>
+                        <p className="text-[11px] text-gray-400 line-clamp-1">{t.description}</p>
 
                         <div className="flex items-center justify-between pt-1 border-t border-gray-800/60">
                           {/* Amostras das 4 cores do sistema */}
@@ -689,8 +688,8 @@ export function CampaignForm() {
                       {isUploadingCover
                         ? "Enviando Capa..."
                         : coverImageUrl
-                        ? "Trocar Imagem"
-                        : "Upload da Capa"}
+                          ? "Trocar Imagem"
+                          : "Upload da Capa"}
                     </button>
                     {coverImageUrl && (
                       <button
@@ -746,8 +745,8 @@ export function CampaignForm() {
                       {isUploadingMap
                         ? "Enviando Mapa..."
                         : worldMapUrl
-                        ? "Trocar Imagem"
-                        : "Upload do Mapa"}
+                          ? "Trocar Imagem"
+                          : "Upload do Mapa"}
                     </button>
                     {worldMapUrl && (
                       <button
@@ -771,7 +770,8 @@ export function CampaignForm() {
                     <span>📜</span> Assets e Handouts da Campanha (Opcional)
                   </h2>
                   <p className="text-[11px] text-gray-400 mt-0.5">
-                    Pré-carregue ilustrações, mapas e documentos para compartilhar durante as sessões.
+                    Pré-carregue ilustrações, mapas e documentos para compartilhar durante as
+                    sessões.
                   </p>
                 </div>
                 {initialAssets.length > 0 && (
@@ -1030,7 +1030,8 @@ export function CampaignForm() {
                         )}
                         {selectedWorldIds.length > 0 && (
                           <span className="rounded bg-blue-950/80 border border-blue-700/50 px-2 py-1 text-blue-300 text-[11px] drop-shadow-sm">
-                            {selectedWorldIds.length} {selectedWorldIds.length === 1 ? "Mundo" : "Mundos"}
+                            {selectedWorldIds.length}{" "}
+                            {selectedWorldIds.length === 1 ? "Mundo" : "Mundos"}
                           </span>
                         )}
                       </div>

@@ -70,7 +70,7 @@ export async function getKavitaCatalog(searchQuery?: string): Promise<KavitaCata
     if (!response.ok) {
       logger.warn(
         { status: response.status, statusText: response.statusText },
-        "Falha na resposta do servidor OPDS Kavita"
+        "Falha na resposta do servidor OPDS Kavita",
       );
       return {
         configured: true,
@@ -106,7 +106,7 @@ export async function getKavitaCatalog(searchQuery?: string): Promise<KavitaCata
         if (!resToRead.ok) {
           logger.warn(
             { url: currentUrl, status: resToRead.status },
-            "Falha ao carregar página seguinte do feed OPDS Kavita"
+            "Falha ao carregar página seguinte do feed OPDS Kavita",
           );
           break;
         }
@@ -162,11 +162,8 @@ export async function getKavitaCatalog(searchQuery?: string): Promise<KavitaCata
       items.push(item);
     };
 
-    const makeBookItem = (
-      subEntry: OpdsEntry,
-      parentEntry?: OpdsEntry
-    ): KavitaBookItem => {
-      const directAcquisition = subEntry.acquisitionUrl || (parentEntry?.acquisitionUrl);
+    const makeBookItem = (subEntry: OpdsEntry, parentEntry?: OpdsEntry): KavitaBookItem => {
+      const directAcquisition = subEntry.acquisitionUrl || parentEntry?.acquisitionUrl;
       const webReader = subEntry.webReaderUrl || parentEntry?.webReaderUrl;
       const format = subEntry.format || parentEntry?.format;
       const hasPdf = isPdfDirect(directAcquisition, format);
@@ -181,9 +178,10 @@ export async function getKavitaCatalog(searchQuery?: string): Promise<KavitaCata
         ? `/api/library/kavita/proxy?url=${encodeURIComponent(rawCover)}&type=image`
         : undefined;
 
-      const pdfProxyUrl = hasPdf && directAcquisition
-        ? `/api/library/kavita/proxy?url=${encodeURIComponent(directAcquisition)}&type=pdf`
-        : undefined;
+      const pdfProxyUrl =
+        hasPdf && directAcquisition
+          ? `/api/library/kavita/proxy?url=${encodeURIComponent(directAcquisition)}&type=pdf`
+          : undefined;
 
       let title = subEntry.title;
       if (parentEntry && parentEntry.title && parentEntry.title !== subEntry.title) {
@@ -194,9 +192,10 @@ export async function getKavitaCatalog(searchQuery?: string): Promise<KavitaCata
         }
       }
 
-      const id = parentEntry && parentEntry.id !== subEntry.id
-        ? `${parentEntry.id}-${subEntry.id}`
-        : subEntry.id;
+      const id =
+        parentEntry && parentEntry.id !== subEntry.id
+          ? `${parentEntry.id}-${subEntry.id}`
+          : subEntry.id;
 
       return {
         id,
@@ -215,10 +214,7 @@ export async function getKavitaCatalog(searchQuery?: string): Promise<KavitaCata
     };
 
     // Função auxiliar recursiva para coletar sub-entries com PDF de sub-feeds
-    const fetchSubFeedEntries = async (
-      subUrl: string,
-      depth = 0
-    ): Promise<OpdsEntry[]> => {
+    const fetchSubFeedEntries = async (subUrl: string, depth = 0): Promise<OpdsEntry[]> => {
       if (depth > 3 || subFeedFetchCount >= MAX_SUBFEEDS || visitedUrls.has(subUrl)) {
         return [];
       }
@@ -247,7 +243,9 @@ export async function getKavitaCatalog(searchQuery?: string): Promise<KavitaCata
           if (child.acquisitionUrl) {
             collected.push(child);
           } else {
-            const childSubUrls = child.subFeedUrls || (child.volumeUrl ? [child.volumeUrl] : (child.chapterUrl ? [child.chapterUrl] : []));
+            const childSubUrls =
+              child.subFeedUrls ||
+              (child.volumeUrl ? [child.volumeUrl] : child.chapterUrl ? [child.chapterUrl] : []);
             if (childSubUrls.length > 0) {
               for (const nextSubUrl of childSubUrls) {
                 const nested = await fetchSubFeedEntries(nextSubUrl, depth + 1);

@@ -20,7 +20,11 @@ vi.mock("@/context/SocketContext", () => ({
 
 vi.mock("@/lib/engine", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/engine")>();
-  return { ...actual, spendSpell: vi.fn(), spendCombatActions: vi.fn(() => ({ session: null, spent: true })) };
+  return {
+    ...actual,
+    spendSpell: vi.fn(),
+    spendCombatActions: vi.fn(() => ({ session: null, spent: true })),
+  };
 });
 
 function makePin(overrides: Partial<NpcPinItem> = {}): NpcPinItem {
@@ -83,8 +87,11 @@ describe("ActorOverlay — dano configurado do NPC (issue #90)", () => {
   });
 
   it("fora de combate: rola ataque e dano configurados, com formula combinada", async () => {
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.5);
     mockNpcFetch([makePin()]);
-    render(<ActorOverlay actor={npcActor} campaignId="camp-1" onClose={vi.fn()} onChanged={vi.fn()} />);
+    render(
+      <ActorOverlay actor={npcActor} campaignId="camp-1" onClose={vi.fn()} onChanged={vi.fn()} />,
+    );
 
     const rollButton = await screen.findByRole("button", { name: /🎲 Rolar/i });
     fireEvent.click(rollButton);
@@ -97,11 +104,16 @@ describe("ActorOverlay — dano configurado do NPC (issue #90)", () => {
     expect(call.formula).toBe("1d20+9 (dano 3d6+5)");
     expect(call.rolledDice.length).toBeGreaterThanOrEqual(2);
     expect(call.diceDetail).toContain("Dano:");
+    randomSpy.mockRestore();
   });
 
   it("fora de combate: ataque sem dano configurado mostra aviso e não registra dano", async () => {
-    mockNpcFetch([makePin({ attackExpression: "1d20+7", damageExpression: null, rollExpression: "1d20+7" })]);
-    render(<ActorOverlay actor={npcActor} campaignId="camp-1" onClose={vi.fn()} onChanged={vi.fn()} />);
+    mockNpcFetch([
+      makePin({ attackExpression: "1d20+7", damageExpression: null, rollExpression: "1d20+7" }),
+    ]);
+    render(
+      <ActorOverlay actor={npcActor} campaignId="camp-1" onClose={vi.fn()} onChanged={vi.fn()} />,
+    );
 
     const rollButton = await screen.findByRole("button", { name: /🎲 Rolar/i });
     fireEvent.click(rollButton);
@@ -117,8 +129,12 @@ describe("ActorOverlay — dano configurado do NPC (issue #90)", () => {
   });
 
   it("modificador puro legado (+9) não inventa 1d6+9", async () => {
-    mockNpcFetch([makePin({ attackExpression: null, damageExpression: null, rollExpression: "+9" })]);
-    render(<ActorOverlay actor={npcActor} campaignId="camp-1" onClose={vi.fn()} onChanged={vi.fn()} />);
+    mockNpcFetch([
+      makePin({ attackExpression: null, damageExpression: null, rollExpression: "+9" }),
+    ]);
+    render(
+      <ActorOverlay actor={npcActor} campaignId="camp-1" onClose={vi.fn()} onChanged={vi.fn()} />,
+    );
 
     const rollButton = await screen.findByRole("button", { name: /🎲 Rolar/i });
     fireEvent.click(rollButton);
@@ -134,7 +150,9 @@ describe("ActorOverlay — dano configurado do NPC (issue #90)", () => {
 
   it("tooltip do pin mostra ataque → dano com tipo", async () => {
     mockNpcFetch([makePin()]);
-    render(<ActorOverlay actor={npcActor} campaignId="camp-1" onClose={vi.fn()} onChanged={vi.fn()} />);
+    render(
+      <ActorOverlay actor={npcActor} campaignId="camp-1" onClose={vi.fn()} onChanged={vi.fn()} />,
+    );
 
     const tooltip = await screen.findByTitle("1d20+9 → 3d6+5 cortante");
     expect(tooltip).toBeInTheDocument();
@@ -186,7 +204,7 @@ describe("ActorOverlay — dano configurado do NPC (issue #90)", () => {
         onClose={vi.fn()}
         onChanged={vi.fn()}
         combatState={combatState}
-      />
+      />,
     );
 
     const attackButton = await screen.findByRole("button", { name: /⚔️ Atacar/i });
@@ -235,7 +253,9 @@ describe("ActorOverlay — dano configurado do NPC (issue #90)", () => {
       ],
     } as unknown as CombatSessionState;
 
-    mockNpcFetch([makePin({ attackExpression: "1d20+7", damageExpression: null, rollExpression: "1d20+7" })]);
+    mockNpcFetch([
+      makePin({ attackExpression: "1d20+7", damageExpression: null, rollExpression: "1d20+7" }),
+    ]);
     render(
       <ActorOverlay
         actor={npcActor}
@@ -243,7 +263,7 @@ describe("ActorOverlay — dano configurado do NPC (issue #90)", () => {
         onClose={vi.fn()}
         onChanged={vi.fn()}
         combatState={combatState}
-      />
+      />,
     );
 
     const attackButton = await screen.findByRole("button", { name: /⚔️ Atacar/i });

@@ -76,7 +76,7 @@ describe("ActorOverlay 3D Dice Emission (Issue #74)", () => {
         campaignId="camp-1"
         onClose={vi.fn()}
         onChanged={vi.fn()}
-      />
+      />,
     );
 
     // Navega para aba de rolagem
@@ -94,7 +94,7 @@ describe("ActorOverlay 3D Dice Emission (Issue #74)", () => {
           actorId: "char-1",
           senderRole: "master",
           rolledDice: expect.any(Array),
-        })
+        }),
       );
     });
 
@@ -120,12 +120,7 @@ describe("ActorOverlay 3D Dice Emission (Issue #74)", () => {
     };
 
     render(
-      <ActorOverlay
-        actor={mockNpc}
-        campaignId="camp-1"
-        onClose={vi.fn()}
-        onChanged={vi.fn()}
-      />
+      <ActorOverlay actor={mockNpc} campaignId="camp-1" onClose={vi.fn()} onChanged={vi.fn()} />,
     );
 
     // Aguarda carregar dados do NPC
@@ -139,7 +134,7 @@ describe("ActorOverlay 3D Dice Emission (Issue #74)", () => {
           actorId: "npc-1",
           senderRole: "master",
           rolledDice: expect.any(Array),
-        })
+        }),
       );
     });
 

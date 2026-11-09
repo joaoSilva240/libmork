@@ -54,9 +54,7 @@ describe("MasterProfile — iniciar DM pelo @handle (Task 11)", () => {
   });
 
   it("clicar no @handle de terceiro cria a DM e navega para o chat", async () => {
-    render(
-      <MasterProfile userId="u-2" profileData={mockProfile} currentUserId="u-1" />,
-    );
+    render(<MasterProfile userId="u-2" profileData={mockProfile} currentUserId="u-1" />);
 
     const dmButton = screen.getByTestId("start-dm-button");
     expect(dmButton).toHaveTextContent("@maria_mestra");
@@ -75,9 +73,7 @@ describe("MasterProfile — iniciar DM pelo @handle (Task 11)", () => {
   });
 
   it("perfil próprio não exibe o botão de DM", () => {
-    render(
-      <MasterProfile userId="u-2" profileData={mockProfile} currentUserId="u-2" />,
-    );
+    render(<MasterProfile userId="u-2" profileData={mockProfile} currentUserId="u-2" />);
 
     expect(screen.queryByTestId("start-dm-button")).not.toBeInTheDocument();
     expect(screen.getByText("@maria_mestra")).toBeInTheDocument();

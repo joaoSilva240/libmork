@@ -41,7 +41,9 @@ vi.mock("@/components/campaigns/SessionLog", () => ({
 }));
 
 vi.mock("@/components/systems/missing/MissingSessionLog", () => ({
-  MissingSessionLog: () => <div data-testid="mock-missing-session-log">MissingSessionLog Content</div>,
+  MissingSessionLog: () => (
+    <div data-testid="mock-missing-session-log">MissingSessionLog Content</div>
+  ),
 }));
 
 vi.mock("@/components/campaigns/CampaignInvites", () => ({
@@ -120,7 +122,7 @@ describe("CampaignDetail - MasterScreenConfig Integration", () => {
         showSessionLog: false,
         showCanvas: false,
         showMap: true,
-      })
+      }),
     );
 
     render(<CampaignDetail />);
@@ -146,7 +148,7 @@ describe("CampaignDetail - MasterScreenConfig Integration", () => {
         showSessionLog: true,
         showCanvas: true,
         showMap: true,
-      })
+      }),
     );
 
     (global.fetch as ReturnType<typeof vi.fn>).mockImplementation((url: string) => {

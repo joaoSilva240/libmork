@@ -17,7 +17,34 @@ type InfiniteCanvasProps = {
   campaignId: string;
 };
 
-const CHARACTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+const CHARACTERS = [
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "I",
+  "J",
+  "K",
+  "L",
+  "M",
+  "N",
+  "O",
+  "P",
+  "Q",
+  "R",
+  "S",
+  "T",
+  "U",
+  "V",
+  "W",
+  "X",
+  "Y",
+  "Z",
+];
 const COLORS = ["#fef08a", "#bfdbfe", "#d9f99d", "#fecaca", "#e9d5ff", "#fed7aa"];
 
 export function InfiniteCanvas({ campaignId }: InfiniteCanvasProps) {
@@ -52,13 +79,13 @@ export function InfiniteCanvas({ campaignId }: InfiniteCanvasProps) {
       setNotes(newNotes);
       localStorage.setItem(`canvas-${campaignId}`, JSON.stringify(newNotes));
     },
-    [campaignId]
+    [campaignId],
   );
 
   // Track container size for minimap viewport indicator
   useEffect(() => {
     if (!containerRef.current) return;
-    
+
     const updateSize = () => {
       if (containerRef.current) {
         setContainerSize({
@@ -67,7 +94,7 @@ export function InfiniteCanvas({ campaignId }: InfiniteCanvasProps) {
         });
       }
     };
-    
+
     updateSize();
     window.addEventListener("resize", updateSize);
     return () => window.removeEventListener("resize", updateSize);
@@ -88,16 +115,14 @@ export function InfiniteCanvas({ campaignId }: InfiniteCanvasProps) {
         const deltaY = (e.clientY - noteDragStart.y) / zoom;
         saveNotes(
           notes.map((n) =>
-            n.id === draggingNoteId
-              ? { ...n, x: n.x + deltaX, y: n.y + deltaY }
-              : n
-          )
+            n.id === draggingNoteId ? { ...n, x: n.x + deltaX, y: n.y + deltaY } : n,
+          ),
         );
         setNoteDragStart({ x: e.clientX, y: e.clientY });
       }
       return;
     }
-    
+
     if (!isDragging) return;
     setViewOffset({
       x: e.clientX - dragStart.x,
@@ -121,12 +146,12 @@ export function InfiniteCanvas({ campaignId }: InfiniteCanvasProps) {
     e.preventDefault();
     const delta = -e.deltaY * 0.001;
     const newZoom = Math.min(Math.max(zoom + delta, 0.25), 3);
-    
+
     if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
-      
+
       // Zoom towards mouse position
       const zoomRatio = newZoom / zoom;
       setViewOffset({
@@ -134,7 +159,7 @@ export function InfiniteCanvas({ campaignId }: InfiniteCanvasProps) {
         y: mouseY - (mouseY - viewOffset.y) * zoomRatio,
       });
     }
-    
+
     setZoom(newZoom);
   };
 
@@ -173,10 +198,10 @@ export function InfiniteCanvas({ campaignId }: InfiniteCanvasProps) {
   // Calculate minimap bounds
   const getCanvasBounds = () => {
     if (notes.length === 0) return { minX: 0, minY: 0, maxX: 800, maxY: 600 };
-    
-    const xs = notes.flatMap(n => [n.x, n.x + n.width]);
-    const ys = notes.flatMap(n => [n.y, n.y + n.height]);
-    
+
+    const xs = notes.flatMap((n) => [n.x, n.x + n.width]);
+    const ys = notes.flatMap((n) => [n.y, n.y + n.height]);
+
     return {
       minX: Math.min(0, ...xs) - 100,
       minY: Math.min(0, ...ys) - 100,
@@ -223,7 +248,7 @@ export function InfiniteCanvas({ campaignId }: InfiniteCanvasProps) {
         <svg width={minimapWidth} height={minimapHeight}>
           {/* Background */}
           <rect width={minimapWidth} height={minimapHeight} fill="#1f2937" />
-          
+
           {/* Notes */}
           {notes.map((note) => (
             <rect
@@ -236,7 +261,7 @@ export function InfiniteCanvas({ campaignId }: InfiniteCanvasProps) {
               opacity={0.7}
             />
           ))}
-          
+
           {/* Viewport indicator */}
           <rect
             x={(-viewOffset.x / zoom - bounds.minX) * minimapScale}

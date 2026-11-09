@@ -20,12 +20,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const body = await request.json().catch(() => ({}));
     const validated = deliverClueSchema.parse(body);
 
-    const clue = await deliverClue(
-      id,
-      session.user.id,
-      clueId,
-      validated.targetHabitantId ?? null,
-    );
+    const clue = await deliverClue(id, session.user.id, clueId, validated.targetHabitantId ?? null);
 
     return NextResponse.json({ success: true, data: clue });
   } catch (error) {

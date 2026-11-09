@@ -1,5 +1,4 @@
 import path from "path";
-import fs from "fs";
 
 /**
  * Obtém a pasta raiz configurada para documentos SMB/rede.
@@ -53,8 +52,8 @@ export function resolveSafeLibraryPath(filePathInput: string): {
   }
 
   // Normaliza root e target path
-  const normalizedRoot = path.resolve(rootPath);
-  const resolvedTarget = path.resolve(rootPath, ...segments);
+  const normalizedRoot = path.resolve(/*turbopackIgnore: true*/ rootPath);
+  const resolvedTarget = path.resolve(/*turbopackIgnore: true*/ rootPath, ...segments);
 
   // Verificação estrita de limite de diretório
   // Deve iniciar com o diretório raiz + separador ou ser exatamente igual

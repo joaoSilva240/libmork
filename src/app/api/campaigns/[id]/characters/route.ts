@@ -25,10 +25,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -42,7 +39,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     if (!campaign) {
       return NextResponse.json(
         { success: false, error: "Campanha não encontrada" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -69,7 +66,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     logger.error({ err: error }, "Erro ao listar vínculos");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -85,24 +82,17 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
 
-    const [campaign] = await db
-      .select()
-      .from(campaigns)
-      .where(eq(campaigns.id, id))
-      .limit(1);
+    const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, id)).limit(1);
 
     if (!campaign) {
       return NextResponse.json(
         { success: false, error: "Campanha não encontrada" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -116,7 +106,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
           error: "Dados inválidos",
           errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -131,7 +121,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!character) {
       return NextResponse.json(
         { success: false, error: "Personagem não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -141,7 +131,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!isMaster && !isOwner) {
       return NextResponse.json(
         { success: false, error: "Sem permissão para vincular este personagem" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -150,17 +140,14 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       .select()
       .from(characterCampaigns)
       .where(
-        and(
-          eq(characterCampaigns.characterId, characterId),
-          eq(characterCampaigns.campaignId, id)
-        )
+        and(eq(characterCampaigns.characterId, characterId), eq(characterCampaigns.campaignId, id)),
       )
       .limit(1);
 
     if (existingLink) {
       return NextResponse.json(
         { success: false, error: "Personagem já vinculado a esta campanha" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -179,13 +166,13 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         success: true,
         data: newLink,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     logger.error({ err: error }, "Erro ao vincular personagem");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

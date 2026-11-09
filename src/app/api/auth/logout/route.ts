@@ -14,7 +14,7 @@ export async function POST() {
     logger.error({ err: error }, "Erro ao fazer logout");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

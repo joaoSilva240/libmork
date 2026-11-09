@@ -62,7 +62,7 @@ describe("GET /api/library/documents/stream", () => {
   it("retorna 503 se LIBRARY_SMB_PATH não estiver configurado", async () => {
     delete process.env.LIBRARY_SMB_PATH;
     const request = new NextRequest(
-      "http://localhost/api/library/documents/stream?file=livro-teste.pdf"
+      "http://localhost/api/library/documents/stream?file=livro-teste.pdf",
     );
     const response = await GET(request);
     expect(response.status).toBe(503);
@@ -70,7 +70,7 @@ describe("GET /api/library/documents/stream", () => {
 
   it("rejeita tentativa de path traversal", async () => {
     const request = new NextRequest(
-      "http://localhost/api/library/documents/stream?file=../etc/passwd"
+      "http://localhost/api/library/documents/stream?file=../etc/passwd",
     );
     const response = await GET(request);
     expect(response.status).toBe(400);
@@ -78,7 +78,7 @@ describe("GET /api/library/documents/stream", () => {
 
   it("rejeita streaming local para URLs web externas", async () => {
     const request = new NextRequest(
-      "http://localhost/api/library/documents/stream?file=https://cdn.example.com/file.pdf"
+      "http://localhost/api/library/documents/stream?file=https://cdn.example.com/file.pdf",
     );
     const response = await GET(request);
     expect(response.status).toBe(400);
@@ -88,7 +88,7 @@ describe("GET /api/library/documents/stream", () => {
 
   it("retorna 404 quando o arquivo não existe", async () => {
     const request = new NextRequest(
-      "http://localhost/api/library/documents/stream?file=nao-existe.pdf"
+      "http://localhost/api/library/documents/stream?file=nao-existe.pdf",
     );
     const response = await GET(request);
     expect(response.status).toBe(404);
@@ -96,7 +96,7 @@ describe("GET /api/library/documents/stream", () => {
 
   it("realiza streaming do PDF com cabeçalhos corretos", async () => {
     const request = new NextRequest(
-      "http://localhost/api/library/documents/stream?file=livro-teste.pdf"
+      "http://localhost/api/library/documents/stream?file=livro-teste.pdf",
     );
     const response = await GET(request);
 
@@ -120,9 +120,7 @@ describe("GET /api/library/documents/stream", () => {
       }),
     });
 
-    const request = new NextRequest(
-      "http://localhost/api/library/documents/stream?docId=doc-uuid"
-    );
+    const request = new NextRequest("http://localhost/api/library/documents/stream?docId=doc-uuid");
     const response = await GET(request);
 
     expect(response.status).toBe(200);

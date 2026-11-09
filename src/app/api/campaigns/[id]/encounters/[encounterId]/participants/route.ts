@@ -53,10 +53,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id, encounterId } = await params;
@@ -65,7 +62,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     if (!encounter) {
       return NextResponse.json(
         { success: false, error: "Encontro não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -79,7 +76,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     logger.error({ err: error }, "Erro ao listar participantes");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -93,10 +90,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id, encounterId } = await params;
@@ -105,7 +99,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!encounter) {
       return NextResponse.json(
         { success: false, error: "Encontro não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -115,7 +109,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!validation.success) {
       return NextResponse.json(
         { success: false, error: "Dados inválidos", errors: validation.error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -127,15 +121,15 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         and(
           eq(encounterParticipants.encounterId, encounterId),
           eq(encounterParticipants.actorType, validation.data.actorType),
-          eq(encounterParticipants.actorId, validation.data.actorId)
-        )
+          eq(encounterParticipants.actorId, validation.data.actorId),
+        ),
       )
       .limit(1);
 
     if (existing.length > 0) {
       return NextResponse.json(
         { success: false, error: "Participante já está no encontro" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -149,15 +143,12 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       })
       .returning();
 
-    return NextResponse.json(
-      { success: true, data: participant },
-      { status: 201 }
-    );
+    return NextResponse.json({ success: true, data: participant }, { status: 201 });
   } catch (error) {
     logger.error({ err: error }, "Erro ao adicionar participante");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

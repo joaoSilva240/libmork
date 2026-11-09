@@ -9,6 +9,7 @@
 ### 1. Componente de abas
 
 **`src/components/campaigns/shield/ShieldTabGroup.tsx`**
+
 - Contêiner reutilizável: cabeçalho com abas por ícone `lucide-react` (tooltip, `role="tablist"`, `aria-selected`, teclado, `focus-visible:ring-accent`), corpo flexível que preenche a altura disponível (`lg:flex-1`), herdando o estilo visual dos painéis atuais (`rounded-lg border ... bg-* p-3`).
 - Diferença-chave vs. Plano A: **renderiza condicionalmente apenas a aba ativa** — exceto a Jukebox, que recebe tratamento especial (prop `keepMounted`, ver §2) para não interromper o áudio.
 - Persistência da aba ativa: hook dedicado **`src/hooks/useShieldActiveTab.ts`** com chaves `libmork:shield-tab:media` e `libmork:shield-tab:actors`; leitura pós-hidratação (padrão `MasterSidebar`) para não divergir do SSR.
@@ -25,11 +26,13 @@
 - Assinaturas WebSocket: `CampaignInvites` (aba players) continua montando/remontando conforme aba ativa — para preservar a otimização da #75, extrair as assinaturas para hook `useCampaignInviteSubscriptions(enabled)` usado pelo `CampaignInvites` de players; desabilitado quando a aba players não está ativa **e** não é `keepMounted`.
 
 ### 3. O que NÃO muda
+
 - `ShieldModuleId`, `leftColumnOrder`, `rightColumnOrder`, `sanitizeColumnOrder` — intactos; usuários mantêm ordenação customizada.
 - `MasterScreenConfigPanel.tsx` — sem alterações estruturais (opcional: rótulo explicando o agrupamento).
 - Módulos ficam fixos ao seu grupo temático (módulo não pode "escapar" do grupo — limitação consciente desta abordagem).
 
 ## Passos de implementação
+
 1. `useShieldActiveTab` (persistência pós-hidratação + fallback por visibilidade) + teste.
 2. `ShieldTabGroup` (abas acessíveis, `keepMounted` por aba) + testes.
 3. Hook `useCampaignInviteSubscriptions` em `CampaignInvites` + teste.
@@ -37,6 +40,7 @@
 5. Remover handles de resize individuais dos painéis agrupados; adicionar handle no grupo.
 
 ## Testes
+
 - `ShieldTabGroup.test.tsx`: abas por ícone/tooltip, troca, `keepMounted` (jukebox não remonta), fallback quando aba invisível, grupo com módulo único sem cabeçalho.
 - `useShieldActiveTab.test.ts`: persistência e restauração.
 - `useCampaignInviteSubscriptions.test.ts`: liga/desliga conforme aba ativa.
@@ -44,6 +48,7 @@
 - Testes existentes (`CampaignDetail.moduleLayout.test.tsx`, `MasterScreenConfigPanel.reorder.test.tsx`) atualizados conforme comportamento.
 
 ## Riscos / Trade-offs vs. Plano A
+
 - ✅ Menor diff, zero migração de config, zero risco para usuários com ordenação customizada.
 - ⚠️ Agrupamento fixo por afinidade — sem novos IDs de módulo, flexibilidade de "posicionar contêineres unificados entre colunas" (pedido na issue) fica limitada à posição do primeiro módulo do grupo.
 - ⚠️ Remontagem de painéis não-keepMounted ao trocar aba (scroll/seleção internos podem resetar) — mitigável promovendo painéis a `keepMounted` caso a caso.

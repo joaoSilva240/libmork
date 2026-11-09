@@ -25,10 +25,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -36,10 +33,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const [npc] = await db.select().from(npcs).where(eq(npcs.id, id)).limit(1);
 
     if (!npc) {
-      return NextResponse.json(
-        { success: false, error: "NPC não encontrado" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "NPC não encontrado" }, { status: 404 });
     }
 
     const pinRows = await db
@@ -55,7 +49,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       ...new Set(
         pinRows
           .map((pin) => pin.contentId)
-          .filter((contentId): contentId is string => Boolean(contentId))
+          .filter((contentId): contentId is string => Boolean(contentId)),
       ),
     ];
     const libraryAttacks = libraryAttackIds.length
@@ -78,16 +72,18 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       return pin;
     });
 
-    const links = await db
-      .select()
-      .from(npcCampaigns)
-      .where(eq(npcCampaigns.npcId, id));
+    const links = await db.select().from(npcCampaigns).where(eq(npcCampaigns.npcId, id));
 
     const includedCampaigns = links.length
       ? await db
           .select({ id: campaigns.id, name: campaigns.name })
           .from(campaigns)
-          .where(inArray(campaigns.id, links.map((link) => link.campaignId)))
+          .where(
+            inArray(
+              campaigns.id,
+              links.map((link) => link.campaignId),
+            ),
+          )
       : [];
 
     return NextResponse.json({
@@ -95,10 +91,10 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: { ...npc, pins, includedCampaigns },
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao obter NPC');
+    logger.error({ err: error }, "Erro ao obter NPC");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -112,10 +108,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -125,7 +118,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     if (!allowed) {
       return NextResponse.json(
         { success: false, error: "Sem permissão para editar este NPC" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -139,7 +132,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
           error: "Dados inválidos",
           errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -154,10 +147,10 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       data: updated,
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao atualizar NPC');
+    logger.error({ err: error }, "Erro ao atualizar NPC");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -171,10 +164,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -184,7 +174,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     if (!allowed) {
       return NextResponse.json(
         { success: false, error: "Sem permissão para excluir este NPC" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -195,10 +185,10 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       message: "NPC excluído com sucesso",
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao excluir NPC');
+    logger.error({ err: error }, "Erro ao excluir NPC");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

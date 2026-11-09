@@ -16,7 +16,7 @@ describe("useResizableLayout", () => {
         initialHeight: 300,
         minHeight: 150,
         maxHeight: 600,
-      })
+      }),
     );
 
     expect(result.current.width).toBe(400);
@@ -32,7 +32,7 @@ describe("useResizableLayout", () => {
         initialHeight: 1000,
         minHeight: 150,
         maxHeight: 600,
-      })
+      }),
     );
 
     expect(result.current.width).toBe(200);
@@ -48,7 +48,7 @@ describe("useResizableLayout", () => {
         initialHeight: 300,
         minHeight: 150,
         maxHeight: 500,
-      })
+      }),
     );
 
     act(() => {
@@ -79,7 +79,7 @@ describe("useResizableLayout", () => {
         initialHeight: 300,
         minHeight: 150,
         maxHeight: 600,
-      })
+      }),
     );
 
     act(() => {
@@ -112,7 +112,7 @@ describe("useResizableLayout", () => {
         initialHeight: 300,
         minHeight: 150,
         maxHeight: 600,
-      })
+      }),
     );
 
     act(() => {
@@ -139,7 +139,7 @@ describe("useResizableLayout", () => {
         initialHeight: 300,
         minHeight: 150,
         maxHeight: 600,
-      })
+      }),
     );
 
     act(() => {
@@ -164,7 +164,7 @@ describe("useResizableLayout", () => {
         initialHeight: 300,
         minHeight: 150,
         maxHeight: 600,
-      })
+      }),
     );
 
     expect(result.current.width).toBe(650);
@@ -184,7 +184,7 @@ describe("useResizableLayout", () => {
         initialHeight: 300,
         minHeight: 150,
         maxHeight: 600,
-      })
+      }),
     );
 
     expect(result.current.width).toBe(800);
@@ -204,7 +204,7 @@ describe("useResizableLayout", () => {
         initialHeight: 300,
         minHeight: 150,
         maxHeight: 600,
-      })
+      }),
     );
 
     expect(result.current.width).toBe(400);
@@ -227,7 +227,7 @@ describe("useResizableLayout", () => {
           minHeight: 150,
           maxHeight: 600,
         }),
-      { initialProps }
+      { initialProps },
     );
 
     expect(result.current.width).toBe(400);

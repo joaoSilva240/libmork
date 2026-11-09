@@ -82,7 +82,7 @@ export async function applyCharacterUpdate(
   campaignId: string,
   characterId: string,
   userId: string,
-  input: ActorUpdateInput
+  input: ActorUpdateInput,
 ) {
   const [character] = await db
     .select()
@@ -94,8 +94,16 @@ export async function applyCharacterUpdate(
     return { error: "Personagem não encontrado" as const };
   }
 
-  const [membership] = await db.select({ characterId: characterCampaigns.characterId }).from(characterCampaigns)
-    .where(and(eq(characterCampaigns.characterId, characterId), eq(characterCampaigns.campaignId, campaignId))).limit(1);
+  const [membership] = await db
+    .select({ characterId: characterCampaigns.characterId })
+    .from(characterCampaigns)
+    .where(
+      and(
+        eq(characterCampaigns.characterId, characterId),
+        eq(characterCampaigns.campaignId, campaignId),
+      ),
+    )
+    .limit(1);
   if (!membership) return { error: "Personagem não pertence à campanha" as const };
 
   const logs: unknown[] = [];
@@ -112,7 +120,7 @@ export async function applyCharacterUpdate(
     const from = next.hitPointsCurrent;
     next.hitPointsCurrent = Math.min(
       Math.max(next.hitPointsCurrent + input.hpDelta, 0),
-      character.hitPointsMax
+      character.hitPointsMax,
     );
     setFields.hitPointsCurrent = next.hitPointsCurrent;
     logs.push(
@@ -124,7 +132,7 @@ export async function applyCharacterUpdate(
         action: "hp_change",
         description: `HP de ${character.name}: ${from} → ${next.hitPointsCurrent} (${input.hpDelta >= 0 ? "+" : ""}${input.hpDelta})${input.reason ? ` — ${input.reason}` : ""}`,
         payload: { from, to: next.hitPointsCurrent, delta: input.hpDelta },
-      })
+      }),
     );
   }
 
@@ -132,7 +140,7 @@ export async function applyCharacterUpdate(
     const from = next.manaPointsCurrent;
     next.manaPointsCurrent = Math.min(
       Math.max(next.manaPointsCurrent + input.manaDelta, 0),
-      character.manaPointsMax
+      character.manaPointsMax,
     );
     setFields.manaPointsCurrent = next.manaPointsCurrent;
     logs.push(
@@ -144,7 +152,7 @@ export async function applyCharacterUpdate(
         action: "mana_change",
         description: `Mana de ${character.name}: ${from} → ${next.manaPointsCurrent} (${input.manaDelta >= 0 ? "+" : ""}${input.manaDelta})${input.reason ? ` — ${input.reason}` : ""}`,
         payload: { from, to: next.manaPointsCurrent, delta: input.manaDelta },
-      })
+      }),
     );
   }
 
@@ -161,13 +169,16 @@ export async function applyCharacterUpdate(
         action: "hp_change",
         description: `HP de ${character.name}: ${from} → ${next.hitPointsCurrent}${input.reason ? ` — ${input.reason}` : ""}`,
         payload: { from, to: next.hitPointsCurrent },
-      })
+      }),
     );
   }
 
   if (input.manaPointsCurrent !== undefined) {
     const from = next.manaPointsCurrent;
-    next.manaPointsCurrent = Math.min(Math.max(input.manaPointsCurrent, 0), character.manaPointsMax);
+    next.manaPointsCurrent = Math.min(
+      Math.max(input.manaPointsCurrent, 0),
+      character.manaPointsMax,
+    );
     setFields.manaPointsCurrent = next.manaPointsCurrent;
     logs.push(
       await writeLog(campaignId, userId, {
@@ -178,7 +189,7 @@ export async function applyCharacterUpdate(
         action: "mana_change",
         description: `Mana de ${character.name}: ${from} → ${next.manaPointsCurrent}${input.reason ? ` — ${input.reason}` : ""}`,
         payload: { from, to: next.manaPointsCurrent },
-      })
+      }),
     );
   }
 
@@ -197,7 +208,7 @@ export async function applyCharacterUpdate(
         action: "xp_gain",
         description: `${character.name} ganhou ${input.xpDelta} XP (agora ${xp}/100)${input.reason ? ` — ${input.reason}` : ""}`,
         payload: { amount: input.xpDelta, xp, level },
-      })
+      }),
     );
     if (leveledUp) {
       logs.push(
@@ -209,7 +220,7 @@ export async function applyCharacterUpdate(
           action: "level_up",
           description: `${character.name} subiu para o nível ${level}!`,
           payload: { level },
-        })
+        }),
       );
     }
   }
@@ -227,7 +238,7 @@ export async function applyCharacterUpdate(
         action: "level_change",
         description: `Nível de ${character.name}: ${from} → ${input.level}`,
         payload: { from, to: input.level },
-      })
+      }),
     );
   }
 
@@ -238,22 +249,19 @@ export async function applyCharacterUpdate(
       .where(
         and(
           eq(characterConditions.characterId, characterId),
-          inArray(characterConditions.conditionId, input.conditionsAdd)
-        )
+          inArray(characterConditions.conditionId, input.conditionsAdd),
+        ),
       );
 
     const existingIds = new Set(existing.map((row) => row.conditionId));
     const toAdd = input.conditionsAdd.filter((id) => !existingIds.has(id));
 
     if (toAdd.length) {
-      await db.insert(characterConditions).values(
-        toAdd.map((conditionId) => ({ characterId, conditionId }))
-      );
+      await db
+        .insert(characterConditions)
+        .values(toAdd.map((conditionId) => ({ characterId, conditionId })));
 
-      const conditionRows = await db
-        .select()
-        .from(conditions)
-        .where(inArray(conditions.id, toAdd));
+      const conditionRows = await db.select().from(conditions).where(inArray(conditions.id, toAdd));
 
       for (const condition of conditionRows) {
         logs.push(
@@ -265,7 +273,7 @@ export async function applyCharacterUpdate(
             action: "condition_add",
             description: `Condição "${condition.name}" aplicada em ${character.name}`,
             payload: { conditionId: condition.id, conditionName: condition.name },
-          })
+          }),
         );
       }
     }
@@ -277,8 +285,8 @@ export async function applyCharacterUpdate(
       .where(
         and(
           eq(characterConditions.characterId, characterId),
-          inArray(characterConditions.conditionId, input.conditionsRemove)
-        )
+          inArray(characterConditions.conditionId, input.conditionsRemove),
+        ),
       );
 
     const conditionRows = await db
@@ -296,7 +304,7 @@ export async function applyCharacterUpdate(
           action: "condition_remove",
           description: `Condição "${condition.name}" removida de ${character.name}`,
           payload: { conditionId: condition.id, conditionName: condition.name },
-        })
+        }),
       );
     }
   }
@@ -322,7 +330,7 @@ export async function applyNpcUpdate(
   campaignId: string,
   npcId: string,
   userId: string,
-  input: ActorUpdateInput
+  input: ActorUpdateInput,
 ) {
   const [npc] = await db.select().from(npcs).where(eq(npcs.id, npcId)).limit(1);
 
@@ -353,7 +361,7 @@ export async function applyNpcUpdate(
         action: "hp_change",
         description: `HP de ${npc.name}: ${from} → ${next.hitPoints} (${input.hpDelta >= 0 ? "+" : ""}${input.hpDelta})${input.reason ? ` — ${input.reason}` : ""}`,
         payload: { from, to: next.hitPoints, delta: input.hpDelta },
-      })
+      }),
     );
   }
 
@@ -370,7 +378,7 @@ export async function applyNpcUpdate(
         action: "mana_change",
         description: `Mana de ${npc.name}: ${from} → ${next.manaPoints} (${input.manaDelta >= 0 ? "+" : ""}${input.manaDelta})${input.reason ? ` — ${input.reason}` : ""}`,
         payload: { from, to: next.manaPoints, delta: input.manaDelta },
-      })
+      }),
     );
   }
 
@@ -387,7 +395,7 @@ export async function applyNpcUpdate(
         action: "hp_change",
         description: `HP de ${npc.name}: ${from} → ${next.hitPoints}${input.reason ? ` — ${input.reason}` : ""}`,
         payload: { from, to: next.hitPoints },
-      })
+      }),
     );
   }
 
@@ -404,7 +412,7 @@ export async function applyNpcUpdate(
         action: "mana_change",
         description: `Mana de ${npc.name}: ${from} → ${next.manaPoints}${input.reason ? ` — ${input.reason}` : ""}`,
         payload: { from, to: next.manaPoints },
-      })
+      }),
     );
   }
 
@@ -423,7 +431,7 @@ export async function applyNpcUpdate(
         action: "xp_gain",
         description: `${npc.name} ganhou ${input.xpDelta} XP (agora ${xp}/100)${input.reason ? ` — ${input.reason}` : ""}`,
         payload: { amount: input.xpDelta, xp, level },
-      })
+      }),
     );
     if (leveledUp) {
       logs.push(
@@ -435,7 +443,7 @@ export async function applyNpcUpdate(
           action: "level_up",
           description: `${npc.name} subiu para o nível ${level}!`,
           payload: { level },
-        })
+        }),
       );
     }
   }
@@ -453,7 +461,7 @@ export async function applyNpcUpdate(
         action: "level_change",
         description: `Nível de ${npc.name}: ${from} → ${input.level}`,
         payload: { from, to: input.level },
-      })
+      }),
     );
   }
 
@@ -472,7 +480,7 @@ export async function applyNpcUpdate(
  */
 async function resolveActorImageUrl(
   actorType: "character" | "npc",
-  actorId: string
+  actorId: string,
 ): Promise<string | null> {
   const table = actorType === "character" ? characters : npcs;
   const [row] = await db
@@ -496,7 +504,7 @@ export async function createRollRequest(
     actorName: string;
     rollExpression: string;
     reason?: string;
-  }
+  },
 ) {
   const actorImageUrl = await resolveActorImageUrl(input.actorType, input.actorId);
 
@@ -514,16 +522,8 @@ export async function createRollRequest(
 /**
  * Preenche o resultado de uma rolagem requisitada (RF-041).
  */
-export async function fillRollResult(
-  logId: string,
-  result: number,
-  description?: string
-) {
-  const [log] = await db
-    .select()
-    .from(campaignLogs)
-    .where(eq(campaignLogs.id, logId))
-    .limit(1);
+export async function fillRollResult(logId: string, result: number, description?: string) {
+  const [log] = await db.select().from(campaignLogs).where(eq(campaignLogs.id, logId)).limit(1);
 
   if (!log || log.action !== "roll_request") {
     return { error: "Rolagem não encontrada" as const };
@@ -536,8 +536,7 @@ export async function fillRollResult(
     .set({
       action: "roll_result",
       description:
-        description ??
-        `${log.actorName ?? "Alguém"} rolou ${rollExpression} e obteve ${result}`,
+        description ?? `${log.actorName ?? "Alguém"} rolou ${rollExpression} e obteve ${result}`,
       payload: { ...(log.payload as Record<string, unknown>), result },
     })
     .where(eq(campaignLogs.id, logId))

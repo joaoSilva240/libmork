@@ -8,10 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { campaigns } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
-import {
-  contentTypeSchema,
-  getContentUpdateValidator,
-} from "@/lib/validators/content";
+import { contentTypeSchema, getContentUpdateValidator } from "@/lib/validators/content";
 import {
   getContentTable,
   getContentCampaignColumn,
@@ -31,10 +28,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id, type, contentId } = await params;
@@ -43,7 +37,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     if (!parsed.success) {
       return NextResponse.json(
         { success: false, error: "Tipo de conteúdo inválido" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -56,7 +50,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     if (!campaign) {
       return NextResponse.json(
         { success: false, error: "Campanha não encontrada" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -68,15 +62,15 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       .where(
         and(
           eq(getContentIdColumn(parsed.data), contentId),
-          eq(getContentCampaignColumn(parsed.data), id)
-        )
+          eq(getContentCampaignColumn(parsed.data), id),
+        ),
       )
       .limit(1);
 
     if (!existing) {
       return NextResponse.json(
         { success: false, error: "Conteúdo não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -91,7 +85,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
           error: "Dados inválidos",
           errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -109,7 +103,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     logger.error({ err: error }, "Erro ao atualizar conteúdo da campanha");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -123,10 +117,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id, type, contentId } = await params;
@@ -135,7 +126,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     if (!parsed.success) {
       return NextResponse.json(
         { success: false, error: "Tipo de conteúdo inválido" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -148,7 +139,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     if (!campaign) {
       return NextResponse.json(
         { success: false, error: "Campanha não encontrada" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -160,15 +151,15 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       .where(
         and(
           eq(getContentIdColumn(parsed.data), contentId),
-          eq(getContentCampaignColumn(parsed.data), id)
-        )
+          eq(getContentCampaignColumn(parsed.data), id),
+        ),
       )
       .limit(1);
 
     if (!existing) {
       return NextResponse.json(
         { success: false, error: "Conteúdo não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -182,7 +173,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     logger.error({ err: error }, "Erro ao excluir conteúdo da campanha");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

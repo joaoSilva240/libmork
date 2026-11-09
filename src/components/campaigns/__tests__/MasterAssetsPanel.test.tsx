@@ -50,7 +50,10 @@ describe("MasterAssetsPanel", () => {
     } as any);
 
     global.fetch = vi.fn().mockImplementation(async (url: string, options?: any) => {
-      if (url.includes("/api/campaigns/c1/assets") && (!options || !options.method || options.method === "GET")) {
+      if (
+        url.includes("/api/campaigns/c1/assets") &&
+        (!options || !options.method || options.method === "GET")
+      ) {
         return {
           ok: true,
           json: async () => ({ success: true, data: mockAssets }),

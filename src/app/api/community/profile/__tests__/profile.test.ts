@@ -106,13 +106,15 @@ describe("Master Profile API Routes", () => {
       // Query 3: postStats
       mockDb.select.mockReturnValueOnce({
         from: vi.fn().mockReturnValue({
-          where: vi.fn().mockResolvedValue([{
-            spells: 2,
-            items: 4,
-            classes: 1,
-            npcs: 5,
-            worlds: 1,
-          }]),
+          where: vi.fn().mockResolvedValue([
+            {
+              spells: 2,
+              items: 4,
+              classes: 1,
+              npcs: 5,
+              worlds: 1,
+            },
+          ]),
         }),
       });
 
@@ -155,13 +157,15 @@ describe("Master Profile API Routes", () => {
 
       mockDb.select.mockReturnValueOnce({
         from: vi.fn().mockReturnValue({
-          where: vi.fn().mockResolvedValue([{
-            spells: 0,
-            items: 0,
-            classes: 0,
-            npcs: 0,
-            worlds: 0,
-          }]),
+          where: vi.fn().mockResolvedValue([
+            {
+              spells: 0,
+              items: 0,
+              classes: 0,
+              npcs: 0,
+              worlds: 0,
+            },
+          ]),
         }),
       });
 
@@ -314,7 +318,9 @@ describe("Master Profile API Routes", () => {
 
       mockDb.select.mockReturnValue(queryChain);
 
-      const req = new NextRequest("http://localhost/api/community/profile/user-123/posts?page=1&limit=10");
+      const req = new NextRequest(
+        "http://localhost/api/community/profile/user-123/posts?page=1&limit=10",
+      );
       const res = await getPosts(req, { params: Promise.resolve({ userId: "user-123" }) });
       const data = await res.json();
 
@@ -373,7 +379,9 @@ describe("Master Profile API Routes", () => {
 
       mockDb.select.mockReturnValue(queryChain);
 
-      const req = new NextRequest("http://localhost/api/community/profile/user-123/cloned?page=2&limit=5");
+      const req = new NextRequest(
+        "http://localhost/api/community/profile/user-123/cloned?page=2&limit=5",
+      );
       const res = await getCloned(req, { params: Promise.resolve({ userId: "user-123" }) });
       const data = await res.json();
 
@@ -429,7 +437,9 @@ describe("Master Profile API Routes", () => {
 
       mockDb.select.mockReturnValue(queryChain);
 
-      const req = new NextRequest("http://localhost/api/community/profile/user-123/liked?page=1&limit=20");
+      const req = new NextRequest(
+        "http://localhost/api/community/profile/user-123/liked?page=1&limit=20",
+      );
       const res = await getLiked(req, { params: Promise.resolve({ userId: "user-123" }) });
       const data = await res.json();
 

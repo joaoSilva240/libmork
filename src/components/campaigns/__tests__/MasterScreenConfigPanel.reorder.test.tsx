@@ -12,7 +12,7 @@ describe("MasterScreenConfigPanel - Reordering & Assets Visibility (Issue #75)",
         config={DEFAULT_MASTER_SCREEN_CONFIG}
         onUpdate={handleUpdate}
         onReset={vi.fn()}
-      />
+      />,
     );
 
     const assetsCheckbox = screen.getByLabelText(/Assets e Handouts/i);
@@ -29,7 +29,7 @@ describe("MasterScreenConfigPanel - Reordering & Assets Visibility (Issue #75)",
         config={DEFAULT_MASTER_SCREEN_CONFIG}
         onUpdate={vi.fn()}
         onReset={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText("Coluna Esquerda (Gestão)")).toBeInTheDocument();
@@ -47,7 +47,7 @@ describe("MasterScreenConfigPanel - Reordering & Assets Visibility (Issue #75)",
         config={DEFAULT_MASTER_SCREEN_CONFIG}
         onUpdate={handleUpdate}
         onReset={vi.fn()}
-      />
+      />,
     );
 
     const moveMediaBtn = screen.getByTestId("btn-move-col-mediaPanel");
@@ -57,7 +57,7 @@ describe("MasterScreenConfigPanel - Reordering & Assets Visibility (Issue #75)",
       expect.objectContaining({
         leftColumnOrder: expect.not.arrayContaining(["mediaPanel"]),
         rightColumnOrder: expect.arrayContaining(["mediaPanel"]),
-      })
+      }),
     );
   });
 
@@ -68,7 +68,7 @@ describe("MasterScreenConfigPanel - Reordering & Assets Visibility (Issue #75)",
         config={DEFAULT_MASTER_SCREEN_CONFIG}
         onUpdate={handleUpdate}
         onReset={vi.fn()}
-      />
+      />,
     );
 
     const moveDownMediaBtn = screen.getByTestId("btn-move-down-mediaPanel");
@@ -77,7 +77,7 @@ describe("MasterScreenConfigPanel - Reordering & Assets Visibility (Issue #75)",
     expect(handleUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
         leftColumnOrder: ["actorsPanel", "mediaPanel"],
-      })
+      }),
     );
   });
 
@@ -88,7 +88,7 @@ describe("MasterScreenConfigPanel - Reordering & Assets Visibility (Issue #75)",
         config={DEFAULT_MASTER_SCREEN_CONFIG}
         onUpdate={handleUpdate}
         onReset={vi.fn()}
-      />
+      />,
     );
 
     const mediaCard = screen.getByTestId("module-card-mediaPanel");

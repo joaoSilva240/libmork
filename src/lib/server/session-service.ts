@@ -387,7 +387,9 @@ export async function getSessionFeed(userId: string, page = 1) {
   const rows = await db
     .select()
     .from(campaignSessions)
-    .where(and(eq(campaignSessions.status, "proposed"), gte(campaignSessions.proposedEnd, new Date())))
+    .where(
+      and(eq(campaignSessions.status, "proposed"), gte(campaignSessions.proposedEnd, new Date())),
+    )
     .orderBy(campaignSessions.proposedStart)
     .limit(limit + 1)
     .offset((page - 1) * limit);
@@ -447,7 +449,9 @@ export async function applyToSession(
     const accepted = await tx
       .select({ id: sessionCandidates.id })
       .from(sessionCandidates)
-      .where(and(eq(sessionCandidates.sessionId, sessionId), eq(sessionCandidates.status, "accepted")));
+      .where(
+        and(eq(sessionCandidates.sessionId, sessionId), eq(sessionCandidates.status, "accepted")),
+      );
 
     const [existing] = await tx
       .select()
@@ -541,7 +545,10 @@ export async function decideCandidate(
       .select()
       .from(sessionCandidates)
       .where(
-        and(eq(sessionCandidates.sessionId, sessionId), eq(sessionCandidates.userId, candidateUserId)),
+        and(
+          eq(sessionCandidates.sessionId, sessionId),
+          eq(sessionCandidates.userId, candidateUserId),
+        ),
       )
       .limit(1);
 
@@ -565,7 +572,10 @@ export async function decideCandidate(
       .update(sessionCandidates)
       .set({ status: decision })
       .where(
-        and(eq(sessionCandidates.sessionId, sessionId), eq(sessionCandidates.userId, candidateUserId)),
+        and(
+          eq(sessionCandidates.sessionId, sessionId),
+          eq(sessionCandidates.userId, candidateUserId),
+        ),
       )
       .returning();
 

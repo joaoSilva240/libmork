@@ -151,8 +151,8 @@ export default function CharacterImportPage() {
               {acquiring ? "Adquirindo..." : "Adquirir Personagem"}
             </Button>
             <p className="text-center text-xs text-secondary-muted">
-              Uma cópia independente será criada na sua conta, com atributos, moedas, itens,
-              magias e proficiências. O personagem original não é alterado.
+              Uma cópia independente será criada na sua conta, com atributos, moedas, itens, magias
+              e proficiências. O personagem original não é alterado.
             </p>
           </>
         )}

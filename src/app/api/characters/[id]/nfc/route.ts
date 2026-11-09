@@ -23,10 +23,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -40,7 +37,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     if (!character) {
       return NextResponse.json(
         { success: false, error: "Personagem não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -55,10 +52,10 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: activeTag ?? null,
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao obter NFC');
+    logger.error({ err: error }, "Erro ao obter NFC");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -72,10 +69,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -89,7 +83,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!character) {
       return NextResponse.json(
         { success: false, error: "Personagem não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -118,13 +112,13 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         success: true,
         data: newTag,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao associar NFC');
+    logger.error({ err: error }, "Erro ao associar NFC");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -138,10 +132,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -155,7 +146,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     if (!character) {
       return NextResponse.json(
         { success: false, error: "Personagem não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -169,10 +160,10 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       message: "Associação NFC revogada com sucesso",
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao revogar NFC');
+    logger.error({ err: error }, "Erro ao revogar NFC");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

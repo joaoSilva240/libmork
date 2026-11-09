@@ -66,11 +66,7 @@ export async function getCampaignAndRole(
   campaignId: string,
   userId: string,
 ): Promise<{ campaign: typeof campaigns.$inferSelect | null; role: Role | null }> {
-  const [campaign] = await db
-    .select()
-    .from(campaigns)
-    .where(eq(campaigns.id, campaignId))
-    .limit(1);
+  const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, campaignId)).limit(1);
 
   if (!campaign) {
     return { campaign: null, role: null };
@@ -101,12 +97,7 @@ export async function getCampaignAndRole(
   const [habitant] = await db
     .select()
     .from(missingHabitants)
-    .where(
-      and(
-        eq(missingHabitants.campaignId, campaignId),
-        eq(missingHabitants.ownerId, userId),
-      ),
-    )
+    .where(and(eq(missingHabitants.campaignId, campaignId), eq(missingHabitants.ownerId, userId)))
     .limit(1);
 
   if (habitant) {
@@ -118,12 +109,7 @@ export async function getCampaignAndRole(
     .select()
     .from(characterCampaigns)
     .innerJoin(characters, eq(characterCampaigns.characterId, characters.id))
-    .where(
-      and(
-        eq(characterCampaigns.campaignId, campaignId),
-        eq(characters.ownerId, userId),
-      ),
-    )
+    .where(and(eq(characterCampaigns.campaignId, campaignId), eq(characters.ownerId, userId)))
     .limit(1);
 
   if (link) {
@@ -245,17 +231,15 @@ export async function getSanitizedCampaignState(
   const myHabitants = await db
     .select()
     .from(missingHabitants)
-    .where(
-      and(
-        eq(missingHabitants.campaignId, campaignId),
-        eq(missingHabitants.ownerId, userId),
-      ),
-    );
+    .where(and(eq(missingHabitants.campaignId, campaignId), eq(missingHabitants.ownerId, userId)));
 
   const myHabitantIds = new Set(myHabitants.map((h) => h.id));
 
   const sanitizedClues: MissingClue[] = (rawState.cluesBank || [])
-    .filter((clue) => clue.deliveredToHabitantId !== null && myHabitantIds.has(clue.deliveredToHabitantId))
+    .filter(
+      (clue) =>
+        clue.deliveredToHabitantId !== null && myHabitantIds.has(clue.deliveredToHabitantId),
+    )
     .map((clue) => ({
       ...clue,
       isFalseClue: false, // Mascaramento de segurança estrita
@@ -484,7 +468,9 @@ export async function updateHabitant(
 
   if (validated.addLine) {
     if (updatedLines.length >= 30) {
-      throw new Error("O Registro de Habitante não pode exceder o limite da folha A4 (máximo 30 linhas)");
+      throw new Error(
+        "O Registro de Habitante não pode exceder o limite da folha A4 (máximo 30 linhas)",
+      );
     }
     updatedLines.push({
       id: randomUUID(),
@@ -511,7 +497,7 @@ export async function updateHabitant(
   }
 
   const isMissing = checkHabitantDisappearance(updatedLines);
-  const status = isMissing ? "missing" : (validated.status || habitant.status);
+  const status = isMissing ? "missing" : validated.status || habitant.status;
 
   const updatedName = validated.name || habitant.name;
 
@@ -646,10 +632,7 @@ export async function eraseHabitantLine(
 // 7.1. Excluir Habitante
 // =============================================================================
 
-export async function deleteHabitant(
-  habitantId: string,
-  userId: string,
-): Promise<void> {
+export async function deleteHabitant(habitantId: string, userId: string): Promise<void> {
   const habitant = await getHabitantById(habitantId);
   if (!habitant) {
     throw new Error("Habitante não encontrado");
@@ -1260,10 +1243,7 @@ export async function executeTestRoll(
 // 14. Livro-Razão (Ledger) de Ações com Sanitização de Segredos
 // =============================================================================
 
-export async function getCampaignLedger(
-  campaignId: string,
-  userId?: string,
-) {
+export async function getCampaignLedger(campaignId: string, userId?: string) {
   let isVoice = true;
 
   if (userId) {
@@ -1324,8 +1304,5 @@ export function handleApiError(error: unknown) {
     return NextResponse.json({ success: false, error: msg }, { status: 400 });
   }
 
-  return NextResponse.json(
-    { success: false, error: "Erro interno do servidor" },
-    { status: 500 },
-  );
+  return NextResponse.json({ success: false, error: "Erro interno do servidor" }, { status: 500 });
 }

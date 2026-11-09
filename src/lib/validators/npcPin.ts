@@ -14,7 +14,7 @@ const diceExpression = z
   .max(200)
   .regex(
     /^\s*[+-]?\s*\d*d\s*\d+\s*(?:[+-]\s*\d+)?\s*$/i,
-    "Expressão inválida. Use o formato XdY±Z (ex.: 1d20+9 ou 3d6+5)."
+    "Expressão inválida. Use o formato XdY±Z (ex.: 1d20+9 ou 3d6+5).",
   );
 
 /**

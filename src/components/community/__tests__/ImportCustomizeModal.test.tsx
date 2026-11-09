@@ -22,11 +22,13 @@ describe("ImportCustomizeModal", () => {
         payload={{ name: "Minha Campanha" }}
         postId="camp-1"
         onClose={onClose}
-      />
+      />,
     );
 
     expect(screen.getByText(/Importação não suportada/i)).toBeInTheDocument();
-    expect(screen.getByText(/A importação de campanhas ainda não é suportada pelo sistema/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/A importação de campanhas ainda não é suportada pelo sistema/i),
+    ).toBeInTheDocument();
 
     const closeBtn = screen.getByRole("button", { name: /Fechar/i });
     fireEvent.click(closeBtn);
@@ -39,7 +41,11 @@ describe("ImportCustomizeModal", () => {
 
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ success: true, message: "Conteúdo importado com sucesso", newEntityId: "spell-123" }),
+      json: async () => ({
+        success: true,
+        message: "Conteúdo importado com sucesso",
+        newEntityId: "spell-123",
+      }),
     });
 
     render(
@@ -54,7 +60,7 @@ describe("ImportCustomizeModal", () => {
         postId="post-spell-1"
         onClose={onClose}
         onSuccess={onSuccess}
-      />
+      />,
     );
 
     expect(screen.getByText(/Personalizar antes de importar/i)).toBeInTheDocument();
@@ -70,7 +76,7 @@ describe("ImportCustomizeModal", () => {
         expect.objectContaining({
           method: "POST",
           body: JSON.stringify({}),
-        })
+        }),
       );
     });
   });
@@ -81,7 +87,11 @@ describe("ImportCustomizeModal", () => {
 
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ success: true, message: "Conteúdo adaptado importado com sucesso", newEntityId: "spell-mod-123" }),
+      json: async () => ({
+        success: true,
+        message: "Conteúdo adaptado importado com sucesso",
+        newEntityId: "spell-mod-123",
+      }),
     });
 
     render(
@@ -95,7 +105,7 @@ describe("ImportCustomizeModal", () => {
         postId="post-spell-1"
         onClose={onClose}
         onSuccess={onSuccess}
-      />
+      />,
     );
 
     const nameInput = screen.getByDisplayValue("Míssil Mágico");
@@ -110,7 +120,7 @@ describe("ImportCustomizeModal", () => {
         expect.objectContaining({
           method: "POST",
           body: expect.stringContaining("Míssil Arcano Supremo"),
-        })
+        }),
       );
     });
   });

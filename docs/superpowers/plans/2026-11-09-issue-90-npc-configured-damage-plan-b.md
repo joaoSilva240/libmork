@@ -2,7 +2,7 @@
 
 **Issue:** #90 — ataque de NPC precisa de dano configurado
 **Data:** 2026-11-09
-**Estratégia:** Incremental, **zero migração de banco**. Mantém a coluna única `roll_expression` e adota a convenção já suportada `ataque(dano)` como formato canônico — a UI passa a *escrever* essa convenção de forma estruturada e o parser deixa de inventar dano. Resolve os sintomas mais graves (dano inventado e 0 silencioso) com diff pequeno; deixa tipo de dano/crítico para um follow-up.
+**Estratégia:** Incremental, **zero migração de banco**. Mantém a coluna única `roll_expression` e adota a convenção já suportada `ataque(dano)` como formato canônico — a UI passa a _escrever_ essa convenção de forma estruturada e o parser deixa de inventar dano. Resolve os sintomas mais graves (dano inventado e 0 silencioso) com diff pequeno; deixa tipo de dano/crítico para um follow-up.
 
 ## 1. Resolver puro — `src/lib/engine/npc-attack.ts` (mesma assinatura do Plano A)
 
@@ -14,6 +14,7 @@ resolveNpcPinAttack(pin: {rollExpression?}): {
 ```
 
 Correções no parser (movido de `ActorOverlay.tsx:74-115` para o módulo puro):
+
 1. `1d20+5(1d8+3)` → ataque+dano (`legacy-paren`) — comportamento atual preservado.
 2. **Modificador puro (`+5`/`-2`)**: vira apenas ataque `1d20+5`; **remove o branch que gera `1d6+5`** (causa do dano inventado). `source: "attack-only"`.
 3. `1d20+7` → ataque puro, `source: "attack-only"` (antes: dano ausente, 0 silencioso).
@@ -42,6 +43,7 @@ Correções no parser (movido de `ActorOverlay.tsx:74-115` para o módulo puro):
 - Editor: salvar com os dois campos produz `ataque(dano)`; editar pin legado `ataque(dano)` pré-preenche os dois campos (round-trip).
 
 ## Critérios de aceite cobertos
+
 - ✅ Nenhum dano inventado (`1d6`) — branch removido.
 - ✅ Ataque sem dano → aviso visível, não 0 silencioso.
 - ✅ Pins antigos continuam funcionando (sem migração de dados).
@@ -49,6 +51,7 @@ Correções no parser (movido de `ActorOverlay.tsx:74-115` para o módulo puro):
 - ⚠️ Parcial: mestre pode configurar `1d20+9 / 3d6+5` via dois campos, mas **sem** tipo de dano estruturado nem faixa de crítico, e **sem** preenchimento automático na importação PF2e (follow-up).
 
 ## Trade-offs vs. Plano A
+
 - ✅ Diff pequeno, zero migração, zero risco de schema, entrega imediata dos dois bugs principais.
 - ⚠️ Convenção por string é frágil a médio prazo (parênteses no label, dano com vírgulas, etc.).
 - ⚠️ Não resolve stat blocks reais (crítico 19–20, tipo de dano) nem importação PF2e — provavelmente vira a issue de follow-up que o Plano A implementaria.

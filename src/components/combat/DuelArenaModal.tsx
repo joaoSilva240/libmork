@@ -23,11 +23,7 @@ type DuelArenaModalProps = {
   onClose?: () => void;
 };
 
-export function DuelArenaModal({
-  duelState,
-  myCharacterId,
-  isOpen,
-}: DuelArenaModalProps) {
+export function DuelArenaModal({ duelState, myCharacterId, isOpen }: DuelArenaModalProps) {
   const { updateDuelState, finishDuel, rollDice } = useSocket();
   const [localStateOverride, setLocalStateOverride] = useState<DuelSessionState | null>(null);
 
@@ -110,7 +106,9 @@ export function DuelArenaModal({
                 </span>
               </div>
               <p className="text-xs text-rose-400/80">
-                {localState.permanentResults ? "⚠️ Resultados Permanentes" : "✦ Resultados Temporários (Restaurados ao final)"}
+                {localState.permanentResults
+                  ? "⚠️ Resultados Permanentes"
+                  : "✦ Resultados Temporários (Restaurados ao final)"}
               </p>
             </div>
           </div>
@@ -133,8 +131,8 @@ export function DuelArenaModal({
               {localState.winnerId === myCharacterId
                 ? "🏆 Você venceu o duelo!"
                 : localState.winnerId
-                ? `Vencedor: ${localState.participants.find((p) => p.characterId === localState.winnerId)?.name}`
-                : "Duelo finalizado por acordo."}
+                  ? `Vencedor: ${localState.participants.find((p) => p.characterId === localState.winnerId)?.name}`
+                  : "Duelo finalizado por acordo."}
             </p>
             {!localState.permanentResults && (
               <p className="text-[11px] text-emerald-400 font-semibold">
@@ -164,7 +162,11 @@ export function DuelArenaModal({
                     <div className="h-10 w-10 rounded-full bg-gray-800 flex items-center justify-center font-bold text-xs text-gray-200 border border-gray-700 overflow-hidden">
                       {p.avatarUrl ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
-                        <img src={p.avatarUrl} alt={p.name} className="h-full w-full object-cover" />
+                        <img
+                          src={p.avatarUrl}
+                          alt={p.name}
+                          className="h-full w-full object-cover"
+                        />
                       ) : (
                         p.name.charAt(0)
                       )}
@@ -172,7 +174,9 @@ export function DuelArenaModal({
                     <div>
                       <div className="text-sm font-bold text-gray-100 flex items-center gap-1.5">
                         <span>{p.name}</span>
-                        {isMe && <span className="text-[10px] text-rose-400 font-semibold">(Você)</span>}
+                        {isMe && (
+                          <span className="text-[10px] text-rose-400 font-semibold">(Você)</span>
+                        )}
                       </div>
                       <span className="text-[10px] text-gray-400">Iniciativa: {p.initiative}</span>
                     </div>
@@ -199,7 +203,9 @@ export function DuelArenaModal({
                     <div className="h-2 w-full rounded-full bg-gray-800 overflow-hidden">
                       <div
                         className="h-full bg-rose-600 transition-all duration-300"
-                        style={{ width: `${Math.max(0, Math.min(100, (p.hpCurrent / p.hpMax) * 100))}%` }}
+                        style={{
+                          width: `${Math.max(0, Math.min(100, (p.hpCurrent / p.hpMax) * 100))}%`,
+                        }}
                       />
                     </div>
                   </div>
@@ -216,7 +222,9 @@ export function DuelArenaModal({
                     <div className="h-1.5 w-full rounded-full bg-gray-800 overflow-hidden">
                       <div
                         className="h-full bg-blue-500 transition-all duration-300"
-                        style={{ width: `${Math.max(0, Math.min(100, (p.manaCurrent / p.manaMax) * 100))}%` }}
+                        style={{
+                          width: `${Math.max(0, Math.min(100, (p.manaCurrent / p.manaMax) * 100))}%`,
+                        }}
                       />
                     </div>
                   </div>

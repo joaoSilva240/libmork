@@ -270,9 +270,12 @@ describe("/api/campaigns/[id]/assets", () => {
       const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit });
       mockSelect.mockReturnValueOnce({ from: () => ({ where: mockWhere }) });
 
-      const request = new NextRequest("http://localhost/api/campaigns/c1/assets/a-unknown/activate", {
-        method: "POST",
-      });
+      const request = new NextRequest(
+        "http://localhost/api/campaigns/c1/assets/a-unknown/activate",
+        {
+          method: "POST",
+        },
+      );
 
       const response = await activatePOST(request, {
         params: Promise.resolve({ id: "c1", assetId: "a-unknown" }),

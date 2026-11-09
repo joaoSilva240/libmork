@@ -26,7 +26,10 @@ export default function MasterSettingsPage() {
       </div>
 
       {/* Navegação entre Abas de Configuração */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-secondary-border mb-6" role="tablist">
+      <div
+        className="flex flex-wrap items-center gap-2 border-b border-secondary-border mb-6"
+        role="tablist"
+      >
         <button
           type="button"
           role="tab"
@@ -101,11 +104,17 @@ export default function MasterSettingsPage() {
       <div className={activeTab === "screen" ? "block" : "hidden"} role="tabpanel">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="rounded-lg border border-secondary-border bg-secondary-card p-4">
-            <h2 className="text-lg font-semibold text-secondary-pure mb-3">Preferências de Visibilidade</h2>
+            <h2 className="text-lg font-semibold text-secondary-pure mb-3">
+              Preferências de Visibilidade
+            </h2>
             <p className="text-xs text-secondary-muted mb-4">
               As alterações são salvas automaticamente e aplicadas a todas as campanhas.
             </p>
-            <MasterScreenConfigPanel config={config} onUpdate={updateConfig} onReset={resetConfig} />
+            <MasterScreenConfigPanel
+              config={config}
+              onUpdate={updateConfig}
+              onReset={resetConfig}
+            />
           </div>
           <div>
             <h2 className="text-lg font-semibold text-secondary-pure mb-3">Preview do Layout</h2>
@@ -135,7 +144,8 @@ export default function MasterSettingsPage() {
                   Inteligência Artificial & Tradução da Biblioteca
                 </h2>
                 <p className="text-xs text-secondary-muted">
-                  Configure o endpoint e a chave da API de IA responsável pela tradução automática e localização de livros, documentos e conteúdos da Biblioteca.
+                  Configure o endpoint e a chave da API de IA responsável pela tradução automática e
+                  localização de livros, documentos e conteúdos da Biblioteca.
                 </p>
               </div>
             </div>

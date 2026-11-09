@@ -93,7 +93,9 @@ function QrAuthorizeContent() {
           <div className="my-6 rounded-xl border border-emerald-800/50 bg-emerald-950/40 p-4 text-emerald-300">
             <span className="text-4xl block mb-2">✅</span>
             <p className="font-semibold">{statusMessage}</p>
-            <p className="mt-2 text-xs text-gray-400">Você já pode fechar esta aba no seu celular.</p>
+            <p className="mt-2 text-xs text-gray-400">
+              Você já pode fechar esta aba no seu celular.
+            </p>
           </div>
         ) : (
           <>
@@ -125,7 +127,13 @@ function QrAuthorizeContent() {
 
 export default function QrAuthorizePage() {
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-gray-950 text-white"><Spinner size="lg" /></div>}>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-gray-950 text-white">
+          <Spinner size="lg" />
+        </div>
+      }
+    >
       <QrAuthorizeContent />
     </Suspense>
   );

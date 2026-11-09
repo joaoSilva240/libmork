@@ -15,7 +15,7 @@ import { isModified, sanitizePayload } from "../../../clone-utils";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ commentId: string }> }
+  { params }: { params: Promise<{ commentId: string }> },
 ) {
   try {
     const session = await requireAuth();
@@ -32,10 +32,7 @@ export async function POST(
       .limit(1);
 
     if (!comment) {
-      return NextResponse.json(
-        { error: "Comentário não encontrado" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Comentário não encontrado" }, { status: 404 });
     }
 
     if (
@@ -43,10 +40,7 @@ export async function POST(
       !comment.attachmentContentType ||
       !comment.attachmentPayload
     ) {
-      return NextResponse.json(
-        { error: "Comentário não é uma versão anexada" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Comentário não é uma versão anexada" }, { status: 400 });
     }
 
     const contentType = comment.attachmentContentType;
@@ -54,7 +48,7 @@ export async function POST(
     if (contentType === "campaign") {
       return NextResponse.json(
         { error: "Clonagem de campanhas não é suportada ainda" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -65,19 +59,13 @@ export async function POST(
       // Body é opcional
     }
 
-    const originalSanitized = sanitizePayload(
-      contentType,
-      comment.attachmentPayload
-    );
+    const originalSanitized = sanitizePayload(contentType, comment.attachmentPayload);
 
     let hasModifications = false;
     let finalPayload = comment.attachmentPayload as Record<string, unknown>;
 
     if (body && body.modifiedPayload && typeof body.modifiedPayload === "object") {
-      const sanitizedCandidate = sanitizePayload(
-        contentType,
-        body.modifiedPayload
-      );
+      const sanitizedCandidate = sanitizePayload(contentType, body.modifiedPayload);
       if (isModified(originalSanitized, sanitizedCandidate)) {
         hasModifications = true;
         finalPayload = sanitizedCandidate;
@@ -161,10 +149,7 @@ export async function POST(
       }
 
       default:
-        return NextResponse.json(
-          { error: "Tipo de conteúdo inválido" },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: "Tipo de conteúdo inválido" }, { status: 400 });
     }
 
     let newAttachmentComment: unknown = null;
@@ -217,9 +202,6 @@ export async function POST(
     });
   } catch (error) {
     console.error("Erro ao clonar anexo:", error);
-    return NextResponse.json(
-      { error: "Erro ao importar versão anexada" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Erro ao importar versão anexada" }, { status: 500 });
   }
 }

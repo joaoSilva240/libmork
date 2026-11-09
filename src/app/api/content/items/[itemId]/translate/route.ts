@@ -18,7 +18,7 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
     if (!(await requireAuth())) {
       return NextResponse.json(
         { success: false, error: "Não autenticado", code: "unauthenticated" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -28,7 +28,7 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
     if (!z.uuid().safeParse(itemId).success) {
       return NextResponse.json(
         { success: false, error: "ID de item inválido", code: "invalid_id" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -37,7 +37,7 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
     if (!item) {
       return NextResponse.json(
         { success: false, error: "Item não encontrado", code: "not_found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -59,13 +59,15 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
     logger.info(`[translateItem] itemId=${itemId} durationMs=${durationMs} success`);
 
     return NextResponse.json({ success: true, translation });
-
   } catch (error) {
     const durationMs = Date.now() - start;
     const err = error as { code?: string; status?: number; message?: string; causeCode?: string };
     const rawCode = err?.code ?? extractErrorCode(error);
-    const isTranslationCode = typeof rawCode === "string" && rawCode.startsWith("translation_provider_");
-    const mappedCode: TranslationErrorCode = isTranslationCode ? (rawCode as TranslationErrorCode) : "translation_provider_unreachable";
+    const isTranslationCode =
+      typeof rawCode === "string" && rawCode.startsWith("translation_provider_");
+    const mappedCode: TranslationErrorCode = isTranslationCode
+      ? (rawCode as TranslationErrorCode)
+      : "translation_provider_unreachable";
 
     // Use getStatusForCode for consistent HTTP status mapping
     const status = isTranslationCode ? getStatusForCode(mappedCode) : 502;
@@ -77,25 +79,27 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
     if (status >= 500) {
       logger.error(
         `[translateItem] itemId=${itemIdForLog} durationMs=${durationMs} error.code=${mappedCode} ` +
-        `cause=${err?.causeCode || ""} status=${status} details=${details.slice(0, 200)}`
+          `cause=${err?.causeCode || ""} status=${status} details=${details.slice(0, 200)}`,
       );
     } else {
       logger.warn(
-        `[translateItem] itemId=${itemIdForLog} durationMs=${durationMs} error.code=${mappedCode} status=${status}`
+        `[translateItem] itemId=${itemIdForLog} durationMs=${durationMs} error.code=${mappedCode} status=${status}`,
       );
     }
 
     // Build client-facing error message
     let clientError: string = mappedCode;
     if (mappedCode.startsWith("translation_provider_http_")) {
-      const snippet = details.includes(":") ? details.split(":").slice(1).join(":").trim().slice(0, 200) : "";
+      const snippet = details.includes(":")
+        ? details.split(":").slice(1).join(":").trim().slice(0, 200)
+        : "";
       clientError = `${mappedCode}: ${snippet}`;
     }
 
     // Avoid leaking KEY via details
     return NextResponse.json(
       { success: false, error: clientError, code: mappedCode, details: details.slice(0, 500) },
-      { status }
+      { status },
     );
   }
 }

@@ -27,7 +27,7 @@ describe("loadYouTubeIframeApi", () => {
 
     const result = await loadYouTubeIframeApi();
     expect(result).toBe(mockYT);
-    
+
     // NÃ£o deve injetar script
     const scripts = document.querySelectorAll('script[src*="youtube.com/iframe_api"]');
     expect(scripts.length).toBe(0);
@@ -42,7 +42,9 @@ describe("loadYouTubeIframeApi", () => {
     const promise = loadYouTubeIframeApi();
 
     // Deve ter injetado o script
-    const script = document.querySelector('script[src="https://www.youtube.com/iframe_api"]') as HTMLScriptElement | null;
+    const script = document.querySelector(
+      'script[src="https://www.youtube.com/iframe_api"]',
+    ) as HTMLScriptElement | null;
     expect(script).toBeTruthy();
     expect(script?.src).toBe("https://www.youtube.com/iframe_api");
 

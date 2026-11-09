@@ -26,7 +26,7 @@ type BenefitsResponse = { data: unknown[] };
 export function useCharacterContentQuery(
   characterId: string,
   type: ContentType,
-  options?: { enabled?: boolean }
+  options?: { enabled?: boolean },
 ) {
   return useQuery({
     queryKey: queryKeys.characterContent.byType(characterId, type),
@@ -37,7 +37,7 @@ export function useCharacterContentQuery(
 
 export function useCharacterGalleryContentQuery(
   characterId: string,
-  options?: { enabled?: boolean }
+  options?: { enabled?: boolean },
 ) {
   const enabled = Boolean(characterId) && (options?.enabled ?? true);
   const spells = useQuery({
@@ -61,7 +61,7 @@ export function useCharacterGalleryContentQuery(
 
 export function useClassBenefitsQuery(
   characterClassId?: string | null,
-  options?: { enabled?: boolean }
+  options?: { enabled?: boolean },
 ) {
   return useQuery({
     queryKey: queryKeys.classBenefits(characterClassId ?? ""),
@@ -88,21 +88,19 @@ export type RaceResponse = {
       speed?: number;
       size?: string;
       hitPointsBonus?: number;
-      attributeBonuses?: Partial<Record<"forca" | "destreza" | "vigor" | "inteligencia" | "empatia", number>>;
+      attributeBonuses?: Partial<
+        Record<"forca" | "destreza" | "vigor" | "inteligencia" | "empatia", number>
+      >;
     }>;
     imageUrl?: string | null;
     sourceSystem?: string | null;
   };
 };
 
-export function useRaceDetailsQuery(
-  raceId?: string | null,
-  options?: { enabled?: boolean }
-) {
+export function useRaceDetailsQuery(raceId?: string | null, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.races.detail(raceId ?? ""),
     queryFn: () => apiFetch<RaceResponse>(`/api/races/${raceId}`),
     enabled: Boolean(raceId) && (options?.enabled ?? true),
   });
 }
-

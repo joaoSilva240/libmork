@@ -19,7 +19,8 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
   {
     key: "dwarf",
     name: "Anão",
-    description: "Povo robusto e resoluto moldado nas profundezas das montanhas. Conhecidos por sua habilidade inigualável na forja, canções de pedra ancestrais e determinação inabalável.",
+    description:
+      "Povo robusto e resoluto moldado nas profundezas das montanhas. Conhecidos por sua habilidade inigualável na forja, canções de pedra ancestrais e determinação inabalável.",
     hitPointsBonus: 10,
     speed: 20,
     size: "Médio",
@@ -32,40 +33,48 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
     traits: [
       {
         name: "Visão no Escuro",
-        description: "Enxerga na escuridão total e na penumbra tão bem quanto na luz plena, em preto e branco.",
+        description:
+          "Enxerga na escuridão total e na penumbra tão bem quanto na luz plena, em preto e branco.",
       },
       {
         name: "Estabilidade de Pedra",
-        description: "Ganha +2 de bônus contra tentativas de empurrar, derrubar ou desestabilizar quando em pé sobre rocha ou solo sólido.",
+        description:
+          "Ganha +2 de bônus contra tentativas de empurrar, derrubar ou desestabilizar quando em pé sobre rocha ou solo sólido.",
       },
       {
         name: "Ofício Ancestral",
-        description: "Familiaridade inata com a fabricação e avaliação de armas, armaduras e gemas finas.",
+        description:
+          "Familiaridade inata com a fabricação e avaliação de armas, armaduras e gemas finas.",
       },
     ],
     heritages: [
       {
         name: "Anão da Rocha Viva",
-        description: "Sua pele e ossos são densos como granito, concedendo resistência natural a cortes e perfurações.",
+        description:
+          "Sua pele e ossos são densos como granito, concedendo resistência natural a cortes e perfurações.",
       },
       {
         name: "Anão Forja-Fogo",
-        description: "Gerações perto das fornalhas conferiram resistência mágica e física a danos de fogo.",
+        description:
+          "Gerações perto das fornalhas conferiram resistência mágica e física a danos de fogo.",
       },
       {
         name: "Anão Guardião da Morte",
-        description: "Devotado a purificar tumbas, recebe bônus contra magias necromânticas e efeitos de drenagem de vida.",
+        description:
+          "Devotado a purificar tumbas, recebe bônus contra magias necromânticas e efeitos de drenagem de vida.",
       },
       {
         name: "Anão de Escudo Forte",
-        description: "Treinado para empunhar e bloquear com escudos pesados com facilidade sobre-humana.",
+        description:
+          "Treinado para empunhar e bloquear com escudos pesados com facilidade sobre-humana.",
       },
     ],
   },
   {
     key: "elf",
     name: "Elfo",
-    description: "Seres graciosos, longevos e profundamente harmonizados com as correntes de magia primordial e as copas das florestas ancestrais. Movem-se com agilidade etérea.",
+    description:
+      "Seres graciosos, longevos e profundamente harmonizados com as correntes de magia primordial e as copas das florestas ancestrais. Movem-se com agilidade etérea.",
     hitPointsBonus: 6,
     speed: 30,
     size: "Médio",
@@ -82,36 +91,43 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
       },
       {
         name: "Passada Élfica",
-        description: "Deslocamento base superior de 30 pés (9 metros) devido à sua fisiologia esbelta e ágil.",
+        description:
+          "Deslocamento base superior de 30 pés (9 metros) devido à sua fisiologia esbelta e ágil.",
       },
       {
         name: "Transe Meditativo",
-        description: "Não dorme no sentido comum; recupera energias com 4 horas de meditação consciente e sonhos despertos.",
+        description:
+          "Não dorme no sentido comum; recupera energias com 4 horas de meditação consciente e sonhos despertos.",
       },
     ],
     heritages: [
       {
         name: "Elfo dos Bosques",
-        description: "Nativo de florestas densas, ganha bônus em Furtividade e ignora penalidades de terreno difícil natural.",
+        description:
+          "Nativo de florestas densas, ganha bônus em Furtividade e ignora penalidades de terreno difícil natural.",
       },
       {
         name: "Elfo Antigo",
-        description: "Sua longevidade prodigiosa permite começar com conhecimentos versáteis de uma classe secundária.",
+        description:
+          "Sua longevidade prodigiosa permite começar com conhecimentos versáteis de uma classe secundária.",
       },
       {
         name: "Elfo das Cavernas",
-        description: "Adaptado a grutas profundas e ruínas subterrâneas, desenvolvendo Visão no Escuro completa.",
+        description:
+          "Adaptado a grutas profundas e ruínas subterrâneas, desenvolvendo Visão no Escuro completa.",
       },
       {
         name: "Elfo Sussurrante",
-        description: "Audição apurada capaz de detectar o menor farfalhar de folhas ou suspiros à distância.",
+        description:
+          "Audição apurada capaz de detectar o menor farfalhar de folhas ou suspiros à distância.",
       },
     ],
   },
   {
     key: "gnome",
     name: "Gnomo",
-    description: "Pequenos seres repletos de entusiasmo, originários do Primeiro Mundo feérico. São movidos por uma curiosidade insaciável para evitar o Desbotamento melancólico.",
+    description:
+      "Pequenos seres repletos de entusiasmo, originários do Primeiro Mundo feérico. São movidos por uma curiosidade insaciável para evitar o Desbotamento melancólico.",
     hitPointsBonus: 8,
     speed: 25,
     size: "Pequeno",
@@ -128,17 +144,20 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
       },
       {
         name: "Centelha Feérica",
-        description: "Conexão inata com magia primal ou ilusória que pulsa através de sua essência.",
+        description:
+          "Conexão inata com magia primal ou ilusória que pulsa através de sua essência.",
       },
       {
         name: "Curiosidade Obsessiva",
-        description: "Foco intenso quando investiga novidades, mecanismos desconhecidos ou fenômenos mágicos.",
+        description:
+          "Foco intenso quando investiga novidades, mecanismos desconhecidos ou fenômenos mágicos.",
       },
     ],
     heritages: [
       {
         name: "Gnomo Camaleão",
-        description: "Sua pele e cabelos mudam sutilmente de tonalidade para se camuflar no ambiente circundante.",
+        description:
+          "Sua pele e cabelos mudam sutilmente de tonalidade para se camuflar no ambiente circundante.",
       },
       {
         name: "Gnomo Sensível a Magia",
@@ -146,7 +165,8 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
       },
       {
         name: "Gnomo Vivaz",
-        description: "Energia vital transbordante que acelera sua recuperação natural contra venenos e doenças.",
+        description:
+          "Energia vital transbordante que acelera sua recuperação natural contra venenos e doenças.",
       },
       {
         name: "Gnomo dos Poços",
@@ -157,7 +177,8 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
   {
     key: "goblin",
     name: "Goblin",
-    description: "Criaturas miúdas, hiperativas e inventivas, célebres por suas canções irreverentes, paixão por chamas e uma surpreendente resiliência a quedas e explosões.",
+    description:
+      "Criaturas miúdas, hiperativas e inventivas, célebres por suas canções irreverentes, paixão por chamas e uma surpreendente resiliência a quedas e explosões.",
     hitPointsBonus: 6,
     speed: 25,
     size: "Pequeno",
@@ -174,25 +195,30 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
       },
       {
         name: "Agilidade Miúda",
-        description: "Capaz de se espremer por passagens apertadas e escapar de agarrões com facilidade acrobática.",
+        description:
+          "Capaz de se espremer por passagens apertadas e escapar de agarrões com facilidade acrobática.",
       },
       {
         name: "Improviso Destemido",
-        description: "Transforma sucata e tralhas em ferramentas e engenhocas úteis no calor da batalha.",
+        description:
+          "Transforma sucata e tralhas em ferramentas e engenhocas úteis no calor da batalha.",
       },
     ],
     heritages: [
       {
         name: "Goblin Queima-Tudo",
-        description: "Resistência inata ao fogo e talento natural para lançar e manipular substâncias incendiárias.",
+        description:
+          "Resistência inata ao fogo e talento natural para lançar e manipular substâncias incendiárias.",
       },
       {
         name: "Goblin Dente-de-Navalha",
-        description: "Presas afiadas como serra que servem como ataque desarmado natural perfurante.",
+        description:
+          "Presas afiadas como serra que servem como ataque desarmado natural perfurante.",
       },
       {
         name: "Goblin Inquebrável",
-        description: "Crânio de ferro e ossos elásticos que reduzem danos causados por quedas e pancadas contundentes.",
+        description:
+          "Crânio de ferro e ossos elásticos que reduzem danos causados por quedas e pancadas contundentes.",
       },
       {
         name: "Goblin Couro-Duro",
@@ -203,7 +229,8 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
   {
     key: "halfling",
     name: "Halfling",
-    description: "Povo de bom coração, pés ligeiros e sorte legendária. Preferem a tranquilidade do lar ou a estrada aberta em caravanas alegres e acolhedoras.",
+    description:
+      "Povo de bom coração, pés ligeiros e sorte legendária. Preferem a tranquilidade do lar ou a estrada aberta em caravanas alegres e acolhedoras.",
     hitPointsBonus: 6,
     speed: 25,
     size: "Pequeno",
@@ -216,7 +243,8 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
     traits: [
       {
         name: "Sorte dos Halflings",
-        description: "Uma vez por sessão ou combate, pode rerrolar um teste de d20 desastroso e ficar com o novo resultado.",
+        description:
+          "Uma vez por sessão ou combate, pode rerrolar um teste de d20 desastroso e ficar com o novo resultado.",
       },
       {
         name: "Coragem Indômita",
@@ -234,22 +262,26 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
       },
       {
         name: "Halfling Nômade",
-        description: "Viajante experiente que aprende novos idiomas e rotas com facilidade impressionante.",
+        description:
+          "Viajante experiente que aprende novos idiomas e rotas com facilidade impressionante.",
       },
       {
         name: "Halfling Pés-Leves",
-        description: "Extrema agilidade para correr e se esquivar através do espaço ocupado por inimigos maiores.",
+        description:
+          "Extrema agilidade para correr e se esquivar através do espaço ocupado por inimigos maiores.",
       },
       {
         name: "Halfling Oculto",
-        description: "Mestre em usar até a menor sombra ou mobília para se esconder da visão alheia.",
+        description:
+          "Mestre em usar até a menor sombra ou mobília para se esconder da visão alheia.",
       },
     ],
   },
   {
     key: "human",
     name: "Humano",
-    description: "A mais adaptável, diversificada e ambiciosa das ancestralidades mortais. Fundam grandes impérios, exploram fronteiras inexploradas e dominam qualquer vocação.",
+    description:
+      "A mais adaptável, diversificada e ambiciosa das ancestralidades mortais. Fundam grandes impérios, exploram fronteiras inexploradas e dominam qualquer vocação.",
     hitPointsBonus: 8,
     speed: 25,
     size: "Médio",
@@ -262,11 +294,13 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
     traits: [
       {
         name: "Versatilidade Natural",
-        description: "Ganha uma perícia treinada adicional e um talento de classe ou geral à sua escolha.",
+        description:
+          "Ganha uma perícia treinada adicional e um talento de classe ou geral à sua escolha.",
       },
       {
         name: "Ambição Sem Limites",
-        description: "Capacidade ímpar de aprender rapidamente novas disciplinas e técnicas avançadas.",
+        description:
+          "Capacidade ímpar de aprender rapidamente novas disciplinas e técnicas avançadas.",
       },
     ],
     heritages: [
@@ -280,18 +314,21 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
       },
       {
         name: "Humano Meio-Elfo",
-        description: "Herdeiro do sangue élfico, herdando visão na penumbra e graça feérica refinada.",
+        description:
+          "Herdeiro do sangue élfico, herdando visão na penumbra e graça feérica refinada.",
       },
       {
         name: "Humano Meio-Orc",
-        description: "Herdeiro da força orc, recebendo visão no escuro e tenacidade brutal diante da morte.",
+        description:
+          "Herdeiro da força orc, recebendo visão no escuro e tenacidade brutal diante da morte.",
       },
     ],
   },
   {
     key: "leshy",
     name: "Léshi",
-    description: "Espíritos da natureza imbuídos em corpos vegetais animados por druidas ou rituais primordiais. Curiosos, leais e defensores apaixonados da flora e fauna.",
+    description:
+      "Espíritos da natureza imbuídos em corpos vegetais animados por druidas ou rituais primordiais. Curiosos, leais e defensores apaixonados da flora e fauna.",
     hitPointsBonus: 8,
     speed: 25,
     size: "Pequeno",
@@ -308,11 +345,13 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
       },
       {
         name: "Fotossíntese Vegetal",
-        description: "Nutre-se primariamente através de luz solar e água limpa em vez de refeições tradicionais.",
+        description:
+          "Nutre-se primariamente através de luz solar e água limpa em vez de refeições tradicionais.",
       },
       {
         name: "Queda Suave de Folha",
-        description: "Pode planar lentamente no ar ao cair, reduzindo qualquer impacto de grandes alturas.",
+        description:
+          "Pode planar lentamente no ar ao cair, reduzindo qualquer impacto de grandes alturas.",
       },
     ],
     heritages: [
@@ -322,22 +361,26 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
       },
       {
         name: "Léshi Cacto",
-        description: "Corpo coberto por espinhos afiados que devolvem dano perfurante a quem tentar agarrá-lo.",
+        description:
+          "Corpo coberto por espinhos afiados que devolvem dano perfurante a quem tentar agarrá-lo.",
       },
       {
         name: "Léshi Fungo",
-        description: "Gera esporos fosforescentes e ganha Visão no Escuro perfeita em cavernas úmidas.",
+        description:
+          "Gera esporos fosforescentes e ganha Visão no Escuro perfeita em cavernas úmidas.",
       },
       {
         name: "Léshi Flor",
-        description: "Pétalas aromáticas que emitem fragrâncias calmantes, melhorando a diplomacia e empatia.",
+        description:
+          "Pétalas aromáticas que emitem fragrâncias calmantes, melhorando a diplomacia e empatia.",
       },
     ],
   },
   {
     key: "orc",
     name: "Orc",
-    description: "Guerreiros imponentes e apaixonados que valorizam a força, a honra em combate e a sobrevivência nas terras mais inóspitas e implacáveis do mundo.",
+    description:
+      "Guerreiros imponentes e apaixonados que valorizam a força, a honra em combate e a sobrevivência nas terras mais inóspitas e implacáveis do mundo.",
     hitPointsBonus: 10,
     speed: 25,
     size: "Médio",
@@ -353,36 +396,43 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
       },
       {
         name: "Ferocidade Orc",
-        description: "Ao ser reduzido a 0 pontos de vida, pode permanecer de pé com 1 HP por um último ato de heroísmo.",
+        description:
+          "Ao ser reduzido a 0 pontos de vida, pode permanecer de pé com 1 HP por um último ato de heroísmo.",
       },
       {
         name: "Físico Imponente",
-        description: "Presença intimidadora natural e capacidade de carga ampliada para carregar fardos pesados.",
+        description:
+          "Presença intimidadora natural e capacidade de carga ampliada para carregar fardos pesados.",
       },
     ],
     heritages: [
       {
         name: "Orc Cicatrizado",
-        description: "Pele marcada por incontáveis batalhas que concede armadura natural e resistência a ferimentos.",
+        description:
+          "Pele marcada por incontáveis batalhas que concede armadura natural e resistência a ferimentos.",
       },
       {
         name: "Orc das Profundezas",
-        description: "Adaptado aos labirintos subterrâneos mais hostis, farejando perigo e minérios.",
+        description:
+          "Adaptado aos labirintos subterrâneos mais hostis, farejando perigo e minérios.",
       },
       {
         name: "Orc da Fúria",
-        description: "Converte sua adrenalina e cólera em dano bruto adicional em ataques corporais.",
+        description:
+          "Converte sua adrenalina e cólera em dano bruto adicional em ataques corporais.",
       },
       {
         name: "Orc Fera da Selva",
-        description: "Agilidade feroz para rastrear presas em pântanos e florestas tropicais fechadas.",
+        description:
+          "Agilidade feroz para rastrear presas em pântanos e florestas tropicais fechadas.",
       },
     ],
   },
   {
     key: "catfolk",
     name: "Amurrun (Homem-Gato)",
-    description: "Humanoides felinos ágeis, curiosos e elegantes. Valorizam a camaradagem, a busca por segredos ancestrais e a liberdade dos grandes horizontes.",
+    description:
+      "Humanoides felinos ágeis, curiosos e elegantes. Valorizam a camaradagem, a busca por segredos ancestrais e a liberdade dos grandes horizontes.",
     hitPointsBonus: 8,
     speed: 25,
     size: "Médio",
@@ -399,7 +449,8 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
       },
       {
         name: "Queda de Felino",
-        description: "Sempre aterrissa sobre quatro patas, reduzindo severamente o impacto de quedas.",
+        description:
+          "Sempre aterrissa sobre quatro patas, reduzindo severamente o impacto de quedas.",
       },
       {
         name: "Reflexos Predatórios",
@@ -428,7 +479,8 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
   {
     key: "kobold",
     name: "Kobold",
-    description: "Humanoides reptilianos pequenos que alegam descender de dragões poderosos. Mencionam com orgulho sua afinidade com armadilhas, túneis e magia draconiana.",
+    description:
+      "Humanoides reptilianos pequenos que alegam descender de dragões poderosos. Mencionam com orgulho sua afinidade com armadilhas, túneis e magia draconiana.",
     hitPointsBonus: 6,
     speed: 25,
     size: "Pequeno",
@@ -445,17 +497,20 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
       },
       {
         name: "Exemplo Draconiano",
-        description: "Inspira-se na imponência dos dragões para resistir ao medo e desferir golpes astutos.",
+        description:
+          "Inspira-se na imponência dos dragões para resistir ao medo e desferir golpes astutos.",
       },
       {
         name: "Rastejador de Túneis",
-        description: "Especialista em rastejar por dutos estreitos e desarmar dispositivos mecânicos.",
+        description:
+          "Especialista em rastejar por dutos estreitos e desarmar dispositivos mecânicos.",
       },
     ],
     heritages: [
       {
         name: "Kobold Escama-de-Dragão",
-        description: "Escamas coloridas brilhantes que conferem resistência a fogo, gelo, ácido ou eletricidade.",
+        description:
+          "Escamas coloridas brilhantes que conferem resistência a fogo, gelo, ácido ou eletricidade.",
       },
       {
         name: "Kobold Tocaieiro da Caverna",
@@ -463,7 +518,8 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
       },
       {
         name: "Kobold Magia-Venenosa",
-        description: "Glândulas venenosas capazes de revestir dardos e adagas com toxinas paralisantes.",
+        description:
+          "Glândulas venenosas capazes de revestir dardos e adagas com toxinas paralisantes.",
       },
       {
         name: "Kobold Asas-de-Dragão",
@@ -474,7 +530,8 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
   {
     key: "ratfolk",
     name: "Povo-Rato (Ysoki)",
-    description: "Comerciantes, exploradores e engenheiros engenhosos e gregários. Possuem bochechas expansivas e vivem em comunidades unidas chamadas tocas.",
+    description:
+      "Comerciantes, exploradores e engenheiros engenhosos e gregários. Possuem bochechas expansivas e vivem em comunidades unidas chamadas tocas.",
     hitPointsBonus: 6,
     speed: 25,
     size: "Pequeno",
@@ -487,15 +544,18 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
     traits: [
       {
         name: "Visão na Penumbra",
-        description: "Enxerga na penumbra e ajusta os bigodes para detectar vibrações e correntes de ar.",
+        description:
+          "Enxerga na penumbra e ajusta os bigodes para detectar vibrações e correntes de ar.",
       },
       {
         name: "Bolsas nas Bochechas",
-        description: "Consegue armazenar até 4 pequenos objetos ou frascos em compartimentos orais especiais.",
+        description:
+          "Consegue armazenar até 4 pequenos objetos ou frascos em compartimentos orais especiais.",
       },
       {
         name: "Empatia de Matilha",
-        description: "Bônus de coordenação tática quando luta lado a lado com aliados no mesmo espaço.",
+        description:
+          "Bônus de coordenação tática quando luta lado a lado com aliados no mesmo espaço.",
       },
     ],
     heritages: [
@@ -505,7 +565,8 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
       },
       {
         name: "Ysoki das Areias",
-        description: "Adaptado a desertos quentes, cavando tocas profundas e resistindo à desidratação.",
+        description:
+          "Adaptado a desertos quentes, cavando tocas profundas e resistindo à desidratação.",
       },
       {
         name: "Ysoki Roedor de Sombras",
@@ -520,7 +581,8 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
   {
     key: "tengu",
     name: "Tengu",
-    description: "Povo humanoide com traços de corvos e pássaros canoros. Famosos pela afinidade com espadas de todos os tipos, colecionismo de relíquias brilhantes e linguagem fluida.",
+    description:
+      "Povo humanoide com traços de corvos e pássaros canoros. Famosos pela afinidade com espadas de todos os tipos, colecionismo de relíquias brilhantes e linguagem fluida.",
     hitPointsBonus: 6,
     speed: 25,
     size: "Médio",
@@ -559,14 +621,16 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
       },
       {
         name: "Tengu Lâmina-Alada",
-        description: "Movimentos rodopiantes com as asas e espadas que confundem as defesas inimigas.",
+        description:
+          "Movimentos rodopiantes com as asas e espadas que confundem as defesas inimigas.",
       },
     ],
   },
   {
     key: "automaton",
     name: "Autômato",
-    description: "Construções ancestrais do lendário império de Jistka contendo almas vivas imbuídas em corpos mecânicos de pedra, bronze e energia vital cristalina.",
+    description:
+      "Construções ancestrais do lendário império de Jistka contendo almas vivas imbuídas em corpos mecânicos de pedra, bronze e energia vital cristalina.",
     hitPointsBonus: 10,
     speed: 25,
     size: "Médio",
@@ -582,11 +646,13 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
       },
       {
         name: "Núcleo de Energia Viva",
-        description: "Não necessita respirar, comer ou dormir; recarrega seu núcleo em repouso estático.",
+        description:
+          "Não necessita respirar, comer ou dormir; recarrega seu núcleo em repouso estático.",
       },
       {
         name: "Fisiologia Construta",
-        description: "Resistência elevada contra efeitos biológicos, venenos e sangramento contínuo.",
+        description:
+          "Resistência elevada contra efeitos biológicos, venenos e sangramento contínuo.",
       },
     ],
     heritages: [
@@ -600,7 +666,8 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
       },
       {
         name: "Autômato Mágico Energizado",
-        description: "Canaliza raios de energia mágica concentrada a partir de seu núcleo peitoral.",
+        description:
+          "Canaliza raios de energia mágica concentrada a partir de seu núcleo peitoral.",
       },
       {
         name: "Autômato Guerreiro Titânico",
@@ -611,7 +678,8 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
   {
     key: "fetchling",
     name: "Fetchling (Kayal)",
-    description: "Descendentes de humanos que foram aprisionados no Plano das Sombras e transformados por sua essência crepuscular. Movimentam-se como sombras vivas.",
+    description:
+      "Descendentes de humanos que foram aprisionados no Plano das Sombras e transformados por sua essência crepuscular. Movimentam-se como sombras vivas.",
     hitPointsBonus: 8,
     speed: 25,
     size: "Médio",
@@ -638,7 +706,8 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
     heritages: [
       {
         name: "Fetchling da Penumbra Profunda",
-        description: "Capaz de extinguir pequenas fontes de luz com a mente e desaparecer nas trevas.",
+        description:
+          "Capaz de extinguir pequenas fontes de luz com a mente e desaparecer nas trevas.",
       },
       {
         name: "Fetchling Ladrão de Reflexos",
@@ -646,11 +715,13 @@ export const PF2E_RACES: Pf2eRaceDefinition[] = [
       },
       {
         name: "Fetchling Resiliente das Trevas",
-        description: "Recuperação acelerada ao descansar em ambientes imersos em completa escuridão.",
+        description:
+          "Recuperação acelerada ao descansar em ambientes imersos em completa escuridão.",
       },
       {
         name: "Fetchling Luz Crepuscular",
-        description: "Manipula contraste entre sombras e luz tênue para cegar momentaneamente oponentes.",
+        description:
+          "Manipula contraste entre sombras e luz tênue para cegar momentaneamente oponentes.",
       },
     ],
   },
