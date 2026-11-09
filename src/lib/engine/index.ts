@@ -7,6 +7,7 @@ export * from "./registry";
 export * from "./systems/libmorkSystem";
 export * from "./attributes";
 export * from "./dice";
+export * from "./npc-attack";
 export * from "./combat";
 export * from "./spells";
 export * from "./combat-actions";

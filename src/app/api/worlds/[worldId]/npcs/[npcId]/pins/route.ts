@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { npcs, worlds, campaigns, npcPins, skills, spells } from "@/lib/db/schema";
+import { npcs, worlds, campaigns, npcPins, skills, spells, attacks } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { createNpcPinSchema } from "@/lib/validators/npcPin";
 import { eq } from "drizzle-orm";
@@ -128,14 +128,14 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json(
         {
           success: false,
-          error: "Dados inválidos",
+          error: validation.error.issues[0]?.message || "Dados inválidos",
           errors: validation.error.issues,
         },
         { status: 400 }
       );
     }
 
-    const { pinType, contentId, label, rollExpression, manaCost, circle } =
+    const { pinType, contentId, label, rollExpression, attackExpression, damageExpression, damageType, criticalRange, manaCost, circle } =
       validation.data;
 
     // Se houver contentId, busca nome/custo/círculo da fonte
@@ -143,6 +143,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     let finalManaCost = manaCost ?? null;
     let finalCircle = circle ?? null;
     let finalRollExpression = rollExpression ?? null;
+    let libraryAttack: typeof attacks.$inferSelect | null = null;
 
     if (contentId) {
       if (pinType === "spell") {
@@ -178,6 +179,18 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
         finalLabel = skill.name;
         finalRollExpression = skill.rollExpression ?? null;
+      } else if (pinType === "attack") {
+        // Ataque da Biblioteca Global (issue #90 follow-up): atalho vinculado
+        // a um ataque configurado; campos explícitos no payload têm prioridade.
+        const [attack] = await db.select().from(attacks).where(eq(attacks.id, contentId)).limit(1);
+        if (!attack) {
+          return NextResponse.json(
+            { success: false, error: "Ataque não encontrado na biblioteca" },
+            { status: 404 }
+          );
+        }
+        libraryAttack = attack;
+        finalLabel = attack.name;
       } else {
         return NextResponse.json(
           { success: false, error: "Ataques não usam contentId" },
@@ -194,6 +207,10 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         contentId: contentId ?? null,
         label: finalLabel,
         rollExpression: finalRollExpression,
+        attackExpression: attackExpression ?? libraryAttack?.attackExpression ?? null,
+        damageExpression: damageExpression ?? libraryAttack?.damageExpression ?? null,
+        damageType: damageType ?? libraryAttack?.damageType ?? null,
+        criticalRange: criticalRange ?? libraryAttack?.criticalRange ?? null,
         manaCost: finalManaCost,
         circle: finalCircle,
       })

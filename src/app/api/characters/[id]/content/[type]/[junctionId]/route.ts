@@ -9,7 +9,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { characters, characterCampaigns, campaigns } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
-import { contentTypeSchema } from "@/lib/validators/content";
+import { characterContentTypeSchema } from "@/lib/validators/content";
 import {
   getJunctionTable,
   getJunctionCharacterColumn,
@@ -82,7 +82,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     }
 
     const { id, type, junctionId } = await params;
-    const parsed = contentTypeSchema.safeParse(type);
+    const parsed = characterContentTypeSchema.safeParse(type);
 
     if (!parsed.success) {
       return NextResponse.json(
@@ -176,7 +176,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     }
 
     const { id, type, junctionId } = await params;
-    const parsed = contentTypeSchema.safeParse(type);
+    const parsed = characterContentTypeSchema.safeParse(type);
 
     if (!parsed.success) {
       return NextResponse.json(

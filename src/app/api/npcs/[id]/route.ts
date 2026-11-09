@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { npcs, npcCampaigns, campaigns, npcPins } from "@/lib/db/schema";
+import { npcs, npcCampaigns, campaigns, npcPins, attacks } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { canManageNpc } from "@/lib/auth/campaign-access";
 import { updateNpcSchema } from "@/lib/validators/npc";
@@ -42,11 +42,41 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       );
     }
 
-    const pins = await db
+    const pinRows = await db
       .select()
       .from(npcPins)
       .where(eq(npcPins.npcId, id))
       .orderBy(npcPins.createdAt);
+
+    // Resolve ataques vinculados da Biblioteca Global (issue #90 follow-up):
+    // pins com contentId de ataque herdam os campos do ataque da biblioteca,
+    // mantendo os campos do próprio pin como override.
+    const libraryAttackIds = [
+      ...new Set(
+        pinRows
+          .map((pin) => pin.contentId)
+          .filter((contentId): contentId is string => Boolean(contentId))
+      ),
+    ];
+    const libraryAttacks = libraryAttackIds.length
+      ? await db.select().from(attacks).where(inArray(attacks.id, libraryAttackIds))
+      : [];
+    const libraryById = new Map(libraryAttacks.map((attack) => [attack.id, attack]));
+
+    const pins = pinRows.map((pin) => {
+      const libraryAttack = pin.contentId ? libraryById.get(pin.contentId) : undefined;
+      if (pin.pinType === "attack" && libraryAttack) {
+        return {
+          ...pin,
+          attackExpression: pin.attackExpression ?? libraryAttack.attackExpression,
+          damageExpression: pin.damageExpression ?? libraryAttack.damageExpression,
+          damageType: pin.damageType ?? libraryAttack.damageType,
+          criticalRange: pin.criticalRange ?? libraryAttack.criticalRange,
+          libraryAttackName: libraryAttack.name,
+        };
+      }
+      return pin;
+    });
 
     const links = await db
       .select()

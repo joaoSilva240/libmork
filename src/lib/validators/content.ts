@@ -6,6 +6,7 @@
 
 import { z } from "zod";
 import { ATTRIBUTES, SPELL_USE_TYPES } from "@/lib/utils/constants";
+import { NPC_DAMAGE_TYPES } from "@/lib/engine/npc-attack";
 
 /**
  * Schema de perícia/habilidade (RF-031, D-20, D-35).
@@ -85,9 +86,49 @@ export const updateSpellSchema = z.object({
   translation: z.any().optional().nullable(),
 });
 
+/**
+ * Schema de ataque da Biblioteca Global (issue #90 follow-up).
+ * Mesma validação de dados dos pins de NPC (diceExpression em npcPin.ts).
+ */
+export const attackSchema = z.object({
+  name: z.string().min(2, "Nome deve ter no mínimo 2 caracteres").max(100),
+  description: z.string().max(5000).optional().nullable(),
+  attackExpression: z
+    .string()
+    .max(200)
+    .regex(/^\s*[+-]?\s*\d*d\s*\d+\s*(?:[+-]\s*\d+)?\s*$/i, "Ataque inválido. Use XdY±Z (ex.: 1d20+9).")
+    .optional()
+    .nullable(),
+  damageExpression: z
+    .string()
+    .max(200)
+    .regex(/^\s*\d*d\s*\d+\s*(?:[+-]\s*\d+)?\s*$/i, "Dano inválido. Use XdY±Z (ex.: 3d6+5).")
+    .optional()
+    .nullable(),
+  damageType: z.enum(NPC_DAMAGE_TYPES).optional().nullable(),
+  criticalRange: z
+    .number()
+    .int()
+    .min(1, "Faixa de crítico deve ser entre 1 e 20")
+    .max(20, "Faixa de crítico deve ser entre 1 e 20")
+    .optional()
+    .nullable(),
+});
+
 /** Tipos de conteúdo suportados */
-export const CONTENT_TYPES = ["skills", "spells", "items", "conditions"] as const;
+export const CONTENT_TYPES = ["skills", "spells", "items", "conditions", "attacks"] as const;
 export type ContentType = (typeof CONTENT_TYPES)[number];
+
+/**
+ * Tipos com junção ficha↔conteúdo (RF-017). Ataques não têm junção com fichas:
+ * são vinculados a NPCs via npc_pins.content_id (issue #90 follow-up).
+ */
+export const CHARACTER_CONTENT_TYPES = ["skills", "spells", "items", "conditions"] as const;
+export type CharacterContentType = (typeof CHARACTER_CONTENT_TYPES)[number];
+
+export const characterContentTypeSchema = z.enum(CHARACTER_CONTENT_TYPES, {
+  message: "Tipo de conteúdo inválido",
+});
 
 export const contentTypeSchema = z.enum(CONTENT_TYPES, {
   message: "Tipo de conteúdo inválido",
@@ -106,6 +147,8 @@ export function getContentCreateValidator(type: ContentType) {
       return itemSchema;
     case "conditions":
       return conditionSchema;
+    case "attacks":
+      return attackSchema;
   }
 }
 
@@ -123,6 +166,8 @@ export function getContentUpdateValidator(type: ContentType) {
       return itemSchema.partial();
     case "conditions":
       return conditionSchema.partial();
+    case "attacks":
+      return attackSchema.partial();
   }
 }
 
@@ -132,4 +177,5 @@ export const CONTENT_LABELS: Record<ContentType, string> = {
   spells: "magia",
   items: "item",
   conditions: "condição",
+  attacks: "ataque",
 };

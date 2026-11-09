@@ -359,6 +359,12 @@ export const npcPins = pgTable(
     contentId: uuid("content_id"),
     label: varchar("label", { length: 100 }).notNull(),
     rollExpression: varchar("roll_expression", { length: 200 }),
+    // Dano configurado (issue #90): ataque e dano separados; roll_expression
+    // permanece como campo legado para compatibilidade.
+    attackExpression: varchar("attack_expression", { length: 200 }),
+    damageExpression: varchar("damage_expression", { length: 200 }),
+    damageType: varchar("damage_type", { length: 30 }),
+    criticalRange: integer("critical_range"),
     manaCost: integer("mana_cost"),
     circle: integer("circle"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -518,6 +524,27 @@ export const libraryDocuments = pgTable(
     index("idx_library_doc_campaign").on(table.campaignId),
     index("idx_library_doc_category").on(table.category),
   ],
+);
+
+/**
+ * ATTACK — Ataque da Biblioteca Global (issue #90 follow-up).
+ * Ataques configurados ficam junto dos dados da biblioteca e podem ser
+ * vinculados a NPCs via npc_pins.content_id.
+ */
+export const attacks = pgTable(
+  "attacks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    campaignId: uuid("campaign_id").references(() => campaigns.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 100 }).notNull(),
+    description: text("description"),
+    attackExpression: varchar("attack_expression", { length: 200 }),
+    damageExpression: varchar("damage_expression", { length: 200 }),
+    damageType: varchar("damage_type", { length: 30 }),
+    criticalRange: integer("critical_range"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [index("idx_attack_campaign").on(table.campaignId)],
 );
 
 /**

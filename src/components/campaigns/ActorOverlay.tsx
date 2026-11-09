@@ -7,6 +7,7 @@ import { getDefenseValue } from "@/lib/engine/combat";
 import type { CombatSessionState, Combatant } from "@/lib/engine";
 import { TargetSelectionModal } from "@/components/combat/TargetSelectionModal";
 import { spendSpell, spendCombatActions, applyResolvedDamage, applyHealing, rollExpression as rollExpressionFn } from "@/lib/engine";
+import { resolveNpcPinAttack, doubleDamageDice, type NpcPinAttack } from "@/lib/engine/npc-attack";
 import { d20s, showDice3D, type Dice3DDie } from "@/lib/dice3d";
 
 export type RosterCondition = {
@@ -71,49 +72,6 @@ export function matchActorId(id1?: string | null, id2?: string | null): boolean 
   return clean1 === clean2;
 }
 
-export function parseNpcPinExpression(rawExpr?: string | null): { attackExpr: string; damageExpr?: string } {
-  const expr = (rawExpr || "").trim();
-
-  if (!expr) {
-    return { attackExpr: "1d20" };
-  }
-
-  const parenMatch = expr.match(/^([^(]+)\(([^)]+)\)/);
-  if (parenMatch) {
-    let attackPart = parenMatch[1].trim();
-    const damagePart = parenMatch[2].trim();
-
-    if (/^[+-]?\d+$/.test(attackPart)) {
-      const sign = attackPart.startsWith("-") ? "" : "+";
-      attackPart = `1d20${sign}${attackPart.replace(/^\+/, "")}`;
-    }
-
-    return {
-      attackExpr: attackPart || "1d20",
-      damageExpr: damagePart || undefined,
-    };
-  }
-
-  if (/^[+-]?\d+$/.test(expr)) {
-    const val = expr.startsWith("-") ? expr : `+${expr.replace(/^\+/, "")}`;
-    return {
-      attackExpr: `1d20${val}`,
-      damageExpr: `1d6${val}`,
-    };
-  }
-
-  if (/d20/i.test(expr)) {
-    return {
-      attackExpr: expr,
-    };
-  }
-
-  return {
-    attackExpr: "1d20",
-    damageExpr: expr,
-  };
-}
-
 type ActorOverlayProps = {
   campaignId: string;
   actor: RosterActor;
@@ -127,6 +85,10 @@ export type NpcPinItem = {
   pinType: string;
   label: string;
   rollExpression?: string | null;
+  attackExpression?: string | null;
+  damageExpression?: string | null;
+  damageType?: string | null;
+  criticalRange?: number | null;
   manaCost?: number | null;
   circle?: number | null;
 };
@@ -155,9 +117,12 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
     isHealing: boolean;
     rollExpr?: string;
     damageExpr?: string;
+    damagePreview?: string;
+    noDamageWarning?: boolean;
     isPhysical: boolean;
     manaCost?: number;
     circle?: number;
+    criticalRange?: number;
     pinType: string;
   } | null>(null);
 
@@ -533,7 +498,13 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
     const desc = pin.label.toLowerCase();
     const isHealing = desc.includes("cura") || desc.includes("poção") || desc.includes("healer") || desc.includes("recupera");
 
-    const { attackExpr, damageExpr } = parseNpcPinExpression(pin.rollExpression);
+    // Dano configurado (issue #90): resolve via módulo puro; nunca inventa dano.
+    const resolved: NpcPinAttack = resolveNpcPinAttack(pin);
+    const { attackExpr, damageExpr } = resolved;
+    const isAttackWithoutDamage = pin.pinType === "attack" && !damageExpr;
+    const damagePreview = damageExpr
+      ? `${damageExpr}${resolved.damageType ? ` ${resolved.damageType}` : ""}`
+      : undefined;
 
     if (isInCombat) {
       setSelectedActionItem({
@@ -541,28 +512,54 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
         isHealing,
         rollExpr: attackExpr,
         damageExpr,
+        damagePreview,
+        noDamageWarning: isAttackWithoutDamage,
         isPhysical: pin.pinType === "attack",
+        criticalRange: pin.criticalRange ?? undefined,
         manaCost: pin.manaCost || undefined,
         circle: pin.circle || undefined,
         pinType: pin.pinType,
       });
     } else {
-      // Se não estiver em combate, rola diretamente
+      // Se não estiver em combate, rola diretamente: ataque e, quando
+      // configurado, também o dano (issue #90). Natural 20 = crítico: dados
+      // de dano dobrados.
       const attack = rollExpressionFn(attackExpr, 1);
-      showDice3D(attack.rolledDice ?? []);
+      const isCritical = (attack.rolledDice ?? []).some(
+        (die) => die.sides === 20 && die.value === 20
+      );
+      const outCritExpr = isCritical ? doubleDamageDice(damageExpr) : undefined;
+      const damage = (outCritExpr ?? damageExpr)
+        ? rollExpressionFn(outCritExpr ?? damageExpr, 0)
+        : null;
+      showDice3D([...(attack.rolledDice ?? []), ...(damage?.rolledDice ?? [])]);
       const die = attack.total;
+      const formula = damage
+        ? `${attackExpr}${isCritical ? " ⚡CRÍTICO!" : ""} (dano ${outCritExpr ?? damageExpr})`
+        : attackExpr;
+      const diceDetail = damage
+        ? `Rolou ${pin.label}: ${attack.detail}. Dano${isCritical ? " CRÍTICO (dados dobrados)" : ""}: ${damage.detail}`
+        : isAttackWithoutDamage
+          ? `Rolou ${pin.label}: ${attack.detail}. Ataque sem dano configurado — nenhum dano será aplicado.`
+          : `Rolou ${pin.label}: ${attack.detail}`;
       rollDice({
         campaignId,
         actorId: actor.id,
         actorName: actor.name,
         rollType: `Rolagem: ${pin.label}`,
-        formula: attackExpr,
+        formula,
         result: die,
-        diceDetail: `Rolou ${pin.label}: ${attack.detail}`,
+        diceDetail,
         senderRole: "master",
-        rolledDice: attack.rolledDice ?? [],
+        rolledDice: [...(attack.rolledDice ?? []), ...(damage?.rolledDice ?? [])],
       });
-      setSuccess(`Rolou ${pin.label}: ${attack.detail}`);
+      if (isAttackWithoutDamage) {
+        setError(
+          "Ataque sem dano configurado — nenhum dano será aplicado. Configure o dano no atalho do NPC."
+        );
+      } else {
+        setSuccess(damage ? `Rolou ${pin.label}: ${attack.detail}. Dano: ${damage.detail}` : `Rolou ${pin.label}: ${attack.detail}`);
+      }
     }
   };
 
@@ -665,7 +662,28 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
       await onChanged();
     } else {
       const attack = rollExpressionFn((selectedActionItem.rollExpr || "1d20") as string, 1);
-      const damage = rollExpressionFn(selectedActionItem.damageExpr, 0);
+      // Crítico: natural 20 no d20 sempre critica; criticalRange configurado
+      // amplia a faixa. Crítico dobra apenas os DADOS do dano (modificador
+      // único): 2d6+5 → 4d6+5.
+      const natural20 = (attack.rolledDice ?? []).some(
+        (die) => die.sides === 20 && die.value === 20
+      );
+      const withinCritRange =
+        selectedActionItem.criticalRange &&
+        (attack.rolledDice ?? []).some(
+          (die) => die.sides === 20 && die.value >= selectedActionItem.criticalRange!
+        );
+      const isCritical = Boolean(natural20 || withinCritRange);
+      const critExpr = isCritical
+        ? doubleDamageDice(selectedActionItem.damageExpr)
+        : undefined;
+      let damage = rollExpressionFn(critExpr ?? selectedActionItem.damageExpr, 0);
+      if (isCritical && critExpr) {
+        damage = {
+          ...damage,
+          detail: `CRÍTICO! ${damage.detail} (dados dobrados)`,
+        };
+      }
       showDice3D([...(attack.rolledDice ?? []), ...(damage.rolledDice ?? [])]);
       const damageConfigured = !damage.missing && damage.valid;
 
@@ -703,7 +721,10 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
         await onChanged();
       } else if (currentTarget.type !== "npc" && damageConfigured) {
         const sanitizedTargetId = currentTarget.characterId ?? currentTarget.id.replace(/^character:/, "");
-        // Envia requisição de reação defensiva ativa para o jogador alvo
+        // Envia requisição de reação defensiva ativa para o jogador alvo.
+        // A rolagem/dano NÃO são publicados aqui: o jogador só os vê depois de
+        // escolher esquivar ou bloquear (issue #90). O log/3D sai do próprio
+        // jogador via rollDice de defesa após a escolha.
         requestDefenseReaction({
           campaignId,
           id: `react_${Date.now()}`,
@@ -717,8 +738,11 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
           actionName: selectedActionItem.name,
         });
         setSuccess(`Solicitada reação defensiva a ${target.name} (Ataque: ${attack.total}, Dano bruto: ${damage.total})`);
+        setSelectedActionItem(null);
+        return;
       }
 
+      // Alvo NPC: publica a rolagem completa (ataque + dano) no log e 3D.
       rollDice({
         campaignId,
         actorId: actor.id,
@@ -726,7 +750,7 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
         rollType: `Ataque: ${selectedActionItem.name}`,
         formula: attack.formula,
         result: attack.total,
-        diceDetail: `Ataque contra ${target.name}: ${attack.detail}; dano: ${damage.total}`,
+        diceDetail: `Ataque contra ${target.name}: ${attack.detail}; dano: ${damage.detail || damage.total}`,
         senderRole: "master",
         rolledDice: [...(attack.rolledDice ?? []), ...(damage.rolledDice ?? [])],
       });
@@ -946,6 +970,16 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
               </div>
             </div>
 
+            {/* Aviso de ataque sem dano configurado (issue #90) */}
+            {error && (
+              <div
+                className="rounded-lg border border-amber-700/60 bg-amber-950/40 p-2 text-xs text-amber-300"
+                role="alert"
+              >
+                {error}
+              </div>
+            )}
+
             {/* Ações & Ataques Configurados (Pins da API / Ficha) */}
             <div className="rounded-xl border border-purple-900/60 bg-purple-950/20 p-3 space-y-2">
               <h4 className="text-xs font-bold text-purple-300 uppercase tracking-wider flex items-center justify-between">
@@ -965,8 +999,17 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
                     <div key={pin.id} className="flex items-center justify-between rounded-xl border border-gray-800 bg-gray-900 p-2.5 text-xs">
                       <div>
                         <div className="font-bold text-white">{pin.label}</div>
-                        <div className="text-[10px] text-purple-300 font-mono">
-                          {pin.rollExpression || "1d20"}
+                        <div
+                          className="text-[10px] text-purple-300 font-mono"
+                          title={
+                            pin.damageExpression
+                              ? `${pin.attackExpression || pin.rollExpression || "1d20"} → ${pin.damageExpression}${pin.damageType ? ` ${pin.damageType}` : ""}`
+                              : pin.attackExpression || pin.rollExpression || "1d20"
+                          }
+                        >
+                          {pin.attackExpression
+                            ? `${pin.attackExpression} → ${pin.damageExpression ?? "sem dano"}${pin.damageType ? ` (${pin.damageType})` : ""}`
+                            : pin.rollExpression || "1d20"}
                         </div>
                       </div>
 
@@ -1028,6 +1071,8 @@ export function ActorOverlay({ campaignId, actor, onClose, onChanged, combatStat
               combatants={combatState?.combatants ?? []}
               myCharacterId={actor.id}
               isOpen={Boolean(selectedActionItem)}
+              damagePreview={selectedActionItem.damagePreview}
+              noDamageWarning={selectedActionItem.noDamageWarning}
               onClose={() => setSelectedActionItem(null)}
               onConfirmTarget={handleConfirmTarget}
             />
