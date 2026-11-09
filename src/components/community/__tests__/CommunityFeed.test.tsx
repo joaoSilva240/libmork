@@ -355,4 +355,38 @@ describe("CommunityFeed Component", () => {
     expect(profileLink).toHaveAttribute("href", "/master/community/profile/master-99");
     expect(screen.queryByRole("img", { name: /avatar/i })).not.toBeInTheDocument();
   });
+
+  it("abre o overlay da publicação centralizado e em formato retangular ao clicar em um card", async () => {
+    global.fetch = vi.fn().mockImplementation((url: string | URL | Request) => {
+      const urlStr = url.toString();
+      if (urlStr.startsWith("/api/community/posts?")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ data: [mockPosts[0]], page: 1, limit: 12 }),
+        });
+      }
+      if (urlStr === `/api/community/posts/${mockPosts[0].id}/comments`) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ data: [] }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ data: [] }),
+      });
+    });
+
+    render(<CommunityFeed />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Bola de Fogo Ancestral")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText("Bola de Fogo Ancestral"));
+
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog).toHaveClass("mx-auto", "max-w-5xl");
+    expect(screen.getByText("Comentários e Adaptações")).toBeInTheDocument();
+  });
 });

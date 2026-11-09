@@ -264,15 +264,27 @@ export default function PostDetailModal({ post, onClose, onCloned }: Props) {
         />
       )}
 
-      <Modal open onClose={onClose} labelledBy="post-detail-title">
-        <div className="w-full max-w-2xl overflow-hidden rounded-2xl border border-gray-800 bg-gray-950 shadow-2xl">
-          {/* Header minimalista com botão fechar */}
-          <Modal.Header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-800 bg-gray-950/90 px-4 py-3 backdrop-blur-md">
+      <Modal
+        open
+        onClose={onClose}
+        labelledBy="post-detail-title"
+        className="mx-auto max-w-5xl overflow-hidden rounded-2xl border border-gray-800 bg-gray-950 shadow-2xl"
+      >
+        {/* Header minimalista com botão fechar */}
+        <Modal.Header className="flex items-center justify-between border-b border-gray-800 bg-gray-950/90 px-6 py-3.5 backdrop-blur-md">
+          <div className="flex items-center gap-2.5">
             <span className="text-sm font-semibold text-gray-200">Publicação</span>
-            <Modal.CloseButton className="rounded-full p-1.5 text-gray-400 hover:bg-gray-900 hover:text-white transition-colors" />
-          </Modal.Header>
+            <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${typeConfig.badgeClass}`}>
+              <span>{typeConfig.icon}</span>
+              <span>{typeConfig.label}</span>
+            </span>
+          </div>
+          <Modal.CloseButton className="rounded-full p-1.5 text-gray-400 hover:bg-gray-900 hover:text-white transition-colors" />
+        </Modal.Header>
 
-          <Modal.Body className="max-h-[75vh] space-y-4 overflow-y-auto px-5 py-4">
+        <Modal.Body className="grid grid-cols-1 lg:grid-cols-12 lg:divide-x lg:divide-gray-800/80 lg:overflow-hidden">
+          {/* Coluna Esquerda: Detalhes da Publicação */}
+          <div className="lg:col-span-7 space-y-4 px-6 py-5 lg:max-h-[78vh] lg:overflow-y-auto">
             {/* Linha do autor */}
             <div className="flex items-center gap-3">
               {post.author?.masterAvatar ? (
@@ -355,7 +367,7 @@ export default function PostDetailModal({ post, onClose, onCloned }: Props) {
                 <img
                   src={attachedImg}
                   alt={post.title}
-                  className="max-h-80 w-full object-contain bg-black/40"
+                  className="max-h-72 w-full object-contain bg-black/40"
                 />
               </div>
             )}
@@ -448,149 +460,149 @@ export default function PostDetailModal({ post, onClose, onCloned }: Props) {
                 {JSON.stringify(post.payload, null, 2)}
               </pre>
             )}
+          </div>
 
-            {/* Seção de comentários inline */}
-            <div className="space-y-3 pt-2">
-              <h3 className="text-sm font-bold text-gray-200">Comentários e Adaptações</h3>
+          {/* Coluna Direita: Seção de comentários e adaptações */}
+          <div className="lg:col-span-5 flex flex-col border-t border-gray-800/80 lg:border-t-0 bg-gray-950/60 px-6 py-5 space-y-3 lg:max-h-[78vh] lg:overflow-y-auto">
+            <h3 className="text-sm font-bold text-gray-200">Comentários e Adaptações</h3>
 
-              {/* Input inline */}
-              <div className="flex items-start gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-800 text-xs font-semibold text-gray-300">
-                  EU
-                </div>
-                <div className="flex-1 flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Publicar sua resposta..."
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        void postComment();
-                      }
-                    }}
-                    className="flex-1 rounded-full border border-gray-800 bg-gray-900/90 px-4 py-2 text-xs text-gray-200 placeholder-gray-500 focus:border-purple-500 focus:bg-gray-900 focus:outline-none"
-                  />
-                  <Button
-                    onClick={postComment}
-                    disabled={isPosting || !newComment.trim()}
-                    variant="primary"
-                    className="rounded-full px-4 py-1 text-xs"
-                  >
-                    {isPosting ? <Spinner size="sm" /> : "Responder"}
-                  </Button>
-                </div>
+            {/* Input inline */}
+            <div className="flex items-start gap-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-800 text-xs font-semibold text-gray-300">
+                EU
               </div>
-
-              {/* Lista de Comentários */}
-              {loadingComments ? (
-                <div className="flex justify-center py-6">
-                  <Spinner size="sm" />
-                </div>
-              ) : comments.length === 0 ? (
-                <p className="py-4 text-center text-xs text-gray-500">
-                  Nenhuma resposta ainda. Seja o primeiro a comentar ou crie uma versão adaptada!
-                </p>
-              ) : (
-                <div className="divide-y divide-gray-800/60 pt-2 space-y-3">
-                  {comments.map((comment) => {
-                    const cAuthor = comment.author?.displayName || "Mestre Anônimo";
-                    const isAttachment = comment.commentType === "attachment";
-                    const payload = comment.attachmentPayload as Record<string, unknown> | undefined;
-                    const commentImg =
-                      payload?.imageUrl ||
-                      payload?.iconUrl ||
-                      payload?.mapUrl ||
-                      payload?.tokenUrl;
-
-                    if (isAttachment) {
-                      return (
-                        <div
-                          key={comment.id}
-                          className="rounded-xl border border-accent/40 bg-accent/10 p-3.5 space-y-2.5 transition-all hover:border-accent/60"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="inline-flex items-center gap-1 rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-semibold text-accent-hover border border-accent/30">
-                                <Sparkles className="h-3 w-3" />
-                                Adaptação da Comunidade
-                              </span>
-                              <span className="text-xs font-semibold text-gray-200">{cAuthor}</span>
-                              <span className="text-gray-600">·</span>
-                              <span className="text-[11px] text-gray-500">
-                                {new Date(comment.createdAt).toLocaleDateString("pt-BR", {
-                                  day: "2-digit",
-                                  month: "short",
-                                })}
-                              </span>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() => handleOpenCommentImport(comment)}
-                              className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-accent-vibrant transition-colors"
-                            >
-                              <Download className="h-3 w-3" />
-                              <span>Importar esta versão</span>
-                            </button>
-                          </div>
-
-                          <div className="flex items-start gap-3">
-                            {commentImg ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={String(commentImg)}
-                                alt={comment.attachmentTitle || "Anexo"}
-                                className="h-14 w-14 rounded-lg object-cover border border-accent/40 shrink-0"
-                              />
-                            ) : null}
-                            <div className="min-w-0 flex-1">
-                              <h4 className="text-xs font-bold text-gray-100">
-                                {comment.attachmentTitle || "Versão Adaptada"}
-                              </h4>
-                              <p className="mt-0.5 text-xs text-gray-300 leading-relaxed">
-                                {comment.content}
-                              </p>
-                              {payload && (payload.description || payload.damage || payload.rarity) ? (
-                                <p className="mt-1 line-clamp-2 text-[11px] text-gray-400">
-                                  {String(payload.description || payload.damage || payload.rarity)}
-                                </p>
-                              ) : null}
-                            </div>
-                          </div>
-                        </div>
-                      );
+              <div className="flex-1 flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Publicar sua resposta..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      void postComment();
                     }
+                  }}
+                  className="flex-1 rounded-full border border-gray-800 bg-gray-900/90 px-4 py-2 text-xs text-gray-200 placeholder-gray-500 focus:border-purple-500 focus:bg-gray-900 focus:outline-none"
+                />
+                <Button
+                  onClick={postComment}
+                  disabled={isPosting || !newComment.trim()}
+                  variant="primary"
+                  className="rounded-full px-4 py-1 text-xs"
+                >
+                  {isPosting ? <Spinner size="sm" /> : "Responder"}
+                </Button>
+              </div>
+            </div>
 
+            {/* Lista de Comentários */}
+            {loadingComments ? (
+              <div className="flex justify-center py-6">
+                <Spinner size="sm" />
+              </div>
+            ) : comments.length === 0 ? (
+              <p className="py-6 text-center text-xs text-gray-500">
+                Nenhuma resposta ainda. Seja o primeiro a comentar ou crie uma versão adaptada!
+              </p>
+            ) : (
+              <div className="divide-y divide-gray-800/60 pt-2 space-y-3">
+                {comments.map((comment) => {
+                  const cAuthor = comment.author?.displayName || "Mestre Anônimo";
+                  const isAttachment = comment.commentType === "attachment";
+                  const payload = comment.attachmentPayload as Record<string, unknown> | undefined;
+                  const commentImg =
+                    payload?.imageUrl ||
+                    payload?.iconUrl ||
+                    payload?.mapUrl ||
+                    payload?.tokenUrl;
+
+                  if (isAttachment) {
                     return (
-                      <div key={comment.id} className="flex gap-3 py-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-800 text-xs font-semibold text-gray-400">
-                          {cAuthor.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5 text-xs">
-                            <span className="font-semibold text-gray-200">{cAuthor}</span>
+                      <div
+                        key={comment.id}
+                        className="rounded-xl border border-accent/40 bg-accent/10 p-3.5 space-y-2.5 transition-all hover:border-accent/60"
+                      >
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-semibold text-accent-hover border border-accent/30">
+                              <Sparkles className="h-3 w-3" />
+                              Adaptação da Comunidade
+                            </span>
+                            <span className="text-xs font-semibold text-gray-200">{cAuthor}</span>
                             <span className="text-gray-600">·</span>
-                            <span className="text-gray-500">
+                            <span className="text-[11px] text-gray-500">
                               {new Date(comment.createdAt).toLocaleDateString("pt-BR", {
                                 day: "2-digit",
                                 month: "short",
                               })}
                             </span>
                           </div>
-                          <p className="mt-1 text-xs text-gray-300 leading-relaxed whitespace-pre-wrap">
-                            {comment.content}
-                          </p>
+
+                          <button
+                            type="button"
+                            onClick={() => handleOpenCommentImport(comment)}
+                            className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-accent-vibrant transition-colors"
+                          >
+                            <Download className="h-3 w-3" />
+                            <span>Importar esta versão</span>
+                          </button>
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                          {commentImg ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={String(commentImg)}
+                              alt={comment.attachmentTitle || "Anexo"}
+                              className="h-14 w-14 rounded-lg object-cover border border-accent/40 shrink-0"
+                            />
+                          ) : null}
+                          <div className="min-w-0 flex-1">
+                            <h4 className="text-xs font-bold text-gray-100">
+                              {comment.attachmentTitle || "Versão Adaptada"}
+                            </h4>
+                            <p className="mt-0.5 text-xs text-gray-300 leading-relaxed">
+                              {comment.content}
+                            </p>
+                            {payload && (payload.description || payload.damage || payload.rarity) ? (
+                              <p className="mt-1 line-clamp-2 text-[11px] text-gray-400">
+                                {String(payload.description || payload.damage || payload.rarity)}
+                              </p>
+                            ) : null}
+                          </div>
                         </div>
                       </div>
                     );
-                  })}
-                </div>
-              )}
-            </div>
-          </Modal.Body>
-        </div>
+                  }
+
+                  return (
+                    <div key={comment.id} className="flex gap-3 py-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-800 text-xs font-semibold text-gray-400">
+                        {cAuthor.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <span className="font-semibold text-gray-200">{cAuthor}</span>
+                          <span className="text-gray-600">·</span>
+                          <span className="text-gray-500">
+                            {new Date(comment.createdAt).toLocaleDateString("pt-BR", {
+                              day: "2-digit",
+                              month: "short",
+                            })}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-xs text-gray-300 leading-relaxed whitespace-pre-wrap">
+                          {comment.content}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </Modal.Body>
       </Modal>
     </>
   );

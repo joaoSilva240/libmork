@@ -193,21 +193,25 @@ export default function CreatePostModal({ open, onClose, onCreated }: Props) {
         />
       )}
 
-      <Modal open={open} onClose={onClose} labelledBy="create-post-title">
-        <div className="w-full max-w-3xl rounded-xl border border-gray-800 bg-gray-900 shadow-2xl flex flex-col max-h-[90vh]">
-          <Modal.Header className="flex items-center justify-between border-b border-gray-800 p-5 shrink-0">
-            <div>
-              <h2 id="create-post-title" className="text-xl font-bold text-gray-100 flex items-center gap-2">
-                <Globe2 className="h-5 w-5 text-purple-400" aria-hidden="true" /> Publicar na Comunidade do Mestre
-              </h2>
-              <p className="mt-1 text-xs text-gray-400">
-                Compartilhe suas criações com outros mestres do Libmork
-              </p>
-            </div>
-            <Modal.CloseButton className="rounded p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white" />
-          </Modal.Header>
+      <Modal
+        open={open}
+        onClose={onClose}
+        labelledBy="create-post-title"
+        className="mx-auto max-w-3xl rounded-xl border border-gray-800 bg-gray-900 shadow-2xl overflow-hidden"
+      >
+        <Modal.Header className="flex items-center justify-between border-b border-gray-800 p-5 shrink-0">
+          <div>
+            <h2 id="create-post-title" className="text-xl font-bold text-gray-100 flex items-center gap-2">
+              <Globe2 className="h-5 w-5 text-purple-400" aria-hidden="true" /> Publicar na Comunidade do Mestre
+            </h2>
+            <p className="mt-1 text-xs text-gray-400">
+              Compartilhe suas criações com outros mestres do Libmork
+            </p>
+          </div>
+          <Modal.CloseButton className="rounded p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white" />
+        </Modal.Header>
 
-          <Modal.Body className="p-5 overflow-y-auto space-y-5">
+        <Modal.Body className="p-5 overflow-y-auto space-y-5">
             <form id="create-post-form" onSubmit={handleSubmit} className="space-y-5">
               {/* Seleção do Tipo de Conteúdo */}
               <div>
@@ -390,7 +394,6 @@ export default function CreatePostModal({ open, onClose, onCreated }: Props) {
               )}
             </Button>
           </Modal.Footer>
-        </div>
       </Modal>
     </>
   );
