@@ -14,11 +14,21 @@ vi.mock("@/components/campaigns/MasterRoster", () => ({
 }));
 vi.mock("@/components/campaigns/ContentOverlay", () => ({ ContentOverlay: () => null }));
 vi.mock("@/components/campaigns/WorldOverlay", () => ({ WorldOverlay: () => null }));
-vi.mock("@/components/campaigns/MasterJukebox", () => ({
-  MasterJukebox: () => <div data-testid="master-jukebox-mock" />,
+vi.mock("@/components/campaigns/shield/MasterMediaPanel", () => ({
+  MasterMediaPanel: () => (
+    <div data-testid="media-panel-mock">
+      <div data-testid="master-jukebox-mock" />
+      <div data-testid="master-assets-mock" />
+    </div>
+  ),
 }));
-vi.mock("@/components/campaigns/MasterAssetsPanel", () => ({
-  MasterAssetsPanel: () => <div data-testid="master-assets-mock" />,
+vi.mock("@/components/campaigns/shield/MasterActorsPanel", () => ({
+  MasterActorsPanel: () => (
+    <div data-testid="actors-panel-mock">
+      <div data-testid="campaign-invites-npcs" />
+      <div data-testid="campaign-invites-players" />
+    </div>
+  ),
 }));
 vi.mock("@/components/campaigns/SessionLog", () => ({
   SessionLog: () => <div data-testid="session-log-mock" className="flex-1 min-h-0" />,
@@ -55,15 +65,15 @@ describe("CampaignDetail Dynamic Column Module Placement (Issue #75)", () => {
     }) as any;
   });
 
-  it("renders Jukebox and Assets in the right column when configured in rightColumnOrder", async () => {
+  it("renders Media and Actors blocks in the right column when configured in rightColumnOrder", async () => {
     localStorage.setItem(
       masterScreenConfigKey,
       JSON.stringify({
         showJukebox: true,
         showAssets: true,
         showSessionLog: true,
-        leftColumnOrder: ["worlds", "charactersNpcs", "players"],
-        rightColumnOrder: ["jukebox", "assets", "sessionLog"],
+        leftColumnOrder: ["actorsPanel"],
+        rightColumnOrder: ["mediaPanel", "sessionLog"],
       })
     );
 
@@ -76,18 +86,21 @@ describe("CampaignDetail Dynamic Column Module Placement (Issue #75)", () => {
     const leftCol = screen.getByTestId("shield-left-column");
     const rightCol = screen.getByTestId("shield-right-column");
 
-    expect(leftCol).not.toContainElement(screen.getByTestId("master-jukebox-mock"));
+    expect(leftCol).not.toContainElement(screen.getByTestId("media-panel-mock"));
+    expect(rightCol).toContainElement(screen.getByTestId("media-panel-mock"));
     expect(rightCol).toContainElement(screen.getByTestId("master-jukebox-mock"));
     expect(rightCol).toContainElement(screen.getByTestId("master-assets-mock"));
     expect(rightCol).toContainElement(screen.getByTestId("session-log-mock"));
   });
 
-  it("hides MasterAssetsPanel when showAssets is false", async () => {
+  it("hides the media panel content when all its tabs are disabled", async () => {
     localStorage.setItem(
       masterScreenConfigKey,
       JSON.stringify({
         showAssets: false,
-        leftColumnOrder: ["assets", "worlds"],
+        showMap: false,
+        showJukebox: false,
+        leftColumnOrder: ["mediaPanel"],
         rightColumnOrder: ["sessionLog"],
       })
     );
@@ -99,6 +112,7 @@ describe("CampaignDetail Dynamic Column Module Placement (Issue #75)", () => {
     });
 
     expect(screen.queryByTestId("master-assets-mock")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("media-panel-mock")).not.toBeInTheDocument();
   });
 
   it("maintains flex-1 and min-h-0 on SessionLog container when sharing column with other modules", async () => {
@@ -107,8 +121,8 @@ describe("CampaignDetail Dynamic Column Module Placement (Issue #75)", () => {
       JSON.stringify({
         showJukebox: true,
         showSessionLog: true,
-        leftColumnOrder: ["worlds"],
-        rightColumnOrder: ["jukebox", "sessionLog"],
+        leftColumnOrder: ["actorsPanel"],
+        rightColumnOrder: ["mediaPanel", "sessionLog"],
       })
     );
 

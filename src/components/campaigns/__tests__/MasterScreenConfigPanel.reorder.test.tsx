@@ -35,12 +35,12 @@ describe("MasterScreenConfigPanel - Reordering & Assets Visibility (Issue #75)",
     expect(screen.getByText("Coluna Esquerda (Gestão)")).toBeInTheDocument();
     expect(screen.getByText("Coluna Direita (Logs)")).toBeInTheDocument();
 
-    expect(screen.getByTestId("module-card-jukebox")).toBeInTheDocument();
+    expect(screen.getByTestId("module-card-mediaPanel")).toBeInTheDocument();
+    expect(screen.getByTestId("module-card-actorsPanel")).toBeInTheDocument();
     expect(screen.getByTestId("module-card-sessionLog")).toBeInTheDocument();
-    expect(screen.getByTestId("module-card-assets")).toBeInTheDocument();
   });
 
-  it("moves module to opposite column when switch-column button is clicked", () => {
+  it("moves consolidated block to opposite column when switch-column button is clicked", () => {
     const handleUpdate = vi.fn();
     render(
       <MasterScreenConfigPanel
@@ -50,18 +50,18 @@ describe("MasterScreenConfigPanel - Reordering & Assets Visibility (Issue #75)",
       />
     );
 
-    const moveJukeboxBtn = screen.getByTestId("btn-move-col-jukebox");
-    fireEvent.click(moveJukeboxBtn);
+    const moveMediaBtn = screen.getByTestId("btn-move-col-mediaPanel");
+    fireEvent.click(moveMediaBtn);
 
     expect(handleUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
-        leftColumnOrder: expect.not.arrayContaining(["jukebox"]),
-        rightColumnOrder: expect.arrayContaining(["jukebox"]),
+        leftColumnOrder: expect.not.arrayContaining(["mediaPanel"]),
+        rightColumnOrder: expect.arrayContaining(["mediaPanel"]),
       })
     );
   });
 
-  it("reorders module up and down within column when arrow buttons are clicked", () => {
+  it("reorders consolidated block within column when arrow buttons are clicked", () => {
     const handleUpdate = vi.fn();
     render(
       <MasterScreenConfigPanel
@@ -71,12 +71,12 @@ describe("MasterScreenConfigPanel - Reordering & Assets Visibility (Issue #75)",
       />
     );
 
-    const moveDownWorldsBtn = screen.getByTestId("btn-move-down-worlds");
-    fireEvent.click(moveDownWorldsBtn);
+    const moveDownMediaBtn = screen.getByTestId("btn-move-down-mediaPanel");
+    fireEvent.click(moveDownMediaBtn);
 
     expect(handleUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
-        leftColumnOrder: ["assets", "worlds", "jukebox", "charactersNpcs", "players"],
+        leftColumnOrder: ["actorsPanel", "mediaPanel"],
       })
     );
   });
@@ -91,10 +91,10 @@ describe("MasterScreenConfigPanel - Reordering & Assets Visibility (Issue #75)",
       />
     );
 
-    const jukeboxCard = screen.getByTestId("module-card-jukebox");
+    const mediaCard = screen.getByTestId("module-card-mediaPanel");
     const rightColDropZone = screen.getByTestId("dropzone-right");
 
-    fireEvent.dragStart(jukeboxCard);
+    fireEvent.dragStart(mediaCard);
     fireEvent.dragOver(rightColDropZone);
     fireEvent.drop(rightColDropZone);
 

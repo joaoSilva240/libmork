@@ -35,6 +35,9 @@ const MODULE_META: Record<
   ShieldModuleId,
   { label: string; icon: ComponentType<{ size?: number; className?: string }> }
 > = {
+  // Blocos consolidados da issue #89
+  mediaPanel: { label: "Cenário & Mídia (Mundos/Assets/Jukebox)", icon: MapPin },
+  actorsPanel: { label: "Participantes (Personagens/Jogadores)", icon: Users },
   worlds: { label: "Mundos & Cenas", icon: MapPin },
   assets: { label: "Assets & Handouts", icon: Image },
   jukebox: { label: "Jukebox de Áudio", icon: Music },
@@ -45,7 +48,9 @@ const MODULE_META: Record<
 
 // Flag de visibilidade que controla cada módulo no escudo. "worlds" é exibido
 // quando o Mapa Tático está ativo (showMap), conforme a especificação da issue #75.
-const MODULE_VISIBILITY: Record<ShieldModuleId, VisibilityFlag> = {
+const MODULE_VISIBILITY: Record<ShieldModuleId, VisibilityFlag | "consolidated-media" | "consolidated-actors"> = {
+  mediaPanel: "consolidated-media",
+  actorsPanel: "consolidated-actors",
   worlds: "showMap",
   assets: "showAssets",
   jukebox: "showJukebox",
@@ -123,7 +128,13 @@ export function MasterScreenConfigPanel({ config, onUpdate, onReset }: MasterScr
   ) => {
     const meta = MODULE_META[moduleId];
     const Icon = meta.icon;
-    const isActive = config[MODULE_VISIBILITY[moduleId]];
+    const flag = MODULE_VISIBILITY[moduleId];
+    const isActive =
+      flag === "consolidated-media"
+        ? config.showMap || config.showAssets || config.showJukebox
+        : flag === "consolidated-actors"
+          ? config.showCharactersNpcs || config.showPlayers
+          : config[flag];
     const isDragging = draggedModule === moduleId;
 
     return (
@@ -386,8 +397,9 @@ export function MasterScreenConfigPanel({ config, onUpdate, onReset }: MasterScr
           Organizador de Módulos
         </h4>
         <p className="text-[11px] text-secondary-muted">
-          Arraste os módulos entre as colunas ou use os botões para reordenar. A ordem é salva
-          automaticamente.
+          Arraste os blocos entre as colunas ou use os botões para reordenar. Mundos/Assets/Jukebox
+          e Personagens/Jogadores são agrupados em blocos com abas no Escudo (issue #89). A ordem é
+          salva automaticamente.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {renderColumn("left", "Coluna Esquerda (Gestão)")}

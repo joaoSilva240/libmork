@@ -2,7 +2,12 @@
 
 import { useCallback, useState } from "react";
 
+// IDs agregadores da issue #89: "mediaPanel" consolida worlds/assets/jukebox e
+// "actorsPanel" consolida charactersNpcs/players em contêineres com abas. Os IDs
+// legados permanecem válidos apenas para migração do localStorage.
 export type ShieldModuleId =
+  | "mediaPanel"
+  | "actorsPanel"
   | "worlds"
   | "assets"
   | "jukebox"
@@ -10,7 +15,14 @@ export type ShieldModuleId =
   | "players"
   | "sessionLog";
 
+export const CONSOLIDATED_MODULES = {
+  mediaPanel: ["worlds", "assets", "jukebox"],
+  actorsPanel: ["charactersNpcs", "players"],
+} as const satisfies Record<string, readonly Exclude<ShieldModuleId, "mediaPanel" | "actorsPanel" | "sessionLog">[]>;
+
 export const ALL_SHIELD_MODULES: readonly ShieldModuleId[] = [
+  "mediaPanel",
+  "actorsPanel",
   "worlds",
   "assets",
   "jukebox",
@@ -20,11 +32,8 @@ export const ALL_SHIELD_MODULES: readonly ShieldModuleId[] = [
 ] as const;
 
 export const DEFAULT_SHIELD_LEFT_ORDER: ShieldModuleId[] = [
-  "worlds",
-  "assets",
-  "jukebox",
-  "charactersNpcs",
-  "players",
+  "mediaPanel",
+  "actorsPanel",
 ];
 
 export const DEFAULT_SHIELD_RIGHT_ORDER: ShieldModuleId[] = [
@@ -78,37 +87,51 @@ function sanitizeColumnOrder(
   const isModuleId = (val: unknown): val is ShieldModuleId =>
     typeof val === "string" && ALL_SHIELD_MODULES.includes(val as ShieldModuleId);
 
-  const rawLeft = Array.isArray(leftInput) ? leftInput.filter(isModuleId) : [];
-  const rawRight = Array.isArray(rightInput) ? rightInput.filter(isModuleId) : [];
+  // Migração da issue #89: configs legados com módulos soltos são consolidados em
+  // blocos (mediaPanel/actorsPanel). O bloco substitui o primeiro módulo do grupo
+  // na coluna; os demais módulos do mesmo grupo são descartados.
+  const LEGACY_TO_BLOCK: Record<string, ShieldModuleId> = {
+    worlds: "mediaPanel",
+    assets: "mediaPanel",
+    jukebox: "mediaPanel",
+    charactersNpcs: "actorsPanel",
+    players: "actorsPanel",
+  };
 
-  const seen = new Set<ShieldModuleId>();
-  const cleanLeft: ShieldModuleId[] = [];
-  const cleanRight: ShieldModuleId[] = [];
-
-  for (const m of rawLeft) {
-    if (!seen.has(m)) {
-      seen.add(m);
-      cleanLeft.push(m);
+  const sanitizeColumn = (raw: unknown): ShieldModuleId[] => {
+    const input = Array.isArray(raw) ? raw.filter(isModuleId) : [];
+    const seen = new Set<ShieldModuleId>();
+    const result: ShieldModuleId[] = [];
+    for (const m of input) {
+      const mapped = LEGACY_TO_BLOCK[m] ?? m;
+      if (!seen.has(mapped)) {
+        seen.add(mapped);
+        result.push(mapped);
+      }
     }
-  }
+    return result;
+  };
 
-  for (const m of rawRight) {
-    if (!seen.has(m)) {
-      seen.add(m);
-      cleanRight.push(m);
+  const cleanLeft = sanitizeColumn(leftInput);
+  const cleanRight = sanitizeColumn(rightInput);
+
+  // Um bloco não pode existir nas duas colunas; mantém na primeira ocorrência
+  // (coluna esquerda tem precedência, mesma semântica do dedupe legado).
+  for (const block of ["mediaPanel", "actorsPanel"] as const) {
+    if (cleanLeft.includes(block) && cleanRight.includes(block)) {
+      const idx = cleanRight.indexOf(block);
+      cleanRight.splice(idx, 1);
     }
   }
 
   // Any missing modules are appended to their default column
   for (const defaultModule of DEFAULT_SHIELD_LEFT_ORDER) {
-    if (!seen.has(defaultModule)) {
-      seen.add(defaultModule);
+    if (!cleanLeft.includes(defaultModule) && !cleanRight.includes(defaultModule)) {
       cleanLeft.push(defaultModule);
     }
   }
   for (const defaultModule of DEFAULT_SHIELD_RIGHT_ORDER) {
-    if (!seen.has(defaultModule)) {
-      seen.add(defaultModule);
+    if (!cleanRight.includes(defaultModule) && !cleanLeft.includes(defaultModule)) {
       cleanRight.push(defaultModule);
     }
   }
