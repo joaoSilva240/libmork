@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Npc, World, Encounter } from "@/types";
 import { ActorOverlay } from "@/components/campaigns/ActorOverlay";
 import type { RosterActor, RosterPlayer } from "@/components/campaigns/ActorOverlay";
@@ -340,6 +340,28 @@ export function MasterRoster({
       unsubscribeCombat();
     };
   }, [campaignId, selectedWorldId, subscribeCombatState]);
+
+  // Automação da cena Combate: abrir seleção de participantes ao ENTRAR na cena
+  // (silencioso se já há encontro ativo); fechar o modal ao SAIR da cena.
+  const prevSceneRef = useRef<ActiveScene>(null);
+  useEffect(() => {
+    if (isMissing) return;
+    const prev = prevSceneRef.current;
+    const current = activeScene ?? null;
+    if (prev === current) return;
+    prevSceneRef.current = current;
+
+    if (current === "combat" && prev !== "combat") {
+      const hasActiveCombat = !!combatState?.active || !!activeEncounter;
+      // Transição real (guarda por ref acima): sincronizar o estado do modal com
+      // a entrada na cena, padrão já estabelecido no repositório.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (!hasActiveCombat && selectedWorldId) setShowEncounterModal(true);
+    }
+    if (current !== "combat" && prev === "combat") {
+      setShowEncounterModal(false);
+    }
+  }, [activeScene, isMissing, combatState?.active, activeEncounter, selectedWorldId, setShowEncounterModal]);
 
   const { updateCombatState } = useSocket();
 

@@ -1,10 +1,16 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MasterRoster } from "../MasterRoster";
 
 // Harness espelhado de MasterRoster.visibility.test.tsx (mocks de socket,
 // fetch e filhos pesados), estendido com updateCombatState e limpeza de
 // localStorage entre casos.
+
+// Captura o callback de subscribeCombatState para que os testes injetem
+// estado de combate "pelo socket" (necessário nos casos de automação).
+const socketHarness = vi.hoisted(() => ({
+  combatCallback: null as null | ((state: unknown) => void),
+}));
 
 // Mock dependencies
 vi.mock("@/context/SocketContext", () => ({
@@ -15,7 +21,10 @@ vi.mock("@/context/SocketContext", () => ({
     joinCampaign: vi.fn(),
     subscribeActorStatus: vi.fn(() => vi.fn()),
     subscribeDiceRoll: vi.fn(() => vi.fn()),
-    subscribeCombatState: vi.fn(() => vi.fn()),
+    subscribeCombatState: vi.fn((cb: (state: unknown) => void) => {
+      socketHarness.combatCallback = cb;
+      return vi.fn();
+    }),
     updateCombatState: vi.fn(),
   }),
 }));
@@ -32,6 +41,19 @@ vi.mock("@/components/campaigns/MapEditor", () => ({
   MapEditor: () => <div data-testid="mock-map-editor">Map Active</div>,
 }));
 
+// Mock do EncounterModal: a presença do div sinaliza o modal aberto; o botão
+// interno chama onClose para simular o fechamento "pelo usuário" sem
+// depender da UI real do modal.
+vi.mock("../EncounterModal", () => ({
+  EncounterModal: ({ onClose }: { onClose?: () => void }) => (
+    <div data-testid="encounter-modal-mock">
+      <button type="button" data-testid="encounter-modal-close" onClick={onClose}>
+        fechar-mock
+      </button>
+    </div>
+  ),
+}));
+
 vi.mock("next/dynamic", () => ({
   __esModule: true,
   default: () => {
@@ -43,49 +65,53 @@ vi.mock("next/dynamic", () => ({
 
 global.fetch = vi.fn();
 
+// Implementação padrão de fetch (sem encontro ativo) compartilhada entre os
+// dois describes; casos específicos podem sobrescrevê-la no próprio teste.
+const defaultFetchImpl = (url: string) => {
+  if (url.includes("/roster")) {
+    return Promise.resolve({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          success: true,
+          data: {
+            players: [],
+            npcs: [],
+          },
+        }),
+    });
+  }
+  if (url.includes("/worlds") && !url.includes("/encounters")) {
+    return Promise.resolve({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          success: true,
+          data: [{ id: "world-1", name: "Mundo Central", mapUrl: "http://example.com/map.jpg" }],
+        }),
+    });
+  }
+  if (url.includes("/encounters")) {
+    return Promise.resolve({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          success: true,
+          data: [],
+        }),
+    });
+  }
+  return Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({ success: true, data: {} }),
+  });
+};
+
 describe("MasterRoster — matriz de visibilidade por cena (Fase 2)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
-    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation((url: string) => {
-      if (url.includes("/roster")) {
-        return Promise.resolve({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              success: true,
-              data: {
-                players: [],
-                npcs: [],
-              },
-            }),
-        });
-      }
-      if (url.includes("/worlds") && !url.includes("/encounters")) {
-        return Promise.resolve({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              success: true,
-              data: [{ id: "world-1", name: "Mundo Central", mapUrl: "http://example.com/map.jpg" }],
-            }),
-        });
-      }
-      if (url.includes("/encounters")) {
-        return Promise.resolve({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              success: true,
-              data: [],
-            }),
-        });
-      }
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ success: true, data: {} }),
-      });
-    });
+    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(defaultFetchImpl);
   });
 
   it("caso 1: activeScene=interlude esconde a barra de combate e o carrossel", async () => {
@@ -253,5 +279,210 @@ describe("MasterRoster — matriz de visibilidade por cena (Fase 2)", () => {
     // Neutro + colapso salvo → carrossel escondido e o botão "Expandir" presente
     expect(screen.queryByTestId("resize-carousel-panel")).toBeNull();
     expect(screen.getByText("Expandir")).toBeInTheDocument();
+  });
+});
+
+describe("MasterRoster — automação do encontro na cena Combate (Fase 2)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    socketHarness.combatCallback = null;
+    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(defaultFetchImpl);
+  });
+
+  it("caso 1: ENTRAR em combat sem encontro ativo abre o EncounterModal", async () => {
+    const { rerender } = render(
+      <MasterRoster
+        campaignId="test-camp"
+        selectedWorldId="world-1"
+        activeScene="investigation"
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("mock-infinite-canvas")).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId("encounter-modal-mock")).toBeNull();
+
+    rerender(
+      <MasterRoster
+        campaignId="test-camp"
+        selectedWorldId="world-1"
+        activeScene="combat"
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("encounter-modal-mock")).toBeInTheDocument();
+    });
+  });
+
+  it("caso 2: ENTRAR em combat com encontro ativo NÃO abre o modal (retomada silenciosa)", async () => {
+    // Referência única e estável: o mock de useSocket recria as funções a cada
+    // render, então o poll de checkActive reexecuta; se o objeto do encontro
+    // mudasse de identidade a cada resposta, setActiveEncounter re-renderizaria
+    // em loop. Com referência estável o React baila e o efeito estabiliza.
+    const activeEncounterFixture = { id: "enc-1", name: "Emboscada", isActive: true };
+    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation((url: string) => {
+      if (url.includes("/encounters")) {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              success: true,
+              data: [activeEncounterFixture],
+            }),
+        });
+      }
+      return defaultFetchImpl(url);
+    });
+
+    const { rerender } = render(
+      <MasterRoster
+        campaignId="test-camp"
+        selectedWorldId="world-1"
+        activeScene={null}
+      />
+    );
+
+    // Sinal positivo de que o encontro ativo chegou ao estado do componente
+    // (barra neutra visível em cena Livre).
+    await waitFor(() => {
+      expect(screen.getByText(/COMBATE ATIVO : Emboscada/)).toBeInTheDocument();
+    });
+
+    rerender(
+      <MasterRoster
+        campaignId="test-camp"
+        selectedWorldId="world-1"
+        activeScene="combat"
+      />
+    );
+
+    // Flush de microtarefas pendentes (fetches do harness) dentro de act para
+    // evitar updates fora de act e garantir que nada reabriu o modal.
+    await act(async () => {});
+    expect(screen.queryByTestId("encounter-modal-mock")).toBeNull();
+  });
+
+  it("caso 2b: ENTRAR em combat com combatState ativo (socket) também retoma em silêncio", async () => {
+    const { rerender } = render(
+      <MasterRoster
+        campaignId="test-camp"
+        selectedWorldId="world-1"
+        activeScene={null}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("mock-infinite-canvas")).toBeInTheDocument();
+    });
+    expect(socketHarness.combatCallback).not.toBeNull();
+
+    act(() => {
+      socketHarness.combatCallback?.({ active: true, round: 1, combatants: [], currentTurnIndex: 0 });
+    });
+    await waitFor(() => {
+      expect(screen.getByText(/COMBATE ATIVO/)).toBeInTheDocument();
+    });
+
+    rerender(
+      <MasterRoster
+        campaignId="test-camp"
+        selectedWorldId="world-1"
+        activeScene="combat"
+      />
+    );
+
+    await act(async () => {});
+    expect(screen.queryByTestId("encounter-modal-mock")).toBeNull();
+  });
+
+  it("caso 3: SAIR de combat com o modal aberto fecha o modal", async () => {
+    const { rerender } = render(
+      <MasterRoster
+        campaignId="test-camp"
+        selectedWorldId="world-1"
+        activeScene="combat"
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("encounter-modal-mock")).toBeInTheDocument();
+    });
+
+    rerender(
+      <MasterRoster
+        campaignId="test-camp"
+        selectedWorldId="world-1"
+        activeScene="interlude"
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("encounter-modal-mock")).toBeNull();
+    });
+  });
+
+  it("caso 4: reprocessar o mesmo activeScene não reabre o modal (guarda por ref)", async () => {
+    const { rerender } = render(
+      <MasterRoster
+        campaignId="test-camp"
+        selectedWorldId="world-1"
+        activeScene="combat"
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("encounter-modal-mock")).toBeInTheDocument();
+    });
+
+    // Fecha "pelo usuário" via onClose do modal mockado.
+    fireEvent.click(screen.getByTestId("encounter-modal-close"));
+    expect(screen.queryByTestId("encounter-modal-mock")).toBeNull();
+
+    // Muda um dep do efeito (combatState) sem mudar a cena: sem a guarda por
+    // ref isso reexecitaria a lógica de entrada em combat e reabriria o modal
+    // (combatState chega inativo e não há encontro ativo).
+    act(() => {
+      socketHarness.combatCallback?.({ active: false, round: 2, combatants: [], currentTurnIndex: 0 });
+    });
+    rerender(
+      <MasterRoster
+        campaignId="test-camp"
+        selectedWorldId="world-1"
+        activeScene="combat"
+      />
+    );
+
+    await act(async () => {});
+    expect(screen.queryByTestId("encounter-modal-mock")).toBeNull();
+  });
+
+  it("caso 5: missing_zero nunca abre o modal ao entrar em combat (efeito no-op)", async () => {
+    const { rerender } = render(
+      <MasterRoster
+        campaignId="test-camp"
+        selectedWorldId="world-1"
+        rulesEngine="missing_zero"
+        activeScene={null}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("[ REGISTRO CIVIL // HABITANTES DA REGIÃO ]")).toBeInTheDocument();
+    });
+
+    rerender(
+      <MasterRoster
+        campaignId="test-camp"
+        selectedWorldId="world-1"
+        rulesEngine="missing_zero"
+        activeScene="combat"
+      />
+    );
+
+    await act(async () => {});
+    expect(screen.queryByTestId("encounter-modal-mock")).toBeNull();
   });
 });
