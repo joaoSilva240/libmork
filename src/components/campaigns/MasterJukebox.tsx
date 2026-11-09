@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   Plus,
   Play,
@@ -18,12 +18,15 @@ import { useJukebox } from "@/hooks/useJukebox";
 import { YouTubeAudioPlayer } from "@/components/audio/YouTubeAudioPlayer";
 import { getYouTubeThumbnailUrl, formatAudioTime } from "@/lib/audio/youtube";
 import type { AudioTrack } from "@/lib/audio/jukebox-protocol";
+import { SCENES, SCENE_ORDER, type ActiveScene, type SceneType } from "@/lib/scenes/sceneConfig";
+import { filterTracksForScene } from "@/lib/scenes/sceneJukebox";
 
 interface MasterJukeboxProps {
   campaignId: string;
   userId: string;
   userName: string;
   className?: string;
+  activeScene?: ActiveScene;
 }
 
 export function MasterJukebox({
@@ -31,6 +34,7 @@ export function MasterJukebox({
   userId,
   userName,
   className = "",
+  activeScene = null,
 }: MasterJukeboxProps) {
   const {
     tracks,
@@ -45,10 +49,17 @@ export function MasterJukebox({
     toggleLoop,
     createPlaylist,
     ungroupPlaylist,
+    setTrackScene,
   } = useJukebox(campaignId, true);
 
   const [urlInput, setUrlInput] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [sceneOverride, setSceneOverride] = useState<"all" | "geral" | SceneType | null>(null);
+  const [addScene, setAddScene] = useState<"" | SceneType>("");
+
+  useEffect(() => {
+    setSceneOverride(null);
+  }, [activeScene]);
   const [volumeLocal, setVolumeLocal] = useState<Record<string, number>>({});
   const [progress, setProgress] = useState<Record<string, { current: number; duration: number }>>(
     {},
@@ -74,9 +85,12 @@ export function MasterJukebox({
   };
 
   const handleAdd = () => {
-    const result = addTrack(urlInput, userId, userName);
+    const result = addScene
+      ? addTrack(urlInput, userId, userName, addScene)
+      : addTrack(urlInput, userId, userName);
     if (result.ok) {
       setUrlInput("");
+      setAddScene("");
       setError(null);
     } else {
       setError(result.error || "Erro desconhecido");
@@ -215,6 +229,23 @@ export function MasterJukebox({
 
   const activeCount = playingTrackIds ? playingTrackIds.size : playingTrackId ? 1 : 0;
 
+  const chipCls = (active: boolean) =>
+    `rounded border px-2 py-0.5 text-[10px] font-semibold transition-colors ${
+      active
+        ? "border-purple-400 bg-purple-600 text-white"
+        : "border-gray-700 bg-gray-800/70 text-gray-300 hover:bg-gray-700"
+    }`;
+
+  const playingIds = playingTrackIds ?? new Set<string>(playingTrackId ? [playingTrackId] : []);
+  const visibleTracks =
+    sceneOverride === "all"
+      ? tracks
+      : sceneOverride === "geral"
+        ? tracks.filter((t) => !t.scene)
+        : sceneOverride !== null
+          ? filterTracksForScene(tracks, sceneOverride, playingIds)
+          : filterTracksForScene(tracks, activeScene ?? null, playingIds);
+
   // Agrupar faixas em itens de renderização (faixas soltas vs playlists unificadas)
   type Item =
     | { type: "track"; track: AudioTrack }
@@ -224,7 +255,7 @@ export function MasterJukebox({
   const seenPlaylists = new Set<string>();
   const playlistMap = new Map<string, AudioTrack[]>();
 
-  tracks.forEach((t) => {
+  visibleTracks.forEach((t) => {
     if (t.playlistId) {
       if (!playlistMap.has(t.playlistId)) {
         playlistMap.set(t.playlistId, []);
@@ -233,7 +264,7 @@ export function MasterJukebox({
     }
   });
 
-  tracks.forEach((t) => {
+  visibleTracks.forEach((t) => {
     if (!t.playlistId) {
       items.push({ type: "track", track: t });
     } else if (!seenPlaylists.has(t.playlistId)) {
@@ -264,6 +295,43 @@ export function MasterJukebox({
         )}
       </div>
 
+      {/* Chips de filtro por cena */}
+      <div className="mb-2 flex shrink-0 flex-wrap gap-1">
+        {activeScene && (
+          <button
+            data-testid="jukebox-scene-chip-auto"
+            onClick={() => setSceneOverride(null)}
+            className={chipCls(sceneOverride === null)}
+          >
+            Seguir cena ({SCENES[activeScene].label})
+          </button>
+        )}
+        <button
+          data-testid="jukebox-scene-chip-all"
+          onClick={() => setSceneOverride("all")}
+          className={chipCls(sceneOverride === "all")}
+        >
+          Todas
+        </button>
+        <button
+          data-testid="jukebox-scene-chip-geral"
+          onClick={() => setSceneOverride("geral")}
+          className={chipCls(sceneOverride === "geral")}
+        >
+          Gerais
+        </button>
+        {SCENE_ORDER.map((s) => (
+          <button
+            key={s}
+            data-testid={`jukebox-scene-chip-${s}`}
+            onClick={() => setSceneOverride(s)}
+            className={chipCls(sceneOverride === s)}
+          >
+            {SCENES[s].label}
+          </button>
+        ))}
+      </div>
+
       {/* Input de URL */}
       <div className="mb-3 flex shrink-0 gap-2">
         <input
@@ -276,6 +344,20 @@ export function MasterJukebox({
           }}
           className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-white text-sm focus:outline-none focus:border-purple-500 min-w-0"
         />
+        <select
+          data-testid="jukebox-add-scene-select"
+          value={addScene}
+          onChange={(e) => setAddScene(e.target.value as "" | SceneType)}
+          aria-label="Cena para nova faixa"
+          className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-xs text-gray-300 focus:outline-none focus:border-purple-500 shrink-0"
+        >
+          <option value="">Geral</option>
+          {SCENE_ORDER.map((s) => (
+            <option key={s} value={s}>
+              {SCENES[s].label}
+            </option>
+          ))}
+        </select>
         <button
           onClick={handleAdd}
           className="shrink-0 bg-purple-600 hover:bg-purple-700 text-white rounded px-3 py-1.5 flex items-center gap-1"
@@ -325,6 +407,10 @@ export function MasterJukebox({
       {tracks.length === 0 ? (
         <p className="text-sm text-gray-500">
           Nenhuma faixa de áudio adicionada. Cole uma URL do YouTube para começar.
+        </p>
+      ) : items.length === 0 ? (
+        <p className="text-sm text-gray-500">
+          Nenhuma faixa encontrada para este filtro de cena.
         </p>
       ) : (
         <div className="space-y-2 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
@@ -617,6 +703,27 @@ export function MasterJukebox({
 
                   {/* Controles em linha */}
                   <div className="flex items-center gap-1 flex-shrink-0">
+                    {/* Select de cena da faixa */}
+                    <select
+                      data-testid={`jukebox-track-scene-${track.id}`}
+                      value={track.scene ?? ""}
+                      onChange={(e) =>
+                        setTrackScene(
+                          track.id,
+                          e.target.value === "" ? null : (e.target.value as SceneType),
+                        )
+                      }
+                      aria-label={`Cena da faixa ${track.title}`}
+                      className="h-6 rounded border border-gray-700 bg-gray-900/90 px-1 text-[10px] text-gray-300 focus:border-purple-500 focus:outline-none shrink-0"
+                    >
+                      <option value="">Geral</option>
+                      {SCENE_ORDER.map((s) => (
+                        <option key={s} value={s}>
+                          {SCENES[s].label}
+                        </option>
+                      ))}
+                    </select>
+
                     {/* Play/Pause */}
                     <button
                       onClick={() => togglePlay(track.id)}

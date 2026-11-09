@@ -508,6 +508,7 @@ export function CampaignDetail() {
               campaignId={campaign.id}
               userId={campaign.masterId}
               userName="Mestre"
+              activeScene={activeScene}
               className="flex flex-col overflow-hidden rounded-lg border border-gray-800 bg-gray-900 p-3 lg:min-h-[160px] lg:flex-1"
             />
           )}
