@@ -13,10 +13,18 @@ type SceneBarProps = {
   activeScene: ActiveScene;
   onSceneChange: (next: ActiveScene) => void;
   disabled?: boolean;
+  /** Combate segue rodando enquanto a cena exibida é outra (Fase 2). */
+  combatBackgroundActive?: boolean;
   className?: string;
 };
 
-export function SceneBar({ activeScene, onSceneChange, disabled = false, className = "" }: SceneBarProps) {
+export function SceneBar({
+  activeScene,
+  onSceneChange,
+  disabled = false,
+  combatBackgroundActive = false,
+  className = "",
+}: SceneBarProps) {
   return (
     <div
       data-testid="scene-bar"
@@ -28,6 +36,16 @@ export function SceneBar({ activeScene, onSceneChange, disabled = false, classNa
       >
         {activeScene ? `Cena: ${SCENES[activeScene].label}` : "Cena: Livre"}
       </span>
+      {combatBackgroundActive && activeScene !== "combat" && (
+        <span
+          data-testid="scene-combat-indicator"
+          title="Combate ativo em 2º plano"
+          className="relative flex h-2.5 w-2.5 items-center"
+        >
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
+        </span>
+      )}
       {SCENE_ORDER.map((value) => {
         const scene = SCENES[value];
         const Icon = scene.icon;

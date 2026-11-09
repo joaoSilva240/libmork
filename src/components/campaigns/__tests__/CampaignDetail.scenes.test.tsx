@@ -27,7 +27,13 @@ vi.mock("@/components/systems/missing/MissingSessionLog", () => ({
   MissingSessionLog: () => <div data-testid="missing-session-log-mock" />,
 }));
 vi.mock("@/context/SocketContext", () => ({
-  useSocket: () => ({ socket: null, isConnected: true }),
+  useSocket: () => ({
+    socket: null,
+    isConnected: true,
+    // CampaignDetail assina combat-state para a confirmação de troca (Fase 2).
+    subscribeCombatState: vi.fn(() => vi.fn()),
+    updateCombatState: vi.fn(),
+  }),
 }));
 
 let campaignPayload: Record<string, unknown> = {};

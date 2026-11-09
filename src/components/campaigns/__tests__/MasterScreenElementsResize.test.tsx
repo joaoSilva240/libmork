@@ -49,6 +49,9 @@ vi.mock("@/context/SocketContext", () => ({
     subscribeCampaignLogCreated: vi.fn(() => vi.fn()),
     subscribeCampaignLogUpdated: vi.fn(() => vi.fn()),
     subscribeDiceRoll: vi.fn(() => vi.fn()),
+    // CampaignDetail assina combat-state para a confirmação de troca (Fase 2).
+    subscribeCombatState: vi.fn(() => vi.fn()),
+    updateCombatState: vi.fn(),
     broadcastCampaignLogUpdate: vi.fn(),
   }),
 }));

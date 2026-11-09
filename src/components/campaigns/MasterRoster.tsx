@@ -343,13 +343,16 @@ export function MasterRoster({
 
   // Automação da cena Combate: abrir seleção de participantes ao ENTRAR na cena
   // (silencioso se já há encontro ativo); fechar o modal ao SAIR da cena.
-  const prevSceneRef = useRef<ActiveScene>(null);
+  // `undefined` = ainda sem referência: a PRIMEIRA execução só semeia a cena
+  // atual (montar/remontar direto em combat não conta como "entrar na cena").
+  const prevSceneRef = useRef<ActiveScene | undefined>(undefined);
   useEffect(() => {
     if (isMissing) return;
     const prev = prevSceneRef.current;
     const current = activeScene ?? null;
     if (prev === current) return;
     prevSceneRef.current = current;
+    if (prev === undefined) return;
 
     if (current === "combat" && prev !== "combat") {
       const hasActiveCombat = !!combatState?.active || !!activeEncounter;

@@ -399,7 +399,21 @@ describe("MasterRoster — automação do encontro na cena Combate (Fase 2)", ()
   });
 
   it("caso 3: SAIR de combat com o modal aberto fecha o modal", async () => {
+    // Ruling da Task 2: a entrada precisa ser uma TRANSIÇÃO real (montar em
+    // Livre e rerenderizar em combat), não um mount direto na cena.
     const { rerender } = render(
+      <MasterRoster
+        campaignId="test-camp"
+        selectedWorldId="world-1"
+        activeScene={null}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("mock-infinite-canvas")).toBeInTheDocument();
+    });
+
+    rerender(
       <MasterRoster
         campaignId="test-camp"
         selectedWorldId="world-1"
@@ -426,6 +440,18 @@ describe("MasterRoster — automação do encontro na cena Combate (Fase 2)", ()
 
   it("caso 4: reprocessar o mesmo activeScene não reabre o modal (guarda por ref)", async () => {
     const { rerender } = render(
+      <MasterRoster
+        campaignId="test-camp"
+        selectedWorldId="world-1"
+        activeScene={null}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("mock-infinite-canvas")).toBeInTheDocument();
+    });
+
+    rerender(
       <MasterRoster
         campaignId="test-camp"
         selectedWorldId="world-1"
@@ -456,6 +482,27 @@ describe("MasterRoster — automação do encontro na cena Combate (Fase 2)", ()
     );
 
     await act(async () => {});
+    expect(screen.queryByTestId("encounter-modal-mock")).toBeNull();
+  });
+
+  it("caso 4b: MONTAR direto em combat (reload/remount) é baseline e NÃO abre o modal", async () => {
+    // Política da correção levada da Task 2: a primeira execução do efeito sem
+    // referência anterior semeia a cena atual em vez de contar como "entrar na
+    // cena". Cobre reload da página em combate e o remount por
+    // key={`roster-${rosterVersion}`} ao fechar o ContentOverlay.
+    render(
+      <MasterRoster
+        campaignId="test-camp"
+        selectedWorldId="world-1"
+        activeScene="combat"
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("mock-infinite-canvas")).toBeInTheDocument();
+    });
+    await act(async () => {});
+
     expect(screen.queryByTestId("encounter-modal-mock")).toBeNull();
   });
 
