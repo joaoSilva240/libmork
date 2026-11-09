@@ -614,4 +614,118 @@ describe("useJukebox", () => {
       });
     });
   });
+
+  describe("scenes (scene support in addTrack & setTrackScene)", () => {
+    it("should allow adding track with specific scene and persist it", () => {
+      const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true }),
+      } as any);
+
+      const { result } = renderHook(() => useJukebox("campaign-1", true));
+
+      act(() => {
+        result.current.addTrack(
+          "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          "user-1",
+          "Master",
+          "combat",
+        );
+      });
+
+      expect(result.current.tracks).toHaveLength(1);
+      expect(result.current.tracks[0].scene).toBe("combat");
+      expect(fetchSpy).toHaveBeenCalledWith(
+        expect.stringContaining("/api/campaigns/campaign-1/tracks"),
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ videoId: "dQw4w9WgXcQ", title: "dQw4w9WgXcQ", scene: "combat" }),
+        }),
+      );
+
+      fetchSpy.mockRestore();
+    });
+
+    it("should default scene to null when not provided to addTrack", () => {
+      const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true }),
+      } as any);
+
+      const { result } = renderHook(() => useJukebox("campaign-1", true));
+
+      act(() => {
+        result.current.addTrack(
+          "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          "user-1",
+          "Master",
+        );
+      });
+
+      expect(result.current.tracks).toHaveLength(1);
+      expect(result.current.tracks[0].scene).toBeNull();
+      expect(fetchSpy).toHaveBeenCalledWith(
+        expect.stringContaining("/api/campaigns/campaign-1/tracks"),
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ videoId: "dQw4w9WgXcQ", title: "dQw4w9WgXcQ", scene: null }),
+        }),
+      );
+
+      fetchSpy.mockRestore();
+    });
+
+    it("should update track scene via setTrackScene and call PATCH", () => {
+      const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true }),
+      } as any);
+
+      const { result } = renderHook(() => useJukebox("campaign-1", true));
+
+      act(() => {
+        result.current.addTrack(
+          "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          "user-1",
+          "Master",
+        );
+      });
+
+      act(() => {
+        result.current.setTrackScene("dQw4w9WgXcQ", "stealth");
+      });
+
+      expect(result.current.tracks[0].scene).toBe("stealth");
+      expect(fetchSpy).toHaveBeenCalledWith(
+        expect.stringContaining("/api/campaigns/campaign-1/tracks/dQw4w9WgXcQ"),
+        expect.objectContaining({
+          method: "PATCH",
+          body: JSON.stringify({ scene: "stealth" }),
+        }),
+      );
+
+      fetchSpy.mockRestore();
+    });
+
+    it("should not allow setTrackScene when isMaster is false", async () => {
+      const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, data: [] }),
+      } as any);
+
+      let hookResult: any;
+      await act(async () => {
+        const { result } = renderHook(() => useJukebox("campaign-1", false));
+        hookResult = result;
+      });
+      fetchSpy.mockClear();
+
+      act(() => {
+        hookResult.current.setTrackScene("dQw4w9WgXcQ", "combat");
+      });
+
+      expect(fetchSpy).not.toHaveBeenCalled();
+      fetchSpy.mockRestore();
+    });
+  });
 });
