@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     "server.js",
     "teste-db.js",
     "scripts/**",
+    "dist-electron/**",
+    "release/**",
   ]),
 ]);
 

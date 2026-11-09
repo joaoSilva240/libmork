@@ -5,3 +5,5 @@ out
 drizzle
 coverage
 uploads
+dist-electron
+release

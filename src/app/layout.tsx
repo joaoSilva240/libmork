@@ -19,6 +19,7 @@ import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import CsrfInit from "@/components/CsrfInit";
 import Dice3DLayer from "@/components/dice/Dice3DLayer";
 import MotionProvider from "@/components/motion/MotionProvider";
+import DesktopNotifier from "@/components/desktop/DesktopNotifier";
 import "./globals.css";
 
 const cinzel = Cinzel({
@@ -126,7 +127,10 @@ export default function RootLayout({
       <body className="antialiased" suppressHydrationWarning>
         <QueryProvider>
           <ThemeProvider>
-            <SocketProvider>{children}</SocketProvider>
+            <SocketProvider>
+              {children}
+              <DesktopNotifier />
+            </SocketProvider>
             <Dice3DLayer />
             <MotionProvider />
           </ThemeProvider>

@@ -1,11 +1,20 @@
 {
   "name": "libmork",
   "version": "0.1.0",
+  "description": "Aplicativo de RPG de mesa com sistema de regras próprio",
+  "author": "João Silva <joao.silvaoliver240@gmail.com>",
   "private": true,
+  "main": "dist-electron/main.js",
   "scripts": {
     "dev": "node server.js",
     "build": "next build",
     "start": "NODE_ENV=production node server.js",
+    "electron:compile": "tsc -p electron/tsconfig.json && esbuild electron/main.ts electron/preload.ts --bundle --platform=node --external:electron --outdir=dist-electron --allow-overwrite",
+    "electron:start": "electron dist-electron/main.js",
+    "electron:dev": "concurrently -k \"npm run dev\" \"wait-on http://localhost:3000/api/health && npm run electron:compile && npm run electron:start\"",
+    "electron:build": "npm run electron:compile",
+    "electron:dist": "npm run electron:compile && electron-builder --win --x64",
+    "electron:dist:all": "npm run electron:compile && electron-builder -mwl",
     "lint": "eslint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -61,7 +70,12 @@
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^4.3.4",
     "@vitest/coverage-v8": "^2.1.8",
+    "concurrently": "^9.2.5",
     "drizzle-kit": "^0.31.10",
+    "electron": "^45.2.3",
+    "electron-builder": "^26.18.0",
+    "electron-store": "^8.2.0",
+    "electron-updater": "^6.8.11",
     "eslint": "^9",
     "eslint-config-next": "16.3.3",
     "husky": "^9.1.7",
@@ -70,6 +84,59 @@
     "prettier": "^3.9.6",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^2.1.8"
+    "vitest": "^2.1.8",
+    "wait-on": "^9.5.1"
+  },
+  "build": {
+    "appId": "com.libmork.desktop",
+    "productName": "Libmork",
+    "copyright": "Copyright © 2026 João Silva",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist-electron/**/*",
+      "electron/gateway/**/*",
+      "electron/assets/**/*",
+      "package.json",
+      "!node_modules/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "electron/assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Libmork"
+    },
+    "mac": {
+      "category": "public.app-category.games",
+      "target": [
+        "dmg"
+      ],
+      "icon": "electron/assets/icon.png"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Game",
+      "icon": "electron/assets/icon.png"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "joaoSilva240",
+      "repo": "libmork"
+    }
   }
 }
