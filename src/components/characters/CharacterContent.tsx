@@ -9,7 +9,7 @@ import {
   useClassBenefitsQuery,
   useRaceDetailsQuery,
 } from "@/hooks/queries/useCharacterContentQueries";
-import type { ContentType } from "@/lib/validators/content";
+import type { ContentType, CharacterContentType } from "@/lib/validators/content";
 import { useSocket, DICE_ROLL_LOADING_DELAY } from "@/context/SocketContext";
 import { showDice3D } from "@/lib/dice3d";
 import { TargetSelectionModal } from "@/components/combat/TargetSelectionModal";
@@ -22,6 +22,7 @@ import {
   applyHealing,
   applyResolvedDamage,
   getExpression,
+  doubleDamageDice,
   hydrateCombatantMana,
   normalizeSkillExpression,
   normalizeFormulaWithAttributes,
@@ -104,9 +105,10 @@ const TYPE_LABELS: Record<ContentType, string> = {
   spells: "Magias",
   items: "Itens",
   conditions: "Condições",
+  attacks: "Ataques",
 };
 
-const TYPE_ORDER: ContentType[] = ["skills", "spells", "items", "conditions"];
+const TYPE_ORDER: CharacterContentType[] = ["skills", "spells", "items", "conditions"];
 
 type LinkedRow = {
   junction: {
@@ -731,18 +733,29 @@ export function CharacterContent({
     const expr = rawExpr !== null ? String(rawExpr) : "1d20";
     const luckModifier = characterAttributeModifiers?.sorte ?? 0;
     const rollResult = rollExpression(expr, 1, { luckModifier });
+    // Crítico no natural 20 (issue #90 follow-up): dados de dano dobrados,
+    // modificador preservado — vale para jogadores e NPCs.
+    const isCritical = (rollResult.rolledDice ?? []).some(
+      (die) => die.sides === 20 && die.value === 20
+    );
     const damageValue = rowType === "items"
       ? normalizeItemDamageRoll(itemContent, characterAttributeModifiers ?? {})
       : normalizeActionDamage(row.content);
-    const damageResult = damageValue !== null ? rollExpression(String(damageValue), 0, { luckModifier }) : null;
-    showDice3D([...(rollResult.rolledDice ?? []), ...(damageResult?.rolledDice ?? [])]);
+    const damageExpr = damageValue !== null
+      ? isCritical
+        ? doubleDamageDice(String(damageValue))
+        : String(damageValue)
+      : null;
+    const damageResult = damageExpr ? rollExpression(damageExpr, 0, { luckModifier }) : null;
+    const rolledDice = [...(rollResult.rolledDice ?? []), ...(damageResult?.rolledDice ?? [])];
+    showDice3D(rolledDice);
 
     const hasValidDamage = Boolean(damageResult && !damageResult.missing && damageResult.valid);
     const formula = hasValidDamage
-      ? `${rollResult.formula} · dano ${damageResult!.formula}`
+      ? `${rollResult.formula}${isCritical ? " ⚡CRÍTICO!" : ""} · dano ${damageResult!.formula}`
       : rollResult.formula;
     const detail = hasValidDamage
-      ? `${rollResult.detail}; Dano: ${damageResult!.detail}`
+      ? `${rollResult.detail}; Dano${isCritical ? " CRÍTICO (dados dobrados)" : ""}: ${damageResult!.detail}`
       : rollResult.detail;
     const total = rollResult.total;
     const rollType = `${name} (Livre)`;
@@ -755,6 +768,8 @@ export function CharacterContent({
       formula,
       result: total,
       diceDetail: detail,
+      senderRole: "player",
+      rolledDice,
     });
 
     onActionResult?.({
@@ -790,6 +805,8 @@ export function CharacterContent({
             formula: rollResult.formula,
             result: rollResult.total,
             diceDetail: rollResult.detail,
+            senderRole: "player",
+            rolledDice: rollResult.rolledDice ?? [],
           });
         }
 
@@ -925,11 +942,21 @@ export function CharacterContent({
         formula: healed.formula,
         result: healAmount,
         diceDetail: `Curou +${healAmount} HP em ${target.name}`,
+        senderRole: "player",
+        rolledDice: healed.rolledDice ?? [],
       });
       onActionResult?.({ title: selectedActionItem.name, formula: healed.formula, result: healAmount, detail: `${healed.detail}; Curou +${healAmount} HP em ${target.name}` });
     } else {
       const attack = rollExpression((selectedActionItem.rollExpr || "1d20") as string, 1, { luckModifier });
-      const damage = rollExpression(selectedActionItem.damageExpr, 0, { luckModifier });
+      // Crítico no natural 20 (issue #90 follow-up): dados de dano dobrados.
+      const isCritical = (attack.rolledDice ?? []).some(
+        (die) => die.sides === 20 && die.value === 20
+      );
+      const critExpr = isCritical ? doubleDamageDice(selectedActionItem.damageExpr ?? undefined) : undefined;
+      let damage = rollExpression(critExpr ?? selectedActionItem.damageExpr, 0, { luckModifier });
+      if (isCritical && critExpr) {
+        damage = { ...damage, detail: `CRÍTICO! ${damage.detail} (dados dobrados)` };
+      }
       showDice3D([...(attack.rolledDice ?? []), ...(damage.rolledDice ?? [])]);
       const damageConfigured = !damage.missing && damage.valid;
       const damageNotice = damage.missing
@@ -981,6 +1008,8 @@ export function CharacterContent({
         formula: attack.formula,
         result: attack.total,
         diceDetail: `Ataque contra ${target.name}: ${attack.detail}; dano: ${damage.total}`,
+        senderRole: "player",
+        rolledDice: [...(attack.rolledDice ?? []), ...(damage.rolledDice ?? [])],
       });
     }
 

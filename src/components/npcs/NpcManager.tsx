@@ -20,6 +20,10 @@ type Pin = {
   contentId: string | null;
   label: string;
   rollExpression: string | null;
+  attackExpression: string | null;
+  damageExpression: string | null;
+  damageType: string | null;
+  criticalRange: number | null;
   manaCost: number | null;
   circle: number | null;
   createdAt: string;
@@ -31,6 +35,15 @@ type ContentOption = {
   rollExpression?: string | null;
   manaCost?: number | null;
   circle?: number | null;
+};
+
+type LibraryAttackOption = {
+  id: string;
+  name: string;
+  attackExpression?: string | null;
+  damageExpression?: string | null;
+  damageType?: string | null;
+  criticalRange?: number | null;
 };
 
 const PIN_TYPE_LABELS: Record<Pin["pinType"], string> = {
@@ -69,10 +82,16 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
     pinType: "attack" as Pin["pinType"],
     label: "",
     rollExpression: "",
+    attackExpression: "",
+    damageExpression: "",
+    damageType: "" as "" | "cortante" | "contundente" | "perfurante",
+    criticalRange: "" as string,
     contentId: "",
+    saveToLibrary: false,
   });
   const [skillOptions, setSkillOptions] = useState<ContentOption[]>([]);
   const [spellOptions, setSpellOptions] = useState<ContentOption[]>([]);
+  const [attackOptions, setAttackOptions] = useState<LibraryAttackOption[]>([]);
   const [isPinBusy, setIsPinBusy] = useState(false);
 
   const [editForm, setEditForm] = useState<{
@@ -419,19 +438,24 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
 
   const loadContentOptions = async () => {
     try {
-      const [skillsResponse, spellsResponse] = await Promise.all([
+      const [skillsResponse, spellsResponse, attacksResponse] = await Promise.all([
         fetch("/api/content/skills", { credentials: "include" }),
         fetch("/api/content/spells", { credentials: "include" }),
+        fetch("/api/content/attacks", { credentials: "include" }),
       ]);
 
       const skillsData = await skillsResponse.json();
       const spellsData = await spellsResponse.json();
+      const attacksData = await attacksResponse.json();
 
       if (skillsResponse.ok) {
         setSkillOptions(skillsData.data);
       }
       if (spellsResponse.ok) {
         setSpellOptions(spellsData.data);
+      }
+      if (attacksResponse.ok) {
+        setAttackOptions(attacksData.data);
       }
     } catch {
       setError("Erro ao carregar conteúdo disponível.");
@@ -447,7 +471,17 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
 
     setExpandedNpcId(npcId);
     setEditForm(null);
-    setPinForm({ pinType: "attack", label: "", rollExpression: "", contentId: "" });
+    setPinForm({
+      pinType: "attack",
+      label: "",
+      rollExpression: "",
+      attackExpression: "",
+      damageExpression: "",
+      damageType: "",
+      criticalRange: "",
+      contentId: "",
+      saveToLibrary: false,
+    });
     await Promise.all([loadPins(npcId), loadContentOptions()]);
   };
 
@@ -462,8 +496,28 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
 
       if (pinForm.pinType === "attack") {
         payload.label = pinForm.label;
+        // Atalho vinculado a um ataque da Biblioteca Global (issue #90)
+        if (pinForm.contentId) {
+          payload.contentId = pinForm.contentId;
+        }
         if (pinForm.rollExpression) {
           payload.rollExpression = pinForm.rollExpression;
+        }
+        // Dano configurado (issue #90)
+        if (pinForm.attackExpression) {
+          payload.attackExpression = pinForm.attackExpression;
+        }
+        if (pinForm.damageExpression) {
+          payload.damageExpression = pinForm.damageExpression;
+        }
+        if (pinForm.damageType) {
+          payload.damageType = pinForm.damageType;
+        }
+        if (pinForm.criticalRange) {
+          const crit = Number.parseInt(pinForm.criticalRange, 10);
+          if (Number.isFinite(crit)) {
+            payload.criticalRange = crit;
+          }
         }
       } else {
         if (!pinForm.contentId) {
@@ -472,6 +526,35 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
         }
         payload.contentId = pinForm.contentId;
         payload.label = "placeholder";
+      }
+
+      // Salvar ataque inline na Biblioteca Global antes de vincular o pin
+      if (pinForm.pinType === "attack" && !pinForm.contentId && pinForm.saveToLibrary) {
+        const requiredOk = pinForm.label && pinForm.attackExpression && pinForm.damageExpression;
+        if (!requiredOk) {
+          setError("Para salvar na Biblioteca, informe Nome, Ataque e Dano.");
+          return;
+        }
+        const libResponse = await fetch("/api/content/attacks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            name: pinForm.label,
+            attackExpression: pinForm.attackExpression,
+            damageExpression: pinForm.damageExpression,
+            ...(pinForm.damageType ? { damageType: pinForm.damageType } : {}),
+            ...(pinForm.criticalRange
+              ? { criticalRange: Number.parseInt(pinForm.criticalRange, 10) }
+              : {}),
+          }),
+        });
+        const libData = await libResponse.json();
+        if (!libResponse.ok) {
+          setError(libData.error || "Erro ao salvar ataque na Biblioteca");
+          return;
+        }
+        payload.contentId = libData.data.id;
       }
 
       const response = await fetch(`/api/worlds/${worldId}/npcs/${npcId}/pins`, {
@@ -488,7 +571,17 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
         return;
       }
 
-      setPinForm({ pinType: "attack", label: "", rollExpression: "", contentId: "" });
+      setPinForm({
+        pinType: "attack",
+        label: "",
+        rollExpression: "",
+        attackExpression: "",
+        damageExpression: "",
+        damageType: "",
+        criticalRange: "",
+        contentId: "",
+        saveToLibrary: false,
+      });
       await loadPins(npcId);
     } catch {
       setError("Erro de conexão. Tente novamente.");
@@ -1067,7 +1160,12 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                                   {PIN_TYPE_LABELS[pin.pinType]}: {pin.label}
                                 </p>
                                 <p className="text-xs text-gray-400">
-                                  {pin.rollExpression && `Rolagem: ${pin.rollExpression}`}
+                                  {pin.attackExpression && `Ataque: ${pin.attackExpression}`}
+                                  {pin.damageExpression && ` · Dano: ${pin.damageExpression}`}
+                                  {pin.damageType && ` (${pin.damageType})`}
+                                  {pin.criticalRange != null && ` · Crítico ${pin.criticalRange}`}
+                                  {!pin.attackExpression && pin.rollExpression &&
+                                    `Rolagem: ${pin.rollExpression}`}
                                   {pin.manaCost !== null && pin.manaCost !== undefined && (
                                     <span> · {pin.manaCost} mana</span>
                                   )}
@@ -1112,6 +1210,40 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
 
                         {pinForm.pinType === "attack" ? (
                           <>
+                            <select
+                              value={pinForm.contentId}
+                              onChange={(e) => {
+                                const selected = attackOptions.find((o) => o.id === e.target.value);
+                                setPinForm((prev) => ({
+                                  ...prev,
+                                  contentId: e.target.value,
+                                  // Pré-preenche com os dados do ataque da biblioteca
+                                  ...(selected
+                                    ? {
+                                        label: prev.label || selected.name,
+                                        attackExpression: selected.attackExpression ?? "",
+                                        damageExpression: selected.damageExpression ?? "",
+                                        damageType: (selected.damageType as typeof prev.damageType) ?? "",
+                                        criticalRange: selected.criticalRange
+                                          ? String(selected.criticalRange)
+                                          : "",
+                                        saveToLibrary: false,
+                                      }
+                                    : {}),
+                                }));
+                              }}
+                              disabled={isPinBusy}
+                              aria-label="Ataque da Biblioteca"
+                              title="Vincular a um ataque da Biblioteca Global (opcional)"
+                              className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                            >
+                              <option value="">Ataque da Biblioteca (opcional)</option>
+                              {attackOptions.map((option) => (
+                                <option key={option.id} value={option.id}>
+                                  {option.name} — {option.attackExpression ?? "?"} → {option.damageExpression ?? "?"}
+                                </option>
+                              ))}
+                            </select>
                             <input
                               type="text"
                               placeholder="Nome (ex.: Mordida)"
@@ -1125,7 +1257,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                             />
                             <input
                               type="text"
-                              placeholder="Rolagem (ex.: 1d8+3)"
+                              placeholder="Rolagem legada (opcional, ex.: 1d8+3)"
                               value={pinForm.rollExpression}
                               onChange={(e) =>
                                 setPinForm((prev) => ({
@@ -1136,6 +1268,83 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                               disabled={isPinBusy}
                               className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                             />
+                            <input
+                              type="text"
+                              placeholder="Ataque (ex.: 1d20+9)"
+                              value={pinForm.attackExpression}
+                              onChange={(e) =>
+                                setPinForm((prev) => ({
+                                  ...prev,
+                                  attackExpression: e.target.value,
+                                }))
+                              }
+                              disabled={isPinBusy}
+                              className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Dano (ex.: 3d6+5)"
+                              value={pinForm.damageExpression}
+                              onChange={(e) =>
+                                setPinForm((prev) => ({
+                                  ...prev,
+                                  damageExpression: e.target.value,
+                                }))
+                              }
+                              disabled={isPinBusy}
+                              className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                            />
+                            <select
+                              value={pinForm.damageType}
+                              onChange={(e) =>
+                                setPinForm((prev) => ({
+                                  ...prev,
+                                  damageType: e.target.value as
+                                    | ""
+                                    | "cortante"
+                                    | "contundente"
+                                    | "perfurante",
+                                }))
+                              }
+                              disabled={isPinBusy}
+                              aria-label="Tipo de dano"
+                              className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                            >
+                              <option value="">Tipo de dano</option>
+                              <option value="cortante">Cortante</option>
+                              <option value="contundente">Contundente</option>
+                              <option value="perfurante">Perfurante</option>
+                            </select>
+                            <input
+                              type="number"
+                              min={1}
+                              max={20}
+                              placeholder="Crítico (ex.: 20)"
+                              value={pinForm.criticalRange}
+                              onChange={(e) =>
+                                setPinForm((prev) => ({
+                                  ...prev,
+                                  criticalRange: e.target.value,
+                                }))
+                              }
+                              disabled={isPinBusy}
+                              className="w-32 rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                            />
+                            <label className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={pinForm.saveToLibrary}
+                                onChange={(e) =>
+                                  setPinForm((prev) => ({
+                                    ...prev,
+                                    saveToLibrary: e.target.checked,
+                                  }))
+                                }
+                                disabled={isPinBusy || Boolean(pinForm.contentId)}
+                                className="h-4 w-4 rounded border-gray-700 bg-gray-900 text-purple-600 focus:ring-2 focus:ring-purple-600 cursor-pointer"
+                              />
+                              Salvar na Biblioteca
+                            </label>
                           </>
                         ) : (
                           <select

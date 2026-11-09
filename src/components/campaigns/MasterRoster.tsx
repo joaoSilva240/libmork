@@ -8,13 +8,12 @@ import type { RosterActor, RosterPlayer } from "@/components/campaigns/ActorOver
 import { InfiniteCanvas } from "@/components/campaigns/InfiniteCanvas";
 import { CharacterCarousel } from "@/components/campaigns/CharacterCarousel";
 import { EncounterModal } from "@/components/campaigns/EncounterModal";
-import { useSocket, type RollDataPayload } from "@/context/SocketContext";
+import { useSocket } from "@/context/SocketContext";
 import type { CombatSessionState } from "@/lib/engine";
 import { advanceCombatTurn, spendCombatActions } from "@/lib/engine";
 import { Spinner } from "@/components/ui";
 import { ResizeHandle } from "@/components/ui";
 import { useResizableLayout } from "@/hooks/useResizableLayout";
-import { WorldSelectorModal } from "@/components/campaigns/WorldSelectorModal";
 import { ExternalLink, Minimize2 } from "lucide-react";
 import { MissingHabitantSheet } from "@/components/systems/missing/MissingHabitantSheet";
 import type { MissingHabitant, EquipmentStatus } from "@/lib/systems/missing/types";
@@ -37,32 +36,28 @@ type RosterData = {
 type MasterRosterProps = {
   campaignId: string;
   selectedWorldId: string;
-  onWorldSelected?: (worldId: string) => void;
   isPoppedOut?: boolean;
   onTogglePopOut?: () => void;
   rulesEngine?: string;
   showRoster?: boolean;
   showCanvas?: boolean;
   showMap?: boolean;
-  showDiceRolls?: boolean;
   onResetConfig?: () => void;
 };
 
 export function MasterRoster({
   campaignId,
   selectedWorldId,
-  onWorldSelected,
   isPoppedOut = false,
   onTogglePopOut,
   rulesEngine,
   showRoster = true,
   showCanvas = true,
   showMap = true,
-  showDiceRolls = true,
   onResetConfig,
 }: MasterRosterProps) {
   const isMissing = rulesEngine === "missing_zero";
-  const { isConnected, presenceList, joinCampaign, subscribeActorStatus, subscribeDiceRoll, subscribeCombatState } = useSocket();
+  const { isConnected, presenceList, joinCampaign, subscribeActorStatus, subscribeCombatState } = useSocket();
   const [roster, setRoster] = useState<RosterData>({ players: [], npcs: [] });
   const [worlds, setWorlds] = useState<World[]>([]);
   const [activeEncounter, setActiveEncounter] = useState<Encounter | null>(null);
@@ -73,11 +68,7 @@ export function MasterRoster({
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<RosterActor | null>(null);
   const [selectedMissingHabitant, setSelectedMissingHabitant] = useState<MissingHabitant | null>(null);
-  const [recentRolls, setRecentRolls] = useState<RollDataPayload[]>([]);
-  const [showRollFeed, setShowRollFeed] = useState(false);
   const [activeCenterView, setActiveCenterView] = useState<"canvas" | "map">("canvas");
-  const [showWorldSelector, setShowWorldSelector] = useState(false);
-  const [campaignWorldIds, setCampaignWorldIds] = useState<Set<string>>(new Set());
   const [isDragOver, setIsDragOver] = useState(false);
 
   useEffect(() => {
@@ -232,15 +223,11 @@ export function MasterRoster({
       void handleRosterChanged();
     });
 
-    const unsubscribeRoll = subscribeDiceRoll((roll) => {
-      setRecentRolls((prev) => [roll, ...prev.slice(0, 49)]);
-    });
-
     return () => {
       unsubscribeStatus();
-      unsubscribeRoll();
     };
-  }, [campaignId, joinCampaign, subscribeActorStatus, subscribeDiceRoll, handleRosterChanged]);
+  }, [campaignId, joinCampaign, subscribeActorStatus, handleRosterChanged]);
+
   const checkActiveEncounter = useCallback(async () => {
     if (!selectedWorldId) {
       setActiveEncounter(null);
@@ -293,12 +280,6 @@ export function MasterRoster({
 
         const combinedWorlds = Array.from(allWorldsMap.values());
         setWorlds(combinedWorlds);
-
-        // Atualizar IDs dos mundos da campanha
-        if (campaignWorldsRes.ok && campaignWorldsData.data) {
-          const campWorlds = campaignWorldsData.data as World[];
-          setCampaignWorldIds(new Set(campWorlds.map((w) => w.id)));
-        }
 
       } catch {
         if (!cancelled) {
@@ -597,28 +578,6 @@ export function MasterRoster({
             {isMissing ? "Dossiê de Campo" : "Mesa"}{selectedWorld ? ` — ${selectedWorld.name}` : ""}
           </h2>
 
-          {/* Botão de Adicionar Mundo - Substitui o dropdown */}
-          <button
-            onClick={() => setShowWorldSelector(true)}
-            className="flex shrink-0 items-center whitespace-nowrap gap-1 rounded-lg border border-accent/50 bg-accent/20 px-2 py-1 text-xs font-semibold text-accent-hover hover:bg-accent/30 transition-colors"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-3.5 w-3.5"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="16" />
-              <line x1="8" y1="12" x2="16" y2="12" />
-            </svg>
-            <span>Adicionar Mundo</span>
-          </button>
-
           {/* Alternador de Vista Central: Canva / Mapa */}
           {(showCanvas || showMap) && (
             <div className="flex shrink-0 items-center rounded-lg border border-gray-700 bg-gray-950 p-0.5 text-xs">
@@ -712,59 +671,11 @@ export function MasterRoster({
             ))}
           </div>
 
-          {showDiceRolls && (
-            <button
-              onClick={() => setShowRollFeed(!showRollFeed)}
-              className="flex shrink-0 items-center whitespace-nowrap gap-1 rounded-lg border border-accent/50 bg-accent/20 px-2 py-0.5 text-xs font-semibold text-accent-hover hover:bg-accent/30 transition-colors"
-            >
-              Rolagens {recentRolls.length > 0 && `(${recentRolls.length})`}
-            </button>
-          )}
-
           <span className="text-[11px] text-secondary-muted">
             {roster.players.length} J · {visibleActors.filter((actor) => actor.kind === "npc").length} N
           </span>
         </div>
       </div>
-
-      {/* Feed de Rolagens de Dados em Tempo Real (RF-041, RF-046) */}
-      {showDiceRolls && showRollFeed && (
-        <div className="mb-1.5 max-h-36 overflow-y-auto rounded-lg border border-accent/40 bg-accent/10 p-2 text-xs text-secondary-pure shadow-inner shrink-0">
-          <div className="mb-1 flex items-center justify-between border-b border-accent/30 pb-1">
-            <span className="font-bold text-accent-hover">Feed de Rolagens ao Vivo</span>
-            <button
-              onClick={() => setRecentRolls([])}
-              className="text-[10px] text-accent-hover hover:underline"
-            >
-              Limpar
-            </button>
-          </div>
-          {recentRolls.length === 0 ? (
-            <p className="py-1 text-center text-gray-400 italic text-[11px]">Nenhuma rolagem realizada na sessão ainda.</p>
-          ) : (
-            <div className="space-y-1">
-              {recentRolls.map((roll, idx) => (
-                <div key={idx} className="flex items-center justify-between rounded bg-gray-900/70 p-1 border border-purple-900/30 text-[11px]">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-bold text-white">{roll.actorName}</span>
-                    <span className="rounded bg-purple-900/60 px-1 py-0.2 text-[9px] uppercase font-semibold text-purple-300">
-                      {roll.rollType}
-                    </span>
-                    <span className="text-gray-300">{roll.formula}</span>
-                    {roll.isManual && <span className="text-[9px] text-amber-400 font-semibold">[Físico]</span>}
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-gray-400">{roll.diceDetail}</span>
-                    <span className="rounded bg-emerald-950 px-1.5 py-0.2 text-xs font-black text-emerald-400 border border-emerald-800">
-                      {roll.result}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
 
       {error && (
         <div className="mb-1.5 rounded-lg border border-red-800 bg-red-900/30 p-1.5 text-xs text-red-300 shrink-0">
@@ -1017,17 +928,6 @@ export function MasterRoster({
           onClose={() => setShowEncounterModal(false)}
           onEncounterStarted={() => {
             void checkActiveEncounter();
-          }}
-        />
-      )}
-
-      {showWorldSelector && (
-        <WorldSelectorModal
-          campaignId={campaignId}
-          campaignWorldIds={campaignWorldIds}
-          onClose={() => setShowWorldSelector(false)}
-          onWorldSelected={(worldId) => {
-            onWorldSelected?.(worldId);
           }}
         />
       )}

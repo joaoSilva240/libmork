@@ -10,7 +10,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { campaigns, characters, characterCampaigns } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
-import { contentTypeSchema } from "@/lib/validators/content";
+import { characterContentTypeSchema } from "@/lib/validators/content";
 import {
   getContentTable,
   getContentCampaignColumn,
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     }
 
     const { id, type } = await params;
-    const parsed = contentTypeSchema.safeParse(type);
+    const parsed = characterContentTypeSchema.safeParse(type);
 
     if (!parsed.success) {
       return NextResponse.json(
@@ -177,7 +177,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     }
 
     const { id, type } = await params;
-    const parsed = contentTypeSchema.safeParse(type);
+    const parsed = characterContentTypeSchema.safeParse(type);
 
     if (!parsed.success) {
       return NextResponse.json(

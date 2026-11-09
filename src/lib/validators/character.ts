@@ -97,6 +97,7 @@ export type HeartAwakeningInput = z.infer<typeof heartAwakeningSchema>;
  */
 export const updateCharacterSchema = z.object({
   name: z.string().min(2).max(100).optional(),
+  description: z.string().max(2000).optional().nullable(),
   classId: z.string().uuid().optional().nullable(),
   raceId: z.string().uuid().optional().nullable(),
   activeHeritages: z.array(z.string()).max(2, "Máximo de 2 heranças ativas").optional(),

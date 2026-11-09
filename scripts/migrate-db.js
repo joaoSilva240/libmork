@@ -252,6 +252,68 @@ async function runMigrations() {
     `);
     console.log('✓ MISSING tables, indexes and nullable campaign_id ensured.');
 
+    console.log('\n--- 12. Applying campaign_assets and active_asset_id migration ---');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "campaign_assets" (
+        "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+        "campaign_id" uuid NOT NULL REFERENCES "campaigns"("id") ON DELETE CASCADE,
+        "name" varchar(200) NOT NULL,
+        "description" text,
+        "image_url" varchar(500) NOT NULL,
+        "category" varchar(50) DEFAULT 'handout' NOT NULL,
+        "position" integer DEFAULT 0 NOT NULL,
+        "created_at" timestamp DEFAULT now() NOT NULL,
+        "updated_at" timestamp DEFAULT now() NOT NULL
+      );
+
+      CREATE INDEX IF NOT EXISTS "idx_campaign_assets_campaign" ON "campaign_assets" ("campaign_id");
+
+      ALTER TABLE "campaigns" ADD COLUMN IF NOT EXISTS "active_asset_id" uuid;
+
+      DO $$ BEGIN
+        ALTER TABLE "campaigns"
+          ADD CONSTRAINT "campaigns_active_asset_id_campaign_assets_id_fk"
+          FOREIGN KEY ("active_asset_id") REFERENCES "public"."campaign_assets"("id")
+          ON DELETE SET NULL ON UPDATE NO ACTION;
+      EXCEPTION
+        WHEN duplicate_object THEN null;
+      END $$;
+    `);
+    console.log('✓ Table campaign_assets and campaigns.active_asset_id ensured.');
+
+    console.log('\n--- 13. Applying campaign dice3d toggles migration (Issue #74) ---');
+    await client.query(`
+      ALTER TABLE "campaigns" ADD COLUMN IF NOT EXISTS "dice3d_players_enabled" boolean DEFAULT true NOT NULL;
+      ALTER TABLE "campaigns" ADD COLUMN IF NOT EXISTS "dice3d_master_enabled" boolean DEFAULT true NOT NULL;
+    `);
+    console.log('✓ Columns campaigns.dice3d_players_enabled and campaigns.dice3d_master_enabled ensured.');
+
+    console.log('\n--- 14. Applying npc pin damage migration (Issue #90) ---');
+    await client.query(`
+      ALTER TABLE "npc_pins" ADD COLUMN IF NOT EXISTS "attack_expression" varchar(200);
+      ALTER TABLE "npc_pins" ADD COLUMN IF NOT EXISTS "damage_expression" varchar(200);
+      ALTER TABLE "npc_pins" ADD COLUMN IF NOT EXISTS "damage_type" varchar(30);
+      ALTER TABLE "npc_pins" ADD COLUMN IF NOT EXISTS "critical_range" integer;
+    `);
+    console.log('✓ Columns npc_pins.attack_expression/damage_expression/damage_type/critical_range ensured.');
+
+    console.log('\n--- 15. Applying global attacks library migration (Issue #90 follow-up) ---');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "attacks" (
+        "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+        "campaign_id" uuid REFERENCES "public"."campaigns"("id") ON DELETE cascade,
+        "name" varchar(100) NOT NULL,
+        "description" text,
+        "attack_expression" varchar(200),
+        "damage_expression" varchar(200),
+        "damage_type" varchar(30),
+        "critical_range" integer,
+        "created_at" timestamp DEFAULT now() NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS "idx_attack_campaign" ON "attacks" USING btree ("campaign_id");
+    `);
+    console.log('✓ Table attacks (biblioteca global de ataques) ensured.');
+
     console.log('\nAll migrations executed successfully!');
   } catch (error) {
     console.error('Migration error:', error);

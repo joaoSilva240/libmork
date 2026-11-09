@@ -2,7 +2,8 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { io, Socket } from "socket.io-client";
-import type { CampaignLog } from "@/types";
+import { showDice3D, type Dice3DDie } from "@/lib/dice3d";
+import type { CampaignLog, CampaignAsset } from "@/types";
 import type {
   AudioTrackAddPayload,
   AudioTrackPlayPayload,
@@ -55,6 +56,9 @@ export interface RollDataPayload {
   details?: string;
   actionId?: string;
   timestamp?: string;
+  senderRole?: "master" | "player";
+  senderSocketId?: string;
+  rolledDice?: Dice3DDie[];
 }
 
 import type { CombatSessionState, PendingDefenseReaction } from "@/lib/engine";
@@ -206,6 +210,48 @@ interface SocketContextValue {
     callback: (payload: AudioTrackPlaylistPayload) => void,
   ) => () => void;
   subscribeAudioTrackState: (callback: (payload: AudioTrackStatePayload) => void) => () => void;
+
+  // Assets (Issue #61)
+  activeAsset: CampaignAsset | null;
+  activateCampaignAsset: (payload: { campaignId: string; asset: CampaignAsset }) => void;
+  deactivateCampaignAsset: (payload: { campaignId: string }) => void;
+  subscribeCampaignAssetActivated: (handler: (asset: CampaignAsset) => void) => () => void;
+  subscribeCampaignAssetDeactivated: (handler: () => void) => () => void;
+  subscribeCampaignAssetState: (handler: (asset: CampaignAsset | null) => void) => () => void;
+
+  // Configurações de Dados 3D (Issue #74)
+  setCampaignDice3DSettings: (
+    campaignId: string,
+    settings: { dice3dPlayersEnabled: boolean; dice3dMasterEnabled: boolean },
+  ) => void;
+  broadcastCampaignDice3DSettings: (payload: {
+    campaignId: string;
+    dice3dPlayersEnabled: boolean;
+    dice3dMasterEnabled: boolean;
+  }) => void;
+
+  // Chat de Campanha (Issue #62)
+  joinChatGroup: (groupId: string) => void;
+  leaveChatGroup: (groupId: string) => void;
+  sendChatMessage: (payload: Record<string, unknown>) => void;
+  sendChatPollVote: (payload: Record<string, unknown>) => void;
+  sendChatPollClose: (payload: Record<string, unknown>) => void;
+  subscribeChatMessage: (callback: (payload: Record<string, unknown>) => void) => () => void;
+  subscribeChatPollUpdated: (callback: (payload: Record<string, unknown>) => void) => () => void;
+  subscribeChatPollClosed: (callback: (payload: Record<string, unknown>) => void) => () => void;
+  sendChatMemberUpdated: (payload: Record<string, unknown>) => void;
+  sendChatMemberRemoved: (payload: Record<string, unknown>) => void;
+  subscribeChatMemberUpdated: (callback: (payload: Record<string, unknown>) => void) => () => void;
+  subscribeChatMemberRemoved: (callback: (payload: Record<string, unknown>) => void) => () => void;
+  // Sessões Agendadas (Issue #63)
+  sendSessionPublish: (payload: Record<string, unknown>) => void;
+  sendSessionApply: (payload: Record<string, unknown>) => void;
+  sendSessionConfirm: (payload: Record<string, unknown>) => void;
+  sendSessionCancel: (payload: Record<string, unknown>) => void;
+  subscribeSessionPublished: (callback: (payload: Record<string, unknown>) => void) => () => void;
+  subscribeSessionApplied: (callback: (payload: Record<string, unknown>) => void) => () => void;
+  subscribeSessionConfirmed: (callback: (payload: Record<string, unknown>) => void) => () => void;
+  subscribeSessionCancelled: (callback: (payload: Record<string, unknown>) => void) => () => void;
 }
 
 const SocketContext = createContext<SocketContextValue | undefined>(undefined);
@@ -214,6 +260,11 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [presenceList, setPresenceList] = useState<PresenceUser[]>([]);
+  const [activeAsset, setActiveAsset] = useState<CampaignAsset | null>(null);
+  const currentRoleRef = useRef<"master" | "player">("player");
+  const campaignDice3DRef = useRef<
+    Map<string, { dice3dPlayersEnabled: boolean; dice3dMasterEnabled: boolean }>
+  >(new Map());
   const socketRef = useRef<Socket | null>(null);
   const statusSubscribersRef = useRef<Set<(payload: ActorStatusPayload) => void>>(new Set());
   const rollSubscribersRef = useRef<Set<(roll: RollDataPayload) => void>>(new Set());
@@ -258,6 +309,9 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   const audioTrackStateSubscribersRef = useRef<Set<(payload: AudioTrackStatePayload) => void>>(
     new Set(),
   );
+  const assetActivatedSubscribersRef = useRef<Set<(asset: CampaignAsset) => void>>(new Set());
+  const assetDeactivatedSubscribersRef = useRef<Set<() => void>>(new Set());
+  const assetStateSubscribersRef = useRef<Set<(asset: CampaignAsset | null) => void>>(new Set());
 
   useEffect(() => {
     // Inicializa a conexão Socket.IO na mesma origem
@@ -297,7 +351,41 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
     socketInstance.on("dice-rolled", (rollData: RollDataPayload) => {
       rollSubscribersRef.current.forEach((handler) => handler(rollData));
+
+      // Issue #74: Remote 3D Dice rendering
+      if (
+        rollData.rolledDice &&
+        rollData.rolledDice.length > 0 &&
+        rollData.senderSocketId !== socketInstance.id
+      ) {
+        const settings = campaignDice3DRef.current.get(rollData.campaignId) ?? {
+          dice3dPlayersEnabled: true,
+          dice3dMasterEnabled: true,
+        };
+        const myRole = currentRoleRef.current;
+        const senderRole = rollData.senderRole ?? "player";
+
+        if (myRole === "master" && senderRole === "player" && settings.dice3dPlayersEnabled) {
+          showDice3D(rollData.rolledDice);
+        } else if (myRole === "player" && senderRole === "master" && settings.dice3dMasterEnabled) {
+          showDice3D(rollData.rolledDice);
+        }
+      }
     });
+
+    socketInstance.on(
+      "campaign:dice3d-settings-updated",
+      (payload: {
+        campaignId: string;
+        dice3dPlayersEnabled: boolean;
+        dice3dMasterEnabled: boolean;
+      }) => {
+        campaignDice3DRef.current.set(payload.campaignId, {
+          dice3dPlayersEnabled: payload.dice3dPlayersEnabled,
+          dice3dMasterEnabled: payload.dice3dMasterEnabled,
+        });
+      },
+    );
 
     socketInstance.on("combat-state-updated", (state: CombatSessionState) => {
       combatSubscribersRef.current.forEach((handler) => handler(state));
@@ -362,6 +450,28 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       audioTrackStateSubscribersRef.current.forEach((handler) => handler(payload));
     });
 
+    socketInstance.on(
+      "campaign:asset-activated",
+      (payload: { campaignId: string; asset: CampaignAsset }) => {
+        setActiveAsset(payload.asset);
+        assetActivatedSubscribersRef.current.forEach((handler) => handler(payload.asset));
+      },
+    );
+
+    socketInstance.on("campaign:asset-deactivated", (payload: { campaignId: string }) => {
+      setActiveAsset(null);
+      assetDeactivatedSubscribersRef.current.forEach((handler) => handler());
+    });
+
+    socketInstance.on(
+      "campaign:asset-state",
+      (payload: { campaignId: string; asset: CampaignAsset | null }) => {
+        const asset = payload.asset || null;
+        setActiveAsset(asset);
+        assetStateSubscribersRef.current.forEach((handler) => handler(asset));
+      },
+    );
+
     return () => {
       socketInstance.disconnect();
       socketRef.current = null;
@@ -375,6 +485,9 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       actorId?: string;
       role?: "master" | "player";
     }) => {
+      if (data.role) {
+        currentRoleRef.current = data.role;
+      }
       const currentSocket = socketRef.current || socket;
       if (currentSocket) {
         currentSocket.emit("join-campaign", data);
@@ -385,6 +498,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
   const leaveCampaign = useCallback(
     (campaignId: string) => {
+      setActiveAsset(null);
       const currentSocket = socketRef.current || socket;
       if (currentSocket) {
         currentSocket.emit("leave-campaign", { campaignId });
@@ -409,8 +523,37 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       if (currentSocket) {
         currentSocket.emit("roll-dice", {
           ...rollPayload,
+          senderRole: rollPayload.senderRole ?? currentRoleRef.current,
           timestamp: rollPayload.timestamp || new Date().toISOString(),
         });
+      }
+    },
+    [socket],
+  );
+
+  const setCampaignDice3DSettings = useCallback(
+    (
+      campaignId: string,
+      settings: { dice3dPlayersEnabled: boolean; dice3dMasterEnabled: boolean },
+    ) => {
+      campaignDice3DRef.current.set(campaignId, settings);
+    },
+    [],
+  );
+
+  const broadcastCampaignDice3DSettings = useCallback(
+    (payload: {
+      campaignId: string;
+      dice3dPlayersEnabled: boolean;
+      dice3dMasterEnabled: boolean;
+    }) => {
+      campaignDice3DRef.current.set(payload.campaignId, {
+        dice3dPlayersEnabled: payload.dice3dPlayersEnabled,
+        dice3dMasterEnabled: payload.dice3dMasterEnabled,
+      });
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("campaign:dice3d-settings-update", payload);
       }
     },
     [socket],
@@ -903,6 +1046,310 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     [socket],
   );
 
+  // ============================= Assets (Issue #61) =============================
+
+  const activateCampaignAsset = useCallback(
+    (payload: { campaignId: string; asset: CampaignAsset }) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("campaign:asset-activate", payload);
+      }
+    },
+    [socket],
+  );
+
+  const deactivateCampaignAsset = useCallback(
+    (payload: { campaignId: string }) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("campaign:asset-deactivate", payload);
+      }
+    },
+    [socket],
+  );
+
+  const subscribeCampaignAssetActivated = useCallback((handler: (asset: CampaignAsset) => void) => {
+    assetActivatedSubscribersRef.current.add(handler);
+    return () => {
+      assetActivatedSubscribersRef.current.delete(handler);
+    };
+  }, []);
+
+  const subscribeCampaignAssetDeactivated = useCallback((handler: () => void) => {
+    assetDeactivatedSubscribersRef.current.add(handler);
+    return () => {
+      assetDeactivatedSubscribersRef.current.delete(handler);
+    };
+  }, []);
+
+  const subscribeCampaignAssetState = useCallback(
+    (handler: (asset: CampaignAsset | null) => void) => {
+      assetStateSubscribersRef.current.add(handler);
+      return () => {
+        assetStateSubscribersRef.current.delete(handler);
+      };
+    },
+    [],
+  );
+
+  // ============================= Chat (Issue #62) =============================
+
+  const joinChatGroup = useCallback(
+    (groupId: string) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("chat:join-group", { groupId });
+      }
+    },
+    [socket],
+  );
+
+  const leaveChatGroup = useCallback(
+    (groupId: string) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("chat:leave-group", { groupId });
+      }
+    },
+    [socket],
+  );
+
+  const sendChatMessage = useCallback(
+    (payload: Record<string, unknown>) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("chat:send-message", payload);
+      }
+    },
+    [socket],
+  );
+
+  const sendChatPollVote = useCallback(
+    (payload: Record<string, unknown>) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("chat:poll-vote", payload);
+      }
+    },
+    [socket],
+  );
+
+  const sendChatPollClose = useCallback(
+    (payload: Record<string, unknown>) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("chat:poll-close", payload);
+      }
+    },
+    [socket],
+  );
+
+  const subscribeChatMessage = useCallback(
+    (callback: (payload: Record<string, unknown>) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on("chat:new-message", callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off("chat:new-message", callback);
+        }
+      };
+    },
+    [socket],
+  );
+
+  const subscribeChatPollUpdated = useCallback(
+    (callback: (payload: Record<string, unknown>) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on("chat:poll-updated", callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off("chat:poll-updated", callback);
+        }
+      };
+    },
+    [socket],
+  );
+
+  const subscribeChatPollClosed = useCallback(
+    (callback: (payload: Record<string, unknown>) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on("chat:poll-closed", callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off("chat:poll-closed", callback);
+        }
+      };
+    },
+    [socket],
+  );
+
+  const sendChatMemberUpdated = useCallback(
+    (payload: Record<string, unknown>) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("chat:member-updated", payload);
+      }
+    },
+    [socket],
+  );
+
+  const sendChatMemberRemoved = useCallback(
+    (payload: Record<string, unknown>) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("chat:member-removed", payload);
+      }
+    },
+    [socket],
+  );
+
+  const subscribeChatMemberUpdated = useCallback(
+    (callback: (payload: Record<string, unknown>) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on("chat:member-updated", callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off("chat:member-updated", callback);
+        }
+      };
+    },
+    [socket],
+  );
+
+  const subscribeChatMemberRemoved = useCallback(
+    (callback: (payload: Record<string, unknown>) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on("chat:member-removed", callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off("chat:member-removed", callback);
+        }
+      };
+    },
+    [socket],
+  );
+
+  // ============================= Sessões (Issue #63) =============================
+
+  const sendSessionPublish = useCallback(
+    (payload: Record<string, unknown>) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("session:publish", payload);
+      }
+    },
+    [socket],
+  );
+
+  const sendSessionApply = useCallback(
+    (payload: Record<string, unknown>) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("session:apply", payload);
+      }
+    },
+    [socket],
+  );
+
+  const sendSessionConfirm = useCallback(
+    (payload: Record<string, unknown>) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("session:confirm", payload);
+      }
+    },
+    [socket],
+  );
+
+  const sendSessionCancel = useCallback(
+    (payload: Record<string, unknown>) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("session:cancel", payload);
+      }
+    },
+    [socket],
+  );
+
+  const subscribeSessionPublished = useCallback(
+    (callback: (payload: Record<string, unknown>) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on("session:published", callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off("session:published", callback);
+        }
+      };
+    },
+    [socket],
+  );
+
+  const subscribeSessionApplied = useCallback(
+    (callback: (payload: Record<string, unknown>) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on("session:applied", callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off("session:applied", callback);
+        }
+      };
+    },
+    [socket],
+  );
+
+  const subscribeSessionConfirmed = useCallback(
+    (callback: (payload: Record<string, unknown>) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on("session:confirmed", callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off("session:confirmed", callback);
+        }
+      };
+    },
+    [socket],
+  );
+
+  const subscribeSessionCancelled = useCallback(
+    (callback: (payload: Record<string, unknown>) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on("session:cancelled", callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off("session:cancelled", callback);
+        }
+      };
+    },
+    [socket],
+  );
+
   return (
     <SocketContext.Provider
       value={{
@@ -955,6 +1402,34 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         subscribeAudioTrackRemove,
         subscribeAudioTrackPlaylist,
         subscribeAudioTrackState,
+        activeAsset,
+        activateCampaignAsset,
+        deactivateCampaignAsset,
+        subscribeCampaignAssetActivated,
+        subscribeCampaignAssetDeactivated,
+        subscribeCampaignAssetState,
+        setCampaignDice3DSettings,
+        broadcastCampaignDice3DSettings,
+        joinChatGroup,
+        leaveChatGroup,
+        sendChatMessage,
+        sendChatPollVote,
+        sendChatPollClose,
+        subscribeChatMessage,
+        subscribeChatPollUpdated,
+        subscribeChatPollClosed,
+        sendChatMemberUpdated,
+        sendChatMemberRemoved,
+        subscribeChatMemberUpdated,
+        subscribeChatMemberRemoved,
+        sendSessionPublish,
+        sendSessionApply,
+        sendSessionConfirm,
+        sendSessionCancel,
+        subscribeSessionPublished,
+        subscribeSessionApplied,
+        subscribeSessionConfirmed,
+        subscribeSessionCancelled,
       }}
     >
       {children}

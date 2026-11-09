@@ -21,15 +21,14 @@ describe("ThemeConfigPanel (src/components/theme/ThemeConfigPanel.tsx)", () => {
     );
   };
 
-  it("renders light/dark mode switcher, accessibility banner, and preset options", () => {
+  it("renders side-by-side subtabs and preset options without luminosity box and accessibility banner", () => {
     renderWithProvider();
 
-    expect(screen.getByText("Modo de Luminosidade")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /🌙 Escuro/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /☀️ Claro/ })).toBeInTheDocument();
-    expect(
-      screen.getByText(/Auditoria de Acessibilidade — Padrão WCAG 2\.1 \(AAA\)/i),
-    ).toBeInTheDocument();
+    expect(screen.queryByText("Modo de Luminosidade")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Auditoria de Acessibilidade/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Temas/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Tipografia/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Detalhes/i })).toBeInTheDocument();
     expect(screen.getByText(/Temas Calibrados AAA/i)).toBeInTheDocument();
   });
 

@@ -1,3 +1,11 @@
+import type { ComponentType } from "react";
+import { Music, Image, MapPin, Users, UserCheck, ScrollText } from "lucide-react";
+import {
+  DEFAULT_SHIELD_LEFT_ORDER,
+  DEFAULT_SHIELD_RIGHT_ORDER,
+  type ShieldModuleId,
+} from "@/hooks/useMasterScreenConfig";
+
 type MasterScreenPreviewProps = {
   showRoster: boolean;
   showSessionLog: boolean;
@@ -7,6 +15,26 @@ type MasterScreenPreviewProps = {
   showDiceRolls?: boolean;
   showCharactersNpcs?: boolean;
   showPlayers?: boolean;
+  showAssets?: boolean;
+  leftColumnOrder?: ShieldModuleId[];
+  rightColumnOrder?: ShieldModuleId[];
+};
+
+type PreviewModuleMeta = {
+  label: string;
+  icon: ComponentType<{ size?: number; className?: string }>;
+  accent?: boolean;
+};
+
+const MODULE_META: Record<ShieldModuleId, PreviewModuleMeta> = {
+  mediaPanel: { label: "Mídia (Mundos/Assets/Jukebox)", icon: MapPin },
+  actorsPanel: { label: "Participantes (Personagens/Jogadores)", icon: Users },
+  worlds: { label: "Mundos", icon: MapPin },
+  assets: { label: "Assets", icon: Image },
+  jukebox: { label: "Jukebox", icon: Music, accent: true },
+  charactersNpcs: { label: "Personagens", icon: Users },
+  players: { label: "Jogadores", icon: UserCheck },
+  sessionLog: { label: "Logs", icon: ScrollText, accent: true },
 };
 
 /** A decorative, live representation of the Master's Screen layout. */
@@ -19,7 +47,50 @@ export function MasterScreenPreview({
   showDiceRolls = true,
   showCharactersNpcs = true,
   showPlayers = true,
+  showAssets = true,
+  leftColumnOrder = DEFAULT_SHIELD_LEFT_ORDER,
+  rightColumnOrder = DEFAULT_SHIELD_RIGHT_ORDER,
 }: MasterScreenPreviewProps) {
+  // Flag de visibilidade que controla cada módulo. "worlds" é exibido quando o
+  // Mapa Tático está ativo (showMap), conforme a especificação da issue #75.
+  const visibility: Record<ShieldModuleId, boolean> = {
+    mediaPanel: showMap || showAssets || showJukebox,
+    actorsPanel: showCharactersNpcs || showPlayers,
+    worlds: showMap,
+    assets: showAssets,
+    jukebox: showJukebox,
+    charactersNpcs: showCharactersNpcs,
+    players: showPlayers,
+    sessionLog: showSessionLog,
+  };
+
+  const leftModules = leftColumnOrder.filter((moduleId) => visibility[moduleId]);
+  const rightModules = rightColumnOrder.filter((moduleId) => visibility[moduleId]);
+  const showRightColumn = rightModules.length > 0;
+
+  const renderBadge = (moduleId: ShieldModuleId) => {
+    const meta = MODULE_META[moduleId];
+    const Icon = meta.icon;
+    return (
+      <div
+        key={moduleId}
+        className={`flex h-7 items-center justify-center gap-1 rounded border px-1 text-[9px] font-medium transition-all duration-300 ${
+          meta.accent
+            ? "border-accent/30 bg-accent/10 text-accent-hover"
+            : "border-secondary-border bg-dominant-deep text-secondary-offwhite"
+        }`}
+      >
+        <Icon size={11} className="shrink-0" aria-hidden="true" />
+        <span className="truncate">{meta.label}</span>
+        {moduleId === "sessionLog" && showDiceRolls && (
+          <span className="rounded bg-accent/20 px-1 text-[8px] font-bold text-accent-hover">
+            Rolagens
+          </span>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div
       role="img"
@@ -28,35 +99,22 @@ export function MasterScreenPreview({
     >
       <div
         className={`grid min-h-64 gap-2 transition-all duration-300 ${
-          showSessionLog
+          showRightColumn
             ? "grid-cols-[minmax(80px,1fr)_minmax(0,3fr)_minmax(72px,1.2fr)]"
             : "grid-cols-[minmax(80px,1fr)_minmax(0,4fr)]"
         }`}
       >
         {/* Coluna 1: Gestão & Áudio */}
         <div
+          data-testid="preview-left-col"
           aria-hidden="true"
           className="flex flex-col gap-1.5 rounded-md border border-secondary-border bg-secondary-card p-1.5 text-center text-[10px] text-secondary-muted transition-all duration-300"
         >
           <span className="font-bold text-accent-hover block border-b border-secondary-border/50 pb-1">
             Gestão
           </span>
-          {showJukebox && (
-            <div className="flex h-7 items-center justify-center rounded border border-accent/30 bg-accent/10 text-[9px] text-accent-hover font-medium">
-              🎵 Jukebox
-            </div>
-          )}
-          {showCharactersNpcs && (
-            <div className="flex h-7 items-center justify-center rounded border border-secondary-border bg-dominant-deep text-[9px] text-secondary-offwhite font-medium">
-              👥 Personagens
-            </div>
-          )}
-          {showPlayers && (
-            <div className="flex h-7 items-center justify-center rounded border border-secondary-border bg-dominant-deep text-[9px] text-secondary-offwhite font-medium">
-              🎲 Jogadores
-            </div>
-          )}
-          {!showJukebox && !showCharactersNpcs && !showPlayers && (
+          {leftModules.map(renderBadge)}
+          {leftModules.length === 0 && (
             <div className="flex flex-1 items-center justify-center text-[9px] text-gray-500 italic">
               Vazio
             </div>
@@ -70,11 +128,6 @@ export function MasterScreenPreview({
         >
           <div className="flex items-center justify-between border-b border-secondary-border/50 pb-1 text-[10px]">
             <span className="font-bold text-secondary-pure">Mesa</span>
-            {showDiceRolls && (
-              <span className="rounded bg-accent/20 px-1 text-[9px] font-bold text-accent-hover">
-                🎲 Rolagens
-              </span>
-            )}
           </div>
 
           <div
@@ -92,13 +145,14 @@ export function MasterScreenPreview({
           )}
         </div>
 
-        {/* Coluna 3: Logs */}
-        {showSessionLog && (
+        {/* Coluna 3: Logs & módulos à direita */}
+        {showRightColumn && (
           <div
+            data-testid="preview-right-col"
             aria-hidden="true"
-            className="flex flex-col items-center justify-center rounded-md border border-secondary-border bg-secondary-card px-1 text-center text-[10px] text-secondary-muted transition-all duration-300"
+            className="flex flex-col gap-1.5 rounded-md border border-secondary-border bg-secondary-card p-1.5 text-center text-[10px] text-secondary-muted transition-all duration-300"
           >
-            <span className="font-bold text-accent-hover mb-1">Logs</span>
+            {rightModules.map(renderBadge)}
           </div>
         )}
       </div>

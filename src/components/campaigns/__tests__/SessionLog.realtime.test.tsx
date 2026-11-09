@@ -1,12 +1,13 @@
 import { render, screen, waitFor, act } from "@testing-library/react";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { SessionLog } from "../SessionLog";
-import type { CampaignLogPayload } from "@/context/SocketContext";
+import type { CampaignLogPayload, RollDataPayload } from "@/context/SocketContext";
 import type { CampaignLog } from "@/types";
 
 let currentIsConnected = true;
 let createdHandler: ((payload: CampaignLogPayload) => void) | null = null;
 let updatedHandler: ((payload: CampaignLogPayload) => void) | null = null;
+let rollHandler: ((roll: RollDataPayload) => void) | null = null;
 const mockBroadcastCampaignLogUpdate = vi.fn();
 
 const mockSubscribeCampaignLogCreated = vi.fn((callback: (payload: CampaignLogPayload) => void) => {
@@ -27,6 +28,15 @@ const mockSubscribeCampaignLogUpdated = vi.fn((callback: (payload: CampaignLogPa
   };
 });
 
+const mockSubscribeDiceRoll = vi.fn((callback: (roll: RollDataPayload) => void) => {
+  rollHandler = callback;
+  return () => {
+    if (rollHandler === callback) {
+      rollHandler = null;
+    }
+  };
+});
+
 vi.mock("@/context/SocketContext", () => ({
   useSocket: () => ({
     get isConnected() {
@@ -34,6 +44,7 @@ vi.mock("@/context/SocketContext", () => ({
     },
     subscribeCampaignLogCreated: mockSubscribeCampaignLogCreated,
     subscribeCampaignLogUpdated: mockSubscribeCampaignLogUpdated,
+    subscribeDiceRoll: mockSubscribeDiceRoll,
     broadcastCampaignLogUpdate: mockBroadcastCampaignLogUpdate,
   }),
 }));
@@ -65,6 +76,7 @@ describe("SessionLog - Realtime and Acceptance Criteria (Issue #13)", () => {
     currentIsConnected = true;
     createdHandler = null;
     updatedHandler = null;
+    rollHandler = null;
   });
 
   afterEach(() => {
@@ -244,7 +256,7 @@ describe("SessionLog - Realtime and Acceptance Criteria (Issue #13)", () => {
       });
 
       expect(screen.getByText("Rolagem realizada")).toBeInTheDocument();
-      expect(screen.getByText("Resultado: 19")).toBeInTheDocument();
+      expect(screen.getByTestId("die-value")).toHaveTextContent("19");
       expect(screen.queryByRole("button", { name: /Registrar resultado/i })).not.toBeInTheDocument();
     });
   });
@@ -283,6 +295,99 @@ describe("SessionLog - Realtime and Acceptance Criteria (Issue #13)", () => {
       await waitFor(() => {
         expect(fetchSpy).toHaveBeenCalledTimes(2);
       });
+    });
+  });
+
+  describe("5. Rolagens ao vivo na linha do tempo do log", () => {
+    const mockFetchWithLogs = (logs: CampaignLog[] = []) => {
+      global.fetch = vi.fn().mockImplementation(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ data: logs }),
+        } as Response)
+      );
+    };
+
+    const roll = (overrides: Partial<RollDataPayload> = {}): RollDataPayload => ({
+      campaignId,
+      actorName: "Thora",
+      rollType: "ataque",
+      formula: "1d20 + 3",
+      result: 18,
+      diceDetail: "Rolou [15] + 3 = 18",
+      timestamp: new Date("2026-09-21T12:00:00Z").toISOString(),
+      ...overrides,
+    });
+
+    it("insere a rolagem recebida pelo socket na lista do log", async () => {
+      mockFetchWithLogs([createMockLog("log-1", "Log existente")]);
+
+      render(<SessionLog campaignId={campaignId} />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Log existente")).toBeInTheDocument();
+      });
+      expect(rollHandler).toBeTypeOf("function");
+
+      act(() => {
+        rollHandler?.(roll());
+      });
+
+      expect(await screen.findByText("Thora:")).toBeInTheDocument();
+      expect(screen.getByText("1d20 + 3")).toBeInTheDocument();
+      expect(screen.getByText("18")).toBeInTheDocument();
+      expect(screen.getByText("ao vivo")).toBeInTheDocument();
+    });
+
+    it("ordena a linha do tempo do mais recente para o mais antigo", async () => {
+      mockFetchWithLogs([createMockLog("log-1", "Log das 10h")]);
+
+      render(<SessionLog campaignId={campaignId} />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Log das 10h")).toBeInTheDocument();
+      });
+
+      // Rolagem das 12h, mais recente que o log persistido das 10h
+      act(() => {
+        rollHandler?.(roll());
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("session-log-roll")).toBeInTheDocument();
+      });
+
+      const timeline = screen.getAllByTestId(/session-log-(roll|entry)/);
+      expect(timeline[0]).toHaveAttribute("data-testid", "session-log-roll");
+      expect(timeline[1]).toHaveAttribute("data-testid", "session-log-entry");
+    });
+
+    it("deixa de assinar e exibir rolagens quando showDiceRolls é false", async () => {
+      mockFetchWithLogs([createMockLog("log-1", "Log existente")]);
+
+      render(<SessionLog campaignId={campaignId} showDiceRolls={false} />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Log existente")).toBeInTheDocument();
+      });
+      expect(rollHandler).toBeNull();
+      expect(screen.queryByText("ao vivo")).not.toBeInTheDocument();
+    });
+
+    it("ignora rolagens de outras campanhas", async () => {
+      mockFetchWithLogs([]);
+
+      render(<SessionLog campaignId={campaignId} />);
+
+      await waitFor(() => {
+        expect(rollHandler).toBeTypeOf("function");
+      });
+
+      act(() => {
+        rollHandler?.(roll({ campaignId: "outra-campanha" }));
+      });
+
+      expect(screen.queryByText("Thora:")).not.toBeInTheDocument();
     });
   });
 });

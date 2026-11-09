@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { campaigns } from "@/lib/db/schema";
+import { campaigns, campaignAssets } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { updateCampaignSchema } from "@/lib/validators/campaign";
 import { eq, and } from "drizzle-orm";
@@ -42,9 +42,22 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       );
     }
 
+    let activeAsset: typeof campaignAssets.$inferSelect | null = null;
+    if (campaign.activeAssetId) {
+      const [asset] = await db
+        .select()
+        .from(campaignAssets)
+        .where(eq(campaignAssets.id, campaign.activeAssetId))
+        .limit(1);
+      activeAsset = asset ?? null;
+    }
+
     return NextResponse.json({
       success: true,
-      data: campaign,
+      data: {
+        ...campaign,
+        activeAsset,
+      },
     });
   } catch (error) {
     logger.error({ err: error }, "Erro ao obter campanha");

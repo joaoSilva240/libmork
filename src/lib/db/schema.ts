@@ -18,6 +18,7 @@ import {
   index,
   real,
   primaryKey,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
 // =============================================================================
@@ -122,6 +123,7 @@ export const characters = pgTable(
     activeHeritages: jsonb("active_heritages").$type<string[]>().notNull().default([]),
     name: varchar("name", { length: 100 }).notNull(),
     imageUrl: varchar("image_url", { length: 500 }),
+    description: text("description"),
     hitPointsMax: integer("hit_points_max").notNull().default(15),
     hitPointsCurrent: integer("hit_points_current").notNull().default(15),
     manaPointsMax: integer("mana_points_max").notNull().default(5),
@@ -166,9 +168,38 @@ export const campaigns = pgTable("campaigns", {
   coverImageUrl: text("cover_image_url"),
   worldMapUrl: text("world_map_url"),
   theme: varchar("theme", { length: 50 }).notNull().default("default-dark"),
+  activeAssetId: uuid("active_asset_id").references((): AnyPgColumn => campaignAssets.id, {
+    onDelete: "set null",
+  }),
+  oneShot: boolean("one_shot"),
+  maxPlayers: integer("max_players"),
+  dice3dPlayersEnabled: boolean("dice3d_players_enabled").notNull().default(true),
+  dice3dMasterEnabled: boolean("dice3d_master_enabled").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
+
+/**
+ * CAMPAIGN_ASSETS — Assets visuais compartilhados na campanha (Issue #61).
+ * Handouts, mapas, cenas, tokens e ilustrações compartilhados com os jogadores.
+ */
+export const campaignAssets = pgTable(
+  "campaign_assets",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    campaignId: uuid("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 200 }).notNull(),
+    description: text("description"),
+    imageUrl: varchar("image_url", { length: 500 }).notNull(),
+    category: varchar("category", { length: 50 }).notNull().default("handout"),
+    position: integer("position").notNull().default(0),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [index("idx_campaign_assets_campaign").on(table.campaignId)],
+);
 
 /**
  * CAMPAIGN_AUDIO_TRACKS — Tracks de áudio da jukebox por campanha (Issue #60).
@@ -328,6 +359,12 @@ export const npcPins = pgTable(
     contentId: uuid("content_id"),
     label: varchar("label", { length: 100 }).notNull(),
     rollExpression: varchar("roll_expression", { length: 200 }),
+    // Dano configurado (issue #90): ataque e dano separados; roll_expression
+    // permanece como campo legado para compatibilidade.
+    attackExpression: varchar("attack_expression", { length: 200 }),
+    damageExpression: varchar("damage_expression", { length: 200 }),
+    damageType: varchar("damage_type", { length: 30 }),
+    criticalRange: integer("critical_range"),
     manaCost: integer("mana_cost"),
     circle: integer("circle"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -487,6 +524,27 @@ export const libraryDocuments = pgTable(
     index("idx_library_doc_campaign").on(table.campaignId),
     index("idx_library_doc_category").on(table.category),
   ],
+);
+
+/**
+ * ATTACK — Ataque da Biblioteca Global (issue #90 follow-up).
+ * Ataques configurados ficam junto dos dados da biblioteca e podem ser
+ * vinculados a NPCs via npc_pins.content_id.
+ */
+export const attacks = pgTable(
+  "attacks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    campaignId: uuid("campaign_id").references(() => campaigns.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 100 }).notNull(),
+    description: text("description"),
+    attackExpression: varchar("attack_expression", { length: 200 }),
+    damageExpression: varchar("damage_expression", { length: 200 }),
+    damageType: varchar("damage_type", { length: 30 }),
+    criticalRange: integer("critical_range"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [index("idx_attack_campaign").on(table.campaignId)],
 );
 
 /**
@@ -664,6 +722,7 @@ export const publicShareLinks = pgTable(
       .notNull()
       .references(() => characters.id, { onDelete: "cascade" }),
     token: varchar("token", { length: 255 }).notNull().unique(),
+    kind: varchar("kind", { length: 10 }).notNull().default("view"), // view | acquire
     revoked: boolean("revoked").notNull().default(false),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
@@ -886,6 +945,18 @@ export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
   missingHabitants: many(missingHabitants),
   missingActionLedger: many(missingActionLedger),
   audioTracks: many(campaignAudioTracks),
+  assets: many(campaignAssets),
+  activeAsset: one(campaignAssets, {
+    fields: [campaigns.activeAssetId],
+    references: [campaignAssets.id],
+  }),
+}));
+
+export const campaignAssetsRelations = relations(campaignAssets, ({ one }) => ({
+  campaign: one(campaigns, {
+    fields: [campaignAssets.campaignId],
+    references: [campaigns.id],
+  }),
 }));
 
 export const campaignAudioTracksRelations = relations(campaignAudioTracks, ({ one }) => ({
@@ -1283,6 +1354,324 @@ export const communityClonesRelations = relations(communityClones, ({ one }) => 
   user: one(users, {
     fields: [communityClones.userId],
     references: [users.id],
+  }),
+}));
+
+// =============================================================================
+// GRUPOS DE CHAT E ENQUETES DA CAMPANHA (Issue #62)
+// =============================================================================
+
+/**
+ * CAMPAIGN_CHAT_GROUPS — Grupo de chat vinculado 1:1 à campanha.
+ */
+export const campaignChatGroups = pgTable(
+  "campaign_chat_groups",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    campaignId: uuid("campaign_id").references(() => campaigns.id, { onDelete: "cascade" }),
+    type: varchar("type", { length: 20 }).notNull().default("campaign"), // "campaign" | "dm"
+    name: varchar("name", { length: 200 }).notNull(),
+    avatarUrl: varchar("avatar_url", { length: 500 }),
+    userAId: uuid("user_a_id").references(() => users.id, { onDelete: "cascade" }),
+    userBId: uuid("user_b_id").references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_campaign_chat_groups_campaign").on(table.campaignId),
+    uniqueIndex("idx_dm_pair").on(table.userAId, table.userBId),
+  ],
+);
+
+/**
+ * CAMPAIGN_CHAT_MEMBERS — Membros e papéis no grupo de chat da campanha.
+ */
+export const campaignChatMembers = pgTable(
+  "campaign_chat_members",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    groupId: uuid("group_id")
+      .notNull()
+      .references(() => campaignChatGroups.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    role: varchar("role", { length: 20 }).notNull().default("member"), // "admin" | "member"
+    canRead: boolean("can_read").notNull().default(true),
+    canWrite: boolean("can_write").notNull().default(true),
+    canShare: boolean("can_share").notNull().default(true),
+    lastReadAt: timestamp("last_read_at").notNull().defaultNow(),
+    joinedAt: timestamp("joined_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_chat_members_group_user").on(table.groupId, table.userId),
+    index("idx_chat_members_user").on(table.userId),
+    index("idx_chat_members_group").on(table.groupId),
+  ],
+);
+
+/**
+ * CAMPAIGN_CHAT_MESSAGES — Mensagens trocadas no grupo de chat.
+ */
+export const campaignChatMessages = pgTable(
+  "campaign_chat_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    groupId: uuid("group_id")
+      .notNull()
+      .references(() => campaignChatGroups.id, { onDelete: "cascade" }),
+    senderId: uuid("sender_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
+    type: varchar("type", { length: 20 }).notNull().default("text"), // "text" | "poll" | "system"
+    payload: jsonb("payload"), // SharePayload quando type = "share"
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_chat_messages_group_created").on(table.groupId, table.createdAt),
+    index("idx_chat_messages_sender").on(table.senderId),
+  ],
+);
+
+/**
+ * CAMPAIGN_CHAT_POLLS — Enquetes vinculadas a uma mensagem do grupo (criadas pelo mestre).
+ */
+export const campaignChatPolls = pgTable(
+  "campaign_chat_polls",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    messageId: uuid("message_id")
+      .notNull()
+      .references(() => campaignChatMessages.id, { onDelete: "cascade" }),
+    groupId: uuid("group_id")
+      .notNull()
+      .references(() => campaignChatGroups.id, { onDelete: "cascade" }),
+    createdById: uuid("created_by_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    isMultipleChoice: boolean("is_multiple_choice").notNull().default(false),
+    status: varchar("status", { length: 20 }).notNull().default("open"), // "open" | "closed"
+    closedAt: timestamp("closed_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_chat_polls_message").on(table.messageId),
+    index("idx_chat_polls_group").on(table.groupId),
+  ],
+);
+
+/**
+ * CAMPAIGN_CHAT_POLL_OPTIONS — Opções da enquete.
+ */
+export const campaignChatPollOptions = pgTable(
+  "campaign_chat_poll_options",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    pollId: uuid("poll_id")
+      .notNull()
+      .references(() => campaignChatPolls.id, { onDelete: "cascade" }),
+    text: varchar("text", { length: 255 }).notNull(),
+    position: integer("position").notNull().default(0),
+  },
+  (table) => [index("idx_poll_options_poll_pos").on(table.pollId, table.position)],
+);
+
+/**
+ * CAMPAIGN_CHAT_POLL_VOTES — Votos registrados nas opções de uma enquete.
+ */
+export const campaignChatPollVotes = pgTable(
+  "campaign_chat_poll_votes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    pollId: uuid("poll_id")
+      .notNull()
+      .references(() => campaignChatPolls.id, { onDelete: "cascade" }),
+    optionId: uuid("option_id")
+      .notNull()
+      .references(() => campaignChatPollOptions.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    votedAt: timestamp("voted_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_poll_votes_unique").on(table.pollId, table.userId, table.optionId),
+    index("idx_poll_votes_option").on(table.optionId),
+    index("idx_poll_votes_user").on(table.userId),
+  ],
+);
+
+// Relações do Chat
+export const campaignChatGroupsRelations = relations(campaignChatGroups, ({ one, many }) => ({
+  campaign: one(campaigns, {
+    fields: [campaignChatGroups.campaignId],
+    references: [campaigns.id],
+  }),
+  members: many(campaignChatMembers),
+  messages: many(campaignChatMessages),
+  polls: many(campaignChatPolls),
+}));
+
+export const campaignChatMembersRelations = relations(campaignChatMembers, ({ one }) => ({
+  group: one(campaignChatGroups, {
+    fields: [campaignChatMembers.groupId],
+    references: [campaignChatGroups.id],
+  }),
+  user: one(users, {
+    fields: [campaignChatMembers.userId],
+    references: [users.id],
+  }),
+}));
+
+export const campaignChatMessagesRelations = relations(campaignChatMessages, ({ one }) => ({
+  group: one(campaignChatGroups, {
+    fields: [campaignChatMessages.groupId],
+    references: [campaignChatGroups.id],
+  }),
+  sender: one(users, {
+    fields: [campaignChatMessages.senderId],
+    references: [users.id],
+  }),
+  poll: one(campaignChatPolls, {
+    fields: [campaignChatMessages.id],
+    references: [campaignChatPolls.messageId],
+  }),
+}));
+
+export const campaignChatPollsRelations = relations(campaignChatPolls, ({ one, many }) => ({
+  message: one(campaignChatMessages, {
+    fields: [campaignChatPolls.messageId],
+    references: [campaignChatMessages.id],
+  }),
+  group: one(campaignChatGroups, {
+    fields: [campaignChatPolls.groupId],
+    references: [campaignChatGroups.id],
+  }),
+  createdBy: one(users, {
+    fields: [campaignChatPolls.createdById],
+    references: [users.id],
+  }),
+  options: many(campaignChatPollOptions),
+  votes: many(campaignChatPollVotes),
+}));
+
+export const campaignChatPollOptionsRelations = relations(
+  campaignChatPollOptions,
+  ({ one, many }) => ({
+    poll: one(campaignChatPolls, {
+      fields: [campaignChatPollOptions.pollId],
+      references: [campaignChatPolls.id],
+    }),
+    votes: many(campaignChatPollVotes),
+  }),
+);
+
+export const campaignChatPollVotesRelations = relations(campaignChatPollVotes, ({ one }) => ({
+  poll: one(campaignChatPolls, {
+    fields: [campaignChatPollVotes.pollId],
+    references: [campaignChatPolls.id],
+  }),
+  option: one(campaignChatPollOptions, {
+    fields: [campaignChatPollVotes.optionId],
+    references: [campaignChatPollOptions.id],
+  }),
+  user: one(users, {
+    fields: [campaignChatPollVotes.userId],
+    references: [users.id],
+  }),
+}));
+
+// =============================================================================
+// SESSÕES AGENDADAS E CANDIDATURAS (Issue #63)
+// =============================================================================
+
+/**
+ * CAMPAIGN_SESSIONS — Sessão agendada pelo mestre (Issue #63).
+ * proposedStart/proposedEnd delimitam o período proposto (inclusivo);
+ * scheduledAt é a data/hora final batida pelo mestre.
+ */
+export const campaignSessions = pgTable(
+  "campaign_sessions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    campaignId: uuid("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" }),
+    masterId: uuid("master_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    description: text("description").notNull(),
+    proposedStart: timestamp("proposed_start", { withTimezone: true }).notNull(),
+    proposedEnd: timestamp("proposed_end", { withTimezone: true }).notNull(),
+    scheduledAt: timestamp("scheduled_at", { withTimezone: true }),
+    durationMinutes: integer("duration_minutes").notNull().default(240),
+    xpReward: integer("xp_reward"),
+    sessionType: varchar("session_type", { length: 20 }).notNull(), // "one_shot" | "continuing"
+    maxSlots: integer("max_slots").notNull(),
+    status: varchar("status", { length: 20 }).notNull().default("proposed"), // proposed | confirmed | cancelled
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_sessions_campaign_status").on(table.campaignId, table.status),
+    index("idx_sessions_feed").on(table.status, table.proposedStart),
+    index("idx_sessions_master").on(table.masterId),
+  ],
+);
+
+/**
+ * SESSION_CANDIDATES — Candidatura de jogador a uma sessão com disponibilidade.
+ */
+export const sessionCandidates = pgTable(
+  "session_candidates",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => campaignSessions.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    characterId: uuid("character_id").references(() => characters.id, { onDelete: "set null" }),
+    availableDays: jsonb("available_days").notNull().default([]), // string[] 'yyyy-MM-dd'
+    preferredStart: varchar("preferred_start", { length: 5 }), // 'HH:mm'
+    preferredEnd: varchar("preferred_end", { length: 5 }), // 'HH:mm'
+    allDay: boolean("all_day").notNull().default(true),
+    status: varchar("status", { length: 20 }).notNull().default("interested"), // interested | accepted | rejected
+    appliedAt: timestamp("applied_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_candidates_session_user").on(table.sessionId, table.userId),
+    index("idx_candidates_user_status").on(table.userId, table.status),
+  ],
+);
+
+export const campaignSessionsRelations = relations(campaignSessions, ({ one, many }) => ({
+  campaign: one(campaigns, {
+    fields: [campaignSessions.campaignId],
+    references: [campaigns.id],
+  }),
+  master: one(users, {
+    fields: [campaignSessions.masterId],
+    references: [users.id],
+  }),
+  candidates: many(sessionCandidates),
+}));
+
+export const sessionCandidatesRelations = relations(sessionCandidates, ({ one }) => ({
+  session: one(campaignSessions, {
+    fields: [sessionCandidates.sessionId],
+    references: [campaignSessions.id],
+  }),
+  user: one(users, {
+    fields: [sessionCandidates.userId],
+    references: [users.id],
+  }),
+  character: one(characters, {
+    fields: [sessionCandidates.characterId],
+    references: [characters.id],
   }),
 }));
 

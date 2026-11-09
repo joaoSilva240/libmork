@@ -188,6 +188,7 @@ export async function POST(request: NextRequest) {
         .values({
           ownerId: session.user.id,
           name,
+          description: validation.data.description ?? null,
           classId: classId || null,
           raceId: raceId || null,
           activeHeritages,

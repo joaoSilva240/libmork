@@ -14,6 +14,7 @@ let combatHandler: ((state: CombatSessionState) => void) | null = null;
 let defenseHandler: ((payload: DefenseReactionRequestPayload) => void) | null = null;
 let duelHandler: ((payload: DuelInviteRequestPayload) => void) | null = null;
 let logHandler: ((payload: CampaignLogPayload) => void) | null = null;
+let chatHandler: ((payload: Record<string, unknown>) => void) | null = null;
 
 vi.mock("@/context/SocketContext", () => ({
   useSocket: () => ({
@@ -45,6 +46,12 @@ vi.mock("@/context/SocketContext", () => ({
       logHandler = cb;
       return () => {
         logHandler = null;
+      };
+    }),
+    subscribeChatMessage: vi.fn((cb) => {
+      chatHandler = cb;
+      return () => {
+        chatHandler = null;
       };
     }),
   }),
@@ -222,6 +229,22 @@ describe("DesktopNotifier Component (Issue #80)", () => {
       expect.objectContaining({
         title: "Mensagem da Campanha — Kael",
         body: "Cuidado com a armadilha no corredor!",
+      }),
+    );
+
+    act(() => {
+      chatHandler?.({
+        id: "msg-42",
+        content: "Vamos descansar na taverna?",
+        sender: { displayName: "Lyra" },
+      });
+    });
+
+    expect(mockClient.sendNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Nova Mensagem — Lyra",
+        body: "Vamos descansar na taverna?",
+        tag: "chat-msg-42",
       }),
     );
   });

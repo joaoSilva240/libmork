@@ -1,6 +1,7 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
-import CommunityFeed from "@/components/community/CommunityFeed";
+import { MasterCommunityView } from "@/components/community/MasterCommunityView";
 import { getSession } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
@@ -25,8 +26,8 @@ export default async function MasterCommunityPage() {
 
   return (
     <div className="flex flex-col flex-1 h-full min-h-0 overflow-hidden">
-      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-        <CommunityFeed
+      <Suspense>
+        <MasterCommunityView
           currentUser={{
             id: session.user.id,
             masterName: user?.masterName ?? null,
@@ -34,7 +35,7 @@ export default async function MasterCommunityPage() {
             displayName: user?.displayName ?? null,
           }}
         />
-      </div>
+      </Suspense>
     </div>
   );
 }

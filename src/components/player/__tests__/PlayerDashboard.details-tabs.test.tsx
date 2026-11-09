@@ -14,6 +14,7 @@ vi.mock("@/components/auth/LogoutButton", () => ({
 
 const mockJoinCampaign = vi.fn();
 const mockLeaveCampaign = vi.fn();
+const mockSetCampaignDice3DSettings = vi.fn();
 
 vi.mock("@/context/SocketContext", () => ({
   useSocket: () => ({
@@ -22,6 +23,10 @@ vi.mock("@/context/SocketContext", () => ({
     presenceList: [],
     joinCampaign: mockJoinCampaign,
     leaveCampaign: mockLeaveCampaign,
+    sendSessionApply: vi.fn(),
+    subscribeSessionPublished: vi.fn(() => vi.fn()),
+    setCampaignDice3DSettings: mockSetCampaignDice3DSettings,
+    broadcastCampaignDice3DSettings: vi.fn(),
     updateActorStatus: vi.fn(),
     rollDice: vi.fn(),
     updateCombatState: vi.fn(),
@@ -127,7 +132,7 @@ describe("PlayerDashboard - Campaign Details Tabs (Resumo e Mundo)", () => {
         return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: null }) });
       }
       if (url === `/api/player/campaigns/${campaignMock.id}/details`) {
-        if (detailsResponse && !detailsResponse.ok) {
+        if (detailsResponse && detailsResponse.ok === false) {
           return Promise.resolve({ ok: false, status: 500 });
         }
         return Promise.resolve({
@@ -353,5 +358,33 @@ describe("PlayerDashboard - Campaign Details Tabs (Resumo e Mundo)", () => {
 
     // Aba ativa deve ser Resumo
     expect(await screen.findByText("Detalhes da Campanha")).toBeDefined();
+  });
+
+  it("ingere configuracoes de dados 3D ao carregar detalhes da campanha", async () => {
+    setupMocks({
+      success: true,
+      data: {
+        dice3dPlayersEnabled: false,
+        dice3dMasterEnabled: true,
+        worlds: [],
+        establishments: [],
+        npcs: [],
+      },
+    });
+
+    render(<PlayerDashboard />);
+
+    const campanhasTab = await screen.findByRole("button", { name: "Campanhas" });
+    fireEvent.click(campanhasTab);
+
+    const campaignCard = await screen.findByText("Crônicas de Eldoria");
+    fireEvent.click(campaignCard);
+
+    await waitFor(() => {
+      expect(mockSetCampaignDice3DSettings).toHaveBeenCalledWith(campaignMock.id, {
+        dice3dPlayersEnabled: false,
+        dice3dMasterEnabled: true,
+      });
+    });
   });
 });

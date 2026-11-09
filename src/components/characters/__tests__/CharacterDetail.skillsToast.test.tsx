@@ -14,10 +14,13 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 
+const mockSetCampaignDice3DSettings = vi.fn();
+
 vi.mock("@/context/SocketContext", () => ({
   useSocket: () => ({
     isConnected: true,
     joinCampaign: vi.fn(),
+    setCampaignDice3DSettings: mockSetCampaignDice3DSettings,
     subscribeInitiativeRequest: vi.fn(() => vi.fn()),
     subscribeDefenseRequest: vi.fn(() => vi.fn()),
     subscribeCombatState: vi.fn(() => vi.fn()),
@@ -90,6 +93,19 @@ describe("CharacterDetail - Skills Toast Flutuante Persistente (#UI-003)", () =>
           json: () => Promise.resolve({ user: { shadowPoints: 2 } }),
         } as Response);
       }
+      if (urlStr.includes("/api/player/campaigns/")) {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              success: true,
+              data: {
+                dice3dPlayersEnabled: false,
+                dice3dMasterEnabled: true,
+              },
+            }),
+        } as Response);
+      }
       return Promise.resolve({
         ok: true,
         json: () => Promise.resolve({}),
@@ -155,5 +171,16 @@ describe("CharacterDetail - Skills Toast Flutuante Persistente (#UI-003)", () =>
 
     // O toast não deve aparecer
     expect(screen.queryByText("Perícias & Treinamento")).not.toBeInTheDocument();
+  });
+
+  it("sincroniza configurações de dados 3D quando o personagem possui campaignId", async () => {
+    renderWithQuery(<CharacterDetail />);
+
+    await waitFor(() => {
+      expect(mockSetCampaignDice3DSettings).toHaveBeenCalledWith("camp-123", {
+        dice3dPlayersEnabled: false,
+        dice3dMasterEnabled: true,
+      });
+    });
   });
 });

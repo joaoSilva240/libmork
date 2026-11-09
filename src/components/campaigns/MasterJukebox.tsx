@@ -262,7 +262,7 @@ export function MasterJukebox({
 
   return (
     <div className={`bg-gray-900 border border-gray-800 rounded p-3 ${className}`}>
-      <div className="flex items-center justify-between mb-2">
+      <div className="mb-2 flex shrink-0 items-center justify-between">
         <h3 className="font-semibold text-white">🎵 Jukebox de Áudio</h3>
         {activeCount > 0 && (
           <button
@@ -278,7 +278,7 @@ export function MasterJukebox({
       </div>
 
       {/* Input de URL */}
-      <div className="flex gap-2 mb-3">
+      <div className="mb-3 flex shrink-0 gap-2">
         <input
           type="url"
           placeholder="Cole a URL do YouTube..."
@@ -299,11 +299,11 @@ export function MasterJukebox({
       </div>
 
       {/* Mensagem de erro */}
-      {error && <div className="text-xs text-red-400 mb-2">{error}</div>}
+      {error && <div className="mb-2 shrink-0 text-xs text-red-400">{error}</div>}
 
       {/* Barra de ação de criação de Playlist (quando 2+ faixas selecionadas) */}
       {selectedTrackIds.size >= 2 && (
-        <div className="flex items-center gap-2 p-2 bg-purple-950/80 border border-purple-700/60 rounded-md text-xs mb-3 shadow-sm">
+        <div className="mb-3 flex shrink-0 items-center gap-2 rounded-md border border-purple-700/60 bg-purple-950/80 p-2 text-xs shadow-sm">
           <span className="text-purple-200 font-medium whitespace-nowrap">
             {selectedTrackIds.size} faixas
           </span>
@@ -340,7 +340,7 @@ export function MasterJukebox({
           Nenhuma faixa de áudio adicionada. Cole uma URL do YouTube para começar.
         </p>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
           {items.map((item) => {
             // Renderização da Playlist Unificada
             if (item.type === "playlist") {

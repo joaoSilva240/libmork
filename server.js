@@ -45,6 +45,10 @@ findAvailablePort(initialPort)
     // campaignId -> { tracks: Map<trackId, AudioTrack>, playingTrackIds: Set<string>, loopTrackIds: Set<string>, playingAts: Map<trackId, number> }
     const campaignAudioStates = new Map();
 
+    // Assets da Campanha — Estado em memória de asset ativo por campanha (Issue #61)
+    // campaignId -> CampaignAsset | null
+    const campaignActiveAssets = new Map();
+
     function getOrCreateAudioState(campaignId) {
       if (!campaignAudioStates.has(campaignId)) {
         campaignAudioStates.set(campaignId, {
@@ -98,6 +102,7 @@ findAvailablePort(initialPort)
           socket.data.campaignId = campaignId;
           socket.data.user = user;
           socket.data.actorId = actorId;
+          socket.data.role = role || "player";
 
           if (!campaignPresence.has(campaignId)) {
             campaignPresence.set(campaignId, new Map());
@@ -134,6 +139,14 @@ findAvailablePort(initialPort)
               loopTrackIds: Array.from(audioState.loopTrackIds),
             });
           }
+
+          // Envia estado de asset ativo para late-joiners se houver (Issue #61)
+          if (campaignActiveAssets.has(campaignId) && campaignActiveAssets.get(campaignId)) {
+            socket.emit("campaign:asset-state", {
+              campaignId,
+              asset: campaignActiveAssets.get(campaignId),
+            });
+          }
         });
 
         // Atualização de status de personagem em tempo real (HP, Mana, XP, Condições) - RF-025, RF-049
@@ -147,8 +160,18 @@ findAvailablePort(initialPort)
         // Evento de rolagem de dados em tempo real - RF-041, RF-046
         socket.on("roll-dice", (rollData) => {
           if (!rollData) return;
-          if (rollData.campaignId)
-            io.to(`campaign:${rollData.campaignId}`).emit("dice-rolled", rollData);
+          if (rollData.campaignId) {
+            io.to(`campaign:${rollData.campaignId}`).emit("dice-rolled", {
+              ...rollData,
+              senderSocketId: socket.id,
+            });
+          }
+        });
+
+        // Configurações de Dados 3D da Campanha (Issue #74)
+        socket.on("campaign:dice3d-settings-update", (payload) => {
+          if (!payload || !payload.campaignId || !socket.rooms.has("campaign:" + payload.campaignId)) return;
+          io.to(`campaign:${payload.campaignId}`).emit("campaign:dice3d-settings-updated", payload);
         });
 
         // Eventos do Motor de Combate (Fase 4 - RF-039, RF-040, RF-041, RF-047, RF-066)
@@ -328,6 +351,76 @@ findAvailablePort(initialPort)
             }
           }
           io.to(`campaign:${payload.campaignId}`).emit("audio:track-playlist", payload);
+        });
+
+        // Assets da Campanha — Issue #61
+        socket.on("campaign:asset-activate", (payload) => {
+          if (!payload || !payload.campaignId || !payload.asset) return;
+          campaignActiveAssets.set(payload.campaignId, payload.asset);
+          io.to(`campaign:${payload.campaignId}`).emit("campaign:asset-activated", payload);
+        });
+
+        socket.on("campaign:asset-deactivate", (payload) => {
+          if (!payload || !payload.campaignId) return;
+          campaignActiveAssets.delete(payload.campaignId);
+          io.to(`campaign:${payload.campaignId}`).emit("campaign:asset-deactivated", payload);
+        });
+
+        // Chat de Campanha em Tempo Real (Issue #62)
+        socket.on("chat:join-group", ({ groupId }) => {
+          if (!groupId) return;
+          socket.join(`chat:${groupId}`);
+        });
+
+        socket.on("chat:leave-group", ({ groupId }) => {
+          if (!groupId) return;
+          socket.leave(`chat:${groupId}`);
+        });
+
+        socket.on("chat:send-message", (payload) => {
+          if (!payload || !payload.groupId) return;
+          io.to(`chat:${payload.groupId}`).emit("chat:new-message", payload);
+        });
+
+        socket.on("chat:poll-vote", (payload) => {
+          if (!payload || !payload.groupId) return;
+          io.to(`chat:${payload.groupId}`).emit("chat:poll-updated", payload);
+        });
+
+        socket.on("chat:poll-close", (payload) => {
+          if (!payload || !payload.groupId) return;
+          io.to(`chat:${payload.groupId}`).emit("chat:poll-closed", payload);
+        });
+
+        socket.on("chat:member-updated", (payload) => {
+          if (!payload || !payload.groupId) return;
+          io.to(`chat:${payload.groupId}`).emit("chat:member-updated", payload);
+        });
+
+        socket.on("chat:member-removed", (payload) => {
+          if (!payload || !payload.groupId) return;
+          io.to(`chat:${payload.groupId}`).emit("chat:member-removed", payload);
+        });
+
+        // Sessões agendadas em tempo real (Issue #63)
+        socket.on("session:publish", (payload) => {
+          if (!payload || !payload.campaignId) return;
+          io.to(`campaign:${payload.campaignId}`).emit("session:published", payload);
+        });
+
+        socket.on("session:apply", (payload) => {
+          if (!payload || !payload.campaignId) return;
+          io.to(`campaign:${payload.campaignId}`).emit("session:applied", payload);
+        });
+
+        socket.on("session:confirm", (payload) => {
+          if (!payload || !payload.campaignId) return;
+          io.to(`campaign:${payload.campaignId}`).emit("session:confirmed", payload);
+        });
+
+        socket.on("session:cancel", (payload) => {
+          if (!payload || !payload.campaignId) return;
+          io.to(`campaign:${payload.campaignId}`).emit("session:cancelled", payload);
         });
 
         // Sair explicitamente de uma campanha

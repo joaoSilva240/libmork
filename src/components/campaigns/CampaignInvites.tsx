@@ -18,12 +18,14 @@ type CampaignInvitesProps = {
   campaignId: string;
   showCharactersNpcs?: boolean;
   showPlayers?: boolean;
+  className?: string;
 };
 
 export function CampaignInvites({
   campaignId,
   showCharactersNpcs = true,
   showPlayers = true,
+  className = "",
 }: CampaignInvitesProps) {
   const {
     subscribeCampaignInviteCreated,
@@ -41,27 +43,35 @@ export function CampaignInvites({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!showCharactersNpcs && !showPlayers) return;
+
     let cancelled = false;
 
     const loadData = async () => {
       try {
         const [invitesRes, rosterRes] = await Promise.all([
-          fetch(`/api/campaigns/${campaignId}/invites`),
-          fetch(`/api/campaigns/${campaignId}/roster`),
+          showPlayers
+            ? fetch(`/api/campaigns/${campaignId}/invites`)
+            : Promise.resolve(null),
+          showCharactersNpcs
+            ? fetch(`/api/campaigns/${campaignId}/roster`)
+            : Promise.resolve(null),
         ]);
 
-        const invitesData = await invitesRes.json();
-        const rosterData = await rosterRes.json();
+        const invitesData = invitesRes ? await invitesRes.json() : null;
+        const rosterData = rosterRes ? await rosterRes.json() : null;
 
         if (cancelled) return;
 
-        if (invitesRes.ok && invitesData.data) {
-          setPlayers(invitesData.data);
-        } else if (!invitesRes.ok) {
-          setError(invitesData.error || "Erro ao carregar jogadores");
+        if (invitesRes && invitesData) {
+          if (invitesRes.ok && invitesData.data) {
+            setPlayers(invitesData.data);
+          } else if (!invitesRes.ok) {
+            setError(invitesData.error || "Erro ao carregar jogadores");
+          }
         }
 
-        if (rosterRes.ok && rosterData.data) {
+        if (rosterRes && rosterData && rosterRes.ok && rosterData.data) {
           const playersList: RosterPlayer[] = rosterData.data.players || [];
           const npcsList: Npc[] = rosterData.data.npcs || [];
 
@@ -109,34 +119,45 @@ export function CampaignInvites({
 
     void loadData();
 
-    const unsubscribeInviteCreated = subscribeCampaignInviteCreated((payload) => {
-      if (payload.campaignId !== campaignId) return;
-      setPlayers((prev) =>
-        prev.map((player) =>
-          player.id === payload.invite.userId
-            ? { ...player, isInvited: true, inviteId: payload.invite.id }
-            : player
-        )
-      );
-    });
+    let unsubscribeInviteCreated: (() => void) | undefined;
+    let unsubscribeInviteRevoked: (() => void) | undefined;
 
-    const unsubscribeInviteRevoked = subscribeCampaignInviteRevoked((payload) => {
-      if (payload.campaignId !== campaignId) return;
-      setPlayers((prev) =>
-        prev.map((player) =>
-          player.id === payload.userId || player.inviteId === payload.inviteId
-            ? { ...player, isInvited: false, inviteId: null }
-            : player
-        )
-      );
-    });
+    if (showPlayers) {
+      unsubscribeInviteCreated = subscribeCampaignInviteCreated((payload) => {
+        if (payload.campaignId !== campaignId) return;
+        setPlayers((prev) =>
+          prev.map((player) =>
+            player.id === payload.invite.userId
+              ? { ...player, isInvited: true, inviteId: payload.invite.id }
+              : player
+          )
+        );
+      });
+
+      unsubscribeInviteRevoked = subscribeCampaignInviteRevoked((payload) => {
+        if (payload.campaignId !== campaignId) return;
+        setPlayers((prev) =>
+          prev.map((player) =>
+            player.id === payload.userId || player.inviteId === payload.inviteId
+              ? { ...player, isInvited: false, inviteId: null }
+              : player
+          )
+        );
+      });
+    }
 
     return () => {
       cancelled = true;
-      unsubscribeInviteCreated();
-      unsubscribeInviteRevoked();
+      unsubscribeInviteCreated?.();
+      unsubscribeInviteRevoked?.();
     };
-  }, [campaignId, subscribeCampaignInviteCreated, subscribeCampaignInviteRevoked]);
+  }, [
+    campaignId,
+    showPlayers,
+    showCharactersNpcs,
+    subscribeCampaignInviteCreated,
+    subscribeCampaignInviteRevoked,
+  ]);
 
   const handleInvite = async (userId: string) => {
     setError(null);
@@ -237,17 +258,17 @@ export function CampaignInvites({
   }
 
   return (
-    <div className="space-y-3 rounded-lg border border-gray-800 bg-gray-900 p-3">
+    <div className={`flex flex-col gap-3 rounded-lg border border-gray-800 bg-gray-900 p-3 ${className}`}>
       {/* Seção Personagens e NPCs com Barra de Pesquisa */}
       {showCharactersNpcs && (
-        <div>
-        <div className="mb-1.5 flex items-center justify-between">
+        <div className="flex flex-col lg:min-h-0 lg:flex-1">
+        <div className="mb-1.5 flex shrink-0 items-center justify-between">
           <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400">
             Personagens e NPCs ({actors.length})
           </h3>
         </div>
 
-        <div className="mb-2">
+        <div className="mb-2 shrink-0">
           <input
             type="text"
             placeholder="Pesquisar personagem ou NPC..."
@@ -264,7 +285,7 @@ export function CampaignInvites({
             {actorSearchQuery ? "Nenhum personagem encontrado." : "Nenhum personagem ou NPC cadastrado."}
           </p>
         ) : (
-          <div className="max-h-36 space-y-1.5 overflow-y-auto pr-0.5">
+          <div className="max-h-36 space-y-1.5 overflow-y-auto pr-0.5 lg:max-h-none lg:min-h-0 lg:flex-1">
             {filteredActors.map((actor) => (
               <div
                 key={`${actor.kind}-${actor.id}`}
@@ -304,14 +325,14 @@ export function CampaignInvites({
 
       {/* Seção Convidar Jogadores Direto */}
       {showPlayers && (
-        <div className={showCharactersNpcs ? "border-t border-gray-800 pt-3" : ""}>
-        <div className="mb-1.5 flex items-center justify-between">
+        <div className={`flex flex-col lg:min-h-0 lg:flex-1 ${showCharactersNpcs ? "border-t border-gray-800 pt-3" : ""}`}>
+        <div className="mb-1.5 flex shrink-0 items-center justify-between">
           <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400">
             Jogadores ({players.filter((p) => p.isInvited).length}/{players.length})
           </h3>
         </div>
 
-        <div className="mb-2">
+        <div className="mb-2 shrink-0">
           <input
             type="text"
             placeholder="Buscar jogador por nome ou email..."
@@ -334,7 +355,7 @@ export function CampaignInvites({
             {playerSearchQuery ? "Nenhum jogador encontrado." : "Nenhum jogador cadastrado no sistema."}
           </p>
         ) : (
-          <div className="max-h-48 space-y-1.5 overflow-y-auto pr-0.5">
+          <div className="max-h-48 space-y-1.5 overflow-y-auto pr-0.5 lg:max-h-none lg:min-h-0 lg:flex-1">
             {filteredPlayers.map((player) => {
               const isActionLoading = actionLoadingId === player.id;
               return (

@@ -15,7 +15,8 @@ describe("MasterSettingsPage (/master/settings)", () => {
     expect(screen.getByText("Preferências de Visibilidade")).toBeInTheDocument();
     expect(screen.getByText("Visibilidade do Escudo")).toBeInTheDocument();
     expect(screen.getByText("Carrossel de Personagens")).toBeInTheDocument();
-    expect(screen.getByText("Log da Sessão")).toBeInTheDocument();
+    // "Log da Sessão" também aparece como card no organizador de módulos do painel.
+    expect(screen.getAllByText("Log da Sessão")[0]).toBeInTheDocument();
     expect(screen.getByText("Canvas Infinito")).toBeInTheDocument();
     expect(screen.getByText("Mapa Tático")).toBeInTheDocument();
     expect(screen.queryByLabelText("Selecione uma campanha")).not.toBeInTheDocument();

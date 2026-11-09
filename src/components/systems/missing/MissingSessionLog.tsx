@@ -13,8 +13,6 @@ import {
 } from "lucide-react";
 import type { LedgerEvent } from "@/lib/systems/missing/types";
 import { useSocket } from "@/context/SocketContext";
-import { ResizeHandle } from "@/components/ui";
-import { useResizableLayout } from "@/hooks/useResizableLayout";
 
 export interface MissingSessionLogProps {
   campaignId: string;
@@ -26,40 +24,39 @@ export function MissingSessionLog({ campaignId, className = "" }: MissingSession
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [filterType, setFilterType] = useState<
-    "all" | "tests" | "erasures" | "investigation"
-  >("all");
+  const [filterType, setFilterType] = useState<"all" | "tests" | "erasures" | "investigation">(
+    "all",
+  );
 
   const { isConnected, subscribeCampaignLogCreated, subscribeCampaignLogUpdated } = useSocket();
   const wasConnectedRef = useRef(isConnected);
 
-  const missingSessionLogPanel = useResizableLayout({
-    storageKey: campaignId ? `libmork:missing-session-log:${campaignId}` : undefined,
-    initialHeight: 400,
-    minHeight: 200,
-    maxHeight: 800,
-  });
-
-  const fetchLedger = useCallback(async (isManual = false) => {
-    if (isManual) setIsRefreshing(true);
-    try {
-      const res = await fetch(`/api/systems/missing/campaigns/${campaignId}/ledger`, {
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (res.ok && data.data) {
-        setEvents(data.data as LedgerEvent[]);
-        setError(null);
-      } else {
-        setError(data.error || "Erro ao carregar livro-razão");
+  const fetchLedger = useCallback(
+    async (isManual = false) => {
+      if (isManual) setIsRefreshing(true);
+      try {
+        const res = await fetch(`/api/systems/missing/campaigns/${campaignId}/ledger`, {
+          credentials: "include",
+        });
+        const data = await res.json();
+        if (res.ok && Array.isArray(data.data)) {
+          setEvents(data.data as LedgerEvent[]);
+          setError(null);
+        } else if (res.ok) {
+          setEvents([]);
+          setError(null);
+        } else {
+          setError(data.error || "Erro ao carregar livro-razão");
+        }
+      } catch {
+        setError("Erro de comunicação com o servidor.");
+      } finally {
+        setIsLoading(false);
+        if (isManual) setIsRefreshing(false);
       }
-    } catch {
-      setError("Erro de comunicação com o servidor.");
-    } finally {
-      setIsLoading(false);
-      if (isManual) setIsRefreshing(false);
-    }
-  }, [campaignId]);
+    },
+    [campaignId],
+  );
 
   // Carregamento inicial e polling suave a cada 5 segundos
   useEffect(() => {
@@ -200,9 +197,14 @@ export function MissingSessionLog({ campaignId, className = "" }: MissingSession
             {/* Dados Rolados */}
             {Array.isArray(payload.dice) && payload.dice.length > 0 && (
               <p className="text-[10px] text-zinc-400">
-                Dados rolados: <span className="font-semibold text-zinc-200">[{payload.dice.join(", ")}]</span>
+                Dados rolados:{" "}
+                <span className="font-semibold text-zinc-200">[{payload.dice.join(", ")}]</span>
                 {payload.forcedDie && (
-                  <span> + Dado Forçado: <strong className="text-amber-400">[{payload.forcedDie}]</strong></span>
+                  <span>
+                    {" "}
+                    + Dado Forçado:{" "}
+                    <strong className="text-amber-400">[{payload.forcedDie}]</strong>
+                  </span>
                 )}
               </p>
             )}
@@ -295,9 +297,7 @@ export function MissingSessionLog({ campaignId, className = "" }: MissingSession
             </div>
 
             {payload.reason && (
-              <p className="text-[10px] text-zinc-400 pl-4 italic">
-                Motivo: {payload.reason}
-              </p>
+              <p className="text-[10px] text-zinc-400 pl-4 italic">Motivo: {payload.reason}</p>
             )}
           </div>
         );
@@ -328,7 +328,8 @@ export function MissingSessionLog({ campaignId, className = "" }: MissingSession
           <div className="flex items-center gap-1.5 text-zinc-300 text-[11px]">
             <Sparkles className="h-3 w-3 text-amber-300 shrink-0" />
             <span>
-              Pista entregue {payload.targetHabitantId ? "a habitante específico" : "à mesa pública"}.
+              Pista entregue{" "}
+              {payload.targetHabitantId ? "a habitante específico" : "à mesa pública"}.
             </span>
           </div>
         );
@@ -380,24 +381,20 @@ export function MissingSessionLog({ campaignId, className = "" }: MissingSession
             <AlertTriangle className="h-3 w-3 text-rose-400 shrink-0" />
             <span>
               Ameaça ({ev.eventType === "THREAT_ADDED" ? "+Nova" : "Alterada"}):{" "}
-              <strong>{payload.threatName || "Ameaça"}</strong> (Perigo {payload.dangerLevel ?? "?"})
+              <strong>{payload.threatName || "Ameaça"}</strong> (Perigo {payload.dangerLevel ?? "?"}
+              )
             </span>
           </div>
         );
 
       default:
-        return (
-          <div className="text-[10px] text-zinc-400">
-            Registro: {ev.eventType}
-          </div>
-        );
+        return <div className="text-[10px] text-zinc-400">Registro: {ev.eventType}</div>;
     }
   };
 
   return (
     <div
-      className={`relative flex flex-col overflow-hidden rounded-lg border border-zinc-800 bg-[#0c0d10] font-mono text-zinc-200 shadow-xl ${className}`}
-      style={{ height: `${missingSessionLogPanel.height}px` }}
+      className={`relative flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-zinc-800 bg-[#0c0d10] font-mono text-zinc-200 shadow-xl ${className}`}
       data-testid="missing-session-log"
     >
       {/* Cabeçalho de Dossiê */}
@@ -417,9 +414,7 @@ export function MissingSessionLog({ campaignId, className = "" }: MissingSession
 
           <div className="flex items-center gap-1.5 shrink-0">
             <span
-              className={`h-2 w-2 rounded-full ${
-                isConnected ? "bg-emerald-500" : "bg-amber-500"
-              }`}
+              className={`h-2 w-2 rounded-full ${isConnected ? "bg-emerald-500" : "bg-amber-500"}`}
               title={isConnected ? "Ao vivo via WebSocket" : "Sincronizando via Polling"}
             />
             <button
@@ -489,7 +484,7 @@ export function MissingSessionLog({ campaignId, className = "" }: MissingSession
 
       {/* Lista de Registros */}
       <div
-        className="flex-1 min-h-0 space-y-2 overflow-y-auto p-2"
+        className="max-h-[70vh] space-y-2 overflow-y-auto p-2 lg:max-h-none lg:min-h-0 lg:flex-1"
         data-testid="missing-session-log-list"
       >
         {error && (
@@ -525,13 +520,6 @@ export function MissingSessionLog({ campaignId, className = "" }: MissingSession
           ))
         )}
       </div>
-
-      <ResizeHandle
-        direction="vertical"
-        onResize={(_, dy) => missingSessionLogPanel.handleResize(0, dy)}
-        title="Redimensionar boletim de ocorrências"
-        data-testid="resize-missing-session-log"
-      />
     </div>
   );
 }

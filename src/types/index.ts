@@ -119,6 +119,18 @@ export type Character = {
   };
 };
 
+export type CampaignAsset = {
+  id: string;
+  campaignId: string;
+  name: string;
+  description: string | null;
+  imageUrl: string;
+  category: "handout" | "map" | "scene" | "token" | "illustration" | string;
+  position: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 export type Campaign = {
   id: string;
   masterId: string;
@@ -130,6 +142,10 @@ export type Campaign = {
   coverImageUrl: string | null;
   worldMapUrl: string | null;
   theme?: string | null;
+  activeAssetId?: string | null;
+  activeAsset?: CampaignAsset | null;
+  dice3dPlayersEnabled?: boolean;
+  dice3dMasterEnabled?: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -380,6 +396,8 @@ export type PlayerCampaign = {
   coverImageUrl?: string | null;
   worldMapUrl?: string | null;
   theme?: string | null;
+  dice3dPlayersEnabled?: boolean;
+  dice3dMasterEnabled?: boolean;
   master: {
     id: string;
     displayName: string;
@@ -405,6 +423,8 @@ export type PlayerCampaign = {
 };
 
 export type PlayerCampaignDetails = {
+  dice3dPlayersEnabled?: boolean;
+  dice3dMasterEnabled?: boolean;
   worlds: Array<{ id: string; name: string; description: string | null; coverUrl: string | null }>;
   establishments: Array<{ id: string; name: string; type: string; worldId: string; reputationLevel: number }>;
   npcs: Array<{ id: string; name: string; npcType: string; level: number; imageUrl: string | null; worldId: string | null }>;

@@ -83,6 +83,18 @@ const TYPE_CONFIGS: Record<ManagerContentType, TypeConfig> = {
     ],
     showInList: [],
   },
+  attacks: {
+    label: "Ataques",
+    fields: [
+      { name: "name", label: "Nome", type: "text", required: true },
+      { name: "description", label: "Descrição", type: "textarea" },
+      { name: "attackExpression", label: "Ataque (XdY±Z)", type: "text", placeholder: "1d20+9" },
+      { name: "damageExpression", label: "Dano (XdY±Z)", type: "text", placeholder: "3d6+5" },
+      { name: "damageType", label: "Tipo de Dano", type: "select", options: ["cortante", "contundente", "perfurante"] },
+      { name: "criticalRange", label: "Faixa de Crítico (1-20)", type: "number", min: 1, max: 20 },
+    ],
+    showInList: ["attackExpression", "damageExpression", "damageType"],
+  },
   classes: {
     label: "Classes",
     fields: [],
@@ -120,6 +132,7 @@ const CONTENT_TYPE_ORDER: ManagerContentType[] = [
   "spells",
   "items",
   "conditions",
+  "attacks",
   "classes",
   "class-features",
   "races",

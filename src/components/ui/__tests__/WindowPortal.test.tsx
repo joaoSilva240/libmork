@@ -18,7 +18,13 @@ describe("WindowPortal", () => {
     vi.spyOn(window, "open").mockReturnValue(externalWindow);
   });
 
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => {
+    vi.restoreAllMocks();
+    document.documentElement.removeAttribute("data-theme");
+    document.documentElement.removeAttribute("data-theme-mode");
+    document.documentElement.removeAttribute("style");
+    document.documentElement.className = "";
+  });
 
   it("renders children in the external portal node", async () => {
     render(<WindowPortal isOpen onClose={vi.fn()}>Conteúdo da Mesa</WindowPortal>);
@@ -55,5 +61,35 @@ describe("WindowPortal", () => {
     rerender(<WindowPortal isOpen onClose={() => {}}>Conteúdo atualizado</WindowPortal>);
     expect(externalWindow.close).toHaveBeenCalledTimes(0);
     expect(window.open).toHaveBeenCalledOnce();
+  });
+
+  it("copies the opener theme attributes and variables into the external window", async () => {
+    document.documentElement.setAttribute("data-theme", "parchment-light");
+    document.documentElement.setAttribute("data-theme-mode", "light");
+    document.documentElement.classList.add("__variable_fake-font");
+    document.documentElement.style.setProperty("--dominant-deep", "rgb(1, 2, 3)");
+
+    render(<WindowPortal isOpen onClose={vi.fn()}>Mesa</WindowPortal>);
+    await act(async () => {});
+
+    const externalRoot = externalDocument.documentElement;
+    expect(externalRoot.getAttribute("data-theme")).toBe("parchment-light");
+    expect(externalRoot.getAttribute("data-theme-mode")).toBe("light");
+    expect(externalRoot.classList.contains("__variable_fake-font")).toBe(true);
+    expect(externalRoot.style.getPropertyValue("--dominant-deep")).toBe("rgb(1, 2, 3)");
+  });
+
+  it("keeps the external window theme in sync when the opener theme changes", async () => {
+    render(<WindowPortal isOpen onClose={vi.fn()}>Mesa</WindowPortal>);
+    await act(async () => {});
+
+    await act(async () => {
+      document.documentElement.setAttribute("data-theme", "nordic-light");
+      document.documentElement.style.setProperty("--dominant-deep", "rgb(9, 8, 7)");
+    });
+
+    const externalRoot = externalDocument.documentElement;
+    expect(externalRoot.getAttribute("data-theme")).toBe("nordic-light");
+    expect(externalRoot.style.getPropertyValue("--dominant-deep")).toBe("rgb(9, 8, 7)");
   });
 });

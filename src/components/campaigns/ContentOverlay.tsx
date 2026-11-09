@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { Plus } from "lucide-react";
 import type { Campaign, Spell } from "@/types";
 import { formatTechnicalField, getTechnicalLabel, PF2E_DAMAGE_TYPES_PT } from "@/lib/content/pf2e-item-formatter";
 import { Spinner } from "@/components/ui";
@@ -13,7 +14,7 @@ type ContentOverlayProps = {
   onClose: () => void;
 };
 
-type ContentTab = "skills" | "spells" | "items" | "conditions" | "npcs";
+type ContentTab = "worlds" | "skills" | "spells" | "items" | "conditions" | "npcs";
 type ContentItem = Record<string, unknown> & { id: string; name: string; campaignId: string | null };
 
 const formatValue = (value: unknown): string => {
@@ -22,7 +23,7 @@ const formatValue = (value: unknown): string => {
 };
 
 export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlayProps) {
-  const [activeTab, setActiveTab] = useState<ContentTab>("skills");
+  const [activeTab, setActiveTab] = useState<ContentTab>("worlds");
   const [items, setItems] = useState<ContentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +34,7 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
   const tabs: { key: ContentTab; label: string }[] = [
+    { key: "worlds", label: "Mundos" },
     { key: "skills", label: "Perícias" },
     { key: "spells", label: "Magias" },
     { key: "items", label: "Itens" },
@@ -47,7 +49,19 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
     setSelectedItem(null);
     
     try {
-      if (activeTab === "npcs") {
+      if (activeTab === "worlds") {
+        const response = await fetch("/api/worlds", {
+          credentials: "include",
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          setError(data.error || "Erro ao carregar mundos");
+          return;
+        }
+
+        setItems(data.data);
+      } else if (activeTab === "npcs") {
         const [libRes, campRes] = await Promise.all([
           fetch("/api/npcs"),
           fetch(`/api/campaigns/${campaignId}/npcs`)
@@ -92,7 +106,21 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
       setSelectedItem(null);
       
       try {
-        if (activeTab === "npcs") {
+        if (activeTab === "worlds") {
+          const response = await fetch("/api/worlds", {
+            credentials: "include",
+          });
+          const data = await response.json();
+
+          if (cancelled) return;
+
+          if (!response.ok) {
+            setError(data.error || "Erro ao carregar mundos");
+            return;
+          }
+
+          setItems(data.data);
+        } else if (activeTab === "npcs") {
           const [libRes, campRes] = await Promise.all([
             fetch("/api/npcs"),
             fetch(`/api/campaigns/${campaignId}/npcs`)
@@ -250,6 +278,28 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
         }
       }
 
+      await loadItems();
+    } catch {
+      setError("Erro de conexão. Tente novamente.");
+    }
+  };
+
+  const handleAddWorld = async (worldId: string) => {
+    try {
+      const response = await fetch(`/api/campaigns/${campaignId}/worlds`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ worldId }),
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        setError(data.error || "Erro ao adicionar mundo à campanha");
+        return;
+      }
+
+      setError(null);
       await loadItems();
     } catch {
       setError("Erro de conexão. Tente novamente.");
@@ -722,6 +772,60 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
           </div>
         )}
 
+        {activeTab === "worlds" ? (
+          <div className="flex-1 overflow-y-auto rounded-lg border border-gray-800 bg-gray-950 p-3">
+            {isLoading ? (
+              <div className="flex items-center justify-center min-h-[200px]">
+                <Spinner size="md" />
+              </div>
+            ) : filteredItems.length === 0 ? (
+              <p className="text-center text-sm text-gray-500">
+                {searchQuery
+                  ? "Nenhum mundo encontrado com este termo."
+                  : "Nenhum mundo na biblioteca."}
+              </p>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredItems.map((world) => {
+                  const isLinked = world.campaignId === campaignId;
+                  return (
+                    <div
+                      key={world.id}
+                      className={`rounded-xl border p-3 transition-colors ${
+                        isLinked
+                          ? "border-purple-500/50 bg-purple-900/10"
+                          : "border-gray-700 bg-gray-900/50 hover:border-purple-500/50"
+                      }`}
+                    >
+                      <h3 className="text-sm font-bold text-white">{world.name}</h3>
+                      {world.description !== null && world.description !== undefined && (
+                        <p className="mt-1 line-clamp-2 text-xs text-gray-400">
+                          {String(world.description)}
+                        </p>
+                      )}
+                      <div className="mt-3">
+                        {isLinked ? (
+                          <div className="flex items-center justify-center gap-2 rounded-lg bg-purple-900/60 py-2 text-xs font-semibold text-purple-200">
+                            ✅ Adicionado
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => void handleAddWorld(world.id)}
+                            className="bg-purple-600 hover:bg-purple-700 text-white rounded px-3 py-1.5 flex items-center justify-center gap-1 w-full"
+                            aria-label={`Adicionar ${world.name} à campanha`}
+                          >
+                            <Plus size={16} />
+                            Adicionar à Campanha
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : (
         <div className="flex flex-1 gap-3 overflow-hidden">
           {/* Lista */}
           <div className="w-1/2 overflow-y-auto rounded-lg border border-gray-800 bg-gray-950 p-2">
@@ -941,6 +1045,7 @@ export function ContentOverlay({ campaignId, campaign, onClose }: ContentOverlay
             )}
           </div>
         </div>
+        )}
       </div>
     </div>
   );

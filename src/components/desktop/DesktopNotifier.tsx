@@ -18,6 +18,7 @@ export default function DesktopNotifier() {
     subscribeDefenseRequest,
     subscribeDuelInvite,
     subscribeCampaignLogCreated,
+    subscribeChatMessage,
   } = useSocket();
   const lastTurnKeyRef = useRef<string | null>(null);
 
@@ -80,12 +81,31 @@ export default function DesktopNotifier() {
       });
     });
 
+    const unsubChat = subscribeChatMessage?.((raw) => {
+      if (!raw || typeof raw !== "object") return;
+      const msg = raw as {
+        id?: string;
+        content?: string | null;
+        senderName?: string | null;
+        sender?: { displayName?: string | null };
+      };
+      const content = msg.content?.trim();
+      if (!content) return;
+      const sender = msg.sender?.displayName || msg.senderName || "Chat";
+      sendDesktopNotification({
+        title: `Nova Mensagem — ${sender}`,
+        body: content,
+        tag: msg.id ? `chat-${msg.id}` : undefined,
+      });
+    });
+
     return () => {
       unsubInitiative();
       unsubCombat();
       unsubDefense();
       unsubDuel();
       unsubLog();
+      unsubChat?.();
     };
   }, [
     subscribeInitiativeRequest,
@@ -93,6 +113,7 @@ export default function DesktopNotifier() {
     subscribeDefenseRequest,
     subscribeDuelInvite,
     subscribeCampaignLogCreated,
+    subscribeChatMessage,
   ]);
 
   // Ponte de eventos de atalhos globais do Electron para a Jukebox

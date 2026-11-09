@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import type { Character, PlayerCampaign } from "@/types";
+import { useSearchParams } from "next/navigation";
+import type { Character, PlayerCampaign, PlayerCampaignDetails } from "@/types";
 import type { MissingHabitant, EquipmentStatus } from "@/lib/systems/missing/types";
 import { CharacterCard } from "@/components/characters/CharacterCard";
 import { MissingHabitantCard } from "@/components/systems/missing/MissingHabitantCard";
@@ -11,13 +12,22 @@ import { LogoutButton } from "@/components/auth/LogoutButton";
 import { Spinner, Button } from "@/components/ui";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { ToastContainer } from "@/components/ui/Toast";
-import { CampaignsFilledIcon, CharactersFilledIcon, SettingsFilledIcon, TreasuryIcon } from "@/components/ui/Icons";
+import {
+  CampaignsFilledIcon,
+  CharactersFilledIcon,
+  SettingsFilledIcon,
+  TreasuryIcon,
+} from "@/components/ui/Icons";
+import { MessageSquare, Dices, CalendarDays } from "lucide-react";
+import { PlayerCommunityHub } from "@/components/sessions/PlayerCommunityHub";
+import { SessionInviteFeed } from "@/components/sessions/SessionInviteFeed";
 import { Dice3DSettingsPanel } from "@/components/dice/Dice3DSettingsPanel";
 import { MotionSettingsPanel } from "@/components/motion/MotionSettingsPanel";
 import { WealthManager, type WealthData } from "@/components/player/WealthManager";
 import { generateUUID } from "@/lib/utils/uuid";
 import { useSocket } from "@/context/SocketContext";
 import { JukeboxAudioBridge } from "@/components/audio/JukeboxAudioBridge";
+import { PlayerAssetOverlay } from "@/components/campaigns/PlayerAssetOverlay";
 import { ThemeConfigPanel } from "@/components/theme/ThemeConfigPanel";
 import { useTheme } from "@/context/ThemeContext";
 
@@ -42,8 +52,19 @@ function getReputationDots(reputationLevel: number): number {
 }
 
 export function PlayerDashboard() {
-  const { joinCampaign, leaveCampaign } = useSocket();
-  const [activeTab, setActiveTab] = useState<"characters" | "campaigns" | "wealth" | "settings">("characters");
+  const {
+    joinCampaign,
+    leaveCampaign,
+    sendSessionApply,
+    subscribeSessionPublished,
+    setCampaignDice3DSettings,
+  } = useSocket();
+  const [activeTab, setActiveTab] = useState<
+    "characters" | "campaigns" | "community" | "wealth" | "settings"
+  >("characters");
+  const [campaignsView, setCampaignsView] = useState<"campanhas" | "sessoes">("campanhas");
+  const [hasNewInvites, setHasNewInvites] = useState(false);
+  const [communityFullscreen, setCommunityFullscreen] = useState(false);
   const [viewMode, setViewMode] = useState<"gallery" | "list">("gallery");
   const [displayName, setDisplayName] = useState("Jogador");
   const [userId, setUserId] = useState<string>("player-id");
@@ -53,6 +74,9 @@ export function PlayerDashboard() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [missingHabitants, setMissingHabitants] = useState<MissingHabitant[]>([]);
   const [selectedHabitant, setSelectedHabitant] = useState<MissingHabitant | null>(null);
+  const [settingsSubTab, setSettingsSubTab] = useState<"themes_colors" | "fonts" | "ui_details">(
+    "themes_colors",
+  );
   const [isLoadingCharacters, setIsLoadingCharacters] = useState(true);
   const [charactersError, setCharactersError] = useState<string | null>(null);
 
@@ -62,11 +86,7 @@ export function PlayerDashboard() {
   const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(true);
   const [campaignsError, setCampaignsError] = useState<string | null>(null);
   const [campaignDetailsTab, setCampaignDetailsTab] = useState<"resumo" | "mundo">("resumo");
-  const [campaignDetails, setCampaignDetails] = useState<{
-    worlds: any[];
-    establishments: any[];
-    npcs: any[];
-  } | null>(null);
+  const [campaignDetails, setCampaignDetails] = useState<PlayerCampaignDetails | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
   // Estado de Tesouraria / Wealth
@@ -87,6 +107,52 @@ export function PlayerDashboard() {
   >([]);
   const addToast = (message: string, type: "error" | "success" | "info" | "warning" = "info") => {
     setToasts((prev) => [...prev, { id: generateUUID(), message, type }]);
+  };
+
+  // Deep-link: /player?tab=<aba>&campaign=<id>
+  const searchParams = useSearchParams();
+  const deepLinkAppliedRef = useRef(false);
+
+  useEffect(() => {
+    const tabParam = searchParams?.get("tab");
+    if (
+      tabParam === "characters" ||
+      tabParam === "campaigns" ||
+      tabParam === "community" ||
+      tabParam === "wealth" ||
+      tabParam === "settings"
+    ) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setActiveTab(tabParam);
+    }
+    // Aplicado apenas uma vez na montagem
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (deepLinkAppliedRef.current) return;
+    const campaignParam = searchParams?.get("campaign");
+    if (!campaignParam || campaigns.length === 0) return;
+    const found = campaigns.find((c) => c.id === campaignParam);
+    if (!found) return;
+    deepLinkAppliedRef.current = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setActiveTab("campaigns");
+    setSelectedCampaign(found);
+  }, [campaigns, searchParams]);
+
+  useEffect(() => {
+    const offPublished = subscribeSessionPublished(() => {
+      setHasNewInvites(true);
+    });
+    return () => {
+      offPublished();
+    };
+  }, [subscribeSessionPublished]);
+
+  const handleSessionApplied = (campaignId: string, sessionId: string) => {
+    sendSessionApply({ campaignId, sessionId });
+    addToast("Candidatura enviada!", "success");
   };
 
   const loadCharacters = async () => {
@@ -145,6 +211,12 @@ export function PlayerDashboard() {
       const data = await response.json();
       const updatedCampaigns: PlayerCampaign[] = data.data || [];
       setCampaigns(updatedCampaigns);
+      updatedCampaigns.forEach((camp) => {
+        setCampaignDice3DSettings?.(camp.id, {
+          dice3dPlayersEnabled: camp.dice3dPlayersEnabled ?? true,
+          dice3dMasterEnabled: camp.dice3dMasterEnabled ?? true,
+        });
+      });
       setSelectedCampaign((prevSelected) => {
         if (!prevSelected) return null;
         return updatedCampaigns.find((c) => c.id === prevSelected.id) || null;
@@ -217,6 +289,10 @@ export function PlayerDashboard() {
       .then((data) => {
         if (isMounted && data && data.success) {
           setCampaignDetails(data.data);
+          setCampaignDice3DSettings?.(selectedCampaign.id, {
+            dice3dPlayersEnabled: data.data.dice3dPlayersEnabled ?? true,
+            dice3dMasterEnabled: data.data.dice3dMasterEnabled ?? true,
+          });
         }
       })
       .catch(() => {})
@@ -491,17 +567,82 @@ export function PlayerDashboard() {
     return () => window.removeEventListener("keydown", handleEscape);
   }, []);
 
+  const isCommunityFullscreen = activeTab === "community" && communityFullscreen;
+
   return (
-    <div className="pt-[calc(5.5rem+env(safe-area-inset-top,0px))] pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
-      <header className="fixed inset-x-0 top-0 z-30 flex items-center justify-between border-x-0 border-t-0 border-b border-secondary-border bg-secondary-card px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top,0px))] shadow-md">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between">
+    <div
+      className={
+        isCommunityFullscreen
+          ? ""
+          : `${activeTab === "settings" ? "pt-[calc(8.25rem+env(safe-area-inset-top,0px))]" : "pt-[calc(5.5rem+env(safe-area-inset-top,0px))]"} pb-[calc(6rem+env(safe-area-inset-bottom,0px))]`
+      }
+    >
+      {!isCommunityFullscreen && (
+      <header className="fixed inset-x-0 top-0 z-30 border-x-0 border-t-0 border-b border-secondary-border bg-secondary-card shadow-md pt-[calc(1rem+env(safe-area-inset-top,0px))]">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 pb-3">
           <div>
             <h1 className="text-xl font-bold text-secondary-pure">{displayName}</h1>
             <p className="text-xs text-secondary-muted">Gerencie seus heróis e campanhas</p>
           </div>
           <LogoutButton />
         </div>
+
+        {activeTab === "settings" && (
+          <div className="border-t border-secondary-border bg-secondary-card/95 backdrop-blur-md px-4 py-2">
+            <div className="mx-auto max-w-7xl">
+              <nav
+                className="grid grid-cols-3 gap-2"
+                role="tablist"
+                aria-label="Configurações do Tema e Interface"
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={settingsSubTab === "themes_colors"}
+                  onClick={() => setSettingsSubTab("themes_colors")}
+                  className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
+                    settingsSubTab === "themes_colors"
+                      ? "bg-accent text-white shadow-sm ring-1 ring-accent"
+                      : "text-secondary-muted hover:text-secondary-pure hover:bg-dominant-container/50"
+                  }`}
+                >
+                  <span className="text-sm">🎨</span>
+                  <span className="truncate">Temas</span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={settingsSubTab === "fonts"}
+                  onClick={() => setSettingsSubTab("fonts")}
+                  className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
+                    settingsSubTab === "fonts"
+                      ? "bg-accent text-white shadow-sm ring-1 ring-accent"
+                      : "text-secondary-muted hover:text-secondary-pure hover:bg-dominant-container/50"
+                  }`}
+                >
+                  <span className="text-sm">✍️</span>
+                  <span className="truncate">Tipografia</span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={settingsSubTab === "ui_details"}
+                  onClick={() => setSettingsSubTab("ui_details")}
+                  className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
+                    settingsSubTab === "ui_details"
+                      ? "bg-accent text-white shadow-sm ring-1 ring-accent"
+                      : "text-secondary-muted hover:text-secondary-pure hover:bg-dominant-container/50"
+                  }`}
+                >
+                  <span className="text-sm">📐</span>
+                  <span className="truncate">Detalhes</span>
+                </button>
+              </nav>
+            </div>
+          </div>
+        )}
       </header>
+      )}
 
       {activeTab === "characters" && (
         <Link
@@ -640,6 +781,49 @@ export function PlayerDashboard() {
         {/* Conteúdo da Aba 2: Campanhas */}
         {activeTab === "campaigns" && (
           <div className="motion-page">
+            <div className="mb-4 flex items-center gap-2" role="tablist" aria-label="Campanhas e sessões">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={campaignsView === "campanhas"}
+                data-testid="campaigns-view-campanhas"
+                onClick={() => setCampaignsView("campanhas")}
+                className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  campaignsView === "campanhas"
+                    ? "bg-accent text-white shadow-sm ring-1 ring-accent"
+                    : "text-secondary-muted hover:text-secondary-pure hover:bg-dominant-container/50"
+                }`}
+              >
+                <Dices className="h-4 w-4" />
+                Minhas Campanhas
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={campaignsView === "sessoes"}
+                data-testid="campaigns-view-sessions"
+                onClick={() => {
+                  setCampaignsView("sessoes");
+                  setHasNewInvites(false);
+                }}
+                className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  campaignsView === "sessoes"
+                    ? "bg-accent text-white shadow-sm ring-1 ring-accent"
+                    : "text-secondary-muted hover:text-secondary-pure hover:bg-dominant-container/50"
+                }`}
+              >
+                <CalendarDays className="h-4 w-4" />
+                Sessões
+                {hasNewInvites && campaignsView !== "sessoes" && (
+                  <span className="h-2 w-2 rounded-full bg-accent-vibrant" />
+                )}
+              </button>
+            </div>
+
+            {campaignsView === "sessoes" ? (
+              <SessionInviteFeed currentUserId={userId} onApplied={handleSessionApplied} />
+            ) : (
+            <>
             {isLoadingCampaigns ? (
               <div className="flex min-h-[300px] items-center justify-center py-12">
                 <Spinner size="lg" />
@@ -820,6 +1004,23 @@ export function PlayerDashboard() {
                 ))}
               </div>
             )}
+            </>
+            )}
+          </div>
+        )}
+
+        {/* Conteúdo da Aba: Comunidade / Chat / Calendário */}
+        {activeTab === "community" && (
+          <div
+            className={`motion-page -mx-4 ${
+              isCommunityFullscreen ? "h-[100dvh]" : "h-[calc(100vh-11.5rem)]"
+            }`}
+          >
+            <PlayerCommunityHub
+              currentUser={{ id: userId, displayName: userName }}
+              isFullscreen={communityFullscreen}
+              onToggleFullscreen={() => setCommunityFullscreen((v) => !v)}
+            />
           </div>
         )}
 
@@ -838,10 +1039,17 @@ export function PlayerDashboard() {
 
         {activeTab === "settings" && (
           <div className="motion-page space-y-6 pb-24">
-            <h2 className="text-lg font-bold text-secondary-pure">Configurações</h2>
-            <ThemeConfigPanel />
-            <MotionSettingsPanel />
-            <Dice3DSettingsPanel />
+            <ThemeConfigPanel
+              activeSubTab={settingsSubTab}
+              onSubTabChange={setSettingsSubTab}
+              hideSubTabsBar={true}
+            />
+            {settingsSubTab === "ui_details" && (
+              <>
+                <MotionSettingsPanel />
+                <Dice3DSettingsPanel />
+              </>
+            )}
           </div>
         )}
 
@@ -850,6 +1058,7 @@ export function PlayerDashboard() {
           onRemove={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))}
         />
 
+        {!isCommunityFullscreen && (
         <BottomNav
           activeId={activeTab}
           onChange={(id) => setActiveTab(id as typeof activeTab)}
@@ -865,6 +1074,11 @@ export function PlayerDashboard() {
               icon: <CampaignsFilledIcon className="h-6 w-6" />,
             },
             {
+              id: "community",
+              label: "Comunidade",
+              icon: <MessageSquare className="h-6 w-6" />,
+            },
+            {
               id: "wealth",
               label: "Tesouraria",
               icon: <TreasuryIcon className="h-6 w-6" />,
@@ -876,6 +1090,7 @@ export function PlayerDashboard() {
             },
           ]}
         />
+        )}
 
         {/* Overlay de Detalhes da Campanha */}
         {selectedCampaign !== null &&
@@ -1357,7 +1572,9 @@ export function PlayerDashboard() {
                                                               d={`M ${start.x} ${start.y} A ${radius} ${radius} 0 0 1 ${end.x} ${end.y}`}
                                                               fill="none"
                                                               stroke={
-                                                                isActive ? "var(--accent-vibrant, #c084fc)" : "var(--secondary-border, #374151)"
+                                                                isActive
+                                                                  ? "var(--accent-vibrant, #c084fc)"
+                                                                  : "var(--secondary-border, #374151)"
                                                               }
                                                               strokeWidth="2"
                                                               strokeLinecap="round"
@@ -1633,6 +1850,9 @@ export function PlayerDashboard() {
             />
           </div>
         )}
+
+        {/* Handout / Asset Compartilhado pelo Mestre (Issue #61) */}
+        <PlayerAssetOverlay />
       </div>
     </div>
   );
