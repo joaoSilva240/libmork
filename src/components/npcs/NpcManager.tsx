@@ -20,6 +20,10 @@ type Pin = {
   contentId: string | null;
   label: string;
   rollExpression: string | null;
+  attackExpression: string | null;
+  damageExpression: string | null;
+  damageType: string | null;
+  criticalRange: number | null;
   manaCost: number | null;
   circle: number | null;
   createdAt: string;
@@ -69,6 +73,10 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
     pinType: "attack" as Pin["pinType"],
     label: "",
     rollExpression: "",
+    attackExpression: "",
+    damageExpression: "",
+    damageType: "" as "" | "cortante" | "contundente" | "perfurante",
+    criticalRange: "" as string,
     contentId: "",
   });
   const [skillOptions, setSkillOptions] = useState<ContentOption[]>([]);
@@ -447,7 +455,16 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
 
     setExpandedNpcId(npcId);
     setEditForm(null);
-    setPinForm({ pinType: "attack", label: "", rollExpression: "", contentId: "" });
+    setPinForm({
+      pinType: "attack",
+      label: "",
+      rollExpression: "",
+      attackExpression: "",
+      damageExpression: "",
+      damageType: "",
+      criticalRange: "",
+      contentId: "",
+    });
     await Promise.all([loadPins(npcId), loadContentOptions()]);
   };
 
@@ -464,6 +481,22 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
         payload.label = pinForm.label;
         if (pinForm.rollExpression) {
           payload.rollExpression = pinForm.rollExpression;
+        }
+        // Dano configurado (issue #90)
+        if (pinForm.attackExpression) {
+          payload.attackExpression = pinForm.attackExpression;
+        }
+        if (pinForm.damageExpression) {
+          payload.damageExpression = pinForm.damageExpression;
+        }
+        if (pinForm.damageType) {
+          payload.damageType = pinForm.damageType;
+        }
+        if (pinForm.criticalRange) {
+          const crit = Number.parseInt(pinForm.criticalRange, 10);
+          if (Number.isFinite(crit)) {
+            payload.criticalRange = crit;
+          }
         }
       } else {
         if (!pinForm.contentId) {
@@ -488,7 +521,16 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
         return;
       }
 
-      setPinForm({ pinType: "attack", label: "", rollExpression: "", contentId: "" });
+      setPinForm({
+        pinType: "attack",
+        label: "",
+        rollExpression: "",
+        attackExpression: "",
+        damageExpression: "",
+        damageType: "",
+        criticalRange: "",
+        contentId: "",
+      });
       await loadPins(npcId);
     } catch {
       setError("Erro de conexão. Tente novamente.");
@@ -1067,7 +1109,12 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                                   {PIN_TYPE_LABELS[pin.pinType]}: {pin.label}
                                 </p>
                                 <p className="text-xs text-gray-400">
-                                  {pin.rollExpression && `Rolagem: ${pin.rollExpression}`}
+                                  {pin.attackExpression && `Ataque: ${pin.attackExpression}`}
+                                  {pin.damageExpression && ` · Dano: ${pin.damageExpression}`}
+                                  {pin.damageType && ` (${pin.damageType})`}
+                                  {pin.criticalRange != null && ` · Crítico ${pin.criticalRange}`}
+                                  {!pin.attackExpression && pin.rollExpression &&
+                                    `Rolagem: ${pin.rollExpression}`}
                                   {pin.manaCost !== null && pin.manaCost !== undefined && (
                                     <span> · {pin.manaCost} mana</span>
                                   )}
@@ -1125,7 +1172,7 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                             />
                             <input
                               type="text"
-                              placeholder="Rolagem (ex.: 1d8+3)"
+                              placeholder="Rolagem legada (opcional, ex.: 1d8+3)"
                               value={pinForm.rollExpression}
                               onChange={(e) =>
                                 setPinForm((prev) => ({
@@ -1135,6 +1182,68 @@ export function NpcManager({ worldId, worldName }: NpcManagerProps) {
                               }
                               disabled={isPinBusy}
                               className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Ataque (ex.: 1d20+9)"
+                              value={pinForm.attackExpression}
+                              onChange={(e) =>
+                                setPinForm((prev) => ({
+                                  ...prev,
+                                  attackExpression: e.target.value,
+                                }))
+                              }
+                              disabled={isPinBusy}
+                              className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Dano (ex.: 3d6+5)"
+                              value={pinForm.damageExpression}
+                              onChange={(e) =>
+                                setPinForm((prev) => ({
+                                  ...prev,
+                                  damageExpression: e.target.value,
+                                }))
+                              }
+                              disabled={isPinBusy}
+                              className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                            />
+                            <select
+                              value={pinForm.damageType}
+                              onChange={(e) =>
+                                setPinForm((prev) => ({
+                                  ...prev,
+                                  damageType: e.target.value as
+                                    | ""
+                                    | "cortante"
+                                    | "contundente"
+                                    | "perfurante",
+                                }))
+                              }
+                              disabled={isPinBusy}
+                              aria-label="Tipo de dano"
+                              className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                            >
+                              <option value="">Tipo de dano</option>
+                              <option value="cortante">Cortante</option>
+                              <option value="contundente">Contundente</option>
+                              <option value="perfurante">Perfurante</option>
+                            </select>
+                            <input
+                              type="number"
+                              min={1}
+                              max={20}
+                              placeholder="Crítico (ex.: 20)"
+                              value={pinForm.criticalRange}
+                              onChange={(e) =>
+                                setPinForm((prev) => ({
+                                  ...prev,
+                                  criticalRange: e.target.value,
+                                }))
+                              }
+                              disabled={isPinBusy}
+                              className="w-32 rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                             />
                           </>
                         ) : (

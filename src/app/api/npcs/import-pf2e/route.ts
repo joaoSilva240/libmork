@@ -70,6 +70,8 @@ async function importSinglePf2eMonster(path: string, userId: string, translateWi
           pinType: pin.pinType,
           label: pin.label,
           rollExpression: pin.rollExpression || null,
+          attackExpression: (pin as { attackExpression?: string }).attackExpression || null,
+          damageExpression: (pin as { damageExpression?: string }).damageExpression || null,
           manaCost: pin.manaCost || null,
           circle: pin.circle || null,
         }));

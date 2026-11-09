@@ -16,6 +16,9 @@ export interface Pf2eNpcPinParsed {
   pinType: "attack" | "spell" | "skill";
   label: string;
   rollExpression?: string;
+  /** Dano configurado (issue #90) extraído do stat block. */
+  attackExpression?: string;
+  damageExpression?: string;
   manaCost?: number;
   circle?: number;
 }
@@ -236,19 +239,29 @@ export async function fetchAndParsePf2eMonster(path: string): Promise<Pf2eMonste
       if (itemType === "melee") {
         const bonus = typeof itemSystem.bonus?.value === "number" ? itemSystem.bonus.value : 0;
         let damageStr = "";
+        let damageExpression: string | undefined;
 
         if (itemSystem.damageRolls && typeof itemSystem.damageRolls === "object") {
           const rolls = Object.values(itemSystem.damageRolls) as Array<{ damage?: string }>;
           if (rolls[0]?.damage) {
             damageStr = ` (${rolls[0].damage})`;
+            // Dano configurado (issue #90): extrai a expressão de dados pura
+            // (ex.: "2d8+6") quando o campo do stat block contém uma.
+            const diceMatch = rolls[0].damage.match(/\d+\s*d\s*\d+\s*(?:[+-]\s*\d+)?/i);
+            if (diceMatch) {
+              damageExpression = diceMatch[0].replace(/\s+/g, "");
+            }
           }
         }
 
         const bonusStr = bonus >= 0 ? `+${bonus}` : `${bonus}`;
+        const attackExpressionValue = `1d20${bonusStr}`;
         pins.push({
           pinType: "attack",
           label: itemName,
           rollExpression: `1d20${bonusStr}${damageStr}`,
+          attackExpression: attackExpressionValue,
+          damageExpression,
         });
       }
       // 2. Magias

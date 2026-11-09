@@ -359,6 +359,12 @@ export const npcPins = pgTable(
     contentId: uuid("content_id"),
     label: varchar("label", { length: 100 }).notNull(),
     rollExpression: varchar("roll_expression", { length: 200 }),
+    // Dano configurado (issue #90): ataque e dano separados; roll_expression
+    // permanece como campo legado para compatibilidade.
+    attackExpression: varchar("attack_expression", { length: 200 }),
+    damageExpression: varchar("damage_expression", { length: 200 }),
+    damageType: varchar("damage_type", { length: 30 }),
+    criticalRange: integer("critical_range"),
     manaCost: integer("mana_cost"),
     circle: integer("circle"),
     createdAt: timestamp("created_at").notNull().defaultNow(),

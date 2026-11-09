@@ -13,6 +13,10 @@ import { Spinner } from "@/components/ui";
 type TargetSelectionModalProps = {
   actionName: string;
   isHealing?: boolean;
+  /** Prévia do dano configurado (issue #90), ex.: "3d6+5 cortante". */
+  damagePreview?: string;
+  /** Aviso quando não há dano configurado (issue #90). */
+  noDamageWarning?: boolean;
   combatants: Combatant[];
   myCharacterId: string;
   isOpen: boolean;
@@ -24,6 +28,8 @@ type TargetSelectionModalProps = {
 export function TargetSelectionModal({
   actionName,
   isHealing = false,
+  damagePreview,
+  noDamageWarning = false,
   combatants,
   myCharacterId,
   isOpen,
@@ -66,6 +72,20 @@ export function TargetSelectionModal({
             <div>
               <h3 className="text-base font-bold text-white">Selecione o Alvo</h3>
               <p className="text-xs text-purple-300">Ação: <strong>{actionName}</strong></p>
+              {damagePreview && (
+                <p className="text-xs text-rose-300" data-testid="target-damage-preview">
+                  Dano configurado: <strong className="font-mono">{damagePreview}</strong>
+                </p>
+              )}
+              {noDamageWarning && (
+                <p
+                  className="text-xs text-amber-300"
+                  data-testid="target-no-damage-warning"
+                  role="alert"
+                >
+                  Ataque sem dano configurado — nenhum dano será aplicado.
+                </p>
+              )}
             </div>
           </div>
           <button 

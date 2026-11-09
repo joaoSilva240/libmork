@@ -288,6 +288,15 @@ async function runMigrations() {
     `);
     console.log('✓ Columns campaigns.dice3d_players_enabled and campaigns.dice3d_master_enabled ensured.');
 
+    console.log('\n--- 14. Applying npc pin damage migration (Issue #90) ---');
+    await client.query(`
+      ALTER TABLE "npc_pins" ADD COLUMN IF NOT EXISTS "attack_expression" varchar(200);
+      ALTER TABLE "npc_pins" ADD COLUMN IF NOT EXISTS "damage_expression" varchar(200);
+      ALTER TABLE "npc_pins" ADD COLUMN IF NOT EXISTS "damage_type" varchar(30);
+      ALTER TABLE "npc_pins" ADD COLUMN IF NOT EXISTS "critical_range" integer;
+    `);
+    console.log('✓ Columns npc_pins.attack_expression/damage_expression/damage_type/critical_range ensured.');
+
     console.log('\nAll migrations executed successfully!');
   } catch (error) {
     console.error('Migration error:', error);

@@ -128,14 +128,14 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json(
         {
           success: false,
-          error: "Dados inválidos",
+          error: validation.error.issues[0]?.message || "Dados inválidos",
           errors: validation.error.issues,
         },
         { status: 400 }
       );
     }
 
-    const { pinType, contentId, label, rollExpression, manaCost, circle } =
+    const { pinType, contentId, label, rollExpression, attackExpression, damageExpression, damageType, criticalRange, manaCost, circle } =
       validation.data;
 
     // Se houver contentId, busca nome/custo/círculo da fonte
@@ -194,6 +194,10 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         contentId: contentId ?? null,
         label: finalLabel,
         rollExpression: finalRollExpression,
+        attackExpression: attackExpression ?? null,
+        damageExpression: damageExpression ?? null,
+        damageType: damageType ?? null,
+        criticalRange: criticalRange ?? null,
         manaCost: finalManaCost,
         circle: finalCircle,
       })
