@@ -266,7 +266,9 @@ export default function PostDetailModal({ post, onClose, onCloned }: Props) {
         <Modal.Header className="flex items-center justify-between border-b border-gray-800 bg-gray-950/90 px-6 py-3.5 backdrop-blur-md">
           <div className="flex items-center gap-2.5">
             <span className="text-sm font-semibold text-gray-200">Publicação</span>
-            <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${typeConfig.badgeClass}`}>
+            <span
+              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${typeConfig.badgeClass}`}
+            >
               <span>{typeConfig.icon}</span>
               <span>{typeConfig.label}</span>
             </span>
@@ -520,10 +522,7 @@ export default function PostDetailModal({ post, onClose, onCloned }: Props) {
                   const isAttachment = comment.commentType === "attachment";
                   const payload = comment.attachmentPayload as Record<string, unknown> | undefined;
                   const commentImg =
-                    payload?.imageUrl ||
-                    payload?.iconUrl ||
-                    payload?.mapUrl ||
-                    payload?.tokenUrl;
+                    payload?.imageUrl || payload?.iconUrl || payload?.mapUrl || payload?.tokenUrl;
 
                   if (isAttachment) {
                     return (
@@ -573,7 +572,8 @@ export default function PostDetailModal({ post, onClose, onCloned }: Props) {
                             <p className="mt-0.5 text-xs text-gray-300 leading-relaxed">
                               {comment.content}
                             </p>
-                            {payload && (payload.description || payload.damage || payload.rarity) ? (
+                            {payload &&
+                            (payload.description || payload.damage || payload.rarity) ? (
                               <p className="mt-1 line-clamp-2 text-[11px] text-gray-400">
                                 {String(payload.description || payload.damage || payload.rarity)}
                               </p>

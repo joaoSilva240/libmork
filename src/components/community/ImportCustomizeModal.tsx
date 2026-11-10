@@ -139,7 +139,9 @@ export default function ImportCustomizeModal({
   if (contentType === "campaign") {
     return (
       <>
-        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+        {toast && (
+          <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
+        )}
         <Modal
           open
           onClose={onClose}
@@ -190,14 +192,21 @@ export default function ImportCustomizeModal({
           {imageUrl && (
             <div className="rounded-xl border border-gray-800 overflow-hidden bg-gray-900/50">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={imageUrl} alt="Preview" className="max-h-56 w-full object-contain bg-black/40" />
+              <img
+                src={imageUrl}
+                alt="Preview"
+                className="max-h-56 w-full object-contain bg-black/40"
+              />
             </div>
           )}
 
           <div className="space-y-3">
             {fields.map((field) => (
               <div key={field.key}>
-                <label htmlFor={`field-${field.key}`} className="block text-xs font-semibold text-gray-300 mb-1">
+                <label
+                  htmlFor={`field-${field.key}`}
+                  className="block text-xs font-semibold text-gray-300 mb-1"
+                >
                   {field.label}
                 </label>
                 {field.type === "textarea" ? (
@@ -214,7 +223,10 @@ export default function ImportCustomizeModal({
                     type={field.type}
                     value={String(formData[field.key] ?? "")}
                     onChange={(e) =>
-                      handleChange(field.key, field.type === "number" ? Number(e.target.value) : e.target.value)
+                      handleChange(
+                        field.key,
+                        field.type === "number" ? Number(e.target.value) : e.target.value,
+                      )
                     }
                     className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:border-purple-500 focus:outline-none"
                   />

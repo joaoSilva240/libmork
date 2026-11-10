@@ -62,13 +62,13 @@ export function CampaignForm() {
 
   const handleToggleNpc = (npcId: string) => {
     setSelectedNpcIds((prev) =>
-      prev.includes(npcId) ? prev.filter((id) => id !== npcId) : [...prev, npcId]
+      prev.includes(npcId) ? prev.filter((id) => id !== npcId) : [...prev, npcId],
     );
   };
 
   const handleToggleWorld = (worldId: string) => {
     setSelectedWorldIds((prev) =>
-      prev.includes(worldId) ? prev.filter((id) => id !== worldId) : [...prev, worldId]
+      prev.includes(worldId) ? prev.filter((id) => id !== worldId) : [...prev, worldId],
     );
   };
 
@@ -128,10 +128,7 @@ export function CampaignForm() {
     setInitialAssets((prev) => prev.filter((_, idx) => idx !== index));
   };
 
-  const handleFileUpload = async (
-    file: File,
-    type: "cover" | "map"
-  ) => {
+  const handleFileUpload = async (file: File, type: "cover" | "map") => {
     setUploadError(null);
     if (type === "cover") setIsUploadingCover(true);
     else setIsUploadingMap(true);
@@ -187,7 +184,8 @@ export function CampaignForm() {
           description: description || null,
           rulesEngine,
           pvpEnabled: rulesEngine === "missing_zero" ? false : pvpEnabled,
-          difficultyModifierShadowPoints: rulesEngine === "missing_zero" ? 0 : difficultyModifierShadowPoints,
+          difficultyModifierShadowPoints:
+            rulesEngine === "missing_zero" ? 0 : difficultyModifierShadowPoints,
           coverImageUrl: coverImageUrl || null,
           worldMapUrl: worldMapUrl || null,
           theme: selectedTheme,
@@ -379,7 +377,8 @@ export function CampaignForm() {
                       )}
                     </div>
                     <p className="text-[11px] text-gray-400 leading-relaxed">
-                      Curva de sino com soma direta de 2 dados d20 para resultados concentrados e épicos.
+                      Curva de sino com soma direta de 2 dados d20 para resultados concentrados e
+                      épicos.
                     </p>
                   </div>
 
@@ -413,9 +412,7 @@ export function CampaignForm() {
                       <div className="text-xs font-semibold text-white">
                         Combate entre Jogadores (PvP)
                       </div>
-                      <div className="text-[11px] text-gray-400">
-                        Duelos diretos entre fichas
-                      </div>
+                      <div className="text-[11px] text-gray-400">Duelos diretos entre fichas</div>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer shrink-0">
                       <input
@@ -639,9 +636,7 @@ export function CampaignForm() {
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="font-bold text-xs text-white truncate">
-                              {t.label}
-                            </span>
+                            <span className="font-bold text-xs text-white truncate">{t.label}</span>
                             <span
                               className={`text-[9px] px-1.5 py-0.2 rounded font-mono ${
                                 t.mode === "dark"
@@ -657,9 +652,7 @@ export function CampaignForm() {
                           )}
                         </div>
 
-                        <p className="text-[11px] text-gray-400 line-clamp-1">
-                          {t.description}
-                        </p>
+                        <p className="text-[11px] text-gray-400 line-clamp-1">{t.description}</p>
 
                         <div className="flex items-center justify-between pt-1 border-t border-gray-800/60">
                           {/* Amostras das 4 cores do sistema */}
@@ -792,8 +785,8 @@ export function CampaignForm() {
                         {isUploadingCover
                           ? "Enviando..."
                           : coverImageUrl
-                          ? "Trocar Arquivo"
-                          : "Upload"}
+                            ? "Trocar Arquivo"
+                            : "Upload"}
                       </button>
                       {coverImageUrl && (
                         <button
@@ -863,11 +856,7 @@ export function CampaignForm() {
                         className="inline-flex items-center gap-1.5 rounded-lg border border-gray-700 bg-gray-800 px-2.5 py-1 text-[11px] font-semibold text-white transition hover:bg-gray-700 disabled:opacity-50"
                       >
                         <Upload className="h-3 w-3" />
-                        {isUploadingMap
-                          ? "Enviando..."
-                          : worldMapUrl
-                          ? "Trocar Arquivo"
-                          : "Upload"}
+                        {isUploadingMap ? "Enviando..." : worldMapUrl ? "Trocar Arquivo" : "Upload"}
                       </button>
                       {worldMapUrl && (
                         <button
@@ -1160,7 +1149,8 @@ export function CampaignForm() {
                         )}
                         {selectedWorldIds.length > 0 && (
                           <span className="rounded bg-blue-950/80 border border-blue-700/50 px-2 py-1 text-blue-300 text-[11px] drop-shadow-sm">
-                            {selectedWorldIds.length} {selectedWorldIds.length === 1 ? "Mundo" : "Mundos"}
+                            {selectedWorldIds.length}{" "}
+                            {selectedWorldIds.length === 1 ? "Mundo" : "Mundos"}
                           </span>
                         )}
                       </div>
