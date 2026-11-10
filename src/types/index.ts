@@ -12,6 +12,10 @@ import type {
   NpcType,
   SpellUseType,
   DuelStatus,
+  Pf2eProficiencyRank,
+  Pf2eDegreeOfSuccess,
+  Pf2eAttribute,
+  Pf2eSave,
 } from "@/lib/utils/constants";
 
 export type {
@@ -23,6 +27,10 @@ export type {
   NpcType,
   SpellUseType,
   DuelStatus,
+  Pf2eProficiencyRank,
+  Pf2eDegreeOfSuccess,
+  Pf2eAttribute,
+  Pf2eSave,
 };
 
 // =============================================================================

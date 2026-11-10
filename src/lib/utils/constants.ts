@@ -70,9 +70,43 @@ export type DeathStatus = (typeof DEATH_STATUSES)[number];
 export const APPROVAL_STATUSES = ["draft", "pending", "approved", "rejected"] as const;
 export type ApprovalStatus = (typeof APPROVAL_STATUSES)[number];
 
-/** Motores de regras disponíveis (D-02, MISSING — Edição ZERO) */
-export const RULES_ENGINES = ["d20_mod", "dual_d20_sum", "missing_zero"] as const;
+/** Motores de regras disponíveis (D-02, MISSING — Edição ZERO, Pathfinder 2e) */
+export const RULES_ENGINES = ["d20_mod", "dual_d20_sum", "missing_zero", "pf2e"] as const;
 export type RulesEngine = (typeof RULES_ENGINES)[number];
+
+/** Ranks de proficiência do Pathfinder 2e (TEML) */
+export const PF2E_PROFICIENCY_RANKS = [
+  "untrained",
+  "trained",
+  "expert",
+  "master",
+  "legendary",
+] as const;
+export type Pf2eProficiencyRank = (typeof PF2E_PROFICIENCY_RANKS)[number];
+
+/** 4 Graus de sucesso do Pathfinder 2e */
+export const PF2E_DEGREES_OF_SUCCESS = [
+  "critical_success",
+  "success",
+  "failure",
+  "critical_failure",
+] as const;
+export type Pf2eDegreeOfSuccess = (typeof PF2E_DEGREES_OF_SUCCESS)[number];
+
+/** Atributos canônicos do Pathfinder 2e */
+export const PF2E_ATTRIBUTES = [
+  "strength",
+  "dexterity",
+  "constitution",
+  "intelligence",
+  "wisdom",
+  "charisma",
+] as const;
+export type Pf2eAttribute = (typeof PF2E_ATTRIBUTES)[number];
+
+/** Salvaguardas do Pathfinder 2e */
+export const PF2E_SAVES = ["fortitude", "reflex", "will"] as const;
+export type Pf2eSave = (typeof PF2E_SAVES)[number];
 
 /** Tipos de NPC (D-38) */
 export const NPC_TYPES = ["enemy", "common"] as const;

@@ -270,7 +270,7 @@ export function CampaignForm() {
                 <label className="block text-xs font-medium text-gray-300 mb-2">
                   Motor de Resolução de Testes
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   {/* Card d20_mod */}
                   <div
                     onClick={() => !isLoading && setRulesEngine("d20_mod")}
@@ -314,6 +314,26 @@ export function CampaignForm() {
                     <p className="text-[11px] text-gray-400">
                       Curva de sino com soma direta de 2 dados d20 para resultados concentrados e
                       épicos.
+                    </p>
+                  </div>
+
+                  {/* Card pf2e */}
+                  <div
+                    onClick={() => !isLoading && setRulesEngine("pf2e")}
+                    className={`cursor-pointer rounded-xl border p-3.5 transition-all select-none ${
+                      rulesEngine === "pf2e"
+                        ? "border-purple-500 bg-purple-950/50 shadow-md ring-1 ring-purple-500/60"
+                        : "border-gray-800 bg-gray-950/70 hover:border-gray-700 hover:bg-gray-950"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1 min-h-[24px]">
+                      <span className="font-bold text-xs text-white">Pathfinder 2e</span>
+                      {rulesEngine === "pf2e" && (
+                        <span className="h-2 w-2 rounded-full bg-purple-400" />
+                      )}
+                    </div>
+                    <p className="text-[11px] text-gray-400">
+                      Regras oficiais de PF2e com 4 graus de sucesso, proficiências TEML e MAP.
                     </p>
                   </div>
 

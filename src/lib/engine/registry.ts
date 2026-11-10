@@ -4,11 +4,13 @@
 
 import type { GameSystem } from "./types";
 import { libmorkSystem } from "./systems/libmorkSystem";
+import { pf2eSystem } from "./systems/pf2eSystem";
 
 const systemsRegistry = new Map<string, GameSystem>();
 
-// Registra sistema padrão
+// Registra sistemas disponíveis
 systemsRegistry.set(libmorkSystem.id, libmorkSystem);
+systemsRegistry.set(pf2eSystem.id, pf2eSystem);
 
 /**
  * Registra um novo sistema de regras na engine.
