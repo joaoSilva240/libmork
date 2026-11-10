@@ -250,20 +250,6 @@ export default function PostDetailModal({ post, onClose, onCloned }: Props) {
         />
       )}
 
-      {customizeImportTarget && (
-        <ImportCustomizeModal
-          contentType={customizeImportTarget.contentType}
-          payload={customizeImportTarget.payload}
-          postId={customizeImportTarget.postId}
-          commentId={customizeImportTarget.commentId}
-          onClose={() => setCustomizeImportTarget(null)}
-          onSuccess={() => {
-            onCloned?.();
-            void loadComments();
-          }}
-        />
-      )}
-
       <Modal
         open
         onClose={onClose}
@@ -604,6 +590,20 @@ export default function PostDetailModal({ post, onClose, onCloned }: Props) {
           </div>
         </Modal.Body>
       </Modal>
+
+      {customizeImportTarget && (
+        <ImportCustomizeModal
+          contentType={customizeImportTarget.contentType}
+          payload={customizeImportTarget.payload}
+          postId={customizeImportTarget.postId}
+          commentId={customizeImportTarget.commentId}
+          onClose={() => setCustomizeImportTarget(null)}
+          onSuccess={() => {
+            onCloned?.();
+            void loadComments();
+          }}
+        />
+      )}
     </>
   );
 }

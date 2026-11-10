@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent, within } from "@testing-library/react";
 import CommunityFeed from "../CommunityFeed";
 import type { CommunityPost } from "../CommunityCard";
 
@@ -388,5 +388,47 @@ describe("CommunityFeed Component", () => {
     const dialog = await screen.findByRole("dialog");
     expect(dialog).toHaveClass("mx-auto", "max-w-5xl");
     expect(screen.getByText("Comentários e Adaptações")).toBeInTheDocument();
+  });
+
+  it("abre o modal de importação sobreposto (z-index 60) acima do overlay da publicação", async () => {
+    global.fetch = vi.fn().mockImplementation((url: string | URL | Request) => {
+      const urlStr = url.toString();
+      if (urlStr.startsWith("/api/community/posts?")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ data: [mockPosts[0]], page: 1, limit: 12 }),
+        });
+      }
+      if (urlStr === `/api/community/posts/${mockPosts[0].id}/comments`) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ data: [] }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ data: [] }),
+      });
+    });
+
+    render(<CommunityFeed />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Bola de Fogo Ancestral")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText("Bola de Fogo Ancestral"));
+    const postDialog = await screen.findByRole("dialog");
+
+    const importBtn = within(postDialog).getByRole("button", { name: /^importar$/i });
+    fireEvent.click(importBtn);
+
+    const importHeading = await screen.findByText("Personalizar antes de importar");
+    expect(importHeading).toBeInTheDocument();
+
+    const dialogs = screen.getAllByRole("dialog");
+    expect(dialogs.length).toBe(2);
+    const topOverlay = dialogs[1].closest(".fixed");
+    expect(topOverlay).toHaveClass("z-[60]");
   });
 });

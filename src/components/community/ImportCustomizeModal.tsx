@@ -130,6 +130,8 @@ export default function ImportCustomizeModal({ contentType, payload, postId, com
           open
           onClose={onClose}
           labelledBy="import-campaign-warn"
+          zIndex={60}
+          overlayClassName="z-[60]"
           className="mx-auto max-w-md rounded-2xl border border-gray-800 bg-gray-950 p-6 text-center shadow-2xl"
         >
           <h2 id="import-campaign-warn" className="text-xl font-bold text-amber-400">
@@ -155,6 +157,8 @@ export default function ImportCustomizeModal({ contentType, payload, postId, com
         open
         onClose={onClose}
         labelledBy="import-customize-title"
+        zIndex={60}
+        overlayClassName="z-[60]"
         className="mx-auto max-w-3xl overflow-hidden rounded-2xl border border-gray-800 bg-gray-950 shadow-2xl"
       >
         <Modal.Header className="flex items-center justify-between border-b border-gray-800 px-5 py-4">
