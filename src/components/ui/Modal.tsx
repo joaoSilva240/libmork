@@ -27,6 +27,8 @@ type ModalProps = {
   "aria-label"?: string;
   children: ReactNode;
   className?: string;
+  overlayClassName?: string;
+  zIndex?: number;
 };
 
 type ModalPartProps = HTMLAttributes<HTMLElement> & { children: ReactNode };
@@ -131,6 +133,8 @@ function ModalComponent({
   "aria-label": ariaLabelProp,
   children,
   className = "",
+  overlayClassName = "",
+  zIndex,
 }: ModalProps) {
   const active = open ?? isOpen ?? false;
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -248,9 +252,10 @@ function ModalComponent({
     <div
       ref={overlayRef}
       aria-hidden={active ? undefined : true}
+      style={zIndex !== undefined ? { zIndex } : undefined}
       className={`fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-black/80 backdrop-blur-sm p-4 ${
         active ? "" : "motion-exit"
-      }`}
+      } ${overlayClassName}`.trim()}
       onClick={(event) => {
         if (active && closeOnBackdropRef.current && event.target === event.currentTarget)
           onCloseRef.current();

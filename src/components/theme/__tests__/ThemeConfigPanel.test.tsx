@@ -71,22 +71,15 @@ describe("ThemeConfigPanel (src/components/theme/ThemeConfigPanel.tsx)", () => {
     expect(stored.name).toBe("crimson-dark");
   });
 
-  it("navigates to 'Cores do Sistema (60-30-10)' subtab and edits colors", () => {
+  it("does not render the custom 60-30-10 color customization block in the themes tab", () => {
     renderWithProvider();
 
-    const colorsTabButton = screen.getByRole("button", { name: /Cores do Sistema/i });
-    fireEvent.click(colorsTabButton);
-
-    expect(screen.getByText("Dominante (60%)")).toBeInTheDocument();
-    expect(screen.getByText("Secundário (30%)")).toBeInTheDocument();
-    expect(screen.getByText("Destaque (10%)")).toBeInTheDocument();
-
-    const hexInputs = screen.getAllByDisplayValue("#09090b");
-    fireEvent.change(hexInputs[0], { target: { value: "#050505" } });
-
-    const stored = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || "{}");
-    expect(stored.name).toBe("custom");
-    expect(stored.colors.dominant.deep).toBe("#050505");
+    expect(
+      screen.queryByText(/Personalização das Cores do Sistema \(60-30-10\)/i),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Dominante (60%)")).not.toBeInTheDocument();
+    expect(screen.queryByText("Secundário (30%)")).not.toBeInTheDocument();
+    expect(screen.queryByText("Destaque (10%)")).not.toBeInTheDocument();
   });
 
   it("navigates to 'Tipografia & Fontes' subtab and switches font presets and individual fonts", () => {
