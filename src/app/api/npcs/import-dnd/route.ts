@@ -30,7 +30,8 @@ interface DnDMonsterResponse {
   }>;
 }
 
-const clamp = (val: number, min = 1, max = 30) => Math.max(min, Math.min(max, Math.round(val || 10)));
+const clamp = (val: number, min = 1, max = 30) =>
+  Math.max(min, Math.min(max, Math.round(val || 10)));
 
 async function fetchAndImportMonster(index: string, userId: string, translateWithLLM = false) {
   try {
@@ -54,7 +55,7 @@ async function fetchAndImportMonster(index: string, userId: string, translateWit
         const translated = await translateContentWithLLM(
           "item",
           payloadToTranslate,
-          `Translate this D&D 5e monster name and action labels from English to Brazilian Portuguese. Return JSON with "name" and "actions" array of strings.`
+          `Translate this D&D 5e monster name and action labels from English to Brazilian Portuguese. Return JSON with "name" and "actions" array of strings.`,
         );
         if (typeof translated.name === "string" && translated.name) {
           finalName = translated.name;
@@ -67,7 +68,10 @@ async function fetchAndImportMonster(index: string, userId: string, translateWit
           }));
         }
       } catch (err) {
-        logger.warn({ err, monsterName: data.name }, "[fetchAndImportMonster D&D 5e] Falha na tradução via LLM");
+        logger.warn(
+          { err, monsterName: data.name },
+          "[fetchAndImportMonster D&D 5e] Falha na tradução via LLM",
+        );
       }
     }
 
@@ -153,12 +157,49 @@ export async function POST(request: NextRequest) {
     } else {
       // Lista expandida com top 30 se não especificado
       targetIndexes = [
-        "goblin", "skeleton", "orc", "zombie", "wolf", "owlbear", "mimic", "minotaur",
-        "troll", "gargoyle", "kobold", "bandit", "vampire-spawn", "young-red-dragon",
-        "beholder", "aboleth", "adult-black-dragon", "basilisk", "bugbear", "centaur",
-        "chimera", "cockatrice", "cyclops", "dryad", "ettin", "ghoul", "giant-spider",
-        "griffin", "harpy", "hydra", "lich", "manticore", "mummy", "nothic", "pegasus",
-        "satyr", "shadow", "specter", "tarrasque", "unicorn", "wight", "wraith", "wyvern"
+        "goblin",
+        "skeleton",
+        "orc",
+        "zombie",
+        "wolf",
+        "owlbear",
+        "mimic",
+        "minotaur",
+        "troll",
+        "gargoyle",
+        "kobold",
+        "bandit",
+        "vampire-spawn",
+        "young-red-dragon",
+        "beholder",
+        "aboleth",
+        "adult-black-dragon",
+        "basilisk",
+        "bugbear",
+        "centaur",
+        "chimera",
+        "cockatrice",
+        "cyclops",
+        "dryad",
+        "ettin",
+        "ghoul",
+        "giant-spider",
+        "griffin",
+        "harpy",
+        "hydra",
+        "lich",
+        "manticore",
+        "mummy",
+        "nothic",
+        "pegasus",
+        "satyr",
+        "shadow",
+        "specter",
+        "tarrasque",
+        "unicorn",
+        "wight",
+        "wraith",
+        "wyvern",
       ];
     }
 
@@ -169,7 +210,7 @@ export async function POST(request: NextRequest) {
     for (let i = 0; i < targetIndexes.length; i += BATCH_SIZE) {
       const chunk = targetIndexes.slice(i, i + BATCH_SIZE);
       const results = await Promise.all(
-        chunk.map((idx) => fetchAndImportMonster(idx, session.user.id, translateWithLLM))
+        chunk.map((idx) => fetchAndImportMonster(idx, session.user.id, translateWithLLM)),
       );
       for (const res of results) {
         if (res) importedMonsters.push(res);
@@ -182,10 +223,10 @@ export async function POST(request: NextRequest) {
       data: importedMonsters,
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro na rota de importação D&D 5e');
+    logger.error({ err: error }, "Erro na rota de importação D&D 5e");
     return NextResponse.json(
       { success: false, error: "Erro ao importar monstros da API D&D 5e" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

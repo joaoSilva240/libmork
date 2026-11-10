@@ -1,9 +1,9 @@
-require('dotenv').config({ path: '.env.local' });
-const { Client } = require('pg');
+require("dotenv").config({ path: ".env.local" });
+const { Client } = require("pg");
 
 async function migrate() {
   if (!process.env.DATABASE_URL) {
-    console.log('No DATABASE_URL found, skipping direct DB migration');
+    console.log("No DATABASE_URL found, skipping direct DB migration");
     return;
   }
   const client = new Client({ connectionString: process.env.DATABASE_URL });
@@ -19,13 +19,13 @@ async function migrate() {
         PRIMARY KEY ("post_id", "user_id")
       );
     `);
-    console.log('Migration of community_post_votes completed successfully!');
+    console.log("Migration of community_post_votes completed successfully!");
   } finally {
     await client.end();
   }
 }
 
 migrate().catch((error) => {
-  console.error('Migration error:', error.message);
+  console.error("Migration error:", error.message);
   process.exitCode = 1;
 });

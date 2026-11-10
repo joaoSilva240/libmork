@@ -13,10 +13,7 @@ export async function GET(request: NextRequest) {
   try {
     const session = await requireAuth();
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -26,7 +23,7 @@ export async function GET(request: NextRequest) {
     if (!targetUrlParam) {
       return NextResponse.json(
         { success: false, error: "Parâmetro 'url' é obrigatório" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -34,7 +31,7 @@ export async function GET(request: NextRequest) {
     if (!config.isConfigured) {
       return NextResponse.json(
         { success: false, error: "Kavita não configurado no servidor" },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
@@ -49,14 +46,15 @@ export async function GET(request: NextRequest) {
     if (!validation.valid || !validation.url) {
       return NextResponse.json(
         { success: false, error: validation.error || "Destino não autorizado" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     // Validação de hostname: o host de destino deve ser o mesmo de KAVITA_URL
     const configuredUrl = new URL(config.baseUrl);
     const targetPort = validation.url.port || (validation.url.protocol === "https:" ? "443" : "80");
-    const configuredPort = configuredUrl.port || (configuredUrl.protocol === "https:" ? "443" : "80");
+    const configuredPort =
+      configuredUrl.port || (configuredUrl.protocol === "https:" ? "443" : "80");
 
     if (
       validation.url.hostname.toLowerCase() !== configuredUrl.hostname.toLowerCase() ||
@@ -64,7 +62,7 @@ export async function GET(request: NextRequest) {
     ) {
       return NextResponse.json(
         { success: false, error: "Host alvo não corresponde ao servidor Kavita configurado." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -83,9 +81,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "Destino corresponde ao leitor web do Kavita, não a um arquivo PDF para download/streaming.",
+          error:
+            "Destino corresponde ao leitor web do Kavita, não a um arquivo PDF para download/streaming.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -124,13 +123,13 @@ export async function GET(request: NextRequest) {
           error: errorMsg,
           statusCode: upstreamRes.status,
         },
-        { status: upstreamRes.status }
+        { status: upstreamRes.status },
       );
     }
 
     const responseHeaders = new Headers();
     const rawContentType = upstreamRes.headers.get("content-type") || "";
-    
+
     // Rejeita resposta HTML quando type=pdf (Kavita retornando tela de leitor web ou página de erro em vez de binário)
     if (typeParam === "pdf") {
       const lowerCt = rawContentType.toLowerCase();
@@ -138,14 +137,16 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(
           {
             success: false,
-            error: "O servidor Kavita retornou HTML em vez de um arquivo PDF. Este recurso é um leitor web ou não possui download direto disponível.",
+            error:
+              "O servidor Kavita retornou HTML em vez de um arquivo PDF. Este recurso é um leitor web ou não possui download direto disponível.",
           },
-          { status: 422 }
+          { status: 422 },
         );
       }
     }
 
-    const contentType = rawContentType || (typeParam === "image" ? "image/jpeg" : "application/pdf");
+    const contentType =
+      rawContentType || (typeParam === "image" ? "image/jpeg" : "application/pdf");
     responseHeaders.set("Content-Type", contentType);
 
     const contentLength = upstreamRes.headers.get("content-length");
@@ -174,7 +175,7 @@ export async function GET(request: NextRequest) {
     logger.error({ err: error }, "Erro no proxy seguro do Kavita");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor ao processar proxy" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

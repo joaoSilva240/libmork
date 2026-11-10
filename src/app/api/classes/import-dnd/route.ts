@@ -60,9 +60,21 @@ async function fetchAndImportDndClass(index: string, translateWithLLM: boolean) 
       const pName = prof.name.toLowerCase();
       if (pName.includes("armor") || pName.includes("shield")) {
         armor.push(prof.name);
-      } else if (pName.includes("weapon") || pName.includes("crossbow") || pName.includes("sword") || pName.includes("dagger")) {
+      } else if (
+        pName.includes("weapon") ||
+        pName.includes("crossbow") ||
+        pName.includes("sword") ||
+        pName.includes("dagger")
+      ) {
         weapons.push(prof.name);
-      } else if (pName.includes("tool") || pName.includes("kit") || pName.includes("instrument") || pName.includes("supplies") || pName.includes("cards") || pName.includes("dice")) {
+      } else if (
+        pName.includes("tool") ||
+        pName.includes("kit") ||
+        pName.includes("instrument") ||
+        pName.includes("supplies") ||
+        pName.includes("cards") ||
+        pName.includes("dice")
+      ) {
         tools.push(prof.name);
       } else if (pName.includes("language")) {
         languages.push(prof.name);
@@ -84,7 +96,7 @@ async function fetchAndImportDndClass(index: string, translateWithLLM: boolean) 
     const hitDie = classData.hit_die || 8;
     const isCaster = Boolean(classData.spellcasting);
     const savingThrows = (classData.saving_throws || []).map((s) => s.name).join(", ");
-    let classDescription = `Dado de Vida: d${hitDie}. Testes de Resistência: ${savingThrows || "Nenhum"}.`;
+    const classDescription = `Dado de Vida: d${hitDie}. Testes de Resistência: ${savingThrows || "Nenhum"}.`;
 
     // Parse níveis 1 a 20
     const rawBenefitsByLevel: Array<{
@@ -100,7 +112,13 @@ async function fetchAndImportDndClass(index: string, translateWithLLM: boolean) 
     for (let lvl = 1; lvl <= 20; lvl++) {
       const lvlData = levelsData.find((l) => l.level === lvl);
       const features = (lvlData?.features || []).map((f) => f.name);
-      const isAsi = (lvlData?.ability_score_bonuses ?? 0) > 0 || lvl === 4 || lvl === 8 || lvl === 12 || lvl === 16 || lvl === 19;
+      const isAsi =
+        (lvlData?.ability_score_bonuses ?? 0) > 0 ||
+        lvl === 4 ||
+        lvl === 8 ||
+        lvl === 12 ||
+        lvl === 16 ||
+        lvl === 19;
       const manaBonus = isCaster ? (lvl === 1 ? 5 : 3) : 0;
       const hpBonus = Math.ceil(hitDie / 2) + 1;
 
@@ -139,7 +157,11 @@ async function fetchAndImportDndClass(index: string, translateWithLLM: boolean) 
           name: classData.name,
           description: classDescription,
           proficiencies: { weapons, armor, languages, tools },
-          initialItems: initialItems.map((i) => ({ name: i.name, quantity: i.quantity, description: i.description })),
+          initialItems: initialItems.map((i) => ({
+            name: i.name,
+            quantity: i.quantity,
+            description: i.description,
+          })),
           benefits: rawBenefitsByLevel.map((b) => ({
             level: b.level,
             advantages: b.advantages,
@@ -150,7 +172,7 @@ async function fetchAndImportDndClass(index: string, translateWithLLM: boolean) 
         const translated = await translateContentWithLLM(
           "class",
           payloadToTranslate,
-          `Você é um especialista em D&D 5e e tradução de RPG. Traduza o nome da classe, descrição, proficiências, nomes dos itens iniciais e descrição/habilidades dos níveis para Português do Brasil (pt-BR). Retorne estritamente um JSON com a mesma estrutura de chaves.`
+          `Você é um especialista em D&D 5e e tradução de RPG. Traduza o nome da classe, descrição, proficiências, nomes dos itens iniciais e descrição/habilidades dos níveis para Português do Brasil (pt-BR). Retorne estritamente um JSON com a mesma estrutura de chaves.`,
         );
 
         if (typeof translated.name === "string" && translated.name) {
@@ -169,7 +191,13 @@ async function fetchAndImportDndClass(index: string, translateWithLLM: boolean) 
           };
         }
         if (Array.isArray(translated.initialItems)) {
-          finalInitialItems = (translated.initialItems as Array<{ name?: string; quantity?: number; description?: string }>).map((item, idx) => ({
+          finalInitialItems = (
+            translated.initialItems as Array<{
+              name?: string;
+              quantity?: number;
+              description?: string;
+            }>
+          ).map((item, idx) => ({
             item_id: null,
             name: item.name || initialItems[idx]?.name || "Item",
             quantity: Number(item.quantity) || initialItems[idx]?.quantity || 1,
@@ -179,7 +207,11 @@ async function fetchAndImportDndClass(index: string, translateWithLLM: boolean) 
           }));
         }
         if (Array.isArray(translated.benefits)) {
-          const transBenefits = translated.benefits as Array<{ level?: number; advantages?: string[]; description?: string }>;
+          const transBenefits = translated.benefits as Array<{
+            level?: number;
+            advantages?: string[];
+            description?: string;
+          }>;
           finalBenefits = rawBenefitsByLevel.map((orig, idx) => {
             const tb = transBenefits[idx];
             return {
@@ -190,7 +222,10 @@ async function fetchAndImportDndClass(index: string, translateWithLLM: boolean) 
           });
         }
       } catch (err) {
-        logger.warn({ err, className: classData.name }, "[fetchAndImportDndClass] Falha na tradução via LLM, mantendo termos originais");
+        logger.warn(
+          { err, className: classData.name },
+          "[fetchAndImportDndClass] Falha na tradução via LLM, mantendo termos originais",
+        );
       }
     }
 
@@ -246,7 +281,7 @@ export async function POST(request: NextRequest) {
     if (session.user.role !== "master") {
       return NextResponse.json(
         { success: false, error: "Apenas mestres podem gerenciar classes" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -263,16 +298,36 @@ export async function POST(request: NextRequest) {
         targetIndexes = (catalogData.results || []).map((c: { index: string }) => c.index);
       } else {
         targetIndexes = [
-          "barbarian", "bard", "cleric", "druid", "fighter", "monk",
-          "paladin", "ranger", "rogue", "sorcerer", "warlock", "wizard"
+          "barbarian",
+          "bard",
+          "cleric",
+          "druid",
+          "fighter",
+          "monk",
+          "paladin",
+          "ranger",
+          "rogue",
+          "sorcerer",
+          "warlock",
+          "wizard",
         ];
       }
     } else if (Array.isArray(body.classIndexes) && body.classIndexes.length > 0) {
       targetIndexes = body.classIndexes;
     } else {
       targetIndexes = [
-        "barbarian", "bard", "cleric", "druid", "fighter", "monk",
-        "paladin", "ranger", "rogue", "sorcerer", "warlock", "wizard"
+        "barbarian",
+        "bard",
+        "cleric",
+        "druid",
+        "fighter",
+        "monk",
+        "paladin",
+        "ranger",
+        "rogue",
+        "sorcerer",
+        "warlock",
+        "wizard",
       ];
     }
 
@@ -282,7 +337,7 @@ export async function POST(request: NextRequest) {
     for (let i = 0; i < targetIndexes.length; i += BATCH_SIZE) {
       const chunk = targetIndexes.slice(i, i + BATCH_SIZE);
       const results = await Promise.all(
-        chunk.map((idx) => fetchAndImportDndClass(idx, translateWithLLM))
+        chunk.map((idx) => fetchAndImportDndClass(idx, translateWithLLM)),
       );
       for (const res of results) {
         if (res) importedClasses.push(res);
@@ -301,7 +356,7 @@ export async function POST(request: NextRequest) {
     logger.error({ err: error }, "Erro na rota de importação de classes D&D 5e");
     return NextResponse.json(
       { success: false, error: "Erro ao importar classes da API D&D 5e" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -6,10 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/session";
-import {
-  acquireCharacter,
-  getAcquirePreview,
-} from "@/lib/server/character-share-service";
+import { acquireCharacter, getAcquirePreview } from "@/lib/server/character-share-service";
 import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ token: string }> };
@@ -23,10 +20,7 @@ function mapError(error: unknown) {
     return NextResponse.json({ success: false, error: message }, { status: 409 });
   }
   logger.error({ err: error }, "Erro na aquisição de personagem");
-  return NextResponse.json(
-    { success: false, error: "Erro interno do servidor" },
-    { status: 500 }
-  );
+  return NextResponse.json({ success: false, error: "Erro interno do servidor" }, { status: 500 });
 }
 
 /**
@@ -37,10 +31,7 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { token } = await params;
@@ -60,10 +51,7 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { token } = await params;

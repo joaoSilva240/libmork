@@ -109,9 +109,7 @@ describe("ApplySessionModal", () => {
     renderModal();
     await screen.findByTestId("apply-day-2026-12-01");
     fireEvent.click(screen.getByTestId("apply-submit"));
-    await waitFor(() =>
-      expect(screen.getByText(/ao menos um dia/i)).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByText(/ao menos um dia/i)).toBeInTheDocument());
     expect(postSpy).not.toHaveBeenCalled();
   });
 

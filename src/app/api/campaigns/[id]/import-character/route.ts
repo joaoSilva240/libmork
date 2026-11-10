@@ -33,10 +33,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -49,7 +46,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
           error: "Dados inválidos",
           errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -66,7 +63,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!campaign) {
       return NextResponse.json(
         { success: false, error: "Campanha não encontrada" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -80,15 +77,15 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         and(
           eq(campaignInvites.userId, session.user.id),
           eq(campaignInvites.campaignId, campaignId),
-          eq(campaignInvites.revoked, false)
-        )
+          eq(campaignInvites.revoked, false),
+        ),
       )
       .limit(1);
 
     if (!invite && !isMaster) {
       return NextResponse.json(
         { success: false, error: "Você não tem convite ativo para esta campanha" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -98,24 +95,21 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         .select()
         .from(missingHabitants)
         .where(
-          and(
-            eq(missingHabitants.id, characterId),
-            eq(missingHabitants.ownerId, session.user.id)
-          )
+          and(eq(missingHabitants.id, characterId), eq(missingHabitants.ownerId, session.user.id)),
         )
         .limit(1);
 
       if (!habitant) {
         return NextResponse.json(
           { success: false, error: "Habitante não encontrado" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
       if (habitant.campaignId === campaignId) {
         return NextResponse.json(
           { success: false, error: "Este habitante já está nesta campanha" },
-          { status: 409 }
+          { status: 409 },
         );
       }
 
@@ -150,7 +144,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
             campaignId,
           },
         },
-        { status: 201 }
+        { status: 201 },
       );
     }
 
@@ -158,18 +152,13 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const [character] = await db
       .select()
       .from(characters)
-      .where(
-        and(
-          eq(characters.id, characterId),
-          eq(characters.ownerId, session.user.id)
-        )
-      )
+      .where(and(eq(characters.id, characterId), eq(characters.ownerId, session.user.id)))
       .limit(1);
 
     if (!character) {
       return NextResponse.json(
         { success: false, error: "Personagem não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -179,15 +168,15 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       .where(
         and(
           eq(characterCampaigns.characterId, characterId),
-          eq(characterCampaigns.campaignId, campaignId)
-        )
+          eq(characterCampaigns.campaignId, campaignId),
+        ),
       )
       .limit(1);
 
     if (existingLink) {
       return NextResponse.json(
         { success: false, error: "Este personagem já está vinculado a esta campanha" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -206,13 +195,13 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         success: true,
         data: newLink,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     logger.error({ err: error }, "Erro ao importar personagem para campanha");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

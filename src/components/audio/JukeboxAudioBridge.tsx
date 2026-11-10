@@ -7,7 +7,7 @@
 // players de áudio sincronizados. Usado por jogadores para receber áudio
 // do mestre sem UI visível. Suporta execução simultânea.
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useJukebox } from "@/hooks/useJukebox";
 import { YouTubeAudioPlayer } from "./YouTubeAudioPlayer";
 
@@ -17,7 +17,14 @@ export interface JukeboxAudioBridgeProps {
 
 export function JukeboxAudioBridge({ campaignId }: JukeboxAudioBridgeProps) {
   const { tracks, playingTrackIds, playingTrackId, loopTrackIds } = useJukebox(campaignId, false);
-  const [volumeLocal, setVolumeLocal] = useState<Record<string, number>>({});
+  const [volumeLocal] = useState<Record<string, number>>({});
+  const [muted, setMuted] = useState(false);
+
+  useEffect(() => {
+    const handleMute = () => setMuted((prev) => !prev);
+    window.addEventListener("libmork:jukebox-mute", handleMute);
+    return () => window.removeEventListener("libmork:jukebox-mute", handleMute);
+  }, []);
 
   return (
     <div data-testid="jukebox-audio-bridge" className="hidden" aria-hidden>
@@ -31,7 +38,7 @@ export function JukeboxAudioBridge({ campaignId }: JukeboxAudioBridgeProps) {
             key={track.id}
             videoId={track.id}
             playing={isPlaying}
-            volume={volumeLocal[track.id] ?? 50}
+            volume={muted ? 0 : (volumeLocal[track.id] ?? 50)}
             loop={loopTrackIds.has(track.id)}
           />
         );

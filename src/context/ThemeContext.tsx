@@ -4,14 +4,7 @@
 // Libmork — Contexto Global de Temas e Acessibilidade (WCAG AAA)
 // =============================================================================
 
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import {
   type ThemeConfig,
   type ThemeMode,
@@ -38,11 +31,7 @@ export interface ThemeContextValue {
   setThemeName: (name: ThemeName) => void;
   setThemeMode: (mode: ThemeMode) => void;
   setThemeConfig: (config: ThemeConfig) => void;
-  updateColor: (
-    section: "dominant" | "secondary" | "accent",
-    key: string,
-    value: string,
-  ) => void;
+  updateColor: (section: "dominant" | "secondary" | "accent", key: string, value: string) => void;
   setFontPreset: (presetId: FontPresetId) => void;
   setFonts: (headingId: FontFamilyId, bodyId: FontFamilyId) => void;
   updateUiDetails: (patch: Partial<ThemeUiDetails>) => void;
@@ -141,11 +130,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const updateColor = useCallback(
-    (
-      section: "dominant" | "secondary" | "accent",
-      key: string,
-      value: string,
-    ) => {
+    (section: "dominant" | "secondary" | "accent", key: string, value: string) => {
       setThemeState((current) => {
         const next: ThemeConfig = {
           ...current,
@@ -194,29 +179,26 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const setFonts = useCallback(
-    (headingId: FontFamilyId, bodyId: FontFamilyId) => {
-      const headingDef = AVAILABLE_FONTS[headingId];
-      const bodyDef = AVAILABLE_FONTS[bodyId];
-      if (!headingDef || !bodyDef) return;
+  const setFonts = useCallback((headingId: FontFamilyId, bodyId: FontFamilyId) => {
+    const headingDef = AVAILABLE_FONTS[headingId];
+    const bodyDef = AVAILABLE_FONTS[bodyId];
+    if (!headingDef || !bodyDef) return;
 
-      setThemeState((current) => {
-        const next: ThemeConfig = {
-          ...current,
-          fonts: {
-            heading: headingDef.css,
-            body: bodyDef.css,
-            headingId,
-            bodyId,
-            presetId: undefined,
-          },
-        };
-        saveStoredTheme(next);
-        return next;
-      });
-    },
-    [],
-  );
+    setThemeState((current) => {
+      const next: ThemeConfig = {
+        ...current,
+        fonts: {
+          heading: headingDef.css,
+          body: bodyDef.css,
+          headingId,
+          bodyId,
+          presetId: undefined,
+        },
+      };
+      saveStoredTheme(next);
+      return next;
+    });
+  }, []);
 
   const updateUiDetails = useCallback((patch: Partial<ThemeUiDetails>) => {
     setThemeState((current) => {
@@ -234,10 +216,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const optimizeContrast = useCallback(() => {
     setThemeState((current) => {
-      const optimized = optimizeForAaa(
-        current.colors.dominant.deep,
-        current.colors.secondary.pure,
-      );
+      const optimized = optimizeForAaa(current.colors.dominant.deep, current.colors.secondary.pure);
 
       const autoText = ensureAaaTextColor(optimized.bg);
 
@@ -269,19 +248,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     saveStoredTheme(def);
   }, []);
 
-  const applyCampaignThemeOverride = useCallback(
-    (themeName?: string | null) => {
-      if (!themeName) {
-        setCampaignOverride(null);
-        return;
-      }
+  const applyCampaignThemeOverride = useCallback((themeName?: string | null) => {
+    if (!themeName) {
+      setCampaignOverride(null);
+      return;
+    }
 
-      if (themes[themeName as ThemeName]) {
-        setCampaignOverride(themes[themeName as ThemeName]);
-      }
-    },
-    [],
-  );
+    if (themes[themeName as ThemeName]) {
+      setCampaignOverride(themes[themeName as ThemeName]);
+    }
+  }, []);
 
   const clearCampaignThemeOverride = useCallback(() => {
     setCampaignOverride(null);

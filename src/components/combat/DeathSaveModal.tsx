@@ -76,20 +76,25 @@ export function DeathSaveModal({
             VOCÊ ESTÁ CAÍDO (0 HP)
           </h2>
           <p className="text-xs text-rose-300/80">
-            <strong className="text-white">{characterName}</strong> precisa passar em 3 testes de salvaguarda de morte ou renascer das cinzas!
+            <strong className="text-white">{characterName}</strong> precisa passar em 3 testes de
+            salvaguarda de morte ou renascer das cinzas!
           </p>
         </div>
 
         {/* Indicadores de Sucessos / Falhas */}
         <div className="grid grid-cols-2 gap-3 rounded-2xl border border-rose-950 bg-rose-950/20 p-4">
           <div className="space-y-1">
-            <span className="text-xs font-bold text-emerald-400 uppercase">Sucessos ({successes}/3)</span>
+            <span className="text-xs font-bold text-emerald-400 uppercase">
+              Sucessos ({successes}/3)
+            </span>
             <div className="flex justify-center gap-2">
               {[1, 2, 3].map((num) => (
                 <span
                   key={num}
                   className={`h-4 w-4 rounded-full border border-emerald-500 ${
-                    num <= successes ? "bg-emerald-500 shadow-md shadow-emerald-500/50" : "bg-gray-900"
+                    num <= successes
+                      ? "bg-emerald-500 shadow-md shadow-emerald-500/50"
+                      : "bg-gray-900"
                   }`}
                 />
               ))}
@@ -148,7 +153,9 @@ export function DeathSaveModal({
           <div className="space-y-4 rounded-2xl border border-amber-500/40 bg-amber-950/20 p-4 text-left text-xs">
             <h3 className="font-bold text-amber-300 text-sm">🔥 Renascimento Fênix (RF-043)</h3>
             <p className="text-amber-200/80">
-              Seu personagem renascerá imediatamente com a metade dos seus níveis (nível {Math.max(1, Math.floor(level / 2))}) e 50% dos pontos de vida/mana. A ficha, imagem e NFC serão mantidos, mas o Mestre aplicará sequelhas permanentes.
+              Seu personagem renascerá imediatamente com a metade dos seus níveis (nível{" "}
+              {Math.max(1, Math.floor(level / 2))}) e 50% dos pontos de vida/mana. A ficha, imagem e
+              NFC serão mantidos, mas o Mestre aplicará sequelhas permanentes.
             </p>
             <div className="flex gap-2 pt-2">
               <button
@@ -169,10 +176,15 @@ export function DeathSaveModal({
 
         {mode === "dead" && (
           <div className="space-y-4 rounded-2xl border border-rose-500/40 bg-rose-950/20 p-4 text-left text-xs">
-            <h3 className="font-bold text-rose-300 text-sm">💀 Morte Definitiva & Pontos de Sombra (RF-044)</h3>
+            <h3 className="font-bold text-rose-300 text-sm">
+              💀 Morte Definitiva & Pontos de Sombra (RF-044)
+            </h3>
             <p className="text-rose-200/80">
               O personagem será inativado definitivamente. Sua conta receberá{" "}
-              <strong className="text-amber-300 font-bold">{Math.floor(level / 2)} Pontos de Sombra</strong> para utilizar em novas campanhas ativando o caos narrativo e bônus de atributos!
+              <strong className="text-amber-300 font-bold">
+                {Math.floor(level / 2)} Pontos de Sombra
+              </strong>{" "}
+              para utilizar em novas campanhas ativando o caos narrativo e bônus de atributos!
             </p>
             <div className="flex gap-2 pt-2">
               <button

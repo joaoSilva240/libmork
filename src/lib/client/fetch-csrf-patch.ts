@@ -16,17 +16,9 @@ export function installFetchCsrfPatch(): void {
 
   const originalFetch = window.fetch.bind(window);
 
-  window.fetch = async (
-    input: RequestInfo | URL,
-    init?: RequestInit
-  ): Promise<Response> => {
+  window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const method = (init?.method || "GET").toUpperCase();
-    const url =
-      typeof input === "string"
-        ? input
-        : input instanceof URL
-          ? input.href
-          : input.url;
+    const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
 
     if (isCsrfMutation(method, url)) {
       const token = await ensureCsrfToken();

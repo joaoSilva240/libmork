@@ -13,11 +13,7 @@ import {
   Settings,
   Package,
 } from "lucide-react";
-import type {
-  ChatGroupSummary,
-  ChatMessageDetail,
-  SharePayload,
-} from "@/lib/server/chat-service";
+import type { ChatGroupSummary, ChatMessageDetail, SharePayload } from "@/lib/server/chat-service";
 import { ChatPollBubble } from "./ChatPollBubble";
 import { CreatePollModal } from "./CreatePollModal";
 import { SharedContentCard } from "./SharedContentCard";
@@ -43,8 +39,7 @@ type LibraryMentionItem = {
 };
 
 type MentionEntry =
-  | { kind: "user"; user: ChatUserResult }
-  | { kind: "item"; item: LibraryMentionItem };
+  { kind: "user"; user: ChatUserResult } | { kind: "item"; item: LibraryMentionItem };
 
 const MENTION_MIN_CHARS = 3;
 
@@ -137,7 +132,10 @@ export function ActiveChatRoom({
     setInputText("");
     closeMention();
     if (entry.kind === "user") {
-      void onSendShare({ kind: "profile", id: entry.user.userId }, textBefore || "Perfil compartilhado");
+      void onSendShare(
+        { kind: "profile", id: entry.user.userId },
+        textBefore || "Perfil compartilhado",
+      );
     } else {
       void onSendShare(
         {
@@ -334,9 +332,7 @@ export function ActiveChatRoom({
                       payload={msg.payload}
                       onClick={() => setSelectedShare(msg.payload!)}
                     />
-                    <div
-                      className={`text-[9px] mt-1 text-right select-none text-secondary-muted`}
-                    >
+                    <div className={`text-[9px] mt-1 text-right select-none text-secondary-muted`}>
                       {formatMessageTime(msg.createdAt)}
                     </div>
                   </div>
@@ -412,8 +408,7 @@ export function ActiveChatRoom({
             >
               {mentionResults.map((entry, index) => {
                 const prev = mentionResults[index - 1];
-                const showLibraryHeader =
-                  entry.kind === "item" && (!prev || prev.kind !== "item");
+                const showLibraryHeader = entry.kind === "item" && (!prev || prev.kind !== "item");
                 const isSelected = index === mentionIndex;
                 const rowClass = `flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors cursor-pointer ${
                   isSelected

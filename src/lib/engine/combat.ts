@@ -67,7 +67,7 @@ export interface CombatSessionState {
  */
 export function createCombatSession(
   campaignId: string,
-  rawCombatants: Array<Omit<Combatant, "actionsRemaining" | "maxActions">>
+  rawCombatants: Array<Omit<Combatant, "actionsRemaining" | "maxActions">>,
 ): CombatSessionState {
   const sorted = [...rawCombatants].sort((a, b) => b.initiative - a.initiative);
 
@@ -144,7 +144,7 @@ export function advanceCombatTurn(session: CombatSessionState): CombatSessionSta
 export function spendCombatActions(
   session: CombatSessionState,
   combatantId: string,
-  actionCost: number
+  actionCost: number,
 ): { session: CombatSessionState; success: boolean; message: string } {
   if (!session.active) {
     return { session, success: false, message: "Não há combate ativo." };
@@ -211,7 +211,7 @@ export function processDeathSaveRoll(
   currentSuccesses: number,
   currentFailures: number,
   dieRoll: number,
-  vigorMod: number
+  vigorMod: number,
 ): {
   success: boolean;
   dieRoll: number;
@@ -330,7 +330,13 @@ export function applyHealing(combatant: Combatant, amount: number): Combatant {
 
 export function applyManaChange(combatant: Combatant, delta: number): Combatant {
   if (combatant.manaCurrent == null || combatant.manaMax == null) return combatant;
-  return { ...combatant, manaCurrent: Math.max(0, Math.min(Math.max(0, combatant.manaMax), combatant.manaCurrent + delta)) };
+  return {
+    ...combatant,
+    manaCurrent: Math.max(
+      0,
+      Math.min(Math.max(0, combatant.manaMax), combatant.manaCurrent + delta),
+    ),
+  };
 }
 
 export function hydrateCombatantMana(
@@ -343,7 +349,8 @@ export function hydrateCombatantMana(
   const safeMax = Math.max(0, manaMax as number);
 
   const hasMana = combatant.manaCurrent != null && combatant.manaMax != null;
-  const shouldHydrate = !hasMana || (combatant.manaCurrent != null && safeCurrent > combatant.manaCurrent);
+  const shouldHydrate =
+    !hasMana || (combatant.manaCurrent != null && safeCurrent > combatant.manaCurrent);
 
   if (!shouldHydrate) return combatant;
 

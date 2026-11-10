@@ -87,7 +87,9 @@ describe("Kavita API Routes", () => {
     it("rejeita requisição se usuário não estiver autenticado", async () => {
       vi.mocked(requireAuth).mockResolvedValueOnce(null as any);
 
-      const req = new NextRequest("http://localhost/api/library/kavita/proxy?url=http://100.122.171.83:5150/test.pdf");
+      const req = new NextRequest(
+        "http://localhost/api/library/kavita/proxy?url=http://100.122.171.83:5150/test.pdf",
+      );
       const res = await proxyRoute(req);
 
       expect(res.status).toBe(401);
@@ -102,7 +104,7 @@ describe("Kavita API Routes", () => {
       process.env.KAVITA_URL = "http://100.122.171.83:5150";
 
       const req = new NextRequest(
-        "http://localhost/api/library/kavita/proxy?url=/library/4/series/56/pdf/358?incognitoMode=false&type=pdf"
+        "http://localhost/api/library/kavita/proxy?url=/library/4/series/56/pdf/358?incognitoMode=false&type=pdf",
       );
       const res = await proxyRoute(req);
       const json = await res.json();
@@ -135,7 +137,7 @@ describe("Kavita API Routes", () => {
       } as any);
 
       const req = new NextRequest(
-        "http://localhost/api/library/kavita/proxy?url=http://100.122.171.83:5150/api/opds/key/download.pdf&type=pdf"
+        "http://localhost/api/library/kavita/proxy?url=http://100.122.171.83:5150/api/opds/key/download.pdf&type=pdf",
       );
       const res = await proxyRoute(req);
       const json = await res.json();
@@ -153,7 +155,9 @@ describe("Kavita API Routes", () => {
       process.env.KAVITA_OPDS_KEY = "key";
       process.env.KAVITA_URL = "http://100.122.171.83:5150";
 
-      const req = new NextRequest("http://localhost/api/library/kavita/proxy?url=http://169.254.169.254/secret");
+      const req = new NextRequest(
+        "http://localhost/api/library/kavita/proxy?url=http://169.254.169.254/secret",
+      );
       const res = await proxyRoute(req);
 
       expect(res.status).toBe(403);
@@ -191,7 +195,7 @@ describe("Kavita API Routes", () => {
         "http://localhost/api/library/kavita/proxy?url=http://100.122.171.83:5150/api/opds/key/download.pdf&type=pdf",
         {
           headers: { Range: "bytes=0-10" },
-        }
+        },
       );
 
       const res = await proxyRoute(req);
@@ -219,7 +223,7 @@ describe("Kavita API Routes", () => {
       } as any);
 
       const req = new NextRequest(
-        "http://localhost/api/library/kavita/proxy?url=/api/opds/key/download.pdf&type=pdf"
+        "http://localhost/api/library/kavita/proxy?url=/api/opds/key/download.pdf&type=pdf",
       );
 
       const res = await proxyRoute(req);
@@ -241,7 +245,7 @@ describe("Kavita API Routes", () => {
       } as any);
 
       const req = new NextRequest(
-        "http://localhost/api/library/kavita/proxy?url=http://100.122.171.83:5150/api/opds/key/invalid.pdf&type=pdf"
+        "http://localhost/api/library/kavita/proxy?url=http://100.122.171.83:5150/api/opds/key/invalid.pdf&type=pdf",
       );
 
       const res = await proxyRoute(req);

@@ -12,10 +12,7 @@ export async function GET(request: NextRequest) {
   try {
     const session = await requireAuth();
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -31,7 +28,7 @@ export async function GET(request: NextRequest) {
     logger.error({ err: error }, "Erro na rota de catálogo Kavita");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

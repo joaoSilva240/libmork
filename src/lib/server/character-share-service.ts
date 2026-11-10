@@ -67,15 +67,27 @@ export type AcquirePreview = {
   isOwn: boolean;
 };
 
-async function resolveNames(row: { raceId: string | null; classId: string | null; ownerId?: string }) {
+async function resolveNames(row: {
+  raceId: string | null;
+  classId: string | null;
+  ownerId?: string;
+}) {
   let raceName: string | null = null;
   let className: string | null = null;
   if (row.raceId) {
-    const [race] = await db.select({ name: rpgRaces.name }).from(rpgRaces).where(eq(rpgRaces.id, row.raceId)).limit(1);
+    const [race] = await db
+      .select({ name: rpgRaces.name })
+      .from(rpgRaces)
+      .where(eq(rpgRaces.id, row.raceId))
+      .limit(1);
     raceName = race?.name ?? null;
   }
   if (row.classId) {
-    const [rpgClass] = await db.select({ name: rpgClasses.name }).from(rpgClasses).where(eq(rpgClasses.id, row.classId)).limit(1);
+    const [rpgClass] = await db
+      .select({ name: rpgClasses.name })
+      .from(rpgClasses)
+      .where(eq(rpgClasses.id, row.classId))
+      .limit(1);
     className = rpgClass?.name ?? null;
   }
   return { raceName, className };
@@ -135,8 +147,15 @@ async function findActiveSession(characterId: string): Promise<CharacterHub["act
 /**
  * Hub off-session do personagem para o visualizador.
  */
-export async function getCharacterHub(characterId: string, viewerId: string | null): Promise<CharacterHub> {
-  const [character] = await db.select().from(characters).where(eq(characters.id, characterId)).limit(1);
+export async function getCharacterHub(
+  characterId: string,
+  viewerId: string | null,
+): Promise<CharacterHub> {
+  const [character] = await db
+    .select()
+    .from(characters)
+    .where(eq(characters.id, characterId))
+    .limit(1);
   if (!character) {
     throw new Error("Personagem não encontrado");
   }
@@ -166,13 +185,23 @@ export async function getPublicOffSession(token: string): Promise<PublicOffSessi
   const [link] = await db
     .select()
     .from(publicShareLinks)
-    .where(and(eq(publicShareLinks.token, token), eq(publicShareLinks.revoked, false), eq(publicShareLinks.kind, "view")))
+    .where(
+      and(
+        eq(publicShareLinks.token, token),
+        eq(publicShareLinks.revoked, false),
+        eq(publicShareLinks.kind, "view"),
+      ),
+    )
     .limit(1);
   if (!link) {
     throw new Error("Link inválido ou revogado");
   }
 
-  const [character] = await db.select().from(characters).where(eq(characters.id, link.characterId)).limit(1);
+  const [character] = await db
+    .select()
+    .from(characters)
+    .where(eq(characters.id, link.characterId))
+    .limit(1);
   if (!character) {
     throw new Error("Personagem não encontrado");
   }
@@ -193,12 +222,22 @@ async function resolveAcquireToken(token: string) {
   const [link] = await db
     .select()
     .from(publicShareLinks)
-    .where(and(eq(publicShareLinks.token, token), eq(publicShareLinks.revoked, false), eq(publicShareLinks.kind, "acquire")))
+    .where(
+      and(
+        eq(publicShareLinks.token, token),
+        eq(publicShareLinks.revoked, false),
+        eq(publicShareLinks.kind, "acquire"),
+      ),
+    )
     .limit(1);
   if (!link) {
     throw new Error("Link inválido ou revogado");
   }
-  const [character] = await db.select().from(characters).where(eq(characters.id, link.characterId)).limit(1);
+  const [character] = await db
+    .select()
+    .from(characters)
+    .where(eq(characters.id, link.characterId))
+    .limit(1);
   if (!character) {
     throw new Error("Personagem não encontrado");
   }
@@ -266,14 +305,20 @@ export function buildCloneValues(source: typeof characters.$inferSelect, newOwne
  * morte é zerado. Vínculos de campanha, condições e links públicos NÃO
  * são copiados; o original permanece intocado.
  */
-export async function acquireCharacter(token: string, newOwnerId: string): Promise<{ characterId: string }> {
+export async function acquireCharacter(
+  token: string,
+  newOwnerId: string,
+): Promise<{ characterId: string }> {
   const { character: source } = await resolveAcquireToken(token);
   if (source.ownerId === newOwnerId) {
     throw new Error("Você já possui este personagem");
   }
 
   const created = await db.transaction(async (tx) => {
-    const [copy] = await tx.insert(characters).values(buildCloneValues(source, newOwnerId)).returning();
+    const [copy] = await tx
+      .insert(characters)
+      .values(buildCloneValues(source, newOwnerId))
+      .returning();
 
     const [skills, spells, itemsRows] = await Promise.all([
       tx.select().from(characterSkills).where(eq(characterSkills.characterId, source.id)),
@@ -282,14 +327,16 @@ export async function acquireCharacter(token: string, newOwnerId: string): Promi
     ]);
 
     if (skills.length > 0) {
-      await tx.insert(characterSkills).values(
-        skills.map((s) => ({ characterId: copy.id, skillId: s.skillId, trained: s.trained })),
-      );
+      await tx
+        .insert(characterSkills)
+        .values(
+          skills.map((s) => ({ characterId: copy.id, skillId: s.skillId, trained: s.trained })),
+        );
     }
     if (spells.length > 0) {
-      await tx.insert(characterSpells).values(
-        spells.map((s) => ({ characterId: copy.id, spellId: s.spellId })),
-      );
+      await tx
+        .insert(characterSpells)
+        .values(spells.map((s) => ({ characterId: copy.id, spellId: s.spellId })));
     }
     if (itemsRows.length > 0) {
       await tx.insert(characterItems).values(
@@ -316,7 +363,13 @@ export async function issueShareLink(characterId: string, kind: ShareKind) {
   await db
     .update(publicShareLinks)
     .set({ revoked: true })
-    .where(and(eq(publicShareLinks.characterId, characterId), eq(publicShareLinks.kind, kind), eq(publicShareLinks.revoked, false)));
+    .where(
+      and(
+        eq(publicShareLinks.characterId, characterId),
+        eq(publicShareLinks.kind, kind),
+        eq(publicShareLinks.revoked, false),
+      ),
+    );
 
   const [newLink] = await db
     .insert(publicShareLinks)

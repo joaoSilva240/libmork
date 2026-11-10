@@ -6,10 +6,29 @@ describe("Pathfinder 2e Classes Catalog", () => {
     expect(PF2E_CLASSES).toHaveLength(23);
 
     const expectedKeys = [
-      "alchemist", "barbarian", "bard", "champion", "cleric", "druid",
-      "fighter", "gunslinger", "inventor", "investigator", "kineticist",
-      "magus", "monk", "oracle", "psychic", "ranger", "rogue",
-      "sorcerer", "summoner", "swashbuckler", "thaumaturge", "witch", "wizard"
+      "alchemist",
+      "barbarian",
+      "bard",
+      "champion",
+      "cleric",
+      "druid",
+      "fighter",
+      "gunslinger",
+      "inventor",
+      "investigator",
+      "kineticist",
+      "magus",
+      "monk",
+      "oracle",
+      "psychic",
+      "ranger",
+      "rogue",
+      "sorcerer",
+      "summoner",
+      "swashbuckler",
+      "thaumaturge",
+      "witch",
+      "wizard",
     ];
 
     const actualKeys = PF2E_CLASSES.map((c) => c.key);
@@ -46,7 +65,18 @@ describe("Pathfinder 2e Classes Catalog", () => {
   });
 
   it("should assign mana progression to spellcasters and 0 mana to pure non-casters", () => {
-    const casters = ["bard", "cleric", "druid", "magus", "oracle", "psychic", "sorcerer", "summoner", "witch", "wizard"];
+    const casters = [
+      "bard",
+      "cleric",
+      "druid",
+      "magus",
+      "oracle",
+      "psychic",
+      "sorcerer",
+      "summoner",
+      "witch",
+      "wizard",
+    ];
     const pureMartials = ["barbarian", "fighter", "gunslinger", "rogue", "swashbuckler"];
 
     for (const casterKey of casters) {

@@ -1,41 +1,41 @@
-'use client';
+"use client";
 
-import { Suspense, useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import { Input, Button, Form } from '@/components/ui';
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { Input, Button, Form } from "@/components/ui";
 
 const BUTTON_IMAGES = [
-  '/Buttons/Button 1.png',
-  '/Buttons/Button 2.png',
-  '/Buttons/Button 3.png',
-  '/Buttons/Button 4.png',
+  "/Buttons/Button 1.png",
+  "/Buttons/Button 2.png",
+  "/Buttons/Button 3.png",
+  "/Buttons/Button 4.png",
 ];
 
 const ERROR_MESSAGES: Record<string, string> = {
-  email_exists: 'E-mail já cadastrado.',
-  invalid_data: 'Dados inválidos. Verifique as informações fornecidas.',
-  server_error: 'Erro interno do servidor. Tente novamente mais tarde.',
-  account_linking_required: 'Já existe uma conta com este e-mail. Faça login para vincular.',
-  discord_email_unverified: 'E-mail do Discord não verificado.',
-  oauth_state_invalid: 'Sessão OAuth inválida ou expirada. Tente novamente.',
-  oauth_access_denied: 'Acesso cancelado no Discord.',
+  email_exists: "E-mail já cadastrado.",
+  invalid_data: "Dados inválidos. Verifique as informações fornecidas.",
+  server_error: "Erro interno do servidor. Tente novamente mais tarde.",
+  account_linking_required: "Já existe uma conta com este e-mail. Faça login para vincular.",
+  discord_email_unverified: "E-mail do Discord não verificado.",
+  oauth_state_invalid: "Sessão OAuth inválida ou expirada. Tente novamente.",
+  oauth_access_denied: "Acesso cancelado no Discord.",
 };
 
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const urlError = searchParams.get('error');
+  const urlError = searchParams.get("error");
   const urlErrorMessage = urlError
-    ? ERROR_MESSAGES[urlError] || 'Erro ao criar conta. Tente novamente.'
+    ? ERROR_MESSAGES[urlError] || "Erro ao criar conta. Tente novamente."
     : undefined;
 
   const [formData, setFormData] = useState({
-    displayName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    role: 'player' as 'player' | 'master',
+    displayName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    role: "player" as "player" | "master",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -55,7 +55,7 @@ function RegisterForm() {
     setFormData((prev) => ({ ...prev, [name]: value }));
     // Limpar erro do campo ao digitar
     if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
@@ -66,16 +66,16 @@ function RegisterForm() {
 
     // Validação local
     if (formData.password !== formData.confirmPassword) {
-      setErrors({ confirmPassword: 'As senhas não coincidem' });
+      setErrors({ confirmPassword: "As senhas não coincidem" });
       setIsLoading(false);
       return;
     }
 
     try {
-      const response = await fetch('/api/auth/register', {
-        credentials: 'include',
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/auth/register", {
+        credentials: "include",
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           displayName: formData.displayName,
           email: formData.email,
@@ -95,7 +95,7 @@ function RegisterForm() {
           });
           setErrors(fieldErrors);
         } else {
-          setErrors({ general: data.error || 'Erro ao criar conta' });
+          setErrors({ general: data.error || "Erro ao criar conta" });
         }
         return;
       }
@@ -103,7 +103,7 @@ function RegisterForm() {
       const targetUrl = data.data?.redirect || "/";
       window.location.href = targetUrl;
     } catch {
-      setErrors({ general: 'Erro de conexão. Tente novamente.' });
+      setErrors({ general: "Erro de conexão. Tente novamente." });
     } finally {
       setIsLoading(false);
     }
@@ -113,9 +113,7 @@ function RegisterForm() {
     <div className="min-h-dvh flex items-center justify-center bg-dominant-deep text-secondary-pure px-4 py-8">
       <div className="max-w-md w-full space-y-8 bg-secondary-card p-8 rounded-xl border border-dominant-border shadow-xl">
         <div>
-          <h1 className="text-3xl font-bold text-center text-secondary-pure">
-            Criar Conta
-          </h1>
+          <h1 className="text-3xl font-bold text-center text-secondary-pure">Criar Conta</h1>
           <p className="mt-2 text-center text-sm text-secondary-muted">
             Crie sua conta no Libmork para começar a jogar
           </p>
@@ -220,15 +218,18 @@ function RegisterForm() {
         </Form>
 
         <a
-          href={`/api/auth/discord?redirect=${encodeURIComponent('/')}`}
+          href={`/api/auth/discord?redirect=${encodeURIComponent("/")}`}
           className="flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-[#5865F2] bg-[#5865F2] font-medium text-white transition-opacity hover:opacity-90"
         >
           Continuar com Discord
         </a>
 
         <p className="text-center text-sm text-secondary-muted">
-          Já tem uma conta?{' '}
-          <Link href="/login" className="font-medium text-accent hover:text-accent-hover transition-colors">
+          Já tem uma conta?{" "}
+          <Link
+            href="/login"
+            className="font-medium text-accent hover:text-accent-hover transition-colors"
+          >
             Fazer login
           </Link>
         </p>

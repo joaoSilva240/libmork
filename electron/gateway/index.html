@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' data: blob:; script-src 'self'; style-src 'self' 'unsafe-inline';"
+    />
+    <title>Libmork — Gateway de Instâncias</title>
+    <link rel="stylesheet" href="./gateway.css" />
+  </head>
+  <body>
+    <div class="gateway-container">
+      <header class="gateway-header">
+        <span class="brand-badge">Cliente Nativo Desktop</span>
+        <h1 class="gateway-title">LIBMORK</h1>
+        <p class="gateway-subtitle">
+          Selecione a instância do servidor para conectar sua sessão de RPG
+        </p>
+      </header>
+
+      <main class="gateway-body">
+        <div class="section-label">
+          <span>Instâncias Disponíveis &amp; Favoritos</span>
+          <button id="btn-test-all" class="btn btn-secondary" type="button">Testar Conexões</button>
+        </div>
+
+        <div id="server-list" class="server-list" role="list">
+          <!-- Renderizado via gateway.js -->
+        </div>
+
+        <div class="section-label">
+          <span>Adicionar Novo Servidor</span>
+        </div>
+
+        <form id="add-server-form" class="add-server-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="server-name">Nome da Instância</label>
+              <input
+                id="server-name"
+                class="form-input"
+                type="text"
+                placeholder="Ex: ZimaCube Campanha"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="server-url">URL do Servidor (HTTP/HTTPS)</label>
+              <input
+                id="server-url"
+                class="form-input"
+                type="url"
+                placeholder="http://100.83.170.1:3000"
+                required
+              />
+            </div>
+            <button type="submit" class="btn btn-primary">Salvar &amp; Conectar</button>
+          </div>
+          <div id="form-error" class="form-error" role="alert"></div>
+        </form>
+      </main>
+
+      <footer class="gateway-footer">
+        <span>Libmork Desktop v0.1.0</span>
+        <span class="shortcut-hint">
+          Voltar ao Gateway a qualquer momento: <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>G</kbd>
+        </span>
+      </footer>
+    </div>
+
+    <script src="./gateway.js"></script>
+  </body>
+</html>

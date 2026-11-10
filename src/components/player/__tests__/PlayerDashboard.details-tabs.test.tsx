@@ -176,7 +176,7 @@ describe("PlayerDashboard - Campaign Details Tabs (Resumo e Mundo)", () => {
                     },
                   ],
                 },
-              }
+              },
             ),
         });
       }
@@ -219,7 +219,7 @@ describe("PlayerDashboard - Campaign Details Tabs (Resumo e Mundo)", () => {
 
     // Aguarda carregamento dos dados do mundo e estabelecimentos unificados
     const establishmentCircle = await screen.findByLabelText(
-      /Taverna do Javali, Taverna, Reputação nível 3 \(3 de 4 segmentos\)/i
+      /Taverna do Javali, Taverna, Reputação nível 3 \(3 de 4 segmentos\)/i,
     );
     expect(establishmentCircle).toBeDefined();
 
@@ -271,7 +271,10 @@ describe("PlayerDashboard - Campaign Details Tabs (Resumo e Mundo)", () => {
     const setupEmptyMocks = () => {
       globalThis.fetch = vi.fn().mockImplementation((url: string) => {
         if (url === "/api/auth/me") {
-          return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: { id: "user-1", displayName: "Jogador Teste" } }) });
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ data: { id: "user-1", displayName: "Jogador Teste" } }),
+          });
         }
         if (url === "/api/characters") {
           return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: [] }) });
@@ -280,7 +283,10 @@ describe("PlayerDashboard - Campaign Details Tabs (Resumo e Mundo)", () => {
           return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: [] }) });
         }
         if (url === "/api/player/campaigns") {
-          return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: [campaignMock] }) });
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ data: [campaignMock] }),
+          });
         }
         if (url === "/api/player/wealth") {
           return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: null }) });
@@ -288,7 +294,11 @@ describe("PlayerDashboard - Campaign Details Tabs (Resumo e Mundo)", () => {
         if (url === `/api/player/campaigns/${campaignMock.id}/details`) {
           return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({ success: true, data: { worlds: [], establishments: [], npcs: [] } }),
+            json: () =>
+              Promise.resolve({
+                success: true,
+                data: { worlds: [], establishments: [], npcs: [] },
+              }),
           });
         }
         return Promise.resolve({ ok: false });

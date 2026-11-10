@@ -16,7 +16,10 @@ type Props = {
   onSuccess?: () => void;
 };
 
-const EDITABLE_FIELDS: Record<string, Array<{ key: string; label: string; type: "text" | "textarea" | "number" }>> = {
+const EDITABLE_FIELDS: Record<
+  string,
+  Array<{ key: string; label: string; type: "text" | "textarea" | "number" }>
+> = {
   spell: [
     { key: "name", label: "Nome", type: "text" },
     { key: "description", label: "Descrição", type: "textarea" },
@@ -65,12 +68,23 @@ const EDITABLE_FIELDS: Record<string, Array<{ key: string; label: string; type: 
   ],
 };
 
-export default function ImportCustomizeModal({ contentType, payload, postId, commentId, onClose, onSuccess }: Props) {
+export default function ImportCustomizeModal({
+  contentType,
+  payload,
+  postId,
+  commentId,
+  onClose,
+  onSuccess,
+}: Props) {
   const [formData, setFormData] = useState<Record<string, unknown>>(payload);
   const [isImporting, setIsImporting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
-  const typeConfig = CONTENT_TYPE_CONFIG[contentType] || { label: contentType, icon: "📜", badgeClass: "bg-gray-800 text-gray-300" };
+  const typeConfig = CONTENT_TYPE_CONFIG[contentType] || {
+    label: contentType,
+    icon: "📜",
+    badgeClass: "bg-gray-800 text-gray-300",
+  };
   const fields = EDITABLE_FIELDS[contentType] || [];
 
   const handleChange = (key: string, value: unknown) => {
@@ -148,7 +162,8 @@ export default function ImportCustomizeModal({ contentType, payload, postId, com
     );
   }
 
-  const imageUrl = (payload.imageUrl || payload.iconUrl || payload.mapUrl || payload.tokenUrl) as string | undefined;
+  const imageUrl = (payload.imageUrl || payload.iconUrl || payload.mapUrl || payload.tokenUrl) as
+    string | undefined;
 
   return (
     <>

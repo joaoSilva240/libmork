@@ -143,9 +143,8 @@ describe("MissingSessionLog Component", () => {
     expect(filterContainer).toHaveClass("flex-wrap");
 
     // Cabeçalho do boletim: também flex-wrap
-    const headerRow = screen
-      .getByText("BOLETIM DE OCORRÊNCIAS")
-      .closest("div")?.parentElement?.parentElement;
+    const headerRow = screen.getByText("BOLETIM DE OCORRÊNCIAS").closest("div")
+      ?.parentElement?.parentElement;
     expect(headerRow).toHaveClass("flex-wrap");
   });
 

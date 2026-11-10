@@ -81,17 +81,13 @@ describe("ShareDetailModal", () => {
   });
 
   it("renderiza nome e label do tipo em library_item", () => {
-    render(
-      <ShareDetailModal payload={libraryPayload} currentUserId="u-1" onClose={vi.fn()} />,
-    );
+    render(<ShareDetailModal payload={libraryPayload} currentUserId="u-1" onClose={vi.fn()} />);
     expect(screen.getByText("Bola de Fogo")).toBeInTheDocument();
     expect(screen.getByText("magia")).toBeInTheDocument();
   });
 
   it("renderiza PostDetailModal com post montado a partir do snapshot", () => {
-    render(
-      <ShareDetailModal payload={postPayload} currentUserId="u-1" onClose={vi.fn()} />,
-    );
+    render(<ShareDetailModal payload={postPayload} currentUserId="u-1" onClose={vi.fn()} />);
     expect(screen.getByTestId("post-detail-modal-mock")).toBeInTheDocument();
     expect(screen.getByTestId("mock-post-id")).toHaveTextContent("p-1");
     expect(screen.getByTestId("mock-post-title")).toHaveTextContent("Post épico");

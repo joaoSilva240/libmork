@@ -26,10 +26,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id, linkId } = await params;
@@ -43,25 +40,20 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     if (!campaign) {
       return NextResponse.json(
         { success: false, error: "Campanha não encontrada" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     const [existingLink] = await db
       .select()
       .from(characterCampaigns)
-      .where(
-        and(
-          eq(characterCampaigns.id, linkId),
-          eq(characterCampaigns.campaignId, id)
-        )
-      )
+      .where(and(eq(characterCampaigns.id, linkId), eq(characterCampaigns.campaignId, id)))
       .limit(1);
 
     if (!existingLink) {
       return NextResponse.json(
         { success: false, error: "Vínculo não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -75,7 +67,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
           error: "Dados inválidos",
           errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -93,7 +85,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     logger.error({ err: error }, "Erro ao atualizar vínculo");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -107,42 +99,30 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id, linkId } = await params;
 
-    const [campaign] = await db
-      .select()
-      .from(campaigns)
-      .where(eq(campaigns.id, id))
-      .limit(1);
+    const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, id)).limit(1);
 
     if (!campaign) {
       return NextResponse.json(
         { success: false, error: "Campanha não encontrada" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     const [existingLink] = await db
       .select()
       .from(characterCampaigns)
-      .where(
-        and(
-          eq(characterCampaigns.id, linkId),
-          eq(characterCampaigns.campaignId, id)
-        )
-      )
+      .where(and(eq(characterCampaigns.id, linkId), eq(characterCampaigns.campaignId, id)))
       .limit(1);
 
     if (!existingLink) {
       return NextResponse.json(
         { success: false, error: "Vínculo não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -159,7 +139,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       if (!character || character.ownerId !== session.user.id) {
         return NextResponse.json(
           { success: false, error: "Sem permissão para remover este vínculo" },
-          { status: 403 }
+          { status: 403 },
         );
       }
     }
@@ -174,7 +154,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     logger.error({ err: error }, "Erro ao remover vínculo");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

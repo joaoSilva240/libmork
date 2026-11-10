@@ -13,15 +13,15 @@
 
 ## 🚀 Stack Tecnológica
 
-| Camada | Tecnologia |
-|---|---|
-| **Framework** | Next.js 15 (App Router) |
-| **Linguagem** | TypeScript 5 |
-| **ORM** | Drizzle ORM |
-| **Banco de Dados** | PostgreSQL (externo) |
-| **Autenticação** | Cookies HTTP-only |
-| **Estilização** | Tailwind CSS 4 |
-| **Validação** | Zod |
+| Camada              | Tecnologia              |
+| ------------------- | ----------------------- |
+| **Framework**       | Next.js 15 (App Router) |
+| **Linguagem**       | TypeScript 5            |
+| **ORM**             | Drizzle ORM             |
+| **Banco de Dados**  | PostgreSQL (externo)    |
+| **Autenticação**    | Cookies HTTP-only       |
+| **Estilização**     | Tailwind CSS 4          |
+| **Validação**       | Zod                     |
 | **Containerização** | Docker + Docker Compose |
 
 ---
@@ -131,11 +131,11 @@ docker compose up -d
 
 A tradução de magias/itens via 9Router (OpenAI-compatible) falha em produção quando `NINEROUTER_URL=http://100.83.170.1:20128/v1` (IP Tailscale CGNAT `100.64/10`) não é roteável do container bridge padrão — o ZimaCube precisa estar no Tailnet ou expor o daemon. O `docker-compose.yml` já inclui `extra_hosts: ["host.docker.internal:host-gateway"]` e fallback automático para `host.docker.internal:20128` quando o IP Tailscale falha, mas isso só funciona se 9Router estiver no **mesmo host físico**. Para produção resiliente escolha uma das opções:
 
-| Opção | Como | Quando usar |
-|-------|------|-------------|
+| Opção                                            | Como                                                                                                                                                                                                                                | Quando usar                                                                                  |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | **A — URL pública (recomendada, menos lock-in)** | Publique o 9Router: `tailscale funnel 20128` **ou** `cloudflared tunnel --url http://100.83.170.1:20128` **ou** Nginx+TLS. Defina `NINEROUTER_URL=https://ninerouter.seudominio.com/v1` no painel ZimaOS/CasaOS (variáveis do app). | Produção acessível de qualquer host, sem sidecar, funciona mesmo se ZimaCube sair do Tailnet |
-| **B — Sidecar Tailscale (privada)** | `docker compose -f docker-compose.yml -f docker-compose.override.tailscale.yml up -d` com `TS_AUTHKEY` (ver `docker-compose.override.tailscale.yml`). Mantém tráfego privado no Tailnet (`network_mode: service:tailscale`). | Quer manter IP `100.83.170.1` privado sem domínio/TLS |
-| **C — Mesmo host (fallback automático)** | Rode 9Router no próprio ZimaCube/ZimaOS e mantenha `NINEROUTER_URL=http://100.83.170.1:20128/v1`; o código tenta automaticamente `host.docker.internal:20128/v1` em falha de rede (`warn: ninerouter fallback...`). | 9Router e app no mesmo hardware e sem querer expor para internet |
+| **B — Sidecar Tailscale (privada)**              | `docker compose -f docker-compose.yml -f docker-compose.override.tailscale.yml up -d` com `TS_AUTHKEY` (ver `docker-compose.override.tailscale.yml`). Mantém tráfego privado no Tailnet (`network_mode: service:tailscale`).        | Quer manter IP `100.83.170.1` privado sem domínio/TLS                                        |
+| **C — Mesmo host (fallback automático)**         | Rode 9Router no próprio ZimaCube/ZimaOS e mantenha `NINEROUTER_URL=http://100.83.170.1:20128/v1`; o código tenta automaticamente `host.docker.internal:20128/v1` em falha de rede (`warn: ninerouter fallback...`).                 | 9Router e app no mesmo hardware e sem querer expor para internet                             |
 
 > Código **não hardcoda** IP: respeita `NINEROUTER_URL` env. O fallback `100.83.170.1 → host.docker.internal` só ativa em `ETIMEDOUT`/`ENETUNREACH`/`ECONNREFUSED`/`UND_ERR_CONNECT_TIMEOUT`. Timeout 25s + 1 retry (backoff 2s) apenas para rede; erros `401/429/400` não retentam. Mensagens granulares (`translation_provider_unconfigured`, `timeout`, `unreachable`, `http_xxx`, `empty`, `invalid_json`) são exibidas na UI com botão **Retry** — não mais 500 opaco.
 
@@ -180,14 +180,14 @@ npm run db:studio        # Abrir Drizzle Studio (GUI do banco)
 
 ## 🎯 Fases de Desenvolvimento
 
-| Fase | Status | Descrição |
-|---|---|---|
-| **Fase 0 — Fundação** | 🚧 **Em andamento** | Repositório, Docker, schema do banco, estrutura base |
-| **Fase 1 — MVP** | 📋 Planejada | Autenticação, fichas, campanhas, links públicos |
-| **Fase 2 — Conteúdo & Fluxo Mestre** | 📋 Planejada | Biblioteca, aprovação de fichas, NPCs, NFC |
-| **Fase 3 — Tempo Real** | 📋 Planejada | WebSockets, sincronização HP/Mana/Condições |
-| **Fase 4 — Motor de Jogo** | 📋 Planejada | Combate, iniciativa, morte, renascimento |
-| **Fase 5 — Duelo & Pontos de Sombra** | 📋 Planejada | Duelo P2P, meta-moeda, caos narrativo |
+| Fase                                  | Status              | Descrição                                            |
+| ------------------------------------- | ------------------- | ---------------------------------------------------- |
+| **Fase 0 — Fundação**                 | 🚧 **Em andamento** | Repositório, Docker, schema do banco, estrutura base |
+| **Fase 1 — MVP**                      | 📋 Planejada        | Autenticação, fichas, campanhas, links públicos      |
+| **Fase 2 — Conteúdo & Fluxo Mestre**  | 📋 Planejada        | Biblioteca, aprovação de fichas, NPCs, NFC           |
+| **Fase 3 — Tempo Real**               | 📋 Planejada        | WebSockets, sincronização HP/Mana/Condições          |
+| **Fase 4 — Motor de Jogo**            | 📋 Planejada        | Combate, iniciativa, morte, renascimento             |
+| **Fase 5 — Duelo & Pontos de Sombra** | 📋 Planejada        | Duelo P2P, meta-moeda, caos narrativo                |
 
 ---
 

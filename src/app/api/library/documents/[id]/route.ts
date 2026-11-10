@@ -18,10 +18,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -36,7 +33,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
           error: "Dados inválidos",
           errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -50,7 +47,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     if (!existingDoc) {
       return NextResponse.json(
         { success: false, error: "Documento não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -71,7 +68,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     logger.error({ err: error }, "Erro ao atualizar documento da biblioteca");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -86,10 +83,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -103,7 +97,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     if (!existingDoc) {
       return NextResponse.json(
         { success: false, error: "Documento não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -117,7 +111,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     logger.error({ err: error }, "Erro ao excluir documento da biblioteca");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

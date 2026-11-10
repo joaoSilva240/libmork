@@ -86,7 +86,13 @@ export function MasterSessionCalendar() {
       offConfirmed();
       offCancelled();
     };
-  }, [subscribeSessionApplied, subscribeSessionConfirmed, subscribeSessionCancelled, loadSessions, pushToast]);
+  }, [
+    subscribeSessionApplied,
+    subscribeSessionConfirmed,
+    subscribeSessionCancelled,
+    loadSessions,
+    pushToast,
+  ]);
 
   const events: CalendarEvent[] = sessions.map((s) => ({
     id: s.id,

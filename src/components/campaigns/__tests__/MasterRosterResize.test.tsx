@@ -73,12 +73,7 @@ describe("MasterRoster Carousel Resize Integration", () => {
   });
 
   it("renders the ResizeHandle on the character carousel when expanded", async () => {
-    render(
-      <MasterRoster
-        campaignId="c1"
-        selectedWorldId="w1"
-      />
-    );
+    render(<MasterRoster campaignId="c1" selectedWorldId="w1" />);
 
     await waitFor(() => {
       expect(screen.getByTestId("resize-carousel-panel")).toBeInTheDocument();
@@ -90,12 +85,7 @@ describe("MasterRoster Carousel Resize Integration", () => {
   });
 
   it("hides the ResizeHandle when the carousel is collapsed via toggle button", async () => {
-    render(
-      <MasterRoster
-        campaignId="c1"
-        selectedWorldId="w1"
-      />
-    );
+    render(<MasterRoster campaignId="c1" selectedWorldId="w1" />);
 
     await waitFor(() => {
       expect(screen.getByTestId("resize-carousel-panel")).toBeInTheDocument();
@@ -119,12 +109,7 @@ describe("MasterRoster Carousel Resize Integration", () => {
   it("hides the ResizeHandle on mount if carousel was previously stored as collapsed in localStorage", async () => {
     localStorage.setItem("carousel-collapsed-c1", "true");
 
-    render(
-      <MasterRoster
-        campaignId="c1"
-        selectedWorldId="w1"
-      />
-    );
+    render(<MasterRoster campaignId="c1" selectedWorldId="w1" />);
 
     await waitFor(() => {
       expect(screen.queryByTestId("resize-carousel-panel")).not.toBeInTheDocument();

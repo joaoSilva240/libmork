@@ -19,14 +19,14 @@ Convites), fluxo de candidatura com disponibilidade e confirmação pelo mestre.
 
 ## 2. Decisões
 
-| Decisão | Escolha | Alternativa descartada |
-|---|---|---|
-| Calendário | Componentes próprios (`CalendarGrid`) com `Date` nativo + `Intl` | FullCalendar (risco React 19, +300KB, theming por overrides) |
-| Tipo/vagas da mesa | Colunas nullable em `campaigns` (`oneShot`, `maxPlayers`), definidas na 1ª sessão | Tabela de configuração separada (overkill) |
-| Detecção de 1ª sessão | Contagem de `campaign_sessions` da campanha (status != cancelled) == 0 | Flag manual no formulário |
-| Disponibilidade do jogador | jsonb de dias ISO + horário preferido opcional; sem horário = `allDay: true` ("Livre o dia todo") | Tabela normalizada de slots (complexidade sem demanda) |
-| Realtime | Eventos socket `session:*` na sala `campaign:${id}` existente + refresh ao abrir aba | Salas novas por sessão (desnecessário) |
-| Migração DB | Script aditivo idempotente temporário (padrão do projeto) | `db:push` (drift sem TTY) |
+| Decisão                    | Escolha                                                                                           | Alternativa descartada                                       |
+| -------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Calendário                 | Componentes próprios (`CalendarGrid`) com `Date` nativo + `Intl`                                  | FullCalendar (risco React 19, +300KB, theming por overrides) |
+| Tipo/vagas da mesa         | Colunas nullable em `campaigns` (`oneShot`, `maxPlayers`), definidas na 1ª sessão                 | Tabela de configuração separada (overkill)                   |
+| Detecção de 1ª sessão      | Contagem de `campaign_sessions` da campanha (status != cancelled) == 0                            | Flag manual no formulário                                    |
+| Disponibilidade do jogador | jsonb de dias ISO + horário preferido opcional; sem horário = `allDay: true` ("Livre o dia todo") | Tabela normalizada de slots (complexidade sem demanda)       |
+| Realtime                   | Eventos socket `session:*` na sala `campaign:${id}` existente + refresh ao abrir aba              | Salas novas por sessão (desnecessário)                       |
+| Migração DB                | Script aditivo idempotente temporário (padrão do projeto)                                         | `db:push` (drift sem TTY)                                    |
 
 ## 3. Schema (aditivo)
 
@@ -148,7 +148,7 @@ Tipos exportados: `SessionSummary`, `SessionDetail`, `CandidateDetail`,
   regex `^([01]\d|2[0-3]):[0-5]\d$` opcionais aos pares.
 - `confirmSessionSchema`: união discriminada por `action` —
   `{ action: 'confirm', scheduledAt: ISO datetime, durationMinutes?: int
-  30–1440 default 240 }` ou `{ action: 'cancel' }` (usada no
+30–1440 default 240 }` ou `{ action: 'cancel' }` (usada no
   `PATCH /api/sessions/[id]`).
 - `decideCandidateSchema`: `decision` enum `accepted|rejected`.
 
@@ -164,7 +164,7 @@ Tipos exportados: `SessionSummary`, `SessionDetail`, `CandidateDetail`,
 - `GET /api/player/calendar?start=&end=` — calendário pessoal.
 - `GET /api/campaigns/[id]/enrolled-players` — inscritos (mestre).
 - `GET /api/campaigns/[id]/session-context` — `{ isFirstSession, oneShot,
-  maxPlayers, enrolledPlayers }` para o formulário de lançamento (mestre).
+maxPlayers, enrolledPlayers }` para o formulário de lançamento (mestre).
 
 Mapeamento de erros: não autenticado 401; validação 400; permissão 403;
 não encontrado 404; conflitos de regra ("Vagas esgotadas", "não está mais
@@ -174,6 +174,7 @@ aberta") 409.
 
 Eventos emitidos pelo cliente após REST (padrão do chat), reemitidos para a
 sala `campaign:${campaignId}`:
+
 - `session:publish` → `session:published` `{ campaignId, session }`.
 - `session:apply` → `session:applied` `{ campaignId, sessionId, userId }`.
 - `session:confirm` → `session:confirmed` `{ campaignId, session }`.

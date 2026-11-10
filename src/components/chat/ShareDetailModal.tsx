@@ -227,9 +227,7 @@ function GenericShareModal({
               {joinError}
             </p>
           )}
-          {joinSuccess && (
-            <p className="text-xs font-medium text-accent">{joinSuccess}</p>
-          )}
+          {joinSuccess && <p className="text-xs font-medium text-accent">{joinSuccess}</p>}
 
           <button
             type="button"

@@ -39,7 +39,7 @@ export function MasterActorsPanel({
         className="h-full w-full overflow-y-auto border-0 bg-transparent p-3"
       />
     ),
-    [campaignId, rosterVersion]
+    [campaignId, rosterVersion],
   );
 
   const tabs: ShieldTabDef[] = [
@@ -60,10 +60,6 @@ export function MasterActorsPanel({
   ];
 
   return (
-    <ShieldTabContainer
-      persistKey="libmork:shield-tab:actors"
-      tabs={tabs}
-      className={className}
-    />
+    <ShieldTabContainer persistKey="libmork:shield-tab:actors" tabs={tabs} className={className} />
   );
 }

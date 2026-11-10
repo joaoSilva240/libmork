@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { createCharacterSchema, updateCharacterSchema, attributesSchema, normalizeAttributes } from "../character";
+import {
+  createCharacterSchema,
+  updateCharacterSchema,
+  attributesSchema,
+  normalizeAttributes,
+} from "../character";
 
 describe("Character Validator Schemas", () => {
   it("should validate attributesSchema requiring all 6 attributes including sorte", () => {

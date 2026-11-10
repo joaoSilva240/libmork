@@ -23,10 +23,7 @@ export async function GET() {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const classes = await db.select().from(rpgClasses).orderBy(rpgClasses.name);
@@ -36,10 +33,10 @@ export async function GET() {
       data: classes,
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao listar classes');
+    logger.error({ err: error }, "Erro ao listar classes");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -53,16 +50,13 @@ export async function POST(request: NextRequest) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     if (session.user.role !== "master") {
       return NextResponse.json(
         { success: false, error: "Apenas mestres podem gerenciar classes" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -76,7 +70,7 @@ export async function POST(request: NextRequest) {
           error: "Dados inválidos",
           errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -97,13 +91,13 @@ export async function POST(request: NextRequest) {
         success: true,
         data: newClass,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao criar classe');
+    logger.error({ err: error }, "Erro ao criar classe");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -117,32 +111,22 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     if (session.user.role !== "master") {
       return NextResponse.json(
         { success: false, error: "Apenas mestres podem gerenciar classes" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     const { id } = await params;
 
-    const [existing] = await db
-      .select()
-      .from(rpgClasses)
-      .where(eq(rpgClasses.id, id))
-      .limit(1);
+    const [existing] = await db.select().from(rpgClasses).where(eq(rpgClasses.id, id)).limit(1);
 
     if (!existing) {
-      return NextResponse.json(
-        { success: false, error: "Classe não encontrada" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "Classe não encontrada" }, { status: 404 });
     }
 
     const body = await request.json();
@@ -155,7 +139,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
           error: "Dados inválidos",
           errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -170,10 +154,10 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       data: updated,
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao atualizar classe');
+    logger.error({ err: error }, "Erro ao atualizar classe");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -187,32 +171,22 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     if (session.user.role !== "master") {
       return NextResponse.json(
         { success: false, error: "Apenas mestres podem gerenciar classes" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     const { id } = await params;
 
-    const [existing] = await db
-      .select()
-      .from(rpgClasses)
-      .where(eq(rpgClasses.id, id))
-      .limit(1);
+    const [existing] = await db.select().from(rpgClasses).where(eq(rpgClasses.id, id)).limit(1);
 
     if (!existing) {
-      return NextResponse.json(
-        { success: false, error: "Classe não encontrada" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "Classe não encontrada" }, { status: 404 });
     }
 
     await db.delete(rpgClasses).where(eq(rpgClasses.id, id));
@@ -222,10 +196,10 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       message: "Classe excluída com sucesso",
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao excluir classe');
+    logger.error({ err: error }, "Erro ao excluir classe");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

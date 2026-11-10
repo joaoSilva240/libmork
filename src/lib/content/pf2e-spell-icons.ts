@@ -1,5 +1,6 @@
 const PF2E_TREE_URL = "https://api.github.com/repos/foundryvtt/pf2e/git/trees/v14-dev?recursive=1";
-const PF2E_SPELLS_CONTENT_URL = "https://api.github.com/repos/foundryvtt/pf2e/contents/static/icons/spells?ref=v14-dev";
+const PF2E_SPELLS_CONTENT_URL =
+  "https://api.github.com/repos/foundryvtt/pf2e/contents/static/icons/spells?ref=v14-dev";
 export const PF2E_SPELL_ICON_BASE_URL =
   "https://raw.githubusercontent.com/foundryvtt/pf2e/v14-dev/static/icons/spells/";
 
@@ -23,9 +24,10 @@ function levenshtein(left: string, right: string): number {
     previous[0] = i;
     for (let j = 1; j <= right.length; j++) {
       const above = previous[j];
-      previous[j] = left[i - 1] === right[j - 1]
-        ? diagonal
-        : Math.min(previous[j] + 1, previous[j - 1] + 1, diagonal + 1);
+      previous[j] =
+        left[i - 1] === right[j - 1]
+          ? diagonal
+          : Math.min(previous[j] + 1, previous[j - 1] + 1, diagonal + 1);
       diagonal = above;
     }
   }
@@ -46,7 +48,11 @@ export function resolvePf2eSpellIcon(name: string, fileNames: readonly string[])
   const ranked = candidates
     .map((candidate) => {
       const distance = levenshtein(slug, candidate.slug);
-      return { ...candidate, distance, similarity: 1 - distance / Math.max(slug.length, candidate.slug.length) };
+      return {
+        ...candidate,
+        distance,
+        similarity: 1 - distance / Math.max(slug.length, candidate.slug.length),
+      };
     })
     .sort((a, b) => b.similarity - a.similarity || a.file.localeCompare(b.file));
   const best = ranked[0];
@@ -60,12 +66,19 @@ export function resolvePf2eSpellIcon(name: string, fileNames: readonly string[])
 }
 
 export async function fetchPf2eSpellIconFiles(): Promise<string[]> {
-  const response = await fetch(PF2E_TREE_URL, { headers: { Accept: "application/vnd.github+json" } });
+  const response = await fetch(PF2E_TREE_URL, {
+    headers: { Accept: "application/vnd.github+json" },
+  });
   if (!response.ok) throw new Error(`ícones PF2e HTTP ${response.status}`);
-  const tree = await response.json() as { truncated?: boolean; tree?: GithubTreeEntry[] };
+  const tree = (await response.json()) as { truncated?: boolean; tree?: GithubTreeEntry[] };
   if (!tree.truncated) {
     return (tree.tree ?? [])
-      .filter((entry) => entry.type === "blob" && typeof entry.path === "string" && /^static\/icons\/spells\/[^/]+\.webp$/i.test(entry.path))
+      .filter(
+        (entry) =>
+          entry.type === "blob" &&
+          typeof entry.path === "string" &&
+          /^static\/icons\/spells\/[^/]+\.webp$/i.test(entry.path),
+      )
       .map((entry) => (entry.path as string).split("/").pop() as string);
   }
 
@@ -76,8 +89,17 @@ export async function fetchPf2eSpellIconFiles(): Promise<string[]> {
       headers: { Accept: "application/vnd.github+json" },
     });
     if (!pageResponse.ok) throw new Error(`ícones PF2e HTTP ${pageResponse.status}`);
-    const entries = await pageResponse.json() as GithubContentEntry[];
-    files.push(...entries.filter((entry) => entry.type === "file" && typeof entry.name === "string" && entry.name.toLowerCase().endsWith(".webp")).map((entry) => entry.name as string));
+    const entries = (await pageResponse.json()) as GithubContentEntry[];
+    files.push(
+      ...entries
+        .filter(
+          (entry) =>
+            entry.type === "file" &&
+            typeof entry.name === "string" &&
+            entry.name.toLowerCase().endsWith(".webp"),
+        )
+        .map((entry) => entry.name as string),
+    );
     if (entries.length < 100) return files;
   }
 }

@@ -1,9 +1,9 @@
-require('dotenv').config({ path: '.env.local' });
-const { Client } = require('pg');
+require("dotenv").config({ path: ".env.local" });
+const { Client } = require("pg");
 
 async function migrate() {
   if (!process.env.DATABASE_URL) {
-    console.log('No DATABASE_URL found, skipping direct DB migration');
+    console.log("No DATABASE_URL found, skipping direct DB migration");
     return;
   }
 
@@ -13,7 +13,7 @@ async function migrate() {
 
   try {
     await client.connect();
-    console.log('Connected to database');
+    console.log("Connected to database");
 
     const sqlStatements = [
       `ALTER TABLE "community_comments" ADD COLUMN IF NOT EXISTS "comment_type" varchar(20) NOT NULL DEFAULT 'text';`,
@@ -27,9 +27,9 @@ async function migrate() {
       console.log(`Executed: ${sql}`);
     }
 
-    console.log('Migration of community_comments completed successfully!');
+    console.log("Migration of community_comments completed successfully!");
   } catch (error) {
-    console.error('Migration error:', error.message);
+    console.error("Migration error:", error.message);
   } finally {
     await client.end();
   }

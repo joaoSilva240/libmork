@@ -9,6 +9,7 @@
 ### 1. Novos componentes de contêiner
 
 **`src/components/campaigns/shield/ShieldTabContainer.tsx`** (genérico)
+
 - Props: `tabs: { id, label, icon, visible }[]`, `activeTab`, `onTabChange`, `persistKey`, `className`, `children` (render por aba ativa).
 - Cabeçalho compacto: botões com ícone `lucide-react` + `title`/tooltip, `role="tablist"` / `role="tab"` / `aria-selected`, navegação por teclado (setas + Enter), `focus-visible:ring-accent` no padrão do projeto.
 - Renderização: **todas as abas ficam montadas no DOM**; apenas a aba ativa é visível (`hidden` via classe). Isso garante que:
@@ -18,12 +19,14 @@
 - Persistência: lê/escreve `localStorage` chave `libmork:shield-tabs:<persistKey>` pós-hidratação (padrão `MasterSidebar.tsx`: ler em `useEffect` para evitar divergência SSR).
 
 **`src/components/campaigns/shield/MasterMediaPanel.tsx`**
+
 - Tabs: `worlds` (MapPin), `assets` (Image), `jukebox` (Music).
 - Recebe `showMap`, `showAssets`, `showJukebox` do config; abas desativadas são **ocultadas do cabeçalho**; se a aba ativa salva ficou invisível, cai para a primeira visível.
 - Renderiza os componentes existentes (`WorldsPanel` extraído de `CampaignDetail`, `MasterAssetsPanel`, `MasterJukebox`) como children da aba, mantendo as props atuais (`isCompact`, `initialActiveAssetId`, etc.).
 - Redimensionamento vertical do contêiner: um único `ResizeHandle` no contêiner (reutilizar `useResizableLayout` com storage key `libmork:campaign-media-panel:<id>`), removendo os handles individuais dos painéis internos.
 
 **`src/components/campaigns/shield/MasterActorsPanel.tsx`**
+
 - Tabs: `charactersNpcs` (Users), `players` (UserCheck).
 - Reutiliza `CampaignInvites` duas vezes com as flags `showCharactersNpcs`/`showPlayers` atuais.
 - Mantém as assinaturas WebSocket (`subscribeCampaignInviteCreated`/`Revoked`) **apenas na aba de Jogadores**, conforme otimização da issue #75 — `CampaignInvites` com `showPlayers={true}` já as registra; como ambos ficam montados, extrair as assinaturas para hook condicionado à aba (ex.: passar prop `subscriptionsEnabled`).
@@ -43,6 +46,7 @@
 - Estado de mundos (`worlds`, `selectedWorldId`, `worldsPanel`) sobe para `CampaignDetail` ou para o `MasterMediaPanel` conforme acoplamento; preferir mover para `MasterMediaPanel` para reduzir o `CampaignDetail` (hoje 819 linhas), mantendo callbacks usados por outros overlays via props.
 
 ## Passos de implementação
+
 1. `ShieldTabContainer` (genérico + acessibilidade + persistência).
 2. `MasterMediaPanel` — extrair painel de Mundos de `CampaignDetail` para componente próprio; montar abas.
 3. `MasterActorsPanel` + hook `subscriptionsEnabled` em `CampaignInvites`.
@@ -51,6 +55,7 @@
 6. Testes + limpeza dos cases legados.
 
 ## Testes
+
 - `ShieldTabContainer.test.tsx`: troca de aba, `role="tablist"`/`aria-selected`, navegação por teclado, persistência no `localStorage` (restauração pós-hidratação), ocultação de aba invisível e fallback para primeira visível.
 - `MasterMediaPanel.test.tsx`: jukebox montado sob `hidden` não remonta/pausa ao trocar aba (assert de que o `<audio>`/elemento persiste no DOM); abas ocultas conforme `showMap/showAssets/showJukebox`.
 - `MasterActorsPanel.test.tsx`: assinaturas WS registradas só com aba players habilitada; ocultação conforme flags.
@@ -58,5 +63,6 @@
 - Critérios de aceitação da issue cobertos item a item.
 
 ## Riscos
+
 - Migração de config: usuários com ordenação customizada perdem granularidade por módulo (aceitável — os módulos agora são blocos).
 - Áudio: garantir que trocar de aba não cause remontagem — testado explicitamente.

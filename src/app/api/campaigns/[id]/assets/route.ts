@@ -127,7 +127,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       try {
         filename = await saveImage(file, "campaigns/assets");
       } catch (uploadError) {
-        const message = uploadError instanceof Error ? uploadError.message : "Erro ao salvar imagem";
+        const message =
+          uploadError instanceof Error ? uploadError.message : "Erro ao salvar imagem";
         return NextResponse.json({ success: false, error: message }, { status: 400 });
       }
 

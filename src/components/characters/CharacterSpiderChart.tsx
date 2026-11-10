@@ -29,7 +29,11 @@ function polygonPoints(radius: number): string {
   return AXES.map((_, index) => point(index, radius)).join(" ");
 }
 
-export function CharacterSpiderChart({ attributes, size = 90, className = "" }: CharacterSpiderChartProps) {
+export function CharacterSpiderChart({
+  attributes,
+  size = 90,
+  className = "",
+}: CharacterSpiderChartProps) {
   const normalized = normalizeAttributeMap(attributes);
   const values = AXES.map(([, attribute]) => normalized[attribute]);
   const characterPoints = values
@@ -82,17 +86,9 @@ export function CharacterSpiderChart({ attributes, size = 90, className = "" }: 
       {AXES.map(([label], index) => {
         const [dotX, dotY] = point(
           index,
-          (Math.min(values[index], MAX_ATTRIBUTE) / MAX_ATTRIBUTE) * RADIUS
+          (Math.min(values[index], MAX_ATTRIBUTE) / MAX_ATTRIBUTE) * RADIUS,
         ).split(",");
-        return (
-          <circle
-            key={label}
-            cx={dotX}
-            cy={dotY}
-            r="2"
-            fill="#ffffff"
-          />
-        );
+        return <circle key={label} cx={dotX} cy={dotY} r="2" fill="#ffffff" />;
       })}
     </svg>
   );

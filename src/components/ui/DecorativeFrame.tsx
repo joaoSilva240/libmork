@@ -11,7 +11,11 @@ type DecorativeFrameProps = {
  * Componente de moldura decorativa usando Frame 17.
  * A imagem é esticada para cobrir todo o container como decoração de borda.
  */
-export function DecorativeFrame({ children, className = "", innerClassName = "" }: DecorativeFrameProps) {
+export function DecorativeFrame({
+  children,
+  className = "",
+  innerClassName = "",
+}: DecorativeFrameProps) {
   return (
     <div className={`relative ${className}`}>
       {/* Imagem decorativa esticada cobrindo todo o elemento e se estendendo além das bordas */}
@@ -21,15 +25,13 @@ export function DecorativeFrame({ children, className = "", innerClassName = "" 
           alt=""
           fill
           className="object-fill opacity-70"
-          style={{ 
+          style={{
             mixBlendMode: "screen",
           }}
         />
       </div>
 
-      <div className={`relative z-10 ${innerClassName}`}>
-        {children}
-      </div>
+      <div className={`relative z-10 ${innerClassName}`}>{children}</div>
     </div>
   );
 }

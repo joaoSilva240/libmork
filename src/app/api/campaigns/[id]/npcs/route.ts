@@ -28,10 +28,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -41,7 +38,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     if (!campaign) {
       return NextResponse.json(
         { success: false, error: "Campanha não encontrada" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -60,7 +57,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     logger.error({ err: error }, "Erro ao listar NPCs incluídos");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -74,10 +71,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -87,7 +81,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!campaign) {
       return NextResponse.json(
         { success: false, error: "Campanha não encontrada" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -95,41 +89,23 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const validation = includeNpcSchema.safeParse(body);
 
     if (!validation.success) {
-      return NextResponse.json(
-        { success: false, error: "Dados inválidos" },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: "Dados inválidos" }, { status: 400 });
     }
 
-    const [npc] = await db
-      .select()
-      .from(npcs)
-      .where(eq(npcs.id, validation.data.npcId))
-      .limit(1);
+    const [npc] = await db.select().from(npcs).where(eq(npcs.id, validation.data.npcId)).limit(1);
 
     if (!npc) {
-      return NextResponse.json(
-        { success: false, error: "NPC não encontrado" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "NPC não encontrado" }, { status: 404 });
     }
 
     const [existing] = await db
       .select()
       .from(npcCampaigns)
-      .where(
-        and(
-          eq(npcCampaigns.npcId, npc.id),
-          eq(npcCampaigns.campaignId, id)
-        )
-      )
+      .where(and(eq(npcCampaigns.npcId, npc.id), eq(npcCampaigns.campaignId, id)))
       .limit(1);
 
     if (!existing) {
-      await db
-        .insert(npcCampaigns)
-        .values({ npcId: npc.id, campaignId: id })
-        .returning();
+      await db.insert(npcCampaigns).values({ npcId: npc.id, campaignId: id }).returning();
     }
 
     await db.insert(campaignLogs).values({
@@ -143,15 +119,12 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       payload: { npcId: npc.id },
     });
 
-    return NextResponse.json(
-      { success: true, data: npc },
-      { status: 201 }
-    );
+    return NextResponse.json({ success: true, data: npc }, { status: 201 });
   } catch (error) {
     logger.error({ err: error }, "Erro ao incluir NPC na campanha");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

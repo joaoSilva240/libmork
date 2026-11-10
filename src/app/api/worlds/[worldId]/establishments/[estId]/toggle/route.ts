@@ -6,10 +6,11 @@ import { getSession } from "@/lib/auth/session";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ worldId: string; estId: string }> }
+  { params }: { params: Promise<{ worldId: string; estId: string }> },
 ) {
   try {
-    const session = await getSession(); const user = session?.user;
+    const session = await getSession();
+    const user = session?.user;
     if (!user) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
     const { estId } = await params;
@@ -35,6 +36,9 @@ export async function PATCH(
     return NextResponse.json({ success: true, data: updated });
   } catch (err) {
     console.error("[Toggle Establishment Error]:", err);
-    return NextResponse.json({ error: "Erro ao alternar status do estabelecimento" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erro ao alternar status do estabelecimento" },
+      { status: 500 },
+    );
   }
 }

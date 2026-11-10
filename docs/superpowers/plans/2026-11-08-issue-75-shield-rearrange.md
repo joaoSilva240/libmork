@@ -23,16 +23,19 @@
 ### Task 1: Hook and Types for Shield Module Ordering & Visibility
 
 **Files:**
+
 - Modify: `src/hooks/useMasterScreenConfig.ts`
 - Test: `src/hooks/__tests__/useMasterScreenConfig.test.ts`
 
 **Interfaces:**
+
 - Consumes: `masterScreenConfigKey` in `localStorage`.
 - Produces: `ShieldModuleId`, `DEFAULT_SHIELD_LEFT_ORDER`, `DEFAULT_SHIELD_RIGHT_ORDER`, `showAssets`, `leftColumnOrder`, and `rightColumnOrder` on `MasterScreenConfig`.
 
 - [ ] **Step 1: Write failing test for hook defaults and sanitization**
 
 Create `src/hooks/__tests__/useMasterScreenConfig.test.ts`:
+
 ```typescript
 import { describe, it, expect, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
@@ -119,18 +122,14 @@ Expected: FAIL with missing properties on `MasterScreenConfig`.
 - [ ] **Step 3: Update `src/hooks/useMasterScreenConfig.ts`**
 
 Update `src/hooks/useMasterScreenConfig.ts`:
+
 ```typescript
 "use client";
 
 import { useCallback, useState } from "react";
 
 export type ShieldModuleId =
-  | "worlds"
-  | "assets"
-  | "jukebox"
-  | "charactersNpcs"
-  | "players"
-  | "sessionLog";
+  "worlds" | "assets" | "jukebox" | "charactersNpcs" | "players" | "sessionLog";
 
 export const ALL_SHIELD_MODULES: readonly ShieldModuleId[] = [
   "worlds",
@@ -149,9 +148,7 @@ export const DEFAULT_SHIELD_LEFT_ORDER: ShieldModuleId[] = [
   "players",
 ];
 
-export const DEFAULT_SHIELD_RIGHT_ORDER: ShieldModuleId[] = [
-  "sessionLog",
-];
+export const DEFAULT_SHIELD_RIGHT_ORDER: ShieldModuleId[] = ["sessionLog"];
 
 export type MasterScreenConfig = {
   showRoster: boolean;
@@ -195,7 +192,7 @@ export const masterScreenConfigKey = "libmork:master-screen-config";
 
 function sanitizeColumnOrder(
   leftInput: unknown,
-  rightInput: unknown
+  rightInput: unknown,
 ): { left: ShieldModuleId[]; right: ShieldModuleId[] } {
   const isModuleId = (val: unknown): val is ShieldModuleId =>
     typeof val === "string" && ALL_SHIELD_MODULES.includes(val as ShieldModuleId);
@@ -256,7 +253,8 @@ export function sanitizeMasterScreenConfig(value: unknown): MasterScreenConfig {
     showMap: typeof input.showMap === "boolean" ? input.showMap : true,
     showJukebox: typeof input.showJukebox === "boolean" ? input.showJukebox : true,
     showDiceRolls: typeof input.showDiceRolls === "boolean" ? input.showDiceRolls : true,
-    showCharactersNpcs: typeof input.showCharactersNpcs === "boolean" ? input.showCharactersNpcs : true,
+    showCharactersNpcs:
+      typeof input.showCharactersNpcs === "boolean" ? input.showCharactersNpcs : true,
     showPlayers: typeof input.showPlayers === "boolean" ? input.showPlayers : true,
     showAssets: typeof input.showAssets === "boolean" ? input.showAssets : true,
     leftColumnOrder: left,
@@ -272,7 +270,9 @@ export function useMasterScreenConfig() {
     if (typeof window === "undefined") return { ...DEFAULT_MASTER_SCREEN_CONFIG };
     try {
       const stored = window.localStorage.getItem(masterScreenConfigKey);
-      return stored ? sanitizeMasterScreenConfig(JSON.parse(stored)) : { ...DEFAULT_MASTER_SCREEN_CONFIG };
+      return stored
+        ? sanitizeMasterScreenConfig(JSON.parse(stored))
+        : { ...DEFAULT_MASTER_SCREEN_CONFIG };
     } catch {
       return { ...DEFAULT_MASTER_SCREEN_CONFIG };
     }
@@ -300,7 +300,7 @@ export function useMasterScreenConfig() {
     try {
       window.localStorage.setItem(
         masterScreenConfigKey,
-        JSON.stringify(DEFAULT_MASTER_SCREEN_CONFIG)
+        JSON.stringify(DEFAULT_MASTER_SCREEN_CONFIG),
       );
     } catch {
       // ignore
@@ -333,16 +333,19 @@ git commit -m "feat(config): adiciona visibilidade de assets e ordenacao de modu
 ### Task 2: Drag & Drop and Accessible Reordering UI in Config Panel
 
 **Files:**
+
 - Modify: `src/components/campaigns/MasterScreenConfigPanel.tsx`
 - Test: `src/components/campaigns/__tests__/MasterScreenConfigPanel.reorder.test.tsx`
 
 **Interfaces:**
+
 - Consumes: `MasterScreenConfig`, `onUpdate`, `onReset`.
 - Produces: UI with Assets checkbox toggle and accessible HTML5 drag-and-drop module organizer using `lucide-react` icons.
 
 - [ ] **Step 1: Write failing test for config panel reordering and assets toggle**
 
 Create `src/components/campaigns/__tests__/MasterScreenConfigPanel.reorder.test.tsx`:
+
 ```typescript
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
@@ -457,6 +460,7 @@ Expected: FAIL with missing elements.
 - [ ] **Step 3: Implement reordering UI in `MasterScreenConfigPanel.tsx`**
 
 Modify `src/components/campaigns/MasterScreenConfigPanel.tsx` to:
+
 1. Import Lucide icons:
    ```tsx
    import {
@@ -509,16 +513,19 @@ git commit -m "feat(ui): adiciona organizador de colunas e drag-and-drop nas con
 ### Task 3: Live Preview Updates for Reordered Columns
 
 **Files:**
+
 - Modify: `src/components/campaigns/MasterScreenPreview.tsx`
 - Test: `src/components/campaigns/__tests__/MasterScreenPreview.test.tsx`
 
 **Interfaces:**
+
 - Consumes: `leftColumnOrder`, `rightColumnOrder`, `showAssets` in `MasterScreenPreviewProps`.
 - Produces: Live visual representation reflecting items dynamically in column 1 vs column 3.
 
 - [ ] **Step 1: Write failing test for preview reflection**
 
 Create `src/components/campaigns/__tests__/MasterScreenPreview.test.tsx`:
+
 ```typescript
 import React from "react";
 import { render, screen } from "@testing-library/react";
@@ -574,6 +581,7 @@ Expected: FAIL with missing props/elements.
 - [ ] **Step 3: Update `MasterScreenPreview.tsx`**
 
 Update `MasterScreenPreview.tsx`:
+
 - Extend `MasterScreenPreviewProps`:
   ```typescript
   type MasterScreenPreviewProps = {
@@ -610,16 +618,19 @@ git commit -m "feat(preview): reflete ordenacao de colunas no preview do escudo 
 ### Task 4: Dynamic Module Rendering and Auto-Adjusting Log Height in Shield
 
 **Files:**
+
 - Modify: `src/components/campaigns/CampaignDetail.tsx`
 - Test: `src/components/campaigns/__tests__/CampaignDetail.moduleLayout.test.tsx`
 
 **Interfaces:**
+
 - Consumes: `screenConfig.leftColumnOrder`, `screenConfig.rightColumnOrder`, `screenConfig.showAssets`.
 - Produces: Dynamic placement of all 6 modules across left and right columns, with `showAssets` check, separated `CampaignInvites` rendering, and elastic auto-adjustment of `SessionLog` without overflowing.
 
 - [ ] **Step 1: Write failing test for dynamic module placement and height containment**
 
 Create `src/components/campaigns/__tests__/CampaignDetail.moduleLayout.test.tsx`:
+
 ```typescript
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
@@ -757,6 +768,7 @@ Expected: FAIL with elements still in fixed columns.
 - [ ] **Step 3: Refactor `CampaignDetail.tsx` for dynamic modular layout**
 
 In `src/components/campaigns/CampaignDetail.tsx`:
+
 1. Add `data-testid="shield-left-column"` to the left column wrapper and `data-testid="shield-right-column"` to the right column wrapper.
 2. Implement a `renderModule(moduleId: ShieldModuleId)` helper inside `CampaignDetail`:
    - Case `"worlds"`: if `screenConfig.showMap`, render the Worlds panel with `ResizeHandle`.
@@ -814,6 +826,7 @@ git commit -m "feat(campaigns): renderiza modulos do escudo dinamicamente com aj
 ### Task 5: End-to-End Type Safety and Regression Suite
 
 **Files:**
+
 - All touched files and existing test suites
 
 - [ ] **Step 1: Run TypeScript compiler check**

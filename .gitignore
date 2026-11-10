@@ -51,6 +51,11 @@ next-env.d.ts
 # drizzle
 /drizzle/meta
 
+# electron
+/dist-electron/
+/dist/
+/release/
+
 # IDE
 .idea/
 .vscode/

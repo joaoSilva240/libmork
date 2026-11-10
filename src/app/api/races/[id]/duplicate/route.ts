@@ -20,32 +20,22 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     if (session.user.role !== "master") {
       return NextResponse.json(
         { success: false, error: "Apenas mestres podem gerenciar raças" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     const { id } = await params;
 
-    const [existing] = await db
-      .select()
-      .from(rpgRaces)
-      .where(eq(rpgRaces.id, id))
-      .limit(1);
+    const [existing] = await db.select().from(rpgRaces).where(eq(rpgRaces.id, id)).limit(1);
 
     if (!existing) {
-      return NextResponse.json(
-        { success: false, error: "Raça não encontrada" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "Raça não encontrada" }, { status: 404 });
     }
 
     const [duplicate] = await db
@@ -71,13 +61,13 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         message: "Raça duplicada com sucesso",
         data: duplicate,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     logger.error({ err: error }, "Erro ao duplicar raça");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

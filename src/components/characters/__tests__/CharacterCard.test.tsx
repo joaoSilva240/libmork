@@ -55,7 +55,11 @@ describe("CharacterCard", () => {
 
     const statusBadge = screen.getByText("💚 Vivo");
     expect(statusBadge).toBeInTheDocument();
-    expect(statusBadge).toHaveClass("border-emerald-700/60", "bg-emerald-950/90", "text-emerald-300");
+    expect(statusBadge).toHaveClass(
+      "border-emerald-700/60",
+      "bg-emerald-950/90",
+      "text-emerald-300",
+    );
   });
 
   it("exibe o badge de status 'Caído' com estilo amber quando o personagem está com HP <= 0 e deathStatus 'falling'", () => {
@@ -148,7 +152,7 @@ describe("CharacterCard", () => {
       "border-secondary-border",
       "hover:border-accent",
       "hover:shadow-[0_0_20px_rgba(147,51,234,0.25)]",
-      "cursor-pointer"
+      "cursor-pointer",
     );
   });
 

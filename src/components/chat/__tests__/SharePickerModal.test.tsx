@@ -47,9 +47,7 @@ describe("SharePickerModal", () => {
     const onPick = vi.fn();
     render(<SharePickerModal isOpen onClose={vi.fn()} onPick={onPick} />);
 
-    expect(
-      await screen.findByText(/Digite ao menos 3 caracteres/i),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/Digite ao menos 3 caracteres/i)).toBeInTheDocument();
     expect(screen.queryByText("Bola de Fogo")).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByTestId("share-search-input"), { target: { value: "bo" } });

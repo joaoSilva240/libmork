@@ -10,7 +10,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { campaigns, characters, characterCampaigns } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
-import { contentTypeSchema } from "@/lib/validators/content";
+import { characterContentTypeSchema } from "@/lib/validators/content";
 import {
   getContentTable,
   getContentCampaignColumn,
@@ -40,12 +40,7 @@ async function canManageCharacterContent(characterId: string, userId: string): P
     .select()
     .from(characterCampaigns)
     .innerJoin(campaigns, eq(characterCampaigns.campaignId, campaigns.id))
-    .where(
-      and(
-        eq(characterCampaigns.characterId, characterId),
-        eq(campaigns.masterId, userId)
-      )
-    )
+    .where(and(eq(characterCampaigns.characterId, characterId), eq(campaigns.masterId, userId)))
     .limit(1);
 
   return !!masterLink;
@@ -83,19 +78,16 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id, type } = await params;
-    const parsed = contentTypeSchema.safeParse(type);
+    const parsed = characterContentTypeSchema.safeParse(type);
 
     if (!parsed.success) {
       return NextResponse.json(
         { success: false, error: "Tipo de conteúdo inválido" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -104,7 +96,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     if (!canManage) {
       return NextResponse.json(
         { success: false, error: "Sem permissão ou personagem não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -120,7 +112,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       .from(junctionTable)
       .innerJoin(
         contentTable,
-        eq(getJunctionContentColumn(parsed.data), getContentIdColumn(parsed.data))
+        eq(getJunctionContentColumn(parsed.data), getContentIdColumn(parsed.data)),
       )
       .where(eq(getJunctionCharacterColumn(parsed.data), id));
 
@@ -140,24 +132,22 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
         campaignIds.length > 0
           ? or(
               isNull(getContentCampaignColumn(parsed.data)),
-              inArray(getContentCampaignColumn(parsed.data), campaignIds)
+              inArray(getContentCampaignColumn(parsed.data), campaignIds),
             )
-          : isNull(getContentCampaignColumn(parsed.data))
+          : isNull(getContentCampaignColumn(parsed.data)),
       );
 
     return NextResponse.json({
       success: true,
       data: { linked, available },
     });
-    } catch (error) {
-    logger.error({ err: error }, 'Erro ao listar conteúdo da ficha');
-    const message = error instanceof Error && /column .*translation.* does not exist/i.test(error.message)
-      ? "Schema desatualizado: aplique a migration 0007_add_item_translation.sql (npm run db:migrate) e tente novamente."
-      : "Erro interno do servidor";
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    );
+  } catch (error) {
+    logger.error({ err: error }, "Erro ao listar conteúdo da ficha");
+    const message =
+      error instanceof Error && /column .*translation.* does not exist/i.test(error.message)
+        ? "Schema desatualizado: aplique a migration 0007_add_item_translation.sql (npm run db:migrate) e tente novamente."
+        : "Erro interno do servidor";
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
 
@@ -170,19 +160,16 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id, type } = await params;
-    const parsed = contentTypeSchema.safeParse(type);
+    const parsed = characterContentTypeSchema.safeParse(type);
 
     if (!parsed.success) {
       return NextResponse.json(
         { success: false, error: "Tipo de conteúdo inválido" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -191,7 +178,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!canManage) {
       return NextResponse.json(
         { success: false, error: "Sem permissão ou personagem não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -206,7 +193,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
           error: "Dados inválidos",
           errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -224,7 +211,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!content) {
       return NextResponse.json(
         { success: false, error: "Conteúdo não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -238,8 +225,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         .where(
           and(
             eq(characterCampaigns.characterId, id),
-            eq(characterCampaigns.campaignId, contentCampaignId)
-          )
+            eq(characterCampaigns.campaignId, contentCampaignId),
+          ),
         )
         .limit(1);
 
@@ -249,7 +236,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
             success: false,
             error: "Este conteúdo pertence a uma campanha da qual o personagem não participa",
           },
-          { status: 403 }
+          { status: 403 },
         );
       }
     }
@@ -263,19 +250,23 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       .where(
         and(
           eq(getJunctionCharacterColumn(parsed.data), id),
-          eq(getJunctionContentColumn(parsed.data), contentId)
-        )
+          eq(getJunctionContentColumn(parsed.data), contentId),
+        ),
       )
       .limit(1);
 
     if (existingJunction) {
       return NextResponse.json(
         { success: false, error: "Conteúdo já vinculado à ficha" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
-    const junctionValues = buildJunctionValues(parsed.data, id, validation.data as Record<string, unknown>);
+    const junctionValues = buildJunctionValues(
+      parsed.data,
+      id,
+      validation.data as Record<string, unknown>,
+    );
 
     const [createdJunction] = await db
       .insert(junctionTable)
@@ -287,13 +278,13 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         success: true,
         data: createdJunction,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao vincular conteúdo');
+    logger.error({ err: error }, "Erro ao vincular conteúdo");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

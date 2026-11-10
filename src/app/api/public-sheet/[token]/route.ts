@@ -25,10 +25,10 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
     if (message === "Link inválido ou revogado" || message === "Personagem não encontrado") {
       return NextResponse.json({ success: false, error: message }, { status: 404 });
     }
-    logger.error({ err: error }, 'Erro ao obter ficha pública');
+    logger.error({ err: error }, "Erro ao obter ficha pública");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

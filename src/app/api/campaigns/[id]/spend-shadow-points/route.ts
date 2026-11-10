@@ -30,13 +30,20 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
     if (!characterId || !bonusType || !target || pointsToSpend < 1) {
       return NextResponse.json(
-        { success: false, error: "Parâmetros inválidos. Informe characterId, bonusType, target e pointsToSpend >= 1." },
-        { status: 400 }
+        {
+          success: false,
+          error:
+            "Parâmetros inválidos. Informe characterId, bonusType, target e pointsToSpend >= 1.",
+        },
+        { status: 400 },
       );
     }
 
     if (!["attribute", "skill", "spell"].includes(bonusType)) {
-      return NextResponse.json({ success: false, error: "bonusType deve ser 'attribute', 'skill' ou 'spell'." }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "bonusType deve ser 'attribute', 'skill' ou 'spell'." },
+        { status: 400 },
+      );
     }
 
     // 1. Buscar usuário para verificar pontos de sombra disponíveis
@@ -48,8 +55,11 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
     if (!userRecord || userRecord.shadowPoints < pointsToSpend) {
       return NextResponse.json(
-        { success: false, error: `Pontos de Sombra insuficientes. Disponíveis: ${userRecord?.shadowPoints ?? 0}` },
-        { status: 400 }
+        {
+          success: false,
+          error: `Pontos de Sombra insuficientes. Disponíveis: ${userRecord?.shadowPoints ?? 0}`,
+        },
+        { status: 400 },
       );
     }
 
@@ -65,15 +75,18 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         and(
           eq(characterCampaigns.campaignId, campaignId),
           eq(characterCampaigns.characterId, characterId),
-          eq(characters.ownerId, session.user.id)
-        )
+          eq(characters.ownerId, session.user.id),
+        ),
       )
       .limit(1);
 
     if (!link) {
       return NextResponse.json(
-        { success: false, error: "Vínculo entre personagem e campanha não encontrado ou não pertence a você." },
-        { status: 404 }
+        {
+          success: false,
+          error: "Vínculo entre personagem e campanha não encontrado ou não pertence a você.",
+        },
+        { status: 404 },
       );
     }
 
@@ -128,7 +141,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     logger.error({ err: error }, "Erro ao gastar Pontos de Sombra");
     return NextResponse.json(
       { success: false, error: "Erro interno ao processar gasto de Pontos de Sombra" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

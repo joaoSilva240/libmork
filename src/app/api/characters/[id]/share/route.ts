@@ -23,7 +23,9 @@ function parseKind(raw: string | null, fallback: ShareKind = "view"): ShareKind 
 }
 
 function linkUrl(kind: ShareKind, token: string, base: string): string {
-  return kind === "acquire" ? `${base}/characters/import/${token}` : `${base}/public-sheet/${token}`;
+  return kind === "acquire"
+    ? `${base}/characters/import/${token}`
+    : `${base}/public-sheet/${token}`;
 }
 
 async function requireOwnedCharacter(id: string, userId: string) {
@@ -44,10 +46,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -57,7 +56,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     if (!character) {
       return NextResponse.json(
         { success: false, error: "Personagem não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -68,8 +67,8 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
         and(
           eq(publicShareLinks.characterId, id),
           eq(publicShareLinks.kind, kind),
-          eq(publicShareLinks.revoked, false)
-        )
+          eq(publicShareLinks.revoked, false),
+        ),
       )
       .limit(1);
 
@@ -90,10 +89,10 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       },
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao obter link público');
+    logger.error({ err: error }, "Erro ao obter link público");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -108,10 +107,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -126,10 +122,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       .object({ kind: kindSchema.optional() })
       .safeParse(body && typeof body === "object" ? body : {});
     if (!kindValidation.success) {
-      return NextResponse.json(
-        { success: false, error: "Dados inválidos" },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: "Dados inválidos" }, { status: 400 });
     }
     const kind: ShareKind = kindValidation.data.kind ?? "view";
 
@@ -137,7 +130,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!character) {
       return NextResponse.json(
         { success: false, error: "Personagem não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -152,13 +145,13 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
           url: linkUrl(kind, newLink.token, baseUrl),
         },
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao gerar link público');
+    logger.error({ err: error }, "Erro ao gerar link público");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -172,10 +165,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -185,7 +175,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     if (!character) {
       return NextResponse.json(
         { success: false, error: "Personagem não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -196,8 +186,8 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
         and(
           eq(publicShareLinks.characterId, id),
           eq(publicShareLinks.kind, kind),
-          eq(publicShareLinks.revoked, false)
-        )
+          eq(publicShareLinks.revoked, false),
+        ),
       );
 
     return NextResponse.json({
@@ -205,10 +195,10 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       message: "Link público revogado com sucesso",
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao revogar link público');
+    logger.error({ err: error }, "Erro ao revogar link público");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -166,9 +166,7 @@ export function CampaignCharacters({ campaignId }: { campaignId: string }) {
 
   return (
     <div className="mt-4 rounded-lg border border-gray-800 bg-gray-900 p-4">
-      <h3 className="mb-3 text-lg font-semibold text-white">
-        Personagens na Campanha
-      </h3>
+      <h3 className="mb-3 text-lg font-semibold text-white">Personagens na Campanha</h3>
 
       {error && (
         <div className="mb-3 rounded-lg border border-red-800 bg-red-900/30 p-3 text-sm text-red-300">
@@ -218,75 +216,76 @@ export function CampaignCharacters({ campaignId }: { campaignId: string }) {
 
           {characters.length === 0 ? (
             <p className="text-sm text-gray-400">
-              Nenhum personagem vinculado. Compartilhe o convite com seus jogadores
-              ou distribua uma ficha pronta.
+              Nenhum personagem vinculado. Compartilhe o convite com seus jogadores ou distribua uma
+              ficha pronta.
             </p>
           ) : (
             <div className="space-y-3">
-          {characters.map((character) => (
-            <div
-              key={character.linkId}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gray-800 bg-gray-950 p-3"
-            >
-              <div className="flex items-center gap-3">
-                {character.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={character.imageUrl}
-                    alt={character.name}
-                    className="h-10 w-10 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 font-bold text-gray-400">
-                    {character.name.charAt(0).toUpperCase()}
+              {characters.map((character) => (
+                <div
+                  key={character.linkId}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gray-800 bg-gray-950 p-3"
+                >
+                  <div className="flex items-center gap-3">
+                    {character.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={character.imageUrl}
+                        alt={character.name}
+                        className="h-10 w-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 font-bold text-gray-400">
+                        {character.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-semibold text-white">{character.name}</p>
+                      <p className="text-xs text-gray-400">
+                        Nível {character.level} ·{" "}
+                        {ORIGIN_LABELS[character.origin] ?? character.origin}
+                      </p>
+                    </div>
                   </div>
-                )}
-                <div>
-                  <p className="font-semibold text-white">{character.name}</p>
-                  <p className="text-xs text-gray-400">
-                    Nível {character.level} · {ORIGIN_LABELS[character.origin] ?? character.origin}
-                  </p>
+
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`rounded px-2 py-1 text-xs font-medium ${
+                        character.approvalStatus === "approved"
+                          ? "bg-green-900/50 text-green-300"
+                          : character.approvalStatus === "rejected"
+                            ? "bg-red-900/50 text-red-300"
+                            : "bg-yellow-900/50 text-yellow-300"
+                      }`}
+                    >
+                      {STATUS_LABELS[character.approvalStatus] ?? character.approvalStatus}
+                    </span>
+
+                    {character.approvalStatus !== "approved" && (
+                      <button
+                        onClick={() => handleApprove(character.linkId, "approved")}
+                        className="rounded bg-green-600 px-2 py-1 text-xs font-semibold text-white hover:bg-green-700"
+                      >
+                        Aprovar
+                      </button>
+                    )}
+                    {character.approvalStatus !== "rejected" && (
+                      <button
+                        onClick={() => handleApprove(character.linkId, "rejected")}
+                        className="rounded bg-red-600 px-2 py-1 text-xs font-semibold text-white hover:bg-red-700"
+                      >
+                        Rejeitar
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleRemove(character.linkId)}
+                      className="text-xs text-gray-500 hover:text-red-400"
+                    >
+                      Remover
+                    </button>
+                  </div>
                 </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span
-                  className={`rounded px-2 py-1 text-xs font-medium ${
-                    character.approvalStatus === "approved"
-                      ? "bg-green-900/50 text-green-300"
-                      : character.approvalStatus === "rejected"
-                        ? "bg-red-900/50 text-red-300"
-                        : "bg-yellow-900/50 text-yellow-300"
-                  }`}
-                >
-                  {STATUS_LABELS[character.approvalStatus] ?? character.approvalStatus}
-                </span>
-
-                {character.approvalStatus !== "approved" && (
-                  <button
-                    onClick={() => handleApprove(character.linkId, "approved")}
-                    className="rounded bg-green-600 px-2 py-1 text-xs font-semibold text-white hover:bg-green-700"
-                  >
-                    Aprovar
-                  </button>
-                )}
-                {character.approvalStatus !== "rejected" && (
-                  <button
-                    onClick={() => handleApprove(character.linkId, "rejected")}
-                    className="rounded bg-red-600 px-2 py-1 text-xs font-semibold text-white hover:bg-red-700"
-                  >
-                    Rejeitar
-                  </button>
-                )}
-                <button
-                  onClick={() => handleRemove(character.linkId)}
-                  className="text-xs text-gray-500 hover:text-red-400"
-                >
-                  Remover
-                </button>
-              </div>
-            </div>
-          ))}
+              ))}
             </div>
           )}
         </div>

@@ -2,10 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 import { GET as getFeed } from "../route";
 import { GET as getSession, PATCH as patchSession } from "../[id]/route";
-import {
-  GET as getCandidates,
-  POST as postCandidate,
-} from "../[id]/candidates/route";
+import { GET as getCandidates, POST as postCandidate } from "../[id]/candidates/route";
 import { PATCH as patchCandidate } from "../[id]/candidates/[userId]/route";
 import { GET as getPlayerCalendar } from "../../player/calendar/route";
 
@@ -147,12 +144,7 @@ describe("PATCH /api/sessions/:id", () => {
     });
     const res = await patchSession(req, { params: Promise.resolve({ id: "s-1" }) });
     expect(res.status).toBe(200);
-    expect(confirmSession).toHaveBeenCalledWith(
-      "s-1",
-      "m-1",
-      "2026-12-02T22:00:00.000Z",
-      240,
-    );
+    expect(confirmSession).toHaveBeenCalledWith("s-1", "m-1", "2026-12-02T22:00:00.000Z", 240);
     const json = await res.json();
     expect(json.data.status).toBe("confirmed");
   });

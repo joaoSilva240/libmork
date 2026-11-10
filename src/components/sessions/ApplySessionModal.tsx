@@ -132,7 +132,10 @@ export function ApplySessionModal({ session, isOpen, onClose, onApplied }: Apply
 
           {/* Personagem */}
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="apply-character-select" className="text-xs font-semibold text-secondary-pure">
+            <label
+              htmlFor="apply-character-select"
+              className="text-xs font-semibold text-secondary-pure"
+            >
               Personagem
             </label>
             <select
@@ -192,7 +195,10 @@ export function ApplySessionModal({ session, isOpen, onClose, onApplied }: Apply
           {!allDay && (
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="apply-time-start" className="text-xs font-semibold text-secondary-pure">
+                <label
+                  htmlFor="apply-time-start"
+                  className="text-xs font-semibold text-secondary-pure"
+                >
                   Início *
                 </label>
                 <input
@@ -205,7 +211,10 @@ export function ApplySessionModal({ session, isOpen, onClose, onApplied }: Apply
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="apply-time-end" className="text-xs font-semibold text-secondary-pure">
+                <label
+                  htmlFor="apply-time-end"
+                  className="text-xs font-semibold text-secondary-pure"
+                >
                   Fim *
                 </label>
                 <input

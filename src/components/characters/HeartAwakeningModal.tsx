@@ -58,22 +58,38 @@ const Q1_OPTIONS: Array<{ id: Q1Origin; title: string; desc: string; glyph: stri
 ];
 
 const Q2_OPTIONS: Array<{ id: Q2Impulse; title: string; desc: string; glyph: string }> = [
-  { id: "colina", title: "Colina", desc: "Para o topo da colina, onde posso ver o mundo primeiro", glyph: "G" },
-  { id: "floresta", title: "Floresta", desc: "Para dentro da floresta, onde as sombras me escondem", glyph: "H" },
-  { id: "mar", title: "Mar", desc: "Para a beira do mar, esperando o que a maré vai trazer", glyph: "I" },
+  {
+    id: "colina",
+    title: "Colina",
+    desc: "Para o topo da colina, onde posso ver o mundo primeiro",
+    glyph: "G",
+  },
+  {
+    id: "floresta",
+    title: "Floresta",
+    desc: "Para dentro da floresta, onde as sombras me escondem",
+    glyph: "H",
+  },
+  {
+    id: "mar",
+    title: "Mar",
+    desc: "Para a beira do mar, esperando o que a maré vai trazer",
+    glyph: "I",
+  },
 ];
 
 const Q3_OPTIONS: Array<{ id: Q3End; title: string; desc: string; glyph: string }> = [
   { id: "luzes", title: "Luzes", desc: "Que eu tremo quando as luzes se apagam", glyph: "J" },
-  { id: "cidade", title: "Cidade", desc: "Que eu esqueci o som da voz mecânica da minha cidade", glyph: "K" },
+  {
+    id: "cidade",
+    title: "Cidade",
+    desc: "Que eu esqueci o som da voz mecânica da minha cidade",
+    glyph: "K",
+  },
   { id: "odiar", title: "Odiar", desc: "Que eu mentiria para salvar quem odeio", glyph: "L" },
 ];
 
-export function HeartAwakeningModal({
-  isOpen,
-  onClose,
-  onComplete,
-}: HeartAwakeningModalProps) {
+export function HeartAwakeningModal({ isOpen, onClose, onComplete }: HeartAwakeningModalProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [questionStep, setQuestionStep] = useState<1 | 2 | 3>(1);
 
@@ -168,7 +184,6 @@ export function HeartAwakeningModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 sm:p-4 backdrop-blur-md transition-all w-full overflow-hidden">
       <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-purple-900/60 bg-gradient-to-b from-gray-950 via-purple-950/40 to-gray-950 p-4 sm:p-8 text-gray-100 shadow-[0_0_50px_rgba(112,26,117,0.3)]">
-        
         {/* Decorative ambient elements */}
         <div className="pointer-events-none absolute -top-24 -left-24 h-64 w-64 rounded-full bg-purple-600/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 -right-24 h-64 w-64 rounded-full bg-blue-600/10 blur-3xl" />
@@ -180,23 +195,57 @@ export function HeartAwakeningModal({
               O Despertar do Coração
             </h2>
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-mono mt-1">
-              <span className={step === 1 ? "text-purple-200 font-bold underline" : step > 1 ? "text-purple-400/60" : "text-gray-500"}>
+              <span
+                className={
+                  step === 1
+                    ? "text-purple-200 font-bold underline"
+                    : step > 1
+                      ? "text-purple-400/60"
+                      : "text-gray-500"
+                }
+              >
                 Relíquias
               </span>
               <span className="text-purple-600/60">→</span>
-              <span className={step === 2 && questionStep === 1 ? "text-purple-200 font-bold underline" : (step === 2 && questionStep > 1) || step > 2 ? "text-purple-400/60" : "text-gray-500"}>
+              <span
+                className={
+                  step === 2 && questionStep === 1
+                    ? "text-purple-200 font-bold underline"
+                    : (step === 2 && questionStep > 1) || step > 2
+                      ? "text-purple-400/60"
+                      : "text-gray-500"
+                }
+              >
                 Pergunta 1/3
               </span>
               <span className="text-purple-600/60">→</span>
-              <span className={step === 2 && questionStep === 2 ? "text-purple-200 font-bold underline" : (step === 2 && questionStep > 2) || step > 2 ? "text-purple-400/60" : "text-gray-500"}>
+              <span
+                className={
+                  step === 2 && questionStep === 2
+                    ? "text-purple-200 font-bold underline"
+                    : (step === 2 && questionStep > 2) || step > 2
+                      ? "text-purple-400/60"
+                      : "text-gray-500"
+                }
+              >
                 Pergunta 2/3
               </span>
               <span className="text-purple-600/60">→</span>
-              <span className={step === 2 && questionStep === 3 ? "text-purple-200 font-bold underline" : step > 2 ? "text-purple-400/60" : "text-gray-500"}>
+              <span
+                className={
+                  step === 2 && questionStep === 3
+                    ? "text-purple-200 font-bold underline"
+                    : step > 2
+                      ? "text-purple-400/60"
+                      : "text-gray-500"
+                }
+              >
                 Pergunta 3/3
               </span>
               <span className="text-purple-600/60">→</span>
-              <span className={step === 3 ? "text-purple-200 font-bold underline" : "text-gray-500"}>
+              <span
+                className={step === 3 ? "text-purple-200 font-bold underline" : "text-gray-500"}
+              >
                 O Despertar
               </span>
             </div>
@@ -212,7 +261,6 @@ export function HeartAwakeningModal({
 
         {/* Modal Content */}
         <div className="relative min-h-[300px] sm:min-h-[360px] flex flex-col justify-between">
-          
           {/* STEP 1: A Escolha das Relíquias */}
           {step === 1 && (
             <div className="space-y-5 sm:space-y-6 animate-fadeIn">
@@ -234,8 +282,8 @@ export function HeartAwakeningModal({
                           isChosen
                             ? "border-purple-400 bg-purple-950/80 shadow-[0_0_15px_rgba(168,85,247,0.4)] ring-1 ring-amber-400/60"
                             : isSacrificed
-                            ? "border-red-500/80 bg-red-950/50 shadow-[0_0_15px_rgba(239,68,68,0.2)] ring-1 ring-red-400/50"
-                            : "border-purple-900/40 bg-gray-900/60 hover:border-purple-700/60 hover:bg-purple-950/30"
+                              ? "border-red-500/80 bg-red-950/50 shadow-[0_0_15px_rgba(239,68,68,0.2)] ring-1 ring-red-400/50"
+                              : "border-purple-900/40 bg-gray-900/60 hover:border-purple-700/60 hover:bg-purple-950/30"
                         }`}
                       >
                         <div>
@@ -245,8 +293,8 @@ export function HeartAwakeningModal({
                                 isChosen
                                   ? "text-amber-300"
                                   : isSacrificed
-                                  ? "text-red-400"
-                                  : "text-purple-300"
+                                    ? "text-red-400"
+                                    : "text-purple-300"
                               }`}
                             >
                               {relic.icon}
@@ -279,8 +327,8 @@ export function HeartAwakeningModal({
                               isChosen
                                 ? "bg-purple-600 text-white shadow-sm ring-1 ring-amber-300"
                                 : isSacrificed
-                                ? "bg-gray-800/50 text-gray-600 cursor-not-allowed border border-gray-800"
-                                : "bg-purple-950/60 text-purple-200 border border-purple-800/60 hover:bg-purple-900 hover:text-white"
+                                  ? "bg-gray-800/50 text-gray-600 cursor-not-allowed border border-gray-800"
+                                  : "bg-purple-950/60 text-purple-200 border border-purple-800/60 hover:bg-purple-900 hover:text-white"
                             }`}
                           >
                             Escolher
@@ -293,8 +341,8 @@ export function HeartAwakeningModal({
                               isSacrificed
                                 ? "bg-red-600 text-white shadow-sm ring-1 ring-red-300"
                                 : isChosen
-                                ? "bg-gray-800/50 text-gray-600 cursor-not-allowed border border-gray-800"
-                                : "bg-red-950/40 text-red-300 border border-red-900/60 hover:bg-red-900 hover:text-white"
+                                  ? "bg-gray-800/50 text-gray-600 cursor-not-allowed border border-gray-800"
+                                  : "bg-red-950/40 text-red-300 border border-red-900/60 hover:bg-red-900 hover:text-white"
                             }`}
                           >
                             Sacrificar
@@ -399,7 +447,8 @@ export function HeartAwakeningModal({
                       Vozes Sem Rosto — Pergunta 2 de 3
                     </span>
                     <h3 className="text-sm sm:text-base font-bold text-purple-200 mt-1">
-                      Pergunta 2 (Impulso) — &quot;Para onde teu olhar se dirige quando a tempestade se aproxima?&quot;
+                      Pergunta 2 (Impulso) — &quot;Para onde teu olhar se dirige quando a tempestade
+                      se aproxima?&quot;
                     </h3>
                   </div>
 
@@ -544,7 +593,14 @@ export function HeartAwakeningModal({
               ) : errorMsg ? (
                 <div className="my-auto rounded-xl border border-red-800 bg-red-950/40 p-6 text-center space-y-4">
                   <p className="text-sm text-red-300 font-semibold">{errorMsg}</p>
-                  <Button onClick={() => { setStep(2); setQuestionStep(3); }} variant="secondary" className="mx-auto">
+                  <Button
+                    onClick={() => {
+                      setStep(2);
+                      setQuestionStep(3);
+                    }}
+                    variant="secondary"
+                    className="mx-auto"
+                  >
                     Tentar Novamente
                   </Button>
                 </div>
@@ -580,10 +636,18 @@ export function HeartAwakeningModal({
                           />
 
                           {/* Cantos ornados */}
-                          <div className="pointer-events-none absolute top-2 left-2 text-yellow-300 text-xs">✦</div>
-                          <div className="pointer-events-none absolute top-2 right-2 text-yellow-300 text-xs">✦</div>
-                          <div className="pointer-events-none absolute bottom-2 left-2 text-yellow-300 text-xs">✦</div>
-                          <div className="pointer-events-none absolute bottom-2 right-2 text-yellow-300 text-xs">✦</div>
+                          <div className="pointer-events-none absolute top-2 left-2 text-yellow-300 text-xs">
+                            ✦
+                          </div>
+                          <div className="pointer-events-none absolute top-2 right-2 text-yellow-300 text-xs">
+                            ✦
+                          </div>
+                          <div className="pointer-events-none absolute bottom-2 left-2 text-yellow-300 text-xs">
+                            ✦
+                          </div>
+                          <div className="pointer-events-none absolute bottom-2 right-2 text-yellow-300 text-xs">
+                            ✦
+                          </div>
 
                           {/* Topo da Carta */}
                           <div className="text-center pt-1">
@@ -604,18 +668,93 @@ export function HeartAwakeningModal({
                             ) : (
                               <div className="relative flex items-center justify-center w-28 h-28 rounded-full border border-yellow-300/40 bg-purple-900/30 shadow-inner my-1">
                                 {/* Sol radiante / Constelação Arcana */}
-                                <svg viewBox="0 0 100 100" className="w-20 h-20 text-yellow-300 animate-spin-slow">
-                                  <circle cx="50" cy="50" r="18" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" />
+                                <svg
+                                  viewBox="0 0 100 100"
+                                  className="w-20 h-20 text-yellow-300 animate-spin-slow"
+                                >
+                                  <circle
+                                    cx="50"
+                                    cy="50"
+                                    r="18"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeDasharray="3 3"
+                                  />
                                   <circle cx="50" cy="50" r="8" fill="currentColor" opacity="0.8" />
                                   {/* Raios de Sol */}
-                                  <line x1="50" y1="10" x2="50" y2="24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                                  <line x1="50" y1="76" x2="50" y2="90" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                                  <line x1="10" y1="50" x2="24" y2="50" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                                  <line x1="76" y1="50" x2="90" y2="50" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                                  <line x1="22" y1="22" x2="32" y2="32" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                                  <line x1="68" y1="68" x2="78" y2="78" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                                  <line x1="22" y1="78" x2="32" y2="68" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                                  <line x1="68" y1="32" x2="78" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                  <line
+                                    x1="50"
+                                    y1="10"
+                                    x2="50"
+                                    y2="24"
+                                    stroke="currentColor"
+                                    strokeWidth="2.5"
+                                    strokeLinecap="round"
+                                  />
+                                  <line
+                                    x1="50"
+                                    y1="76"
+                                    x2="50"
+                                    y2="90"
+                                    stroke="currentColor"
+                                    strokeWidth="2.5"
+                                    strokeLinecap="round"
+                                  />
+                                  <line
+                                    x1="10"
+                                    y1="50"
+                                    x2="24"
+                                    y2="50"
+                                    stroke="currentColor"
+                                    strokeWidth="2.5"
+                                    strokeLinecap="round"
+                                  />
+                                  <line
+                                    x1="76"
+                                    y1="50"
+                                    x2="90"
+                                    y2="50"
+                                    stroke="currentColor"
+                                    strokeWidth="2.5"
+                                    strokeLinecap="round"
+                                  />
+                                  <line
+                                    x1="22"
+                                    y1="22"
+                                    x2="32"
+                                    y2="32"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                  />
+                                  <line
+                                    x1="68"
+                                    y1="68"
+                                    x2="78"
+                                    y2="78"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                  />
+                                  <line
+                                    x1="22"
+                                    y1="78"
+                                    x2="32"
+                                    y2="68"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                  />
+                                  <line
+                                    x1="68"
+                                    y1="32"
+                                    x2="78"
+                                    y2="22"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                  />
                                 </svg>
                                 <div className="absolute inset-0 rounded-full bg-yellow-300/10 blur-md pointer-events-none" />
                               </div>
@@ -656,10 +795,18 @@ export function HeartAwakeningModal({
                           />
 
                           {/* Cantos ornados */}
-                          <div className="pointer-events-none absolute top-2 left-2 text-yellow-300 text-xs">✦</div>
-                          <div className="pointer-events-none absolute top-2 right-2 text-yellow-300 text-xs">✦</div>
-                          <div className="pointer-events-none absolute bottom-2 left-2 text-yellow-300 text-xs">✦</div>
-                          <div className="pointer-events-none absolute bottom-2 right-2 text-yellow-300 text-xs">✦</div>
+                          <div className="pointer-events-none absolute top-2 left-2 text-yellow-300 text-xs">
+                            ✦
+                          </div>
+                          <div className="pointer-events-none absolute top-2 right-2 text-yellow-300 text-xs">
+                            ✦
+                          </div>
+                          <div className="pointer-events-none absolute bottom-2 left-2 text-yellow-300 text-xs">
+                            ✦
+                          </div>
+                          <div className="pointer-events-none absolute bottom-2 right-2 text-yellow-300 text-xs">
+                            ✦
+                          </div>
 
                           {/* Topo da Carta Verso */}
                           <div className="text-center pt-1">
@@ -677,24 +824,44 @@ export function HeartAwakeningModal({
                               </span>
                               <div className="grid grid-cols-5 gap-1 sm:gap-1.5 text-center">
                                 <div className="rounded-lg border border-yellow-300/30 bg-purple-950/70 p-1.5 sm:p-2">
-                                  <div className="text-[9px] sm:text-[10px] text-yellow-200/70 font-semibold">FOR</div>
-                                  <div className="text-sm sm:text-base font-bold text-yellow-300">{awakeningResult.attributes.forca}</div>
+                                  <div className="text-[9px] sm:text-[10px] text-yellow-200/70 font-semibold">
+                                    FOR
+                                  </div>
+                                  <div className="text-sm sm:text-base font-bold text-yellow-300">
+                                    {awakeningResult.attributes.forca}
+                                  </div>
                                 </div>
                                 <div className="rounded-lg border border-yellow-300/30 bg-purple-950/70 p-1.5 sm:p-2">
-                                  <div className="text-[9px] sm:text-[10px] text-yellow-200/70 font-semibold">DES</div>
-                                  <div className="text-sm sm:text-base font-bold text-yellow-300">{awakeningResult.attributes.destreza}</div>
+                                  <div className="text-[9px] sm:text-[10px] text-yellow-200/70 font-semibold">
+                                    DES
+                                  </div>
+                                  <div className="text-sm sm:text-base font-bold text-yellow-300">
+                                    {awakeningResult.attributes.destreza}
+                                  </div>
                                 </div>
                                 <div className="rounded-lg border border-yellow-300/30 bg-purple-950/70 p-1.5 sm:p-2">
-                                  <div className="text-[9px] sm:text-[10px] text-yellow-200/70 font-semibold">VIG</div>
-                                  <div className="text-sm sm:text-base font-bold text-yellow-300">{awakeningResult.attributes.vigor}</div>
+                                  <div className="text-[9px] sm:text-[10px] text-yellow-200/70 font-semibold">
+                                    VIG
+                                  </div>
+                                  <div className="text-sm sm:text-base font-bold text-yellow-300">
+                                    {awakeningResult.attributes.vigor}
+                                  </div>
                                 </div>
                                 <div className="rounded-lg border border-yellow-300/30 bg-purple-950/70 p-1.5 sm:p-2">
-                                  <div className="text-[9px] sm:text-[10px] text-yellow-200/70 font-semibold">INT</div>
-                                  <div className="text-sm sm:text-base font-bold text-yellow-300">{awakeningResult.attributes.inteligencia}</div>
+                                  <div className="text-[9px] sm:text-[10px] text-yellow-200/70 font-semibold">
+                                    INT
+                                  </div>
+                                  <div className="text-sm sm:text-base font-bold text-yellow-300">
+                                    {awakeningResult.attributes.inteligencia}
+                                  </div>
                                 </div>
                                 <div className="rounded-lg border border-yellow-300/30 bg-purple-950/70 p-1.5 sm:p-2">
-                                  <div className="text-[9px] sm:text-[10px] text-yellow-200/70 font-semibold">EMP</div>
-                                  <div className="text-sm sm:text-base font-bold text-yellow-300">{awakeningResult.attributes.empatia}</div>
+                                  <div className="text-[9px] sm:text-[10px] text-yellow-200/70 font-semibold">
+                                    EMP
+                                  </div>
+                                  <div className="text-sm sm:text-base font-bold text-yellow-300">
+                                    {awakeningResult.attributes.empatia}
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -703,17 +870,23 @@ export function HeartAwakeningModal({
                             <div className="rounded-xl border border-yellow-300/25 bg-black/40 p-2.5 sm:p-3 space-y-1.5 text-xs text-purple-200">
                               <p className="flex justify-between border-b border-yellow-300/20 pb-1">
                                 <span className="text-yellow-200/80">Classe Sugerida:</span>
-                                <span className="font-bold text-white">{awakeningResult.suggestedClass}</span>
+                                <span className="font-bold text-white">
+                                  {awakeningResult.suggestedClass}
+                                </span>
                               </p>
                               {awakeningResult.suggestedRace && (
                                 <p className="flex justify-between border-b border-yellow-300/20 pb-1">
                                   <span className="text-yellow-200/80">Raça Sugerida:</span>
-                                  <span className="font-bold text-white">{awakeningResult.suggestedRace}</span>
+                                  <span className="font-bold text-white">
+                                    {awakeningResult.suggestedRace}
+                                  </span>
                                 </p>
                               )}
                               <p className="flex justify-between pt-0.5">
                                 <span className="text-yellow-200/80">Traço Revelado:</span>
-                                <span className="font-bold text-yellow-300">{awakeningResult.suggestedTrait}</span>
+                                <span className="font-bold text-yellow-300">
+                                  {awakeningResult.suggestedTrait}
+                                </span>
                               </p>
                             </div>
                           </div>
@@ -742,7 +915,6 @@ export function HeartAwakeningModal({
               )}
             </div>
           )}
-
         </div>
       </div>
     </div>

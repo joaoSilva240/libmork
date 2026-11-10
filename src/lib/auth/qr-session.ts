@@ -19,7 +19,11 @@ export async function getQrSession(qrSessionId: string): Promise<QrSessionData |
   return await cache.get<QrSessionData>(`qr_session:${qrSessionId}`);
 }
 
-export async function authorizeQrSession(qrSessionId: string, userId: string, sessionToken: string): Promise<boolean> {
+export async function authorizeQrSession(
+  qrSessionId: string,
+  userId: string,
+  sessionToken: string,
+): Promise<boolean> {
   const session = await getQrSession(qrSessionId);
   if (!session || session.status !== "PENDING") return false;
 

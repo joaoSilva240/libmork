@@ -14,9 +14,8 @@ vi.mock("@/lib/server/session-service", () => ({
 vi.mock("@/lib/logger", () => ({ logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));
 
 const { requireAuth } = await import("@/lib/auth/session");
-const { launchSession, listMasterSessions, getSessionContext } = await import(
-  "@/lib/server/session-service"
-);
+const { launchSession, listMasterSessions, getSessionContext } =
+  await import("@/lib/server/session-service");
 
 const UUID = "550e8400-e29b-41d4-a716-446655440000";
 

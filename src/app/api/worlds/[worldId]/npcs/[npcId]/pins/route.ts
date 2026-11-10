@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { npcs, worlds, campaigns, npcPins, skills, spells } from "@/lib/db/schema";
+import { npcs, worlds, campaigns, npcPins, skills, spells, attacks } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { createNpcPinSchema } from "@/lib/validators/npcPin";
 import { eq } from "drizzle-orm";
@@ -15,11 +15,7 @@ import { logger } from "@/lib/logger";
 type RouteContext = { params: Promise<{ worldId: string; npcId: string }> };
 
 async function isWorldMaster(worldId: string, userId: string): Promise<boolean> {
-  const [world] = await db
-    .select()
-    .from(worlds)
-    .where(eq(worlds.id, worldId))
-    .limit(1);
+  const [world] = await db.select().from(worlds).where(eq(worlds.id, worldId)).limit(1);
 
   if (!world || !world.campaignId) return false;
 
@@ -41,10 +37,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { worldId, npcId } = await params;
@@ -54,17 +47,14 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     if (!isMaster) {
       return NextResponse.json(
         { success: false, error: "Sem permissão para acessar os pins deste NPC" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     const [npc] = await db.select().from(npcs).where(eq(npcs.id, npcId)).limit(1);
 
     if (!npc || npc.worldId !== worldId) {
-      return NextResponse.json(
-        { success: false, error: "NPC não encontrado" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "NPC não encontrado" }, { status: 404 });
     }
 
     const pins = await db
@@ -78,10 +68,10 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: pins,
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao listar pins');
+    logger.error({ err: error }, "Erro ao listar pins");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -95,10 +85,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { worldId, npcId } = await params;
@@ -108,17 +95,14 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!isMaster) {
       return NextResponse.json(
         { success: false, error: "Apenas o mestre da campanha pode gerenciar pins" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     const [npc] = await db.select().from(npcs).where(eq(npcs.id, npcId)).limit(1);
 
     if (!npc || npc.worldId !== worldId) {
-      return NextResponse.json(
-        { success: false, error: "NPC não encontrado" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "NPC não encontrado" }, { status: 404 });
     }
 
     const body = await request.json();
@@ -128,34 +112,41 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json(
         {
           success: false,
-          error: "Dados inválidos",
+          error: validation.error.issues[0]?.message || "Dados inválidos",
           errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const { pinType, contentId, label, rollExpression, manaCost, circle } =
-      validation.data;
+    const {
+      pinType,
+      contentId,
+      label,
+      rollExpression,
+      attackExpression,
+      damageExpression,
+      damageType,
+      criticalRange,
+      manaCost,
+      circle,
+    } = validation.data;
 
     // Se houver contentId, busca nome/custo/círculo da fonte
     let finalLabel = label;
     let finalManaCost = manaCost ?? null;
     let finalCircle = circle ?? null;
     let finalRollExpression = rollExpression ?? null;
+    let libraryAttack: typeof attacks.$inferSelect | null = null;
 
     if (contentId) {
       if (pinType === "spell") {
-        const [spell] = await db
-          .select()
-          .from(spells)
-          .where(eq(spells.id, contentId))
-          .limit(1);
+        const [spell] = await db.select().from(spells).where(eq(spells.id, contentId)).limit(1);
 
         if (!spell) {
           return NextResponse.json(
             { success: false, error: "Magia não encontrada" },
-            { status: 404 }
+            { status: 404 },
           );
         }
 
@@ -163,25 +154,33 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         finalManaCost = spell.manaCost;
         finalCircle = spell.circle;
       } else if (pinType === "skill") {
-        const [skill] = await db
-          .select()
-          .from(skills)
-          .where(eq(skills.id, contentId))
-          .limit(1);
+        const [skill] = await db.select().from(skills).where(eq(skills.id, contentId)).limit(1);
 
         if (!skill) {
           return NextResponse.json(
             { success: false, error: "Perícia não encontrada" },
-            { status: 404 }
+            { status: 404 },
           );
         }
 
         finalLabel = skill.name;
         finalRollExpression = skill.rollExpression ?? null;
+      } else if (pinType === "attack") {
+        // Ataque da Biblioteca Global (issue #90 follow-up): atalho vinculado
+        // a um ataque configurado; campos explícitos no payload têm prioridade.
+        const [attack] = await db.select().from(attacks).where(eq(attacks.id, contentId)).limit(1);
+        if (!attack) {
+          return NextResponse.json(
+            { success: false, error: "Ataque não encontrado na biblioteca" },
+            { status: 404 },
+          );
+        }
+        libraryAttack = attack;
+        finalLabel = attack.name;
       } else {
         return NextResponse.json(
           { success: false, error: "Ataques não usam contentId" },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
@@ -194,6 +193,10 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         contentId: contentId ?? null,
         label: finalLabel,
         rollExpression: finalRollExpression,
+        attackExpression: attackExpression ?? libraryAttack?.attackExpression ?? null,
+        damageExpression: damageExpression ?? libraryAttack?.damageExpression ?? null,
+        damageType: damageType ?? libraryAttack?.damageType ?? null,
+        criticalRange: criticalRange ?? libraryAttack?.criticalRange ?? null,
         manaCost: finalManaCost,
         circle: finalCircle,
       })
@@ -204,13 +207,13 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         success: true,
         data: newPin,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao criar pin');
+    logger.error({ err: error }, "Erro ao criar pin");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

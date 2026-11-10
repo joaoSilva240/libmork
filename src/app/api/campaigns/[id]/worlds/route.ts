@@ -33,10 +33,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -45,7 +42,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     if (!campaign) {
       return NextResponse.json(
         { success: false, error: "Campanha não encontrada" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -60,10 +57,10 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: campaignWorlds,
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao listar mundos');
+    logger.error({ err: error }, "Erro ao listar mundos");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -80,10 +77,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -92,7 +86,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!campaign) {
       return NextResponse.json(
         { success: false, error: "Campanha não encontrada" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -103,16 +97,12 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       const { worldId } = body;
 
       // Verificar se o mundo existe e é acessível (ou global ou do usuário)
-      const [existingWorld] = await db
-        .select()
-        .from(worlds)
-        .where(eq(worlds.id, worldId))
-        .limit(1);
+      const [existingWorld] = await db.select().from(worlds).where(eq(worlds.id, worldId)).limit(1);
 
       if (!existingWorld) {
         return NextResponse.json(
           { success: false, error: "Mundo não encontrado" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -126,7 +116,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       if (existingLink) {
         return NextResponse.json(
           { success: false, error: "Este mundo já está vinculado à campanha" },
-          { status: 409 }
+          { status: 409 },
         );
       }
 
@@ -142,7 +132,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
           success: true,
           data: updatedWorld,
         },
-        { status: 200 }
+        { status: 200 },
       );
     }
 
@@ -156,7 +146,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
           error: "Dados inválidos",
           errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -178,13 +168,13 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         success: true,
         data: newWorld,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao processar mundo');
+    logger.error({ err: error }, "Erro ao processar mundo");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

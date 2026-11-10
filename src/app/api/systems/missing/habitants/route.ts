@@ -4,11 +4,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/session";
-import {
-  createHabitant,
-  getUserHabitants,
-  handleApiError,
-} from "@/lib/server/missing-service";
+import { createHabitant, getUserHabitants, handleApiError } from "@/lib/server/missing-service";
 import { createHabitantSchema } from "@/lib/systems/missing/validators";
 
 export async function GET() {
@@ -35,11 +31,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = createHabitantSchema.parse(body);
 
-    const habitant = await createHabitant(
-      validated.campaignId || null,
-      session.user.id,
-      validated,
-    );
+    const habitant = await createHabitant(validated.campaignId || null, session.user.id, validated);
 
     return NextResponse.json({ success: true, data: habitant }, { status: 201 });
   } catch (error) {

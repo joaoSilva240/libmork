@@ -6,7 +6,12 @@ import { users } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 
 const updateProfileSchema = z.object({
-  masterName: z.string().trim().max(100, "Nome de mestre deve ter no máximo 100 caracteres").optional().nullable(),
+  masterName: z
+    .string()
+    .trim()
+    .max(100, "Nome de mestre deve ter no máximo 100 caracteres")
+    .optional()
+    .nullable(),
   masterAvatar: z
     .string()
     .trim()
@@ -15,7 +20,12 @@ const updateProfileSchema = z.object({
     .or(z.literal(""))
     .optional()
     .nullable(),
-  masterBio: z.string().trim().max(500, "Bio deve ter no máximo 500 caracteres").optional().nullable(),
+  masterBio: z
+    .string()
+    .trim()
+    .max(500, "Bio deve ter no máximo 500 caracteres")
+    .optional()
+    .nullable(),
   masterBannerUrl: z
     .string()
     .trim()
@@ -44,7 +54,7 @@ export async function PUT(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Dados inválidos", details: parsed.error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -59,7 +69,9 @@ export async function PUT(request: NextRequest) {
       updateData.masterBio = parsed.data.masterBio ? parsed.data.masterBio.trim() : null;
     }
     if (parsed.data.masterBannerUrl !== undefined) {
-      updateData.masterBannerUrl = parsed.data.masterBannerUrl ? parsed.data.masterBannerUrl.trim() : null;
+      updateData.masterBannerUrl = parsed.data.masterBannerUrl
+        ? parsed.data.masterBannerUrl.trim()
+        : null;
     }
 
     const [updatedUser] = await db
@@ -89,9 +101,6 @@ export async function PUT(request: NextRequest) {
     });
   } catch (error) {
     console.error("Erro ao atualizar perfil de mestre:", error);
-    return NextResponse.json(
-      { error: "Erro ao atualizar perfil de mestre" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Erro ao atualizar perfil de mestre" }, { status: 500 });
   }
 }

@@ -26,7 +26,10 @@ export async function GET() {
       results,
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao carregar catálogo Pathfinder 2e');
-    return NextResponse.json({ success: false, error: "Erro interno do servidor" }, { status: 500 });
+    logger.error({ err: error }, "Erro ao carregar catálogo Pathfinder 2e");
+    return NextResponse.json(
+      { success: false, error: "Erro interno do servidor" },
+      { status: 500 },
+    );
   }
 }

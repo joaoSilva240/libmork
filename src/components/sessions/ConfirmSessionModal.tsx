@@ -39,10 +39,7 @@ export function ConfirmSessionModal({
       return;
     }
     const chosen = new Date(datetime);
-    if (
-      chosen < new Date(`${startDay}T00:00:00`) ||
-      chosen > new Date(`${endDay}T23:59:59`)
-    ) {
+    if (chosen < new Date(`${startDay}T00:00:00`) || chosen > new Date(`${endDay}T23:59:59`)) {
       setError("A data final está fora do período proposto");
       return;
     }
@@ -88,8 +85,8 @@ export function ConfirmSessionModal({
           )}
 
           <p className="text-xs text-secondary-muted">
-            Escolha a data e hora dentro do período proposto ({startDay.split("-").reverse().join("/")} a{" "}
-            {endDay.split("-").reverse().join("/")}).
+            Escolha a data e hora dentro do período proposto (
+            {startDay.split("-").reverse().join("/")} a {endDay.split("-").reverse().join("/")}).
           </p>
 
           <div className="flex flex-col gap-1.5">

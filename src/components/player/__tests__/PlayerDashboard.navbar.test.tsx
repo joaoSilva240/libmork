@@ -96,7 +96,7 @@ describe("PlayerDashboard - Navbar Redesign & Floating Action Button", () => {
                     displayName: "Artemis Shadowalker",
                     role: "player",
                   },
-                }
+                },
               ),
           });
         }

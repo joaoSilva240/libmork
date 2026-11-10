@@ -111,7 +111,11 @@ export async function verifySessionToken(token: string): Promise<{
   if (!token) return null;
 
   const cached = await cache.get<any>(`session:${token}`);
-  if (cached && new Date(cached.session.expiresAt) > new Date()) return { user: cached.user, session: { ...cached.session, expiresAt: new Date(cached.session.expiresAt) } };
+  if (cached && new Date(cached.session.expiresAt) > new Date())
+    return {
+      user: cached.user,
+      session: { ...cached.session, expiresAt: new Date(cached.session.expiresAt) },
+    };
 
   const result = await db
     .select()

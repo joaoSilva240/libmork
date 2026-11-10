@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createClassSchema, createClassBenefitSchema, updateClassSchema } from "../class";
+import { createClassSchema, createClassBenefitSchema } from "../class";
 
 describe("Class Validator Schemas", () => {
   it("should validate a simple class creation payload with optional hitRoll and damageRoll on initialItems", () => {

@@ -18,7 +18,15 @@ export function CharacterCard({ character }: { character: Character }) {
       href={`/player/characters/${character.id}`}
       aria-label={`Ver ficha de ${character.name}`}
       className="motion-lift group relative overflow-hidden flex flex-col justify-between rounded-xl border border-secondary-border bg-secondary-card p-5 transition-all hover:border-accent hover:shadow-[0_0_20px_rgba(147,51,234,0.25)] cursor-pointer"
-      style={character.imageUrl ? { backgroundImage: `url(${character.imageUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
+      style={
+        character.imageUrl
+          ? {
+              backgroundImage: `url(${character.imageUrl})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }
+          : undefined
+      }
     >
       {character.imageUrl && (
         <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/85 to-gray-950/65 group-hover:via-gray-950/75 transition-colors pointer-events-none" />
@@ -29,16 +37,33 @@ export function CharacterCard({ character }: { character: Character }) {
             <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full ring-2 ring-purple-500">
               {character.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={character.imageUrl} alt={character.name} className="h-full w-full object-cover" />
+                <img
+                  src={character.imageUrl}
+                  alt={character.name}
+                  className="h-full w-full object-cover"
+                />
               ) : (
-                <div className="flex h-full w-full items-center justify-center bg-purple-950 text-lg font-bold text-purple-200">{character.name.charAt(0).toUpperCase()}</div>
+                <div className="flex h-full w-full items-center justify-center bg-purple-950 text-lg font-bold text-purple-200">
+                  {character.name.charAt(0).toUpperCase()}
+                </div>
               )}
             </div>
-            <h3 className={`truncate text-lg font-bold drop-shadow-md transition-colors ${character.imageUrl ? "text-white" : "text-secondary-pure group-hover:text-accent-vibrant [data-theme-mode=light]:group-hover:text-accent-dark"}`}>{character.name}</h3>
+            <h3
+              className={`truncate text-lg font-bold drop-shadow-md transition-colors ${character.imageUrl ? "text-white" : "text-secondary-pure group-hover:text-accent-vibrant [data-theme-mode=light]:group-hover:text-accent-dark"}`}
+            >
+              {character.name}
+            </h3>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1">
-            <span className="rounded border border-accent/40 bg-accent/15 px-2 py-0.5 text-[10px] font-semibold text-accent-dark [data-theme-mode=dark]:border-accent-vibrant/50 [data-theme-mode=dark]:bg-accent-dark/90 [data-theme-mode=dark]:text-white">Nv. {character.level}{character.className ? ` · ${character.className}` : ""}</span>
-            <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${status.className}`}>{status.label}</span>
+            <span className="rounded border border-accent/40 bg-accent/15 px-2 py-0.5 text-[10px] font-semibold text-accent-dark [data-theme-mode=dark]:border-accent-vibrant/50 [data-theme-mode=dark]:bg-accent-dark/90 [data-theme-mode=dark]:text-white">
+              Nv. {character.level}
+              {character.className ? ` · ${character.className}` : ""}
+            </span>
+            <span
+              className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${status.className}`}
+            >
+              {status.label}
+            </span>
           </div>
         </div>
         <div className="flex items-center justify-between gap-3">
@@ -60,7 +85,9 @@ export function CharacterCard({ character }: { character: Character }) {
               🏰 Campanha: {character.campaignName}
             </span>
           )}
-          <span>Bloqueio: {stats.block}</span><span>·</span><span>XP: {character.xp}</span>
+          <span>Bloqueio: {stats.block}</span>
+          <span>·</span>
+          <span>XP: {character.xp}</span>
         </div>
       </div>
     </Link>

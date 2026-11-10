@@ -34,8 +34,11 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 
     return NextResponse.json({ success: true, data });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao listar estabelecimentos');
-    return NextResponse.json({ success: false, error: "Erro interno do servidor" }, { status: 500 });
+    logger.error({ err: error }, "Erro ao listar estabelecimentos");
+    return NextResponse.json(
+      { success: false, error: "Erro interno do servidor" },
+      { status: 500 },
+    );
   }
 }
 
@@ -59,7 +62,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!validation.success) {
       return NextResponse.json(
         { success: false, error: "Dados inválidos", errors: validation.error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -75,7 +78,10 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
     return NextResponse.json({ success: true, data: newEst }, { status: 201 });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao criar estabelecimento');
-    return NextResponse.json({ success: false, error: "Erro interno do servidor" }, { status: 500 });
+    logger.error({ err: error }, "Erro ao criar estabelecimento");
+    return NextResponse.json(
+      { success: false, error: "Erro interno do servidor" },
+      { status: 500 },
+    );
   }
 }

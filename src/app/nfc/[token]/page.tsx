@@ -10,19 +10,13 @@ import { nfcTags } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth/session";
 import { eq, and, like } from "drizzle-orm";
 
-export default async function NfcPage({
-  params,
-}: {
-  params: Promise<{ token: string }>;
-}) {
+export default async function NfcPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
 
   const [tag] = await db
     .select()
     .from(nfcTags)
-    .where(
-      and(like(nfcTags.ndefUrl, `%/nfc/${token}`), eq(nfcTags.active, true))
-    )
+    .where(and(like(nfcTags.ndefUrl, `%/nfc/${token}`), eq(nfcTags.active, true)))
     .limit(1);
 
   if (!tag) {
@@ -44,7 +38,5 @@ export default async function NfcPage({
     redirect(`/player/characters/${tag.characterId}`);
   }
 
-  redirect(
-    `/login?redirect=${encodeURIComponent(`/player/characters/${tag.characterId}`)}`
-  );
+  redirect(`/login?redirect=${encodeURIComponent(`/player/characters/${tag.characterId}`)}`);
 }

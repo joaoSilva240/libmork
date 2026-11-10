@@ -27,16 +27,15 @@ export async function GET(request: NextRequest) {
       ? or(isNull(worlds.campaignId), eq(worlds.campaignId, campaignId))
       : undefined;
 
-    const data = await db
-      .select()
-      .from(worlds)
-      .where(condition)
-      .orderBy(desc(worlds.createdAt));
+    const data = await db.select().from(worlds).where(condition).orderBy(desc(worlds.createdAt));
 
     return NextResponse.json({ success: true, data });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao listar mundos');
-    return NextResponse.json({ success: false, error: "Erro interno do servidor" }, { status: 500 });
+    logger.error({ err: error }, "Erro ao listar mundos");
+    return NextResponse.json(
+      { success: false, error: "Erro interno do servidor" },
+      { status: 500 },
+    );
   }
 }
 
@@ -57,7 +56,7 @@ export async function POST(request: NextRequest) {
     if (!validation.success) {
       return NextResponse.json(
         { success: false, error: "Dados inválidos", errors: validation.error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -76,7 +75,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, data: newWorld }, { status: 201 });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao criar mundo');
-    return NextResponse.json({ success: false, error: "Erro interno do servidor" }, { status: 500 });
+    logger.error({ err: error }, "Erro ao criar mundo");
+    return NextResponse.json(
+      { success: false, error: "Erro interno do servidor" },
+      { status: 500 },
+    );
   }
 }

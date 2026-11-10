@@ -44,13 +44,13 @@ vi.mock("@/lib/db/schema", () => ({
     userId: "communityPostVotes.userId",
     value: "communityPostVotes.value",
   },
-   communityClones: {
-     id: "communityClones.id",
-     postId: "communityClones.postId",
-     userId: "communityClones.userId",
-   },
-   communityComments: {
-     id: "communityComments.id",
+  communityClones: {
+    id: "communityClones.id",
+    postId: "communityClones.postId",
+    userId: "communityClones.userId",
+  },
+  communityComments: {
+    id: "communityComments.id",
     postId: "communityComments.postId",
     userId: "communityComments.userId",
     content: "communityComments.content",
@@ -487,9 +487,9 @@ describe("POST /api/community/posts/[id]/like", () => {
       .mockReturnValueOnce({
         from: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([
-              { id: "post-1", title: "Test Post", clonesCount: 0 },
-            ]),
+            limit: vi
+              .fn()
+              .mockResolvedValue([{ id: "post-1", title: "Test Post", clonesCount: 0 }]),
           }),
         }),
       })
@@ -535,9 +535,9 @@ describe("POST /api/community/posts/[id]/like", () => {
       .mockReturnValueOnce({
         from: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([
-              { id: "post-1", title: "Test Post", clonesCount: 0 },
-            ]),
+            limit: vi
+              .fn()
+              .mockResolvedValue([{ id: "post-1", title: "Test Post", clonesCount: 0 }]),
           }),
         }),
       })
@@ -545,9 +545,9 @@ describe("POST /api/community/posts/[id]/like", () => {
       .mockReturnValueOnce({
         from: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
-            limit: vi.fn().mockResolvedValue([
-              { id: "like-1", postId: "post-1", userId: "user-123" },
-            ]),
+            limit: vi
+              .fn()
+              .mockResolvedValue([{ id: "like-1", postId: "post-1", userId: "user-123" }]),
           }),
         }),
       })

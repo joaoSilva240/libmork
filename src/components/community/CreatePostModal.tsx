@@ -29,7 +29,9 @@ const CONTENT_TYPES: ContentTypeOption[] = [
 ];
 
 export default function CreatePostModal({ open, onClose, onCreated }: Props) {
-  const [contentType, setContentType] = useState<"spell" | "item" | "class" | "npc" | "world">("spell");
+  const [contentType, setContentType] = useState<"spell" | "item" | "class" | "npc" | "world">(
+    "spell",
+  );
   const [sourceMode, setSourceMode] = useState<"existing" | "manual">("existing");
 
   // Entidades carregadas da API
@@ -41,11 +43,14 @@ export default function CreatePostModal({ open, onClose, onCreated }: Props) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [tagsInput, setTagsInput] = useState("");
-  const [payloadText, setPayloadText] = useState("{\n  \"name\": \"\"\n}");
+  const [payloadText, setPayloadText] = useState('{\n  "name": ""\n}');
   const [contentId, setContentId] = useState<string | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error" | "info";
+  } | null>(null);
 
   // Carrega entidades existentes quando muda contentType
   useEffect(() => {
@@ -114,14 +119,30 @@ export default function CreatePostModal({ open, onClose, onCreated }: Props) {
       setContentId(null);
       const defaultPayload =
         contentType === "spell"
-          ? { name: title || "Nova Magia", circle: 1, manaCost: 5, school: "Evocação", description: description || "" }
+          ? {
+              name: title || "Nova Magia",
+              circle: 1,
+              manaCost: 5,
+              school: "Evocação",
+              description: description || "",
+            }
           : contentType === "item"
-          ? { name: title || "Novo Item", category: "Arma", rarity: "Comum", description: description || "" }
-          : contentType === "class"
-          ? { name: title || "Nova Classe", hitDie: "d8", hpPerLevel: 5, description: description || "" }
-          : contentType === "npc"
-          ? { name: title || "Novo NPC", level: 1, hp: 20, description: description || "" }
-          : { name: title || "Novo Mundo", description: description || "" };
+            ? {
+                name: title || "Novo Item",
+                category: "Arma",
+                rarity: "Comum",
+                description: description || "",
+              }
+            : contentType === "class"
+              ? {
+                  name: title || "Nova Classe",
+                  hitDie: "d8",
+                  hpPerLevel: 5,
+                  description: description || "",
+                }
+              : contentType === "npc"
+                ? { name: title || "Novo NPC", level: 1, hp: 20, description: description || "" }
+                : { name: title || "Novo Mundo", description: description || "" };
       setPayloadText(JSON.stringify(defaultPayload, null, 2));
       if (!tagsInput) {
         setTagsInput(contentType);
@@ -140,7 +161,10 @@ export default function CreatePostModal({ open, onClose, onCreated }: Props) {
     try {
       parsedPayload = JSON.parse(payloadText);
     } catch {
-      setToast({ message: "O payload JSON é inválido. Corrija o formato antes de prosseguir.", type: "error" });
+      setToast({
+        message: "O payload JSON é inválido. Corrija o formato antes de prosseguir.",
+        type: "error",
+      });
       return;
     }
 
@@ -185,13 +209,7 @@ export default function CreatePostModal({ open, onClose, onCreated }: Props) {
 
   return (
     <>
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       <Modal
         open={open}
@@ -303,7 +321,8 @@ export default function CreatePostModal({ open, onClose, onCreated }: Props) {
                           <option value="">-- Selecione uma entidade existente --</option>
                           {entities.map((item) => (
                             <option key={item.id} value={item.id}>
-                              {item.name || item.title || "Sem nome"} {item.circle ? `(Círculo ${item.circle})` : ""}
+                              {item.name || item.title || "Sem nome"}{" "}
+                              {item.circle ? `(Círculo ${item.circle})` : ""}
                             </option>
                           ))}
                         </select>
@@ -378,12 +397,7 @@ export default function CreatePostModal({ open, onClose, onCreated }: Props) {
             <Button type="button" onClick={onClose} variant="secondary">
               Cancelar
             </Button>
-            <Button
-              type="submit"
-              form="create-post-form"
-              disabled={submitting}
-              variant="master"
-            >
+            <Button type="submit" form="create-post-form" disabled={submitting} variant="master">
               {submitting ? (
                 <span className="flex items-center gap-2">
                   <Spinner size="sm" />

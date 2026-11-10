@@ -35,7 +35,12 @@ export function ResizeHandle({
         ? "cursor-ns-resize"
         : "cursor-se-resize";
 
-  const Icon = direction === "horizontal" ? MoveHorizontal : direction === "vertical" ? MoveVertical : MoveDiagonal;
+  const Icon =
+    direction === "horizontal"
+      ? MoveHorizontal
+      : direction === "vertical"
+        ? MoveVertical
+        : MoveDiagonal;
 
   const positionClass =
     position === "top-left"
@@ -60,10 +65,7 @@ export function ResizeHandle({
     const deltaX = event.clientX - lastPoint.current.x;
     const deltaY = event.clientY - lastPoint.current.y;
     lastPoint.current = { x: event.clientX, y: event.clientY };
-    onResize(
-      direction === "vertical" ? 0 : deltaX,
-      direction === "horizontal" ? 0 : deltaY,
-    );
+    onResize(direction === "vertical" ? 0 : deltaX, direction === "horizontal" ? 0 : deltaY);
   };
 
   const finishResize = (event: PointerEvent<HTMLButtonElement>) => {

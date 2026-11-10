@@ -1,8 +1,12 @@
 "use client";
 
-import { getTechnicalLabel, formatTechnicalField, PF2E_DAMAGE_TYPES_PT } from "@/lib/content/pf2e-item-formatter";
-import { useEffect, useState } from "react";
-import { ATTRIBUTES, SPELL_USE_TYPES } from "@/lib/utils/constants";
+import {
+  getTechnicalLabel,
+  formatTechnicalField,
+  PF2E_DAMAGE_TYPES_PT,
+} from "@/lib/content/pf2e-item-formatter";
+import { useEffect, useRef, useState } from "react";
+import { ATTRIBUTES } from "@/lib/utils/constants";
 import type { ContentType } from "@/lib/validators/content";
 import { Button, Form, Input, Spinner } from "@/components/ui";
 import type { Spell } from "@/types";
@@ -13,7 +17,6 @@ import { LibraryRaces } from "@/components/races/LibraryRaces";
 import { LibraryNpcs } from "@/components/npcs/LibraryNpcs";
 import { LibraryWorlds } from "@/components/worlds/LibraryWorlds";
 import { LibraryDocuments } from "@/components/library/LibraryDocuments";
-import { useRef } from "react";
 import { getCsrfToken } from "@/lib/client/csrf";
 
 type FieldDef = {
@@ -33,7 +36,8 @@ type TypeConfig = {
   showInList: string[];
 };
 
-type ManagerContentType = ContentType | "classes" | "class-features" | "races" | "npcs" | "worlds" | "documents";
+type ManagerContentType =
+  ContentType | "classes" | "class-features" | "races" | "npcs" | "worlds" | "documents";
 
 const TYPE_CONFIGS: Record<ManagerContentType, TypeConfig> = {
   skills: {
@@ -41,8 +45,19 @@ const TYPE_CONFIGS: Record<ManagerContentType, TypeConfig> = {
     fields: [
       { name: "name", label: "Nome", type: "text", required: true },
       { name: "description", label: "Descrição", type: "textarea" },
-      { name: "rollExpression", label: "Expressão de Rolagem", type: "text", placeholder: "1d20 + destreza" },
-      { name: "keyAttribute", label: "Atributo Chave", type: "select", options: ATTRIBUTES, required: true },
+      {
+        name: "rollExpression",
+        label: "Expressão de Rolagem",
+        type: "text",
+        placeholder: "1d20 + destreza",
+      },
+      {
+        name: "keyAttribute",
+        label: "Atributo Chave",
+        type: "select",
+        options: ATTRIBUTES,
+        required: true,
+      },
     ],
     showInList: ["keyAttribute", "rollExpression"],
   },
@@ -61,7 +76,13 @@ const TYPE_CONFIGS: Record<ManagerContentType, TypeConfig> = {
       { name: "damageType", label: "Tipo de Dano", type: "text" },
       { name: "description", label: "Descrição", type: "textarea" },
       { name: "extraEffect", label: "Efeito Extra", type: "textarea" },
-      { name: "actionCostOverride", label: "Custo de Ações (override, 0-3)", type: "number", min: 0, max: 3 },
+      {
+        name: "actionCostOverride",
+        label: "Custo de Ações (override, 0-3)",
+        type: "number",
+        min: 0,
+        max: 3,
+      },
     ],
     showInList: ["circle", "manaCost"],
   },
@@ -82,6 +103,23 @@ const TYPE_CONFIGS: Record<ManagerContentType, TypeConfig> = {
       { name: "description", label: "Descrição", type: "textarea" },
     ],
     showInList: [],
+  },
+  attacks: {
+    label: "Ataques",
+    fields: [
+      { name: "name", label: "Nome", type: "text", required: true },
+      { name: "description", label: "Descrição", type: "textarea" },
+      { name: "attackExpression", label: "Ataque (XdY±Z)", type: "text", placeholder: "1d20+9" },
+      { name: "damageExpression", label: "Dano (XdY±Z)", type: "text", placeholder: "3d6+5" },
+      {
+        name: "damageType",
+        label: "Tipo de Dano",
+        type: "select",
+        options: ["cortante", "contundente", "perfurante"],
+      },
+      { name: "criticalRange", label: "Faixa de Crítico (1-20)", type: "number", min: 1, max: 20 },
+    ],
+    showInList: ["attackExpression", "damageExpression", "damageType"],
   },
   classes: {
     label: "Classes",
@@ -120,6 +158,7 @@ const CONTENT_TYPE_ORDER: ManagerContentType[] = [
   "spells",
   "items",
   "conditions",
+  "attacks",
   "classes",
   "class-features",
   "races",
@@ -140,11 +179,28 @@ function toFormValue(value: unknown): string {
   return String(value);
 }
 
-const ITEM_TECHNICAL_FIELDS = ["level", "price", "bulk", "quantity", "usage", "category", "group", "damage", "traits", "ac", "resiliency"];
+const ITEM_TECHNICAL_FIELDS = [
+  "level",
+  "price",
+  "bulk",
+  "quantity",
+  "usage",
+  "category",
+  "group",
+  "damage",
+  "traits",
+  "ac",
+  "resiliency",
+];
 
 function getSourceSystem(item: Item): Record<string, unknown> {
-  const sourceData = item.sourceData && typeof item.sourceData === "object" ? item.sourceData as Record<string, unknown> : {};
-  return sourceData.system && typeof sourceData.system === "object" ? sourceData.system as Record<string, unknown> : {};
+  const sourceData =
+    item.sourceData && typeof item.sourceData === "object"
+      ? (item.sourceData as Record<string, unknown>)
+      : {};
+  return sourceData.system && typeof sourceData.system === "object"
+    ? (sourceData.system as Record<string, unknown>)
+    : {};
 }
 
 function getItemPrice(item: Item): number {
@@ -240,9 +296,12 @@ function getSpellActions(spell: Item): number | null {
   const castingTime = spell.castingTime;
   if (typeof castingTime === "string") {
     const clean = castingTime.toLowerCase();
-    if (clean.includes("1 action") || clean.includes("1 ação") || clean.includes("1 acao")) return 1;
-    if (clean.includes("2 action") || clean.includes("2 ações") || clean.includes("2 acoes")) return 2;
-    if (clean.includes("3 action") || clean.includes("3 ações") || clean.includes("3 acoes")) return 3;
+    if (clean.includes("1 action") || clean.includes("1 ação") || clean.includes("1 acao"))
+      return 1;
+    if (clean.includes("2 action") || clean.includes("2 ações") || clean.includes("2 acoes"))
+      return 2;
+    if (clean.includes("3 action") || clean.includes("3 ações") || clean.includes("3 acoes"))
+      return 3;
     if (clean.includes("1")) return 1;
     if (clean.includes("2")) return 2;
     if (clean.includes("3")) return 3;
@@ -252,7 +311,9 @@ function getSpellActions(spell: Item): number | null {
 
 function getTechnicalValue(system: Record<string, unknown>, key: string): unknown {
   const raw = system[key];
-  return raw && typeof raw === "object" && "value" in raw ? (raw as Record<string, unknown>).value : raw;
+  return raw && typeof raw === "object" && "value" in raw
+    ? (raw as Record<string, unknown>).value
+    : raw;
 }
 
 export function extractItemDamageInfo(item: Record<string, unknown>): {
@@ -264,14 +325,23 @@ export function extractItemDamageInfo(item: Record<string, unknown>): {
     return { damage: null, damageType: null, rollExpression: null };
   }
 
-  const sourceData = (item.sourceData && typeof item.sourceData === "object" ? item.sourceData : {}) as Record<string, unknown>;
-  const system = (sourceData.system && typeof sourceData.system === "object" ? sourceData.system : {}) as Record<string, unknown>;
-  const translation = (item.translation && typeof item.translation === "object" ? item.translation : {}) as Record<string, unknown>;
-  const transSystem = (translation.system && typeof translation.system === "object" ? translation.system : {}) as Record<string, unknown>;
+  const sourceData = (
+    item.sourceData && typeof item.sourceData === "object" ? item.sourceData : {}
+  ) as Record<string, unknown>;
+  const system = (
+    sourceData.system && typeof sourceData.system === "object" ? sourceData.system : {}
+  ) as Record<string, unknown>;
+  const translation = (
+    item.translation && typeof item.translation === "object" ? item.translation : {}
+  ) as Record<string, unknown>;
+  const transSystem = (
+    translation.system && typeof translation.system === "object" ? translation.system : {}
+  ) as Record<string, unknown>;
 
   let rawDamage: unknown = item.damage ?? system.damage ?? transSystem.damage;
   let rawDamageType: unknown = item.damageType ?? system.damageType ?? transSystem.damageType;
-  let rawRollExpr: unknown = item.rollExpression ?? system.rollExpression ?? transSystem.rollExpression;
+  const rawRollExpr: unknown =
+    item.rollExpression ?? system.rollExpression ?? transSystem.rollExpression;
 
   if (system.damage && typeof system.damage === "object") {
     const sysDmg = system.damage as Record<string, unknown>;
@@ -304,7 +374,11 @@ export function extractItemDamageInfo(item: Record<string, unknown>): {
   }
 
   let damageTypeStr: string | null = null;
-  if (rawDamageType !== null && rawDamageType !== undefined && String(rawDamageType).trim() !== "") {
+  if (
+    rawDamageType !== null &&
+    rawDamageType !== undefined &&
+    String(rawDamageType).trim() !== ""
+  ) {
     damageTypeStr = String(rawDamageType).trim();
   }
 
@@ -341,7 +415,14 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
   const documentActionsRef = useRef<{ openCreate: () => void; openTome?: () => void } | null>(null);
   const isCampaignContext = basePath.includes("/api/campaigns/");
   const availableTypes = isCampaignContext
-    ? CONTENT_TYPE_ORDER.filter((t) => t !== "npcs" && t !== "worlds" && t !== "classes" && t !== "class-features" && t !== "races")
+    ? CONTENT_TYPE_ORDER.filter(
+        (t) =>
+          t !== "npcs" &&
+          t !== "worlds" &&
+          t !== "classes" &&
+          t !== "class-features" &&
+          t !== "races",
+      )
     : CONTENT_TYPE_ORDER;
   const [items, setItems] = useState<Item[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -363,7 +444,9 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
   const [spellActionsFilter, setSpellActionsFilter] = useState<number | "all">("all");
 
   // State de Filtros Avançados - Itens
-  const [itemTypeFilter, setItemTypeFilter] = useState<"all" | "weapons" | "armors" | "magic" | "consumables">("all");
+  const [itemTypeFilter, setItemTypeFilter] = useState<
+    "all" | "weapons" | "armors" | "magic" | "consumables"
+  >("all");
   const [itemPriceMin, setItemPriceMin] = useState<number>(0);
   const [itemPriceMax, setItemPriceMax] = useState<number>(1000);
   const [itemLevelFilter, setItemLevelFilter] = useState<number | "all">("all");
@@ -408,16 +491,23 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
   // Helpers para traduzir — com feedback acionável e retry
   const humanizeTranslationError = (code: string | null, rawError: string): string => {
     if (!code) return rawError || "Erro desconhecido ao traduzir.";
-    if (code === "translation_provider_unconfigured") return "Tradução não configurada: defina NINEROUTER_KEY no .env ou variável ZimaOS.";
-    if (code === "translation_provider_timeout") return "Tradução indisponível: tempo esgotado ao contatar 9Router (modelo 120b lento, 25s). Tente novamente.";
-    if (code === "translation_provider_unreachable") return "Tradução indisponível: verifique conexão com 9Router (100.83.170.1 não alcançável do container). Tente novamente ou configure NINEROUTER_URL público (docs/deploy-zimaos.md).";
+    if (code === "translation_provider_unconfigured")
+      return "Tradução não configurada: defina NINEROUTER_KEY no .env ou variável ZimaOS.";
+    if (code === "translation_provider_timeout")
+      return "Tradução indisponível: tempo esgotado ao contatar 9Router (modelo 120b lento, 25s). Tente novamente.";
+    if (code === "translation_provider_unreachable")
+      return "Tradução indisponível: verifique conexão com 9Router (100.83.170.1 não alcançável do container). Tente novamente ou configure NINEROUTER_URL público (docs/deploy-zimaos.md).";
     if (code.startsWith("translation_provider_http_")) {
       const status = code.replace("translation_provider_http_", "");
-      const snippet = rawError.includes(":") ? rawError.split(":").slice(1).join(":").trim().slice(0, 200) : "";
+      const snippet = rawError.includes(":")
+        ? rawError.split(":").slice(1).join(":").trim().slice(0, 200)
+        : "";
       return `Erro do provedor 9Router (HTTP ${status})${snippet ? `: ${snippet}` : ""}. Verifique KEY/modelo.`;
     }
-    if (code === "translation_provider_empty") return "Tradução indisponível: resposta vazia do 9Router.";
-    if (code === "translation_provider_invalid_json") return "Tradução indisponível: resposta inválida (JSON) do 9Router.";
+    if (code === "translation_provider_empty")
+      return "Tradução indisponível: resposta vazia do 9Router.";
+    if (code === "translation_provider_invalid_json")
+      return "Tradução indisponível: resposta inválida (JSON) do 9Router.";
     return rawError || `Erro: ${code}`;
   };
 
@@ -432,22 +522,42 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
         credentials: "include",
         headers: csrfToken ? { "x-csrf-token": csrfToken } : undefined,
       });
-      const data = (await res.json().catch(() => ({}))) as { success?: boolean; translation?: unknown; error?: string; code?: string; details?: string };
+      const data = (await res.json().catch(() => ({}))) as {
+        success?: boolean;
+        translation?: unknown;
+        error?: string;
+        code?: string;
+        details?: string;
+      };
       if (!res.ok) {
-        const code = (data.code as string) || (data.error as string) || `translation_provider_http_${res.status}`;
+        const code =
+          (data.code as string) ||
+          (data.error as string) ||
+          `translation_provider_http_${res.status}`;
         const raw = (data.error as string) || `HTTP ${res.status}`;
         // Normaliza code se vier como mensagem completa
-        const normalizedCode = code.startsWith("translation_provider_") ? code.split(":")[0].trim() : code.startsWith("translation_provider") ? code : `translation_provider_http_${res.status}`;
+        const normalizedCode = code.startsWith("translation_provider_")
+          ? code.split(":")[0].trim()
+          : code.startsWith("translation_provider")
+            ? code
+            : `translation_provider_http_${res.status}`;
         // Se error já contém code prefix, extrai
-        const finalCode = (data.code || (raw.startsWith("translation_provider_") ? raw.split(":")[0].trim() : normalizedCode)) as string;
+        const finalCode = (data.code ||
+          (raw.startsWith("translation_provider_")
+            ? raw.split(":")[0].trim()
+            : normalizedCode)) as string;
         const msg = humanizeTranslationError(finalCode, raw);
         throw Object.assign(new Error(msg), { code: finalCode, raw });
       }
       if (data.success && data.translation) {
         setItems((prevItems) =>
-          prevItems.map((item) => (item.id === spellId ? { ...item, translation: data.translation } : item))
+          prevItems.map((item) =>
+            item.id === spellId ? { ...item, translation: data.translation } : item,
+          ),
         );
-        setSelectedSpell((prev) => (prev && prev.id === spellId ? { ...prev, translation: data.translation } as Item : prev));
+        setSelectedSpell((prev) =>
+          prev && prev.id === spellId ? ({ ...prev, translation: data.translation } as Item) : prev,
+        );
         setModalLanguage("pt");
         setTranslationError(null);
         setTranslationCode(null);
@@ -458,7 +568,10 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
       const e = err as { code?: string; message?: string; raw?: string };
       const code = (e.code as string) || "translation_provider_unreachable";
       const rawMsg = (e.raw as string) || (e.message as string) || "Erro desconhecido";
-      const human = e.message && e.message.includes("Tradução") ? e.message : humanizeTranslationError(code, rawMsg);
+      const human =
+        e.message && e.message.includes("Tradução")
+          ? e.message
+          : humanizeTranslationError(code, rawMsg);
       setTranslationCode(code);
       setTranslationError(human);
       console.error(`Erro ao traduzir ${type === "items" ? "item" : "magia"}:`, code, rawMsg);
@@ -514,20 +627,42 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
           credentials: "include",
           headers: csrfToken ? { "x-csrf-token": csrfToken } : undefined,
         });
-        const data = (await res.json().catch(() => ({}))) as { success?: boolean; translation?: unknown; error?: string; code?: string; details?: string };
+        const data = (await res.json().catch(() => ({}))) as {
+          success?: boolean;
+          translation?: unknown;
+          error?: string;
+          code?: string;
+          details?: string;
+        };
         if (!active) return;
         if (!res.ok) {
           const raw = (data.error as string) || `HTTP ${res.status}`;
-          const code = (data.code as string) || (raw.startsWith("translation_provider_") ? raw.split(":")[0].trim() : `translation_provider_http_${res.status}`);
+          const code =
+            (data.code as string) ||
+            (raw.startsWith("translation_provider_")
+              ? raw.split(":")[0].trim()
+              : `translation_provider_http_${res.status}`);
           const msg = humanizeTranslationError(code, raw);
           setTranslationCode(code);
           setTranslationError(msg);
-          console.error(`Erro ao traduzir ${activeType === "items" ? "item" : "magia"}:`, code, raw);
+          console.error(
+            `Erro ao traduzir ${activeType === "items" ? "item" : "magia"}:`,
+            code,
+            raw,
+          );
           return;
         }
         if (data.success && data.translation) {
-          setItems((prevItems) => prevItems.map((item) => (item.id === spellId ? { ...item, translation: data.translation } : item)));
-          setSelectedSpell((prev) => (prev && prev.id === spellId ? { ...prev, translation: data.translation } as Item : prev));
+          setItems((prevItems) =>
+            prevItems.map((item) =>
+              item.id === spellId ? { ...item, translation: data.translation } : item,
+            ),
+          );
+          setSelectedSpell((prev) =>
+            prev && prev.id === spellId
+              ? ({ ...prev, translation: data.translation } as Item)
+              : prev,
+          );
           setModalLanguage("pt");
           setTranslationError(null);
           setTranslationCode(null);
@@ -596,7 +731,14 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
   };
 
   useEffect(() => {
-    if (activeType === "classes" || activeType === "class-features" || activeType === "races" || activeType === "npcs" || activeType === "worlds" || activeType === "documents") {
+    if (
+      activeType === "classes" ||
+      activeType === "class-features" ||
+      activeType === "races" ||
+      activeType === "npcs" ||
+      activeType === "worlds" ||
+      activeType === "documents"
+    ) {
       setIsLoading(false);
       return;
     }
@@ -753,16 +895,14 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
     data: Record<string, string>,
     onChange: (name: string, value: string) => void,
     disabled: boolean,
-    prefix: string
+    prefix: string,
   ) => {
     return config.fields.map((field) => {
       const key = `${prefix}-${field.name}`;
       if (field.type === "textarea") {
         return (
           <div key={key}>
-            <label className="mb-1 block text-sm font-medium text-gray-300">
-              {field.label}
-            </label>
+            <label className="mb-1 block text-sm font-medium text-gray-300">{field.label}</label>
             <textarea
               value={data[field.name] || ""}
               onChange={(e) => onChange(field.name, e.target.value)}
@@ -778,9 +918,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
       if (field.type === "select") {
         return (
           <div key={key}>
-            <label className="mb-1 block text-sm font-medium text-gray-300">
-              {field.label}
-            </label>
+            <label className="mb-1 block text-sm font-medium text-gray-300">{field.label}</label>
             <select
               value={data[field.name] || ""}
               onChange={(e) => onChange(field.name, e.target.value)}
@@ -917,7 +1055,12 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
               className="rounded-xl bg-accent px-4 py-2.5 text-xs font-bold text-white hover:bg-accent-vibrant transition shadow-lg flex items-center gap-1.5"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
               </svg>
               <span>Criar Mundo</span>
             </button>
@@ -936,27 +1079,38 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
             </>
           )}
 
-          {activeType !== "classes" && activeType !== "class-features" && activeType !== "races" && activeType !== "npcs" && activeType !== "worlds" && activeType !== "documents" && (
-            <>
-              <button
-                type="button"
-                onClick={() => setShowCreateModal(true)}
-                className="rounded-xl bg-accent px-4 py-2.5 text-xs font-bold text-white hover:bg-accent-vibrant transition shadow-lg flex items-center gap-1.5"
-              >
-                <span>+</span>
-                <span>Criar {config.label.replace(/s$/, "")}</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleImportDndContent}
-                disabled={isImportingDnd}
-                className="rounded-xl border border-accent/50 bg-accent/20 px-4 py-2.5 text-xs font-bold text-accent-hover hover:bg-accent/30 transition shadow-lg flex items-center gap-2 disabled:opacity-50"
-              >
-                <span>🐉</span>
-                <span>{isImportingDnd ? "Importando..." : activeType === "items" ? "Importar itens SF2e" : `Importar ${config.label}`}</span>
-              </button>
-            </>
-          )}
+          {activeType !== "classes" &&
+            activeType !== "class-features" &&
+            activeType !== "races" &&
+            activeType !== "npcs" &&
+            activeType !== "worlds" &&
+            activeType !== "documents" && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(true)}
+                  className="rounded-xl bg-accent px-4 py-2.5 text-xs font-bold text-white hover:bg-accent-vibrant transition shadow-lg flex items-center gap-1.5"
+                >
+                  <span>+</span>
+                  <span>Criar {config.label.replace(/s$/, "")}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleImportDndContent}
+                  disabled={isImportingDnd}
+                  className="rounded-xl border border-accent/50 bg-accent/20 px-4 py-2.5 text-xs font-bold text-accent-hover hover:bg-accent/30 transition shadow-lg flex items-center gap-2 disabled:opacity-50"
+                >
+                  <span>🐉</span>
+                  <span>
+                    {isImportingDnd
+                      ? "Importando..."
+                      : activeType === "items"
+                        ? "Importar itens SF2e"
+                        : `Importar ${config.label}`}
+                  </span>
+                </button>
+              </>
+            )}
         </div>
       </div>
 
@@ -993,15 +1147,20 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
             ))}
           </div>
 
-          {activeType !== "classes" && activeType !== "class-features" && activeType !== "races" && activeType !== "npcs" && activeType !== "worlds" && activeType !== "documents" && (
-            <input
-              type="text"
-              placeholder={`Buscar ${config.label.toLowerCase()} por nome...`}
-              value={searchContent}
-              onChange={(e) => setSearchContent(e.target.value)}
-              className="w-full rounded-xl border border-gray-800 bg-gray-900 px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none transition"
-            />
-          )}
+          {activeType !== "classes" &&
+            activeType !== "class-features" &&
+            activeType !== "races" &&
+            activeType !== "npcs" &&
+            activeType !== "worlds" &&
+            activeType !== "documents" && (
+              <input
+                type="text"
+                placeholder={`Buscar ${config.label.toLowerCase()} por nome...`}
+                value={searchContent}
+                onChange={(e) => setSearchContent(e.target.value)}
+                className="w-full rounded-xl border border-gray-800 bg-gray-900 px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none transition"
+              />
+            )}
         </div>
 
         {/* Painel de Filtros Avançados para Magias */}
@@ -1010,7 +1169,9 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
             {/* Círculo */}
             <select
               value={spellCircleFilter}
-              onChange={(e) => setSpellCircleFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
+              onChange={(e) =>
+                setSpellCircleFilter(e.target.value === "all" ? "all" : Number(e.target.value))
+              }
               className="rounded-xl border border-gray-800 bg-gray-900 px-3 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none transition-all"
             >
               <option value="all">Círculo (Todos)</option>
@@ -1083,7 +1244,10 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
             </div>
 
             {/* Botão Limpar ultra-compacto */}
-            {(spellCircleFilter !== "all" || spellManaMin !== 0 || spellManaMax !== 50 || spellActionsFilter !== "all") && (
+            {(spellCircleFilter !== "all" ||
+              spellManaMin !== 0 ||
+              spellManaMax !== 50 ||
+              spellActionsFilter !== "all") && (
               <button
                 type="button"
                 onClick={() => {
@@ -1155,7 +1319,9 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
             {/* Nível */}
             <select
               value={itemLevelFilter}
-              onChange={(e) => setItemLevelFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
+              onChange={(e) =>
+                setItemLevelFilter(e.target.value === "all" ? "all" : Number(e.target.value))
+              }
               className="rounded-xl border border-gray-800 bg-gray-900 px-3 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none transition-all"
             >
               <option value="all">Nível (Todos)</option>
@@ -1169,7 +1335,9 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
             {/* Peso / Bulk */}
             <select
               value={itemBulkFilter}
-              onChange={(e) => setItemBulkFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
+              onChange={(e) =>
+                setItemBulkFilter(e.target.value === "all" ? "all" : Number(e.target.value))
+              }
               className="rounded-xl border border-gray-800 bg-gray-900 px-3 py-1.5 text-xs text-white focus:border-purple-500 focus:outline-none transition-all"
             >
               <option value="all">Peso (Todos)</option>
@@ -1181,7 +1349,11 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
             </select>
 
             {/* Botão Limpar ultra-compacto */}
-            {(itemTypeFilter !== "all" || itemPriceMin !== 0 || itemPriceMax !== 1000 || itemLevelFilter !== "all" || itemBulkFilter !== "all") && (
+            {(itemTypeFilter !== "all" ||
+              itemPriceMin !== 0 ||
+              itemPriceMax !== 1000 ||
+              itemLevelFilter !== "all" ||
+              itemBulkFilter !== "all") && (
               <button
                 type="button"
                 onClick={() => {
@@ -1228,677 +1400,1018 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
       ) : (
         /* Área Principal de Conteúdo (Full Width) */
         <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 shadow-xl flex flex-col max-h-[calc(100vh-16rem)]">
-        <h3 className="mb-3 font-semibold text-white text-sm flex items-center justify-between">
-          <span>{config.label} Cadastradas</span>
-          <span className="text-xs text-purple-400 font-bold bg-purple-950/60 border border-purple-900/60 px-2.5 py-1 rounded-lg">{items.length} itens</span>
-        </h3>
+          <h3 className="mb-3 font-semibold text-white text-sm flex items-center justify-between">
+            <span>{config.label} Cadastradas</span>
+            <span className="text-xs text-purple-400 font-bold bg-purple-950/60 border border-purple-900/60 px-2.5 py-1 rounded-lg">
+              {items.length} itens
+            </span>
+          </h3>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center w-full min-h-[300px]">
-            <Spinner size="lg" />
-          </div>
-        ) : items.length === 0 ? (
-          <div className="py-12 text-center text-sm text-gray-400 space-y-2">
-            <p>Nenhuma {config.label.toLowerCase().replace(/s$/, "")} cadastrada ainda.</p>
-            <p className="text-xs text-gray-500">
-              Clique em <strong>+ Criar {config.label.replace(/s$/, "")}</strong> ou <strong>Importar conteúdo</strong> para popular.
-            </p>
-          </div>
-        ) : (() => {
-          const filteredItems = items.filter((item) => {
-            const name = String(item.name || "").toLowerCase();
-            const desc = String(item.description || "").toLowerCase();
-            const matchSearch = name.includes(searchContent.toLowerCase()) || desc.includes(searchContent.toLowerCase());
-            if (!matchSearch) return false;
+          {isLoading ? (
+            <div className="flex items-center justify-center w-full min-h-[300px]">
+              <Spinner size="lg" />
+            </div>
+          ) : items.length === 0 ? (
+            <div className="py-12 text-center text-sm text-gray-400 space-y-2">
+              <p>Nenhuma {config.label.toLowerCase().replace(/s$/, "")} cadastrada ainda.</p>
+              <p className="text-xs text-gray-500">
+                Clique em <strong>+ Criar {config.label.replace(/s$/, "")}</strong> ou{" "}
+                <strong>Importar conteúdo</strong> para popular.
+              </p>
+            </div>
+          ) : (
+            (() => {
+              const filteredItems = items.filter((item) => {
+                const name = String(item.name || "").toLowerCase();
+                const desc = String(item.description || "").toLowerCase();
+                const matchSearch =
+                  name.includes(searchContent.toLowerCase()) ||
+                  desc.includes(searchContent.toLowerCase());
+                if (!matchSearch) return false;
 
-            if (activeType === "spells") {
-              if (spellCircleFilter !== "all") {
-                const circle = typeof item.circle === "number" ? item.circle : 0;
-                if (circle !== spellCircleFilter) return false;
-              }
-              const mana = typeof item.manaCost === "number" ? item.manaCost : 0;
-              if (mana < spellManaMin) return false;
-              if (spellManaMax < 50 && mana > spellManaMax) return false;
-              if (spellActionsFilter !== "all") {
-                const actions = getSpellActions(item);
-                if (actions !== spellActionsFilter) return false;
-              }
-            }
-
-            if (activeType === "items") {
-              if (itemTypeFilter !== "all") {
-                const sourceData = item.sourceData && typeof item.sourceData === "object" ? item.sourceData as Record<string, unknown> : {};
-                const source = sourceData.source && typeof sourceData.source === "object" ? sourceData.source as Record<string, unknown> : {};
-                const category = String(item.category || source.category || "").toLowerCase();
-                const text = `${name} ${desc} ${category}`;
-
-                if (itemTypeFilter === "weapons") {
-                  if (!category.includes("weapon") && !/sword|bow|axe|blade|dagger|spear|mace|staff|hammer|weapon|arma|espada|machado|arco|adaga|lança|clava|cajado|martelo|cimitarra/i.test(text)) return false;
-                } else if (itemTypeFilter === "armors") {
-                  if (!/armor|shield|chain|plate|leather|helm|escudo|armadura|cota|couro|elmo/i.test(text)) return false;
-                } else if (itemTypeFilter === "magic") {
-                  if (!Boolean(item.qualityDescription || item.counterpointDescription || /magic|ring|wand|scroll|potion|mágico|anel|vara|pergaminho|poção/i.test(text))) return false;
-                } else if (itemTypeFilter === "consumables") {
-                  if (!/potion|food|ration|herb|poção|comida|ração|erva|kit|tocha|corda/i.test(text)) return false;
+                if (activeType === "spells") {
+                  if (spellCircleFilter !== "all") {
+                    const circle = typeof item.circle === "number" ? item.circle : 0;
+                    if (circle !== spellCircleFilter) return false;
+                  }
+                  const mana = typeof item.manaCost === "number" ? item.manaCost : 0;
+                  if (mana < spellManaMin) return false;
+                  if (spellManaMax < 50 && mana > spellManaMax) return false;
+                  if (spellActionsFilter !== "all") {
+                    const actions = getSpellActions(item);
+                    if (actions !== spellActionsFilter) return false;
+                  }
                 }
-              }
 
-              const price = getItemPrice(item);
-              if (price < itemPriceMin) return false;
-              if (itemPriceMax < 1000 && price > itemPriceMax) return false;
-              if (itemLevelFilter !== "all") {
-                const level = getItemLevel(item);
-                if (level !== itemLevelFilter) return false;
-              }
-              if (itemBulkFilter !== "all") {
-                const bulk = getItemBulk(item);
-                if (itemBulkFilter === 3) {
-                  if (bulk < 3) return false;
-                } else {
-                  if (bulk !== itemBulkFilter) return false;
+                if (activeType === "items") {
+                  if (itemTypeFilter !== "all") {
+                    const sourceData =
+                      item.sourceData && typeof item.sourceData === "object"
+                        ? (item.sourceData as Record<string, unknown>)
+                        : {};
+                    const source =
+                      sourceData.source && typeof sourceData.source === "object"
+                        ? (sourceData.source as Record<string, unknown>)
+                        : {};
+                    const category = String(item.category || source.category || "").toLowerCase();
+                    const text = `${name} ${desc} ${category}`;
+
+                    if (itemTypeFilter === "weapons") {
+                      if (
+                        !category.includes("weapon") &&
+                        !/sword|bow|axe|blade|dagger|spear|mace|staff|hammer|weapon|arma|espada|machado|arco|adaga|lança|clava|cajado|martelo|cimitarra/i.test(
+                          text,
+                        )
+                      )
+                        return false;
+                    } else if (itemTypeFilter === "armors") {
+                      if (
+                        !/armor|shield|chain|plate|leather|helm|escudo|armadura|cota|couro|elmo/i.test(
+                          text,
+                        )
+                      )
+                        return false;
+                    } else if (itemTypeFilter === "magic") {
+                      if (
+                        !Boolean(
+                          item.qualityDescription ||
+                          item.counterpointDescription ||
+                          /magic|ring|wand|scroll|potion|mágico|anel|vara|pergaminho|poção/i.test(
+                            text,
+                          ),
+                        )
+                      )
+                        return false;
+                    } else if (itemTypeFilter === "consumables") {
+                      if (
+                        !/potion|food|ration|herb|poção|comida|ração|erva|kit|tocha|corda/i.test(
+                          text,
+                        )
+                      )
+                        return false;
+                    }
+                  }
+
+                  const price = getItemPrice(item);
+                  if (price < itemPriceMin) return false;
+                  if (itemPriceMax < 1000 && price > itemPriceMax) return false;
+                  if (itemLevelFilter !== "all") {
+                    const level = getItemLevel(item);
+                    if (level !== itemLevelFilter) return false;
+                  }
+                  if (itemBulkFilter !== "all") {
+                    const bulk = getItemBulk(item);
+                    if (itemBulkFilter === 3) {
+                      if (bulk < 3) return false;
+                    } else {
+                      if (bulk !== itemBulkFilter) return false;
+                    }
+                  }
                 }
-              }
-            }
 
-            return true;
-          });
+                return true;
+              });
 
-          const totalPages = Math.ceil(filteredItems.length / pageSize) || 1;
-          const paginatedItems = filteredItems.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+              const totalPages = Math.ceil(filteredItems.length / pageSize) || 1;
+              const paginatedItems = filteredItems.slice(
+                (currentPage - 1) * pageSize,
+                currentPage * pageSize,
+              );
 
-          return (
-            <>
-              <div className="flex-1 overflow-y-auto pr-1">
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
-                  {paginatedItems.map((item) => (
-                    <div
-                      key={item.id as string}
-                      role={activeType === "spells" || activeType === "items" ? "button" : undefined}
-                      tabIndex={activeType === "spells" || activeType === "items" ? 0 : undefined}
-                      onClick={activeType === "spells" || activeType === "items" ? () => setSelectedSpell(item) : undefined}
-                      onKeyDown={
-                        activeType === "spells" || activeType === "items"
-                          ? (event) => {
-                              if (event.key === "Enter" || event.key === " ") {
-                                event.preventDefault();
-                                setSelectedSpell(item);
-                              }
-                            }
-                          : undefined
-                      }
-                      className={`rounded-xl border border-secondary-border bg-secondary-card p-3.5 hover:border-accent hover:shadow-lg transition-all cursor-pointer ${
-                        activeType === "spells" || activeType === "items" ? "focus:outline-none focus:ring-2 focus:ring-accent" : ""
-                      }`}
-                    >
-                      <div className={activeType === "spells" || activeType === "items" ? "flex items-center gap-3" : "flex items-start justify-between"}>
-                        {(activeType === "spells" || activeType === "items") && item.imageUrl && !failedImages.has(item.id as string) ? (
-                          <img
-                            src={String(item.imageUrl)}
-                            alt={`Ícone de ${String(item.name)}`}
-                            width={96}
-                            height={96}
-                            loading="lazy"
-                            className="h-24 w-24 shrink-0 rounded-lg object-cover"
-                            onError={() => setFailedImages((previous) => new Set(previous).add(item.id as string))}
-                          />
-                        ) : activeType === "spells" || activeType === "items" ? (
-                          <div aria-label={`Ícone indisponível para ${String(item.name)}`} className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border border-secondary-border bg-dominant-deep text-3xl text-secondary-muted">✦</div>
-                        ) : null}
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-2">
-                            {activeType === "spells" || activeType === "items" ? (
-                              <span className="text-left font-bold text-sm text-secondary-pure hover:text-accent-hover">
-                                {item.name as string}
-                              </span>
-                            ) : (
-                              <button
-                                onClick={() =>
-                                  editingId === item.id ? setEditingId(null) : startEditing(item)
-                                }
-                                className="text-left font-bold text-sm text-secondary-pure hover:text-accent-hover flex items-center gap-1.5"
-                              >
-                                <span>{item.name as string}</span>
-                                <span className="text-xs text-purple-400 opacity-70">
-                                  {editingId === item.id ? "−" : "✎"}
-                                </span>
-                              </button>
-                            )}
-                            {(activeType === "spells" || activeType === "items") && (
-                              <button
-                                type="button"
-                                aria-label={`Editar ${String(item.name)}`}
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  if (editingId === item.id) {
-                                    setEditingId(null);
-                                  } else {
-                                    startEditing(item);
+              return (
+                <>
+                  <div className="flex-1 overflow-y-auto pr-1">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
+                      {paginatedItems.map((item) => (
+                        <div
+                          key={item.id as string}
+                          role={
+                            activeType === "spells" || activeType === "items" ? "button" : undefined
+                          }
+                          tabIndex={
+                            activeType === "spells" || activeType === "items" ? 0 : undefined
+                          }
+                          onClick={
+                            activeType === "spells" || activeType === "items"
+                              ? () => setSelectedSpell(item)
+                              : undefined
+                          }
+                          onKeyDown={
+                            activeType === "spells" || activeType === "items"
+                              ? (event) => {
+                                  if (event.key === "Enter" || event.key === " ") {
+                                    event.preventDefault();
+                                    setSelectedSpell(item);
                                   }
-                                }}
-                                className="shrink-0 text-xs text-purple-400 hover:text-purple-300"
-                              >
-                                ✎
-                              </button>
-                            )}
-                          </div>
-
-                          <div className="mt-1 space-y-0.5 text-xs text-gray-400">
-                            {activeType === "items" && (() => {
-                              const dmgInfo = extractItemDamageInfo(item);
-                              if (!dmgInfo.damage) return null;
-                              const translatedType = dmgInfo.damageType
-                                ? (PF2E_DAMAGE_TYPES_PT[dmgInfo.damageType.toLowerCase()] || dmgInfo.damageType)
-                                : null;
-                              return (
-                                <div className="mb-1 mt-0.5">
-                                  <span className="rounded bg-rose-950 px-2 py-0.5 text-[10px] font-bold text-rose-300 border border-rose-800/60 inline-flex items-center gap-1">
-                                    ⚔️ Dano: {dmgInfo.damage}{translatedType ? ` (${translatedType})` : ""}
-                                  </span>
-                                </div>
-                              );
-                            })()}
-                            {config.showInList.map((field) => {
-                              const value = item[field];
-                              if (value === null || value === undefined || value === "") return null;
-                              return (
-                                <p key={field} className="text-gray-300">
-                                  <strong className="text-gray-400">{field}:</strong> {String(value)}
-                                </p>
-                              );
-                            })}
-                            {activeType === "items" && (() => {
-                              const system = getSourceSystem(item);
-                              const technical = ITEM_TECHNICAL_FIELDS
-                                .map((field) => [field, getTechnicalValue(system, field)] as const)
-                                .filter(([, value]) => value !== null && value !== undefined && value !== "")
-                                .slice(0, 3);
-                              return technical.map(([field, value]) => {
-                                const formatted = formatTechnicalField(field, value, modalLanguage);
-                                if (!formatted) return null;
-                                return (
-                                  <p key={`technical-${field}`} className="text-gray-300 text-xs">
-                                    <strong className="text-gray-400">{getTechnicalLabel(field, modalLanguage)}:</strong> {formatted}
-                                  </p>
-                                );
-                              });
-                            })()}
-                            {Boolean(item.description) && (
-                              <p className="line-clamp-2 text-gray-400 text-xs mt-1">
-                                {String(item.description)}
-                              </p>
-                            )}
-                            {item.campaignId ? (
-                              <p className="text-[10px] text-purple-400 font-semibold pt-1">
-                                Privado da campanha
-                              </p>
-                            ) : (
-                              <p className="text-[10px] text-gray-500 pt-1">Global</p>
-                            )}
-                          </div>
-                        </div>
-
-                        <button
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            handleDelete(item.id as string);
-                          }}
-                          className="ml-2 shrink-0 text-xs font-semibold text-red-400 hover:text-red-300"
+                                }
+                              : undefined
+                          }
+                          className={`rounded-xl border border-secondary-border bg-secondary-card p-3.5 hover:border-accent hover:shadow-lg transition-all cursor-pointer ${
+                            activeType === "spells" || activeType === "items"
+                              ? "focus:outline-none focus:ring-2 focus:ring-accent"
+                              : ""
+                          }`}
                         >
-                          Excluir
+                          <div
+                            className={
+                              activeType === "spells" || activeType === "items"
+                                ? "flex items-center gap-3"
+                                : "flex items-start justify-between"
+                            }
+                          >
+                            {(activeType === "spells" || activeType === "items") &&
+                            item.imageUrl &&
+                            !failedImages.has(item.id as string) ? (
+                              <img
+                                src={String(item.imageUrl)}
+                                alt={`Ícone de ${String(item.name)}`}
+                                width={96}
+                                height={96}
+                                loading="lazy"
+                                className="h-24 w-24 shrink-0 rounded-lg object-cover"
+                                onError={() =>
+                                  setFailedImages((previous) =>
+                                    new Set(previous).add(item.id as string),
+                                  )
+                                }
+                              />
+                            ) : activeType === "spells" || activeType === "items" ? (
+                              <div
+                                aria-label={`Ícone indisponível para ${String(item.name)}`}
+                                className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border border-secondary-border bg-dominant-deep text-3xl text-secondary-muted"
+                              >
+                                ✦
+                              </div>
+                            ) : null}
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-start justify-between gap-2">
+                                {activeType === "spells" || activeType === "items" ? (
+                                  <span className="text-left font-bold text-sm text-secondary-pure hover:text-accent-hover">
+                                    {item.name as string}
+                                  </span>
+                                ) : (
+                                  <button
+                                    onClick={() =>
+                                      editingId === item.id
+                                        ? setEditingId(null)
+                                        : startEditing(item)
+                                    }
+                                    className="text-left font-bold text-sm text-secondary-pure hover:text-accent-hover flex items-center gap-1.5"
+                                  >
+                                    <span>{item.name as string}</span>
+                                    <span className="text-xs text-purple-400 opacity-70">
+                                      {editingId === item.id ? "−" : "✎"}
+                                    </span>
+                                  </button>
+                                )}
+                                {(activeType === "spells" || activeType === "items") && (
+                                  <button
+                                    type="button"
+                                    aria-label={`Editar ${String(item.name)}`}
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      if (editingId === item.id) {
+                                        setEditingId(null);
+                                      } else {
+                                        startEditing(item);
+                                      }
+                                    }}
+                                    className="shrink-0 text-xs text-purple-400 hover:text-purple-300"
+                                  >
+                                    ✎
+                                  </button>
+                                )}
+                              </div>
+
+                              <div className="mt-1 space-y-0.5 text-xs text-gray-400">
+                                {activeType === "items" &&
+                                  (() => {
+                                    const dmgInfo = extractItemDamageInfo(item);
+                                    if (!dmgInfo.damage) return null;
+                                    const translatedType = dmgInfo.damageType
+                                      ? PF2E_DAMAGE_TYPES_PT[dmgInfo.damageType.toLowerCase()] ||
+                                        dmgInfo.damageType
+                                      : null;
+                                    return (
+                                      <div className="mb-1 mt-0.5">
+                                        <span className="rounded bg-rose-950 px-2 py-0.5 text-[10px] font-bold text-rose-300 border border-rose-800/60 inline-flex items-center gap-1">
+                                          ⚔️ Dano: {dmgInfo.damage}
+                                          {translatedType ? ` (${translatedType})` : ""}
+                                        </span>
+                                      </div>
+                                    );
+                                  })()}
+                                {config.showInList.map((field) => {
+                                  const value = item[field];
+                                  if (value === null || value === undefined || value === "")
+                                    return null;
+                                  return (
+                                    <p key={field} className="text-gray-300">
+                                      <strong className="text-gray-400">{field}:</strong>{" "}
+                                      {String(value)}
+                                    </p>
+                                  );
+                                })}
+                                {activeType === "items" &&
+                                  (() => {
+                                    const system = getSourceSystem(item);
+                                    const technical = ITEM_TECHNICAL_FIELDS.map(
+                                      (field) => [field, getTechnicalValue(system, field)] as const,
+                                    )
+                                      .filter(
+                                        ([, value]) =>
+                                          value !== null && value !== undefined && value !== "",
+                                      )
+                                      .slice(0, 3);
+                                    return technical.map(([field, value]) => {
+                                      const formatted = formatTechnicalField(
+                                        field,
+                                        value,
+                                        modalLanguage,
+                                      );
+                                      if (!formatted) return null;
+                                      return (
+                                        <p
+                                          key={`technical-${field}`}
+                                          className="text-gray-300 text-xs"
+                                        >
+                                          <strong className="text-gray-400">
+                                            {getTechnicalLabel(field, modalLanguage)}:
+                                          </strong>{" "}
+                                          {formatted}
+                                        </p>
+                                      );
+                                    });
+                                  })()}
+                                {Boolean(item.description) && (
+                                  <p className="line-clamp-2 text-gray-400 text-xs mt-1">
+                                    {String(item.description)}
+                                  </p>
+                                )}
+                                {item.campaignId ? (
+                                  <p className="text-[10px] text-purple-400 font-semibold pt-1">
+                                    Privado da campanha
+                                  </p>
+                                ) : (
+                                  <p className="text-[10px] text-gray-500 pt-1">Global</p>
+                                )}
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleDelete(item.id as string);
+                              }}
+                              className="ml-2 shrink-0 text-xs font-semibold text-red-400 hover:text-red-300"
+                            >
+                              Excluir
+                            </button>
+                          </div>
+
+                          {editingId === item.id && (
+                            <div
+                              className="space-y-3 border-t border-gray-800 mt-3 pt-3"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <p className="text-xs font-bold text-purple-300">
+                                Editar {config.label.replace(/s$/, "")}
+                              </p>
+                              {renderFields(
+                                editData,
+                                (name, value) =>
+                                  setEditData((prev) => ({ ...prev, [name]: value })),
+                                isSaving,
+                                "edit",
+                              )}
+                              <div className="flex gap-2 pt-1">
+                                <Button
+                                  type="button"
+                                  variant="master"
+                                  isLoading={isSaving}
+                                  onClick={() => handleSaveEdit(item.id as string)}
+                                >
+                                  Salvar
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  onClick={() => setEditingId(null)}
+                                >
+                                  Cancelar
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {filteredItems.length > 0 && (
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-800 pt-3 mt-3">
+                      <span className="text-xs text-gray-400">
+                        Exibindo {Math.min((currentPage - 1) * pageSize + 1, filteredItems.length)}{" "}
+                        a {Math.min(currentPage * pageSize, filteredItems.length)} de{" "}
+                        {filteredItems.length} {config.label.toLowerCase()}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          disabled={currentPage === 1}
+                          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                          className="rounded-lg border border-gray-800 bg-gray-950 px-3 py-1 text-xs font-semibold text-gray-300 hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                        >
+                          Anterior
+                        </button>
+                        <span className="px-2 text-xs font-bold text-purple-400">
+                          {currentPage} / {totalPages}
+                        </span>
+                        <button
+                          type="button"
+                          disabled={currentPage >= totalPages}
+                          onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                          className="rounded-lg border border-gray-800 bg-gray-950 px-3 py-1 text-xs font-semibold text-gray-300 hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                        >
+                          Próximo
                         </button>
                       </div>
-
-                      {editingId === item.id && (
-                        <div className="space-y-3 border-t border-gray-800 mt-3 pt-3" onClick={(event) => event.stopPropagation()}>
-                          <p className="text-xs font-bold text-purple-300">
-                            Editar {config.label.replace(/s$/, "")}
-                          </p>
-                          {renderFields(
-                            editData,
-                            (name, value) => setEditData((prev) => ({ ...prev, [name]: value })),
-                            isSaving,
-                            "edit"
-                          )}
-                          <div className="flex gap-2 pt-1">
-                            <Button
-                              type="button"
-                              variant="master"
-                              isLoading={isSaving}
-                              onClick={() => handleSaveEdit(item.id as string)}
-                            >
-                              Salvar
-                            </Button>
-                            <Button type="button" variant="secondary" onClick={() => setEditingId(null)}>
-                              Cancelar
-                            </Button>
-                          </div>
-                        </div>
-                      )}
                     </div>
-                  ))}
-                </div>
-              </div>
+                  )}
+                </>
+              );
+            })()
+          )}
+        </div>
+      )}
 
-              {filteredItems.length > 0 && (
-                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-800 pt-3 mt-3">
-                  <span className="text-xs text-gray-400">
-                    Exibindo {Math.min((currentPage - 1) * pageSize + 1, filteredItems.length)} a {Math.min(currentPage * pageSize, filteredItems.length)} de {filteredItems.length} {config.label.toLowerCase()}
+      {selectedSpell &&
+        activeType === "spells" &&
+        (() => {
+          const spell = selectedSpell as unknown as Spell;
+          const isPt = modalLanguage === "pt";
+          const translation = (spell.translation || null) as Record<string, unknown> | null;
+
+          const getField = (key: string) => {
+            if (
+              isPt &&
+              translation &&
+              translation[key] !== undefined &&
+              translation[key] !== null &&
+              translation[key] !== ""
+            ) {
+              return translation[key];
+            }
+            return spell[key as keyof Spell];
+          };
+
+          const formatDamage = (dmg: unknown): string => {
+            if (!dmg) return "";
+            if (typeof dmg === "string") return dmg;
+            if (typeof dmg === "object") {
+              if (Array.isArray(dmg)) {
+                return dmg.map(formatDamage).filter(Boolean).join(", ");
+              }
+              const typedDmg = dmg as Record<string, unknown>;
+              const parts: string[] = [];
+              if (typedDmg.formula) {
+                parts.push(String(typedDmg.formula));
+              } else if (typedDmg.dice) {
+                let diceStr = String(typedDmg.dice);
+                if (typedDmg.bonus !== undefined && typedDmg.bonus !== null) {
+                  const bonusNum = Number(typedDmg.bonus);
+                  if (bonusNum > 0) diceStr += ` + ${bonusNum}`;
+                  else if (bonusNum < 0) diceStr += ` - ${Math.abs(bonusNum)}`;
+                }
+                parts.push(diceStr);
+              } else if (typedDmg.diceCount && typedDmg.diceSides) {
+                let diceStr = `${typedDmg.diceCount}d${typedDmg.diceSides}`;
+                if (typedDmg.bonus !== undefined && typedDmg.bonus !== null) {
+                  const bonusNum = Number(typedDmg.bonus);
+                  if (bonusNum > 0) diceStr += ` + ${bonusNum}`;
+                  else if (bonusNum < 0) diceStr += ` - ${Math.abs(bonusNum)}`;
+                }
+                parts.push(diceStr);
+              }
+              if (parts.length > 0) {
+                return parts.join(" ");
+              }
+              return JSON.stringify(dmg);
+            }
+            return String(dmg);
+          };
+
+          const displayName = getField("name") ? String(getField("name")) : String(spell.name);
+          const displayDescription = getField("description")
+            ? String(getField("description"))
+            : null;
+          const displayExtraEffect = getField("extraEffect")
+            ? String(getField("extraEffect"))
+            : null;
+          const displayDuration = getField("duration") ? String(getField("duration")) : null;
+
+          const parseUseType = (val: string | null | undefined): string => {
+            if (!val) return isPt ? "Somático" : "Somatic";
+            const parts = val.split(",").map((p) => p.trim().toLowerCase());
+            const mapped = parts.map((part) => {
+              if (part === "somatic" || part === "somático") return isPt ? "Somático" : "Somatic";
+              if (part === "verbal" || part === "falada") return isPt ? "Falada" : "Verbal";
+              if (part === "manual" || part === "material" || part === "componentes")
+                return isPt ? "Componentes" : "Material";
+              return part;
+            });
+            return mapped.filter(Boolean).join(", ");
+          };
+
+          const rawUseType = getField("useType");
+          const displayUseType = parseUseType(rawUseType ? String(rawUseType) : null);
+
+          const circleLabel = isPt ? "Círculo" : "Circle";
+          const manaCostLabel = isPt ? "Custo de Mana" : "Mana Cost";
+          const useTypeLabel = isPt ? "Condições" : "Conditions";
+          const durationLabel = isPt ? "Duração" : "Duration";
+          const actionCostLabel = isPt ? "Custo de Ações" : "Action Cost";
+          const descriptionLabel = isPt ? "Descrição" : "Description";
+          const extraEffectLabel = isPt ? "Efeito Extra" : "Extra Effect";
+
+          const rangeLabel = isPt ? "Alcance" : "Range";
+          const targetLabel = isPt ? "Alvo" : "Target";
+          const areaLabel = isPt ? "Área" : "Area";
+          const castingTimeLabel = isPt ? "Tempo de Conjuração" : "Casting Time";
+          const damageTypeLabel = isPt ? "Tipo de Dano" : "Damage Type";
+          const damageLabel = isPt ? "Dano" : "Damage";
+
+          const displayDamageVal = getField("damage");
+          const displayDamage = displayDamageVal ? formatDamage(displayDamageVal) : null;
+
+          const renderActionCost = (
+            cost: number | null | undefined,
+            textVal: string | null | undefined,
+          ) => {
+            if (cost !== null && cost !== undefined) {
+              if (cost >= 1 && cost <= 3) {
+                const dots = Array.from({ length: 3 }, (_, i) => (
+                  <span
+                    key={i}
+                    className={i < cost ? "text-purple-500 font-bold" : "text-gray-600"}
+                  >
+                    {i < cost ? "●" : "○"}
                   </span>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      disabled={currentPage === 1}
-                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                      className="rounded-lg border border-gray-800 bg-gray-950 px-3 py-1 text-xs font-semibold text-gray-300 hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition"
-                    >
-                      Anterior
-                    </button>
-                    <span className="px-2 text-xs font-bold text-purple-400">
-                      {currentPage} / {totalPages}
+                ));
+                return (
+                  <div className="flex items-center gap-1.5" title={`${cost} ações`}>
+                    <div className="flex gap-0.5 text-lg leading-none">{dots}</div>
+                    <span className="text-xs text-gray-400">
+                      ({cost} {cost === 1 ? "ação" : "ações"})
                     </span>
+                  </div>
+                );
+              }
+              if (cost === 0) {
+                return (
+                  <span className="text-white font-medium">⚡ {isPt ? "Reação" : "Reaction"}</span>
+                );
+              }
+            }
+            if (textVal) {
+              const cleanText = textVal.toLowerCase();
+              if (
+                cleanText.includes("reaction") ||
+                cleanText.includes("reação") ||
+                cleanText.includes("reac.")
+              ) {
+                return (
+                  <span className="text-white font-medium">⚡ {isPt ? "Reação" : "Reaction"}</span>
+                );
+              }
+              return <span className="text-white font-medium">{textVal}</span>;
+            }
+            return null;
+          };
+
+          const renderArea = (areaVal: string | null | undefined) => {
+            if (!areaVal) return null;
+            const lower = areaVal.toLowerCase();
+            let icon = "⛶";
+            if (lower.includes("cone")) icon = "📐";
+            else if (
+              lower.includes("burst") ||
+              lower.includes("emanation") ||
+              lower.includes("circle") ||
+              lower.includes("cylinder")
+            )
+              icon = "⭕";
+            else if (lower.includes("line")) icon = "▬";
+            else if (lower.includes("cube")) icon = "⬜";
+
+            return (
+              <span className="flex items-center gap-1.5">
+                <span>{icon}</span>
+                <span>{areaVal}</span>
+              </span>
+            );
+          };
+
+          return (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
+              onClick={() => setSelectedSpell(null)}
+            >
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="spell-details-title"
+                className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-purple-800 bg-gray-950 p-6 text-gray-100 shadow-2xl"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
+                  <div className="flex items-center gap-3">
+                    {spell.imageUrl && !failedImages.has(spell.id as string) ? (
+                      <img
+                        src={String(spell.imageUrl)}
+                        alt={`Imagem da magia ${displayName}`}
+                        width={44}
+                        height={44}
+                        className="h-11 w-11 rounded-lg border border-purple-900/60 object-cover"
+                        onError={() =>
+                          setFailedImages((previous) => new Set(previous).add(spell.id as string))
+                        }
+                      />
+                    ) : (
+                      <div
+                        aria-label={`Imagem indisponível para ${displayName}`}
+                        className="flex h-11 w-11 items-center justify-center rounded-lg border border-purple-900/60 bg-gray-900 text-xl text-gray-600"
+                      >
+                        ✦
+                      </div>
+                    )}
+                    <h3 id="spell-details-title" className="text-xl font-bold text-purple-200">
+                      {displayName}
+                    </h3>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {isTranslating && (
+                      <span className="text-xs text-purple-400 animate-pulse">
+                        Traduzindo magia via IA...
+                      </span>
+                    )}
+                    {spell.translation ? (
+                      <div className="flex gap-1.5 rounded-lg border border-purple-800 bg-gray-900 p-0.5">
+                        <button
+                          type="button"
+                          onClick={() => setModalLanguage("pt")}
+                          className={`rounded-md px-2 py-1 text-xs font-bold transition ${
+                            modalLanguage === "pt"
+                              ? "bg-accent text-white"
+                              : "text-secondary-muted hover:text-secondary-pure"
+                          }`}
+                        >
+                          🇧🇷 PT-BR
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setModalLanguage("en")}
+                          className={`rounded-md px-2 py-1 text-xs font-bold transition ${
+                            modalLanguage === "en"
+                              ? "bg-accent text-white"
+                              : "text-secondary-muted hover:text-secondary-pure"
+                          }`}
+                        >
+                          🇺🇸 EN
+                        </button>
+                      </div>
+                    ) : null}
                     <button
                       type="button"
-                      disabled={currentPage >= totalPages}
-                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                      className="rounded-lg border border-gray-800 bg-gray-950 px-3 py-1 text-xs font-semibold text-gray-300 hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                      aria-label="Fechar detalhes da magia"
+                      onClick={() => setSelectedSpell(null)}
+                      className="rounded-lg px-2 py-1 text-gray-400 hover:bg-gray-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                     >
-                      Próximo
+                      ✕
                     </button>
                   </div>
                 </div>
-              )}
-            </>
+
+                {translationError && (
+                  <div className="mt-4 rounded-xl border border-red-800 bg-red-900/30 p-3 text-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <p className="font-bold text-red-300">Tradução indisponível</p>
+                        <p className="mt-1 text-xs leading-5 text-red-200">{translationError}</p>
+                        {translationCode && (
+                          <p className="mt-1 text-[11px] font-mono text-red-300/70">
+                            {translationCode}
+                          </p>
+                        )}
+                        <p className="mt-2 text-[11px] text-red-300/80">
+                          Dica: verifique se NINEROUTER_URL é pública (Funnel/Cloudflare) ou se o
+                          host está no Tailnet. Código tenta fallback host.docker.internal
+                          automaticamente quando 100.83.170.1 falha.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRetryTranslate}
+                        disabled={isTranslating}
+                        className="shrink-0 rounded-lg bg-red-700 px-3 py-2 text-xs font-bold text-white hover:bg-red-600 disabled:opacity-50"
+                      >
+                        {isTranslating ? "Tentando..." : "Tentar novamente"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-5 pt-5">
+                  <div className="flex items-start gap-4">
+                    {/* Lado Esquerdo (Box de Dano Compacto - D20) */}
+                    {displayDamage && (
+                      <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-accent/20 border border-accent/40 w-24 shrink-0">
+                        {/* D20 SVG */}
+                        <div className="relative flex h-12 w-12 shrink-0 items-center justify-center">
+                          <svg
+                            className="absolute inset-0 h-full w-full text-accent hover:text-accent-vibrant transition-colors"
+                            viewBox="0 0 100 100"
+                            fill="currentColor"
+                          >
+                            <polygon
+                              points="50,2 95,25 95,75 50,98 5,75 5,25"
+                              fill="rgba(15, 10, 25, 0.8)"
+                              stroke="currentColor"
+                              strokeWidth="3"
+                            />
+                            <polygon
+                              points="50,2 50,98"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeDasharray="2,2"
+                              opacity="0.4"
+                            />
+                            <polygon
+                              points="5,25 95,25"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeDasharray="2,2"
+                              opacity="0.4"
+                            />
+                            <polygon
+                              points="5,75 95,75"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeDasharray="2,2"
+                              opacity="0.4"
+                            />
+                            <polygon
+                              points="50,2 5,75"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeDasharray="2,2"
+                              opacity="0.4"
+                            />
+                            <polygon
+                              points="50,2 95,75"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeDasharray="2,2"
+                              opacity="0.4"
+                            />
+                            <polygon
+                              points="5,25 50,98"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeDasharray="2,2"
+                              opacity="0.4"
+                            />
+                            <polygon
+                              points="95,25 50,98"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeDasharray="2,2"
+                              opacity="0.4"
+                            />
+                          </svg>
+                          <span className="relative z-10 text-center text-[10px] font-black text-white px-1 leading-tight break-all">
+                            {displayDamage}
+                          </span>
+                        </div>
+                        {/* Tipo de Dano */}
+                        {getField("damageType") && (
+                          <div className="mt-1 text-[10px] text-purple-300 font-bold uppercase tracking-wider text-center">
+                            {String(getField("damageType"))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Lado Direito (Informações Técnicas - Linhas 1 e 2) */}
+                    <div className={`${displayDamage ? "flex-1" : "w-full"} space-y-2`}>
+                      {/* Linha 1 (Círculo, Custo de Mana, Alvo, Alcance, Área) */}
+                      <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-gray-300 pb-3 border-b border-purple-900/20">
+                        <span>
+                          <strong className="text-purple-400 font-bold">{circleLabel}:</strong>{" "}
+                          {spell.circle}
+                        </span>
+                        <span>
+                          <strong className="text-purple-400 font-bold">{manaCostLabel}:</strong>{" "}
+                          {spell.manaCost}
+                        </span>
+                        {getField("target") && (
+                          <span>
+                            <strong className="text-purple-400 font-bold">{targetLabel}:</strong>{" "}
+                            {String(getField("target"))}
+                          </span>
+                        )}
+                        {getField("range") && (
+                          <span>
+                            <strong className="text-purple-400 font-bold">{rangeLabel}:</strong>{" "}
+                            {String(getField("range"))}
+                          </span>
+                        )}
+                        {getField("area") && (
+                          <span className="inline-flex items-center gap-1">
+                            <strong className="text-purple-400 font-bold">{areaLabel}:</strong>{" "}
+                            {renderArea(getField("area") as string)}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Linha 2 (Condições, Duração, Tempo de Conjuração) */}
+                      <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-gray-300 pt-2 pb-3 border-b border-purple-900/20">
+                        {displayUseType && (
+                          <span>
+                            <strong className="text-purple-400 font-bold">{useTypeLabel}:</strong>{" "}
+                            {displayUseType}
+                          </span>
+                        )}
+                        {displayDuration && (
+                          <span>
+                            <strong className="text-purple-400 font-bold">{durationLabel}:</strong>{" "}
+                            {String(displayDuration)}
+                          </span>
+                        )}
+                        {renderActionCost(
+                          spell.actionCostOverride,
+                          getField("castingTime") as string,
+                        ) && (
+                          <span className="inline-flex items-center gap-1">
+                            <strong className="text-purple-400 font-bold">
+                              {castingTimeLabel}:
+                            </strong>{" "}
+                            {renderActionCost(
+                              spell.actionCostOverride,
+                              getField("castingTime") as string,
+                            )}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {displayDescription ? (
+                    <section>
+                      <h4 className="mb-1 text-sm font-semibold text-purple-300">
+                        {descriptionLabel}
+                      </h4>
+                      <p className="whitespace-pre-wrap text-sm leading-6 text-gray-300">
+                        {displayDescription}
+                      </p>
+                    </section>
+                  ) : null}
+                  {displayExtraEffect ? (
+                    <section>
+                      <h4 className="mb-1 text-sm font-semibold text-purple-300">
+                        {extraEffectLabel}
+                      </h4>
+                      <p className="whitespace-pre-wrap text-sm leading-6 text-gray-300">
+                        {displayExtraEffect}
+                      </p>
+                    </section>
+                  ) : null}
+                </div>
+              </div>
+            </div>
           );
         })()}
-      </div>
-      )}
 
-      {selectedSpell && activeType === "spells" && (() => {
-        const spell = selectedSpell as unknown as Spell;
-        const isPt = modalLanguage === "pt";
-        const translation = (spell.translation || null) as Record<string, unknown> | null;
-
-        const getField = (key: string) => {
-          if (isPt && translation && translation[key] !== undefined && translation[key] !== null && translation[key] !== "") {
-            return translation[key];
-          }
-          return spell[key as keyof Spell];
-        };
-
-        const formatDamage = (dmg: unknown): string => {
-          if (!dmg) return "";
-          if (typeof dmg === "string") return dmg;
-          if (typeof dmg === "object") {
-            if (Array.isArray(dmg)) {
-              return dmg.map(formatDamage).filter(Boolean).join(", ");
-            }
-            const typedDmg = dmg as Record<string, unknown>;
-            const parts: string[] = [];
-            if (typedDmg.formula) {
-              parts.push(String(typedDmg.formula));
-            } else if (typedDmg.dice) {
-              let diceStr = String(typedDmg.dice);
-              if (typedDmg.bonus !== undefined && typedDmg.bonus !== null) {
-                const bonusNum = Number(typedDmg.bonus);
-                if (bonusNum > 0) diceStr += ` + ${bonusNum}`;
-                else if (bonusNum < 0) diceStr += ` - ${Math.abs(bonusNum)}`;
-              }
-              parts.push(diceStr);
-            } else if (typedDmg.diceCount && typedDmg.diceSides) {
-              let diceStr = `${typedDmg.diceCount}d${typedDmg.diceSides}`;
-              if (typedDmg.bonus !== undefined && typedDmg.bonus !== null) {
-                const bonusNum = Number(typedDmg.bonus);
-                if (bonusNum > 0) diceStr += ` + ${bonusNum}`;
-                else if (bonusNum < 0) diceStr += ` - ${Math.abs(bonusNum)}`;
-              }
-              parts.push(diceStr);
-            }
-            if (parts.length > 0) {
-              return parts.join(" ");
-            }
-            return JSON.stringify(dmg);
-          }
-          return String(dmg);
-        };
-
-        const displayName = getField("name") ? String(getField("name")) : String(spell.name);
-        const displayDescription = getField("description") ? String(getField("description")) : null;
-        const displayExtraEffect = getField("extraEffect") ? String(getField("extraEffect")) : null;
-        const displayDuration = getField("duration") ? String(getField("duration")) : null;
-
-        const parseUseType = (val: string | null | undefined): string => {
-          if (!val) return isPt ? "Somático" : "Somatic";
-          const parts = val.split(",").map((p) => p.trim().toLowerCase());
-          const mapped = parts.map((part) => {
-            if (part === "somatic" || part === "somático") return isPt ? "Somático" : "Somatic";
-            if (part === "verbal" || part === "falada") return isPt ? "Falada" : "Verbal";
-            if (part === "manual" || part === "material" || part === "componentes") return isPt ? "Componentes" : "Material";
-            return part;
-          });
-          return mapped.filter(Boolean).join(", ");
-        };
-
-        const rawUseType = getField("useType");
-        const displayUseType = parseUseType(rawUseType ? String(rawUseType) : null);
-
-        const circleLabel = isPt ? "Círculo" : "Circle";
-        const manaCostLabel = isPt ? "Custo de Mana" : "Mana Cost";
-        const useTypeLabel = isPt ? "Condições" : "Conditions";
-        const durationLabel = isPt ? "Duração" : "Duration";
-        const actionCostLabel = isPt ? "Custo de Ações" : "Action Cost";
-        const descriptionLabel = isPt ? "Descrição" : "Description";
-        const extraEffectLabel = isPt ? "Efeito Extra" : "Extra Effect";
-
-        const rangeLabel = isPt ? "Alcance" : "Range";
-        const targetLabel = isPt ? "Alvo" : "Target";
-        const areaLabel = isPt ? "Área" : "Area";
-        const castingTimeLabel = isPt ? "Tempo de Conjuração" : "Casting Time";
-        const damageTypeLabel = isPt ? "Tipo de Dano" : "Damage Type";
-        const damageLabel = isPt ? "Dano" : "Damage";
-
-        const displayDamageVal = getField("damage");
-        const displayDamage = displayDamageVal ? formatDamage(displayDamageVal) : null;
-
-        const renderActionCost = (cost: number | null | undefined, textVal: string | null | undefined) => {
-          if (cost !== null && cost !== undefined) {
-            if (cost >= 1 && cost <= 3) {
-              const dots = Array.from({ length: 3 }, (_, i) => (
-                <span key={i} className={i < cost ? "text-purple-500 font-bold" : "text-gray-600"}>
-                  {i < cost ? "●" : "○"}
-                </span>
-              ));
-              return (
-                <div className="flex items-center gap-1.5" title={`${cost} ações`}>
-                  <div className="flex gap-0.5 text-lg leading-none">{dots}</div>
-                  <span className="text-xs text-gray-400">({cost} {cost === 1 ? "ação" : "ações"})</span>
-                </div>
-              );
-            }
-            if (cost === 0) {
-              return <span className="text-white font-medium">⚡ {isPt ? "Reação" : "Reaction"}</span>;
-            }
-          }
-          if (textVal) {
-            const cleanText = textVal.toLowerCase();
-            if (cleanText.includes("reaction") || cleanText.includes("reação") || cleanText.includes("reac.")) {
-              return <span className="text-white font-medium">⚡ {isPt ? "Reação" : "Reaction"}</span>;
-            }
-            return <span className="text-white font-medium">{textVal}</span>;
-          }
-          return null;
-        };
-
-        const renderArea = (areaVal: string | null | undefined) => {
-          if (!areaVal) return null;
-          const lower = areaVal.toLowerCase();
-          let icon = "⛶";
-          if (lower.includes("cone")) icon = "📐";
-          else if (lower.includes("burst") || lower.includes("emanation") || lower.includes("circle") || lower.includes("cylinder")) icon = "⭕";
-          else if (lower.includes("line")) icon = "▬";
-          else if (lower.includes("cube")) icon = "⬜";
-
+      {selectedSpell &&
+        activeType === "items" &&
+        (() => {
+          const item = selectedSpell;
+          const translation =
+            item.translation && typeof item.translation === "object"
+              ? (item.translation as Record<string, unknown>)
+              : null;
+          const getItemField = (key: string) =>
+            modalLanguage === "pt" && translation?.[key] ? translation[key] : item[key];
+          const sourceData =
+            item.sourceData && typeof item.sourceData === "object"
+              ? (item.sourceData as Record<string, unknown>)
+              : {};
+          const system =
+            sourceData.system && typeof sourceData.system === "object"
+              ? (sourceData.system as Record<string, unknown>)
+              : {};
+          const display = (key: string, label: string) => {
+            const raw = system[key];
+            const value =
+              raw && typeof raw === "object" && "value" in raw
+                ? (raw as Record<string, unknown>).value
+                : raw;
+            if (value === null || value === undefined || value === "") return null;
+            const formatted = formatTechnicalField(key, value, modalLanguage);
+            if (!formatted) return null;
+            return (
+              <span>
+                <strong className="text-purple-400">
+                  {getTechnicalLabel(key, modalLanguage)}:
+                </strong>{" "}
+                {formatted}
+              </span>
+            );
+          };
+          const itemDmgInfo = extractItemDamageInfo(item);
+          const translatedType = itemDmgInfo.damageType
+            ? PF2E_DAMAGE_TYPES_PT[itemDmgInfo.damageType.toLowerCase()] || itemDmgInfo.damageType
+            : null;
           return (
-            <span className="flex items-center gap-1.5">
-              <span>{icon}</span>
-              <span>{areaVal}</span>
-            </span>
-          );
-        };
-
-        return (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
-            onClick={() => setSelectedSpell(null)}
-          >
             <div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="spell-details-title"
-              className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-purple-800 bg-gray-950 p-6 text-gray-100 shadow-2xl"
-              onClick={(event) => event.stopPropagation()}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
+              onClick={() => setSelectedSpell(null)}
             >
-              <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
-                <div className="flex items-center gap-3">
-                  {spell.imageUrl && !failedImages.has(spell.id as string) ? (
-                    <img
-                      src={String(spell.imageUrl)}
-                      alt={`Imagem da magia ${displayName}`}
-                      width={44}
-                      height={44}
-                      className="h-11 w-11 rounded-lg border border-purple-900/60 object-cover"
-                      onError={() => setFailedImages((previous) => new Set(previous).add(spell.id as string))}
-                    />
-                  ) : (
-                    <div
-                      aria-label={`Imagem indisponível para ${displayName}`}
-                      className="flex h-11 w-11 items-center justify-center rounded-lg border border-purple-900/60 bg-gray-900 text-xl text-gray-600"
-                    >
-                      ✦
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="item-details-title"
+                className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-purple-800 bg-gray-950 p-6 text-gray-100 shadow-2xl"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
+                  <div className="flex items-center gap-3">
+                    {item.imageUrl && !failedImages.has(String(item.id)) ? (
+                      <img
+                        src={String(item.imageUrl)}
+                        alt={`Imagem de ${String(item.name)}`}
+                        className="h-11 w-11 rounded-lg border border-purple-900/60 object-cover"
+                        onError={() =>
+                          setFailedImages((previous) => new Set(previous).add(String(item.id)))
+                        }
+                      />
+                    ) : (
+                      <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-purple-900/60 bg-gray-900 text-xl text-gray-600">
+                        ✦
+                      </div>
+                    )}
+                    <div>
+                      <h3 id="item-details-title" className="text-xl font-bold text-purple-200">
+                        {String(getItemField("name"))}
+                      </h3>
+                      {itemDmgInfo.damage && (
+                        <div className="mt-1 flex items-center gap-2">
+                          <span className="rounded-md bg-rose-950 px-2 py-0.5 text-xs font-bold text-rose-300 border border-rose-800/60 inline-flex items-center gap-1">
+                            ⚔️ Dano: {itemDmgInfo.damage}
+                          </span>
+                          {translatedType && (
+                            <span className="text-xs font-medium text-rose-400">
+                              ({translatedType})
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  )}
-                  <h3 id="spell-details-title" className="text-xl font-bold text-purple-200">
-                    {displayName}
-                  </h3>
-                </div>
-                <div className="flex items-center gap-3">
-                  {isTranslating && (
-                    <span className="text-xs text-purple-400 animate-pulse">
-                      Traduzindo magia via IA...
-                    </span>
-                  )}
-                  {spell.translation ? (
-                    <div className="flex gap-1.5 rounded-lg border border-purple-800 bg-gray-900 p-0.5">
-                      <button
-                        type="button"
-                        onClick={() => setModalLanguage("pt")}
-                        className={`rounded-md px-2 py-1 text-xs font-bold transition ${
-                          modalLanguage === "pt"
-                            ? "bg-accent text-white"
-                            : "text-secondary-muted hover:text-secondary-pure"
-                        }`}
-                      >
-                        🇧🇷 PT-BR
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setModalLanguage("en")}
-                        className={`rounded-md px-2 py-1 text-xs font-bold transition ${
-                          modalLanguage === "en"
-                            ? "bg-accent text-white"
-                            : "text-secondary-muted hover:text-secondary-pure"
-                        }`}
-                      >
-                        🇺🇸 EN
-                      </button>
-                    </div>
-                  ) : null}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {isTranslating && (
+                      <span className="text-xs text-purple-400 animate-pulse">
+                        Traduzindo item...
+                      </span>
+                    )}
+                    {translation && (
+                      <div className="flex gap-1 rounded-lg border border-purple-800 bg-gray-900 p-0.5">
+                        <button
+                          type="button"
+                          onClick={() => setModalLanguage("pt")}
+                          className="rounded px-2 py-1 text-xs"
+                        >
+                          PT
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setModalLanguage("en")}
+                          className="rounded px-2 py-1 text-xs"
+                        >
+                          EN
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   <button
                     type="button"
-                    aria-label="Fechar detalhes da magia"
+                    aria-label="Fechar detalhes do item"
                     onClick={() => setSelectedSpell(null)}
-                    className="rounded-lg px-2 py-1 text-gray-400 hover:bg-gray-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="rounded-lg px-2 py-1 text-gray-400 hover:bg-gray-800 hover:text-white"
                   >
                     ✕
                   </button>
                 </div>
-              </div>
-
-              {translationError && (
-                <div className="mt-4 rounded-xl border border-red-800 bg-red-900/30 p-3 text-sm">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1">
-                      <p className="font-bold text-red-300">Tradução indisponível</p>
-                      <p className="mt-1 text-xs leading-5 text-red-200">{translationError}</p>
-                      {translationCode && <p className="mt-1 text-[11px] font-mono text-red-300/70">{translationCode}</p>}
-                      <p className="mt-2 text-[11px] text-red-300/80">Dica: verifique se NINEROUTER_URL é pública (Funnel/Cloudflare) ou se o host está no Tailnet. Código tenta fallback host.docker.internal automaticamente quando 100.83.170.1 falha.</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleRetryTranslate}
-                      disabled={isTranslating}
-                      className="shrink-0 rounded-lg bg-red-700 px-3 py-2 text-xs font-bold text-white hover:bg-red-600 disabled:opacity-50"
-                    >
-                      {isTranslating ? "Tentando..." : "Tentar novamente"}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-5 pt-5">
-                <div className="flex items-start gap-4">
-                  {/* Lado Esquerdo (Box de Dano Compacto - D20) */}
-                  {displayDamage && (
-                    <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-accent/20 border border-accent/40 w-24 shrink-0">
-                      {/* D20 SVG */}
-                      <div className="relative flex h-12 w-12 shrink-0 items-center justify-center">
-                        <svg className="absolute inset-0 h-full w-full text-accent hover:text-accent-vibrant transition-colors" viewBox="0 0 100 100" fill="currentColor">
-                          <polygon points="50,2 95,25 95,75 50,98 5,75 5,25" fill="rgba(15, 10, 25, 0.8)" stroke="currentColor" strokeWidth="3" />
-                          <polygon points="50,2 50,98" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2,2" opacity="0.4" />
-                          <polygon points="5,25 95,25" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2,2" opacity="0.4" />
-                          <polygon points="5,75 95,75" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2,2" opacity="0.4" />
-                          <polygon points="50,2 5,75" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2,2" opacity="0.4" />
-                          <polygon points="50,2 95,75" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2,2" opacity="0.4" />
-                          <polygon points="5,25 50,98" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2,2" opacity="0.4" />
-                          <polygon points="95,25 50,98" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2,2" opacity="0.4" />
-                        </svg>
-                        <span className="relative z-10 text-center text-[10px] font-black text-white px-1 leading-tight break-all">
-                          {displayDamage}
-                        </span>
+                {translationError && (
+                  <div className="mt-4 rounded-xl border border-red-800 bg-red-900/30 p-3 text-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <p className="font-bold text-red-300">Tradução indisponível</p>
+                        <p className="mt-1 text-xs leading-5 text-red-200">{translationError}</p>
+                        {translationCode && (
+                          <p className="mt-1 text-[11px] font-mono text-red-300/70">
+                            {translationCode}
+                          </p>
+                        )}
+                        <p className="mt-2 text-[11px] text-red-300/80">
+                          Dica: verifique NINEROUTER_URL público ou rota Tailscale. Fallback
+                          host.docker.internal tentado automaticamente.
+                        </p>
                       </div>
-                      {/* Tipo de Dano */}
-                      {getField("damageType") && (
-                        <div className="mt-1 text-[10px] text-purple-300 font-bold uppercase tracking-wider text-center">
-                          {String(getField("damageType"))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Lado Direito (Informações Técnicas - Linhas 1 e 2) */}
-                  <div className={`${displayDamage ? "flex-1" : "w-full"} space-y-2`}>
-                    {/* Linha 1 (Círculo, Custo de Mana, Alvo, Alcance, Área) */}
-                    <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-gray-300 pb-3 border-b border-purple-900/20">
-                      <span><strong className="text-purple-400 font-bold">{circleLabel}:</strong> {spell.circle}</span>
-                      <span><strong className="text-purple-400 font-bold">{manaCostLabel}:</strong> {spell.manaCost}</span>
-                      {getField("target") && (
-                        <span><strong className="text-purple-400 font-bold">{targetLabel}:</strong> {String(getField("target"))}</span>
-                      )}
-                      {getField("range") && (
-                        <span><strong className="text-purple-400 font-bold">{rangeLabel}:</strong> {String(getField("range"))}</span>
-                      )}
-                      {getField("area") && (
-                        <span className="inline-flex items-center gap-1"><strong className="text-purple-400 font-bold">{areaLabel}:</strong> {renderArea(getField("area") as string)}</span>
-                      )}
-                    </div>
-
-                    {/* Linha 2 (Condições, Duração, Tempo de Conjuração) */}
-                    <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-gray-300 pt-2 pb-3 border-b border-purple-900/20">
-                      {displayUseType && (
-                        <span><strong className="text-purple-400 font-bold">{useTypeLabel}:</strong> {displayUseType}</span>
-                      )}
-                      {displayDuration && (
-                        <span><strong className="text-purple-400 font-bold">{durationLabel}:</strong> {String(displayDuration)}</span>
-                      )}
-                      {renderActionCost(spell.actionCostOverride, getField("castingTime") as string) && (
-                        <span className="inline-flex items-center gap-1"><strong className="text-purple-400 font-bold">{castingTimeLabel}:</strong> {renderActionCost(spell.actionCostOverride, getField("castingTime") as string)}</span>
-                      )}
+                      <button
+                        type="button"
+                        onClick={handleRetryTranslate}
+                        disabled={isTranslating}
+                        className="shrink-0 rounded-lg bg-red-700 px-3 py-2 text-xs font-bold text-white hover:bg-red-600 disabled:opacity-50"
+                      >
+                        {isTranslating ? "Tentando..." : "Tentar novamente"}
+                      </button>
                     </div>
                   </div>
+                )}
+                <div className="space-y-5 pt-5">
+                  <div className="flex flex-wrap gap-x-5 gap-y-2 border-b border-purple-900/20 pb-3 text-xs text-gray-300">
+                    {ITEM_TECHNICAL_FIELDS.map((field) => display(field, field))}
+                  </div>
+                  {getItemField("description") ? (
+                    <section>
+                      <h4 className="mb-1 text-sm font-semibold text-purple-300">Descrição</h4>
+                      <p className="whitespace-pre-wrap text-sm leading-6 text-gray-300">
+                        {String(getItemField("description"))}
+                      </p>
+                    </section>
+                  ) : null}
+                  {getItemField("qualityDescription") ? (
+                    <section>
+                      <h4 className="mb-1 text-sm font-semibold text-purple-300">Qualidade</h4>
+                      <p className="whitespace-pre-wrap text-sm leading-6 text-gray-300">
+                        {String(getItemField("qualityDescription"))}
+                      </p>
+                    </section>
+                  ) : null}
+                  {getItemField("counterpointDescription") ? (
+                    <section>
+                      <h4 className="mb-1 text-sm font-semibold text-purple-300">Contraponto</h4>
+                      <p className="whitespace-pre-wrap text-sm leading-6 text-gray-300">
+                        {String(getItemField("counterpointDescription"))}
+                      </p>
+                    </section>
+                  ) : null}
                 </div>
-
-                {displayDescription ? (
-                  <section>
-                    <h4 className="mb-1 text-sm font-semibold text-purple-300">{descriptionLabel}</h4>
-                    <p className="whitespace-pre-wrap text-sm leading-6 text-gray-300">{displayDescription}</p>
-                  </section>
-                ) : null}
-                 {displayExtraEffect ? (
-                   <section>
-                     <h4 className="mb-1 text-sm font-semibold text-purple-300">{extraEffectLabel}</h4>
-                     <p className="whitespace-pre-wrap text-sm leading-6 text-gray-300">{displayExtraEffect}</p>
-                   </section>
-                 ) : null}
-               </div>
-            </div>
-          </div>
-        );
-      })()}
-
-      {selectedSpell && activeType === "items" && (() => {
-         const item = selectedSpell;
-         const translation = item.translation && typeof item.translation === "object" ? item.translation as Record<string, unknown> : null;
-         const getItemField = (key: string) => modalLanguage === "pt" && translation?.[key] ? translation[key] : item[key];
-        const sourceData = item.sourceData && typeof item.sourceData === "object" ? item.sourceData as Record<string, unknown> : {};
-        const system = sourceData.system && typeof sourceData.system === "object" ? sourceData.system as Record<string, unknown> : {};
-        const display = (key: string, label: string) => {
-          const raw = system[key];
-          const value = raw && typeof raw === "object" && "value" in raw ? (raw as Record<string, unknown>).value : raw;
-          if (value === null || value === undefined || value === "") return null;
-          const formatted = formatTechnicalField(key, value, modalLanguage);
-          if (!formatted) return null;
-          return <span><strong className="text-purple-400">{getTechnicalLabel(key, modalLanguage)}:</strong> {formatted}</span>;
-        };
-        const itemDmgInfo = extractItemDamageInfo(item);
-        const translatedType = itemDmgInfo.damageType
-          ? (PF2E_DAMAGE_TYPES_PT[itemDmgInfo.damageType.toLowerCase()] || itemDmgInfo.damageType)
-          : null;
-        return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md" onClick={() => setSelectedSpell(null)}>
-            <div role="dialog" aria-modal="true" aria-labelledby="item-details-title" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-purple-800 bg-gray-950 p-6 text-gray-100 shadow-2xl" onClick={(event) => event.stopPropagation()}>
-              <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
-                 <div className="flex items-center gap-3">
-                   {item.imageUrl && !failedImages.has(String(item.id)) ? <img src={String(item.imageUrl)} alt={`Imagem de ${String(item.name)}`} className="h-11 w-11 rounded-lg border border-purple-900/60 object-cover" onError={() => setFailedImages((previous) => new Set(previous).add(String(item.id)))} /> : <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-purple-900/60 bg-gray-900 text-xl text-gray-600">✦</div>}
-                   <div>
-                     <h3 id="item-details-title" className="text-xl font-bold text-purple-200">{String(getItemField("name"))}</h3>
-                     {itemDmgInfo.damage && (
-                       <div className="mt-1 flex items-center gap-2">
-                         <span className="rounded-md bg-rose-950 px-2 py-0.5 text-xs font-bold text-rose-300 border border-rose-800/60 inline-flex items-center gap-1">
-                           ⚔️ Dano: {itemDmgInfo.damage}
-                         </span>
-                         {translatedType && (
-                           <span className="text-xs font-medium text-rose-400">
-                             ({translatedType})
-                           </span>
-                         )}
-                       </div>
-                     )}
-                   </div>
-                 </div>
-                 <div className="flex items-center gap-2">{isTranslating && <span className="text-xs text-purple-400 animate-pulse">Traduzindo item...</span>}{translation && <div className="flex gap-1 rounded-lg border border-purple-800 bg-gray-900 p-0.5"><button type="button" onClick={() => setModalLanguage("pt")} className="rounded px-2 py-1 text-xs">PT</button><button type="button" onClick={() => setModalLanguage("en")} className="rounded px-2 py-1 text-xs">EN</button></div>}</div>
-                 <button type="button" aria-label="Fechar detalhes do item" onClick={() => setSelectedSpell(null)} className="rounded-lg px-2 py-1 text-gray-400 hover:bg-gray-800 hover:text-white">✕</button>
-               </div>
-               {translationError && (
-                 <div className="mt-4 rounded-xl border border-red-800 bg-red-900/30 p-3 text-sm">
-                   <div className="flex items-start justify-between gap-3">
-                     <div className="flex-1">
-                       <p className="font-bold text-red-300">Tradução indisponível</p>
-                       <p className="mt-1 text-xs leading-5 text-red-200">{translationError}</p>
-                       {translationCode && <p className="mt-1 text-[11px] font-mono text-red-300/70">{translationCode}</p>}
-                       <p className="mt-2 text-[11px] text-red-300/80">Dica: verifique NINEROUTER_URL público ou rota Tailscale. Fallback host.docker.internal tentado automaticamente.</p>
-                     </div>
-                     <button
-                       type="button"
-                       onClick={handleRetryTranslate}
-                       disabled={isTranslating}
-                       className="shrink-0 rounded-lg bg-red-700 px-3 py-2 text-xs font-bold text-white hover:bg-red-600 disabled:opacity-50"
-                     >
-                       {isTranslating ? "Tentando..." : "Tentar novamente"}
-                     </button>
-                   </div>
-                 </div>
-               )}
-               <div className="space-y-5 pt-5">
-                 <div className="flex flex-wrap gap-x-5 gap-y-2 border-b border-purple-900/20 pb-3 text-xs text-gray-300">
-                  {ITEM_TECHNICAL_FIELDS.map(field => display(field, field))}
-                </div>
-                 {getItemField("description") ? <section><h4 className="mb-1 text-sm font-semibold text-purple-300">Descrição</h4><p className="whitespace-pre-wrap text-sm leading-6 text-gray-300">{String(getItemField("description"))}</p></section> : null}
-                 {getItemField("qualityDescription") ? <section><h4 className="mb-1 text-sm font-semibold text-purple-300">Qualidade</h4><p className="whitespace-pre-wrap text-sm leading-6 text-gray-300">{String(getItemField("qualityDescription"))}</p></section> : null}
-                 {getItemField("counterpointDescription") ? <section><h4 className="mb-1 text-sm font-semibold text-purple-300">Contraponto</h4><p className="whitespace-pre-wrap text-sm leading-6 text-gray-300">{String(getItemField("counterpointDescription"))}</p></section> : null}
               </div>
             </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
 
       {/* Modal / Overlay de Criação de Conteúdo */}
       {showCreateModal && (
@@ -1928,7 +2441,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
                 formData,
                 (name, value) => setFormData((prev) => ({ ...prev, [name]: value })),
                 isCreating,
-                "create"
+                "create",
               )}
               <div className="flex gap-3 pt-2">
                 <button

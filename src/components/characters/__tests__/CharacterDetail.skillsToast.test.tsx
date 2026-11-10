@@ -129,7 +129,7 @@ describe("CharacterDetail - Skills Toast Flutuante Persistente (#UI-003)", () =>
     const toastHeading = await screen.findByRole("heading", { name: "Perícias & Treinamento" });
     expect(toastHeading).toBeInTheDocument();
     expect(
-      screen.getByText(/Slots de perícias treinadas disponíveis por Inteligência:/i)
+      screen.getByText(/Slots de perícias treinadas disponíveis por Inteligência:/i),
     ).toBeInTheDocument();
 
     // Botão de dispensar com aria-label correto
@@ -147,7 +147,9 @@ describe("CharacterDetail - Skills Toast Flutuante Persistente (#UI-003)", () =>
     const skillsTabButton = screen.getByRole("button", { name: /perícias/i });
     fireEvent.click(skillsTabButton);
 
-    const dismissButton = await screen.findByRole("button", { name: "Fechar e não mostrar novamente" });
+    const dismissButton = await screen.findByRole("button", {
+      name: "Fechar e não mostrar novamente",
+    });
     fireEvent.click(dismissButton);
 
     // Toast deve sumir

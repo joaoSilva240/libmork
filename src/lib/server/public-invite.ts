@@ -10,8 +10,7 @@ export type PublicInvite = {
 };
 
 export type PublicInviteResult =
-  | { invite: PublicInvite; error: null }
-  | { invite: null; error: "invalid" | "campaign-not-found" };
+  { invite: PublicInvite; error: null } | { invite: null; error: "invalid" | "campaign-not-found" };
 
 /** Consults the public invite using the same validity rules for pages and API. */
 export async function getPublicInvite(token: string): Promise<PublicInviteResult> {

@@ -102,10 +102,9 @@ export function SharePickerModal({ isOpen, onClose, onPick }: SharePickerModalPr
       void (async () => {
         setLibraryLoading(true);
         try {
-          const res = await fetch(
-            `/api/chat/search?q=${encodeURIComponent(libraryQuery)}`,
-            { credentials: "include" },
-          );
+          const res = await fetch(`/api/chat/search?q=${encodeURIComponent(libraryQuery)}`, {
+            credentials: "include",
+          });
           const body = (await res.json()) as {
             success?: boolean;
             data?: { users?: unknown[]; libraryItems?: LibrarySearchItem[] };
@@ -287,9 +286,7 @@ export function SharePickerModal({ isOpen, onClose, onPick }: SharePickerModalPr
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-xs font-bold text-secondary-pure">{post.title}</p>
-                  <p className="truncate text-[10px] text-secondary-muted">
-                    Por {post.authorName}
-                  </p>
+                  <p className="truncate text-[10px] text-secondary-muted">Por {post.authorName}</p>
                 </div>
               </button>
             ))}
@@ -328,9 +325,7 @@ export function SharePickerModal({ isOpen, onClose, onPick }: SharePickerModalPr
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-bold text-secondary-pure">
-                    {campaign.name}
-                  </p>
+                  <p className="truncate text-xs font-bold text-secondary-pure">{campaign.name}</p>
                 </div>
               </button>
             ))}

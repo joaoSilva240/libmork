@@ -132,7 +132,9 @@ export function MasterScreenPreview({
 
           <div
             className={`flex min-h-0 flex-1 items-center justify-center rounded border border-secondary-border px-1 text-center text-[10px] text-secondary-offwhite transition-all duration-300 ${
-              showCanvas || showMap ? "bg-dominant-deep" : "bg-dominant-container text-secondary-muted"
+              showCanvas || showMap
+                ? "bg-dominant-deep"
+                : "bg-dominant-container text-secondary-muted"
             }`}
           >
             {showCanvas || showMap ? "Canvas/Mapa" : "Vazio"}

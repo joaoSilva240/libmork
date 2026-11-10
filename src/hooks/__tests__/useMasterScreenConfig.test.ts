@@ -253,4 +253,3 @@ describe("useMasterScreenConfig - Module Ordering & Assets Visibility (Issue #75
     expect(stored.leftColumnOrder).toEqual(["actorsPanel"]);
   });
 });
-

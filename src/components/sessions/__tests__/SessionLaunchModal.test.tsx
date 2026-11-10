@@ -155,9 +155,7 @@ describe("SessionLaunchModal", () => {
 
     fireEvent.click(screen.getByTestId("launch-submit"));
 
-    await waitFor(() =>
-      expect(screen.getByText(/mínimo de 10 caracteres/i)).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByText(/mínimo de 10 caracteres/i)).toBeInTheDocument());
     expect(postSpy).not.toHaveBeenCalled();
   });
 });

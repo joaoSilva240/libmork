@@ -3,12 +3,7 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useResolvedMotion } from "@/hooks/useMotionPreferences";
-import {
-  applyMotion,
-  enterTransform,
-  isMotionCategoryActive,
-  motionDuration,
-} from "@/lib/motion";
+import { applyMotion, enterTransform, isMotionCategoryActive, motionDuration } from "@/lib/motion";
 
 /**
  * Aplica as preferências de animação no <html> (variáveis CSS + atributos) e

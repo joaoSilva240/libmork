@@ -61,14 +61,18 @@ describe("Discord OAuth Routes", () => {
       expect(targetUrl.searchParams.get("client_id")).toBe("test-client-id");
       expect(targetUrl.searchParams.get("scope")).toBe("identify email");
       expect(targetUrl.searchParams.get("response_type")).toBe("code");
-      expect(targetUrl.searchParams.get("redirect_uri")).toBe("http://localhost:3000/api/auth/discord/callback");
+      expect(targetUrl.searchParams.get("redirect_uri")).toBe(
+        "http://localhost:3000/api/auth/discord/callback",
+      );
       expect(targetUrl.searchParams.get("state")).toBeTruthy();
     });
   });
 
   describe("GET /api/auth/discord/callback", () => {
     it("redirects to /login?error=oauth_access_denied if Discord returned error", async () => {
-      const req = new NextRequest("http://localhost:3000/api/auth/discord/callback?error=access_denied");
+      const req = new NextRequest(
+        "http://localhost:3000/api/auth/discord/callback?error=access_denied",
+      );
       const res = await discordCallbackGet(req);
 
       expect(res.status).toBe(303);
@@ -84,7 +88,9 @@ describe("Discord OAuth Routes", () => {
     });
 
     it("redirects to /login?error=oauth_state_invalid if state signature or format is invalid", async () => {
-      const req = new NextRequest("http://localhost:3000/api/auth/discord/callback?code=mock_code&state=invalid.state");
+      const req = new NextRequest(
+        "http://localhost:3000/api/auth/discord/callback?code=mock_code&state=invalid.state",
+      );
       const res = await discordCallbackGet(req);
 
       expect(res.status).toBe(303);
@@ -107,33 +113,40 @@ describe("Discord OAuth Routes", () => {
         if (url.includes("/users/@me")) {
           return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({
-              id: "discord_uid_123",
-              username: "testuser",
-              email: "existing@example.com",
-              verified: true,
-            }),
+            json: () =>
+              Promise.resolve({
+                id: "discord_uid_123",
+                username: "testuser",
+                email: "existing@example.com",
+                verified: true,
+              }),
           });
         }
         return originalFetch(url);
       });
 
       // No existing oauth account, but user with email exists
-      vi.mocked(db.select).mockReturnValueOnce({
-        from: vi.fn().mockReturnValueOnce({
-          where: vi.fn().mockReturnValueOnce({
-            limit: vi.fn().mockResolvedValueOnce([]), // no existing oauthAccount
+      vi.mocked(db.select)
+        .mockReturnValueOnce({
+          from: vi.fn().mockReturnValueOnce({
+            where: vi.fn().mockReturnValueOnce({
+              limit: vi.fn().mockResolvedValueOnce([]), // no existing oauthAccount
+            }),
           }),
-        }),
-      } as any).mockReturnValueOnce({
-        from: vi.fn().mockReturnValueOnce({
-          where: vi.fn().mockReturnValueOnce({
-            limit: vi.fn().mockResolvedValueOnce([{ id: "existing-user-id", email: "existing@example.com" }]), // user exists
+        } as any)
+        .mockReturnValueOnce({
+          from: vi.fn().mockReturnValueOnce({
+            where: vi.fn().mockReturnValueOnce({
+              limit: vi
+                .fn()
+                .mockResolvedValueOnce([{ id: "existing-user-id", email: "existing@example.com" }]), // user exists
+            }),
           }),
-        }),
-      } as any);
+        } as any);
 
-      const req = new NextRequest(`http://localhost:3000/api/auth/discord/callback?code=valid_code&state=${state}`);
+      const req = new NextRequest(
+        `http://localhost:3000/api/auth/discord/callback?code=valid_code&state=${state}`,
+      );
       const res = await discordCallbackGet(req);
 
       expect(res.status).toBe(303);
@@ -158,46 +171,61 @@ describe("Discord OAuth Routes", () => {
         if (url.includes("/users/@me")) {
           return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({
-              id: "discord_uid_new",
-              username: "newuser",
-              email: "new@example.com",
-              verified: true,
-            }),
+            json: () =>
+              Promise.resolve({
+                id: "discord_uid_new",
+                username: "newuser",
+                email: "new@example.com",
+                verified: true,
+              }),
           });
         }
         return originalFetch(url);
       });
 
       // No oauth account, no user with this email
-      vi.mocked(db.select).mockReturnValueOnce({
-        from: vi.fn().mockReturnValueOnce({
-          where: vi.fn().mockReturnValueOnce({
-            limit: vi.fn().mockResolvedValueOnce([]),
+      vi.mocked(db.select)
+        .mockReturnValueOnce({
+          from: vi.fn().mockReturnValueOnce({
+            where: vi.fn().mockReturnValueOnce({
+              limit: vi.fn().mockResolvedValueOnce([]),
+            }),
           }),
-        }),
-      } as any).mockReturnValueOnce({
-        from: vi.fn().mockReturnValueOnce({
-          where: vi.fn().mockReturnValueOnce({
-            limit: vi.fn().mockResolvedValueOnce([]),
+        } as any)
+        .mockReturnValueOnce({
+          from: vi.fn().mockReturnValueOnce({
+            where: vi.fn().mockReturnValueOnce({
+              limit: vi.fn().mockResolvedValueOnce([]),
+            }),
           }),
-        }),
-      } as any);
+        } as any);
 
-      vi.mocked(db.insert).mockReturnValueOnce({
-        values: vi.fn().mockReturnValueOnce({
-          returning: vi.fn().mockResolvedValueOnce([{ id: "new-user-id", email: "new@example.com", role: "player" }]),
-        }),
-      } as any).mockReturnValueOnce({
-        values: vi.fn().mockResolvedValueOnce({}),
-      } as any);
+      vi.mocked(db.insert)
+        .mockReturnValueOnce({
+          values: vi.fn().mockReturnValueOnce({
+            returning: vi
+              .fn()
+              .mockResolvedValueOnce([
+                { id: "new-user-id", email: "new@example.com", role: "player" },
+              ]),
+          }),
+        } as any)
+        .mockReturnValueOnce({
+          values: vi.fn().mockResolvedValueOnce({}),
+        } as any);
 
-      const req = new NextRequest(`http://localhost:3000/api/auth/discord/callback?code=valid_code&state=${state}`);
+      const req = new NextRequest(
+        `http://localhost:3000/api/auth/discord/callback?code=valid_code&state=${state}`,
+      );
       const res = await discordCallbackGet(req);
 
       expect(res.status).toBe(303);
       expect(res.headers.get("Location")).toBe("http://localhost:3000/player");
-      expect(createSession).toHaveBeenCalledWith("new-user-id", expect.anything(), expect.anything());
+      expect(createSession).toHaveBeenCalledWith(
+        "new-user-id",
+        expect.anything(),
+        expect.anything(),
+      );
 
       global.fetch = originalFetch;
     });
@@ -218,12 +246,13 @@ describe("Discord OAuth Routes", () => {
         if (url.includes("/users/@me")) {
           return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({
-              id: "discord_uid_existing",
-              username: "existinguser",
-              email: "existing@example.com",
-              verified: true,
-            }),
+            json: () =>
+              Promise.resolve({
+                id: "discord_uid_existing",
+                username: "existinguser",
+                email: "existing@example.com",
+                verified: true,
+              }),
           });
         }
         return originalFetch(url);
@@ -233,17 +262,29 @@ describe("Discord OAuth Routes", () => {
       vi.mocked(db.select).mockReturnValueOnce({
         from: vi.fn().mockReturnValueOnce({
           where: vi.fn().mockReturnValueOnce({
-            limit: vi.fn().mockResolvedValueOnce([{ userId: "user-abc-123", provider: "discord", providerAccountId: "discord_uid_existing" }]),
+            limit: vi.fn().mockResolvedValueOnce([
+              {
+                userId: "user-abc-123",
+                provider: "discord",
+                providerAccountId: "discord_uid_existing",
+              },
+            ]),
           }),
         }),
       } as any);
 
-      const req = new NextRequest(`http://localhost:3000/api/auth/discord/callback?code=valid_code&state=${state}`);
+      const req = new NextRequest(
+        `http://localhost:3000/api/auth/discord/callback?code=valid_code&state=${state}`,
+      );
       const res = await discordCallbackGet(req);
 
       expect(res.status).toBe(303);
       expect(res.headers.get("Location")).toBe("http://localhost:3000/master");
-      expect(createSession).toHaveBeenCalledWith("user-abc-123", expect.anything(), expect.anything());
+      expect(createSession).toHaveBeenCalledWith(
+        "user-abc-123",
+        expect.anything(),
+        expect.anything(),
+      );
 
       global.fetch = originalFetch;
     });
@@ -269,12 +310,13 @@ describe("Discord OAuth Routes", () => {
         if (url.includes("/users/@me")) {
           return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({
-              id: "discord_uid_to_link",
-              username: "linkeduser",
-              email: "different_email@example.com",
-              verified: true,
-            }),
+            json: () =>
+              Promise.resolve({
+                id: "discord_uid_to_link",
+                username: "linkeduser",
+                email: "different_email@example.com",
+                verified: true,
+              }),
           });
         }
         return originalFetch(url);
@@ -294,7 +336,9 @@ describe("Discord OAuth Routes", () => {
         values: insertValuesMock,
       } as any);
 
-      const req = new NextRequest(`http://localhost:3000/api/auth/discord/callback?code=valid_code&state=${state}`);
+      const req = new NextRequest(
+        `http://localhost:3000/api/auth/discord/callback?code=valid_code&state=${state}`,
+      );
       const res = await discordCallbackGet(req);
 
       expect(res.status).toBe(303);

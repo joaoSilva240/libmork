@@ -7,7 +7,15 @@ body {
   min-height: 100dvh;
   background-color: var(--dominant-deep, #09090b);
   color: var(--secondary-pure, #ffffff);
-  font-family: var(--font-body, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+  font-family: var(
+    --font-body,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif
+  );
 }
 
 :root,
@@ -35,33 +43,35 @@ body {
   --accent-glow: rgba(168, 85, 247, 0.2);
 
   /* Variáveis de Fonte Padrão e Temáticas */
-  --font-cinzel: 'Cinzel', serif;
-  --font-cinzel-decorative: 'Cinzel Decorative', fantasy, serif;
+  --font-cinzel: "Cinzel", serif;
+  --font-cinzel-decorative: "Cinzel Decorative", fantasy, serif;
   --font-heading: var(--font-cinzel-decorative);
-  --font-body: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-body:
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
 
   /* Fontes Temáticas de RPG / D&D (Google Fonts) */
-  --font-medievalsharp: 'MedievalSharp', cursive, serif;
-  --font-almendra: 'Almendra', serif;
-  --font-uncial-antiqua: 'Uncial Antiqua', fantasy, cursive;
-  --font-pirata-one: 'Pirata One', cursive, fantasy;
-  --font-im-fell-english-sc: 'IM Fell English SC', Georgia, serif;
-  --font-grenze-gotisch: 'Grenze Gotisch', cursive, serif;
-  --font-metamorphous: 'Metamorphous', fantasy, serif;
-  --font-eagle-lake: 'Eagle Lake', cursive, serif;
-  --font-marcellus: 'Marcellus', Georgia, serif;
+  --font-medievalsharp: "MedievalSharp", cursive, serif;
+  --font-almendra: "Almendra", serif;
+  --font-uncial-antiqua: "Uncial Antiqua", fantasy, cursive;
+  --font-pirata-one: "Pirata One", cursive, fantasy;
+  --font-im-fell-english-sc: "IM Fell English SC", Georgia, serif;
+  --font-grenze-gotisch: "Grenze Gotisch", cursive, serif;
+  --font-metamorphous: "Metamorphous", fantasy, serif;
+  --font-eagle-lake: "Eagle Lake", cursive, serif;
+  --font-marcellus: "Marcellus", Georgia, serif;
 
   /* Fontes Locais da Pasta public/fonts */
-  --font-vecna: 'Vecna', Georgia, serif;
-  --font-dragon-hunter: 'Dragon Hunter', fantasy, serif;
-  --font-special-elite: 'Special Elite', ui-monospace, monospace;
-  --font-optima: 'Optima', ui-sans-serif, system-ui, sans-serif;
-  --font-roman-new-times: 'Roman New Times', Times New Roman, serif;
-  --font-keyes: 'Keyes', fantasy, serif;
-  --font-westsac: 'Westsac', cursive, fantasy;
-  --font-fstein: 'FStein', fantasy, serif;
-  --font-reappeat: 'Reappeat', fantasy, sans-serif;
-  --font-215000e: '215000E', fantasy, sans-serif;
+  --font-vecna: "Vecna", Georgia, serif;
+  --font-dragon-hunter: "Dragon Hunter", fantasy, serif;
+  --font-special-elite: "Special Elite", ui-monospace, monospace;
+  --font-optima: "Optima", ui-sans-serif, system-ui, sans-serif;
+  --font-roman-new-times: "Roman New Times", Times New Roman, serif;
+  --font-keyes: "Keyes", fantasy, serif;
+  --font-westsac: "Westsac", cursive, fantasy;
+  --font-fstein: "FStein", fantasy, serif;
+  --font-reappeat: "Reappeat", fantasy, sans-serif;
+  --font-215000e: "215000E", fantasy, sans-serif;
 
   /* Variáveis dinâmicas de superfície e texto neutro para o tema escuro */
   --theme-bg-deep: var(--dominant-deep, #09090b);
@@ -127,7 +137,7 @@ body {
   --accent-glow: rgba(120, 53, 15, 0.15);
 
   --font-heading: var(--font-cinzel);
-  --font-body: Georgia, Cambria, 'Times New Roman', Times, serif;
+  --font-body: Georgia, Cambria, "Times New Roman", Times, serif;
 }
 
 [data-theme="alabaster-light"] {
@@ -150,7 +160,8 @@ body {
   --accent-glow: rgba(107, 33, 168, 0.15);
 
   --font-heading: var(--font-cinzel-decorative);
-  --font-body: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-body:
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 [data-theme="nordic-light"] {
@@ -173,7 +184,8 @@ body {
   --accent-glow: rgba(2, 132, 199, 0.15);
 
   --font-heading: var(--font-cinzel);
-  --font-body: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-body:
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 [data-theme="high-contrast-light"] {
@@ -196,7 +208,8 @@ body {
   --accent-glow: rgba(0, 0, 0, 0.2);
 
   --font-heading: var(--font-cinzel-decorative);
-  --font-body: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-body:
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 @theme {
@@ -275,7 +288,12 @@ body {
   font-family: var(--font-cinzel-decorative);
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-heading, var(--font-cinzel));
 }
 
@@ -293,32 +311,37 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--secondary-pure, #09090b);
 }
 
-[data-theme-mode="light"] .text-white:not(button):not(button *):not(.btn):not(.btn *):not([role="button"]):not([role="button"] *):not([class*="bg-purple"]):not([class*="bg-accent"]):not([class*="bg-gradient"]):not([class*="badge"]) {
+[data-theme-mode="light"]
+  .text-white:not(button):not(button *):not(.btn):not(.btn *):not([role="button"]):not(
+    [role="button"] *
+  ):not([class*="bg-purple"]):not([class*="bg-accent"]):not([class*="bg-gradient"]):not(
+    [class*="badge"]
+  ) {
   color: var(--secondary-pure, #09090b);
 }
 
 @font-face {
-  font-family: 'FantasyClipart';
-  src: url('/fonts/FantasyClipart.ttf') format('truetype');
+  font-family: "FantasyClipart";
+  src: url("/fonts/FantasyClipart.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
 
 .font-fantasy {
-  font-family: 'FantasyClipart', sans-serif;
+  font-family: "FantasyClipart", sans-serif;
 }
 
 @font-face {
-  font-family: 'FourthEditionDings';
-  src: url('/fonts/FourthEditionDings.ttf') format('truetype');
+  font-family: "FourthEditionDings";
+  src: url("/fonts/FourthEditionDings.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
 
 .font-dings {
-  font-family: 'FourthEditionDings', sans-serif;
+  font-family: "FourthEditionDings", sans-serif;
 }
 
 /* =============================================================================
@@ -326,104 +349,104 @@ h1, h2, h3, h4, h5, h6 {
    ============================================================================= */
 
 @font-face {
-  font-family: 'Vecna';
-  src: url('/fonts/Vecna-oppx.ttf') format('truetype');
+  font-family: "Vecna";
+  src: url("/fonts/Vecna-oppx.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Vecna';
-  src: url('/fonts/VecnaBold-4YY4.ttf') format('truetype');
+  font-family: "Vecna";
+  src: url("/fonts/VecnaBold-4YY4.ttf") format("truetype");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Vecna';
-  src: url('/fonts/VecnaItalic-e44p.ttf') format('truetype');
+  font-family: "Vecna";
+  src: url("/fonts/VecnaItalic-e44p.ttf") format("truetype");
   font-weight: 400;
   font-style: italic;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Vecna';
-  src: url('/fonts/VecnaBoldItalic-011d.ttf') format('truetype');
+  font-family: "Vecna";
+  src: url("/fonts/VecnaBoldItalic-011d.ttf") format("truetype");
   font-weight: 700;
   font-style: italic;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Dragon Hunter';
-  src: url('/fonts/DragonHunter-9Ynxj.otf') format('opentype');
+  font-family: "Dragon Hunter";
+  src: url("/fonts/DragonHunter-9Ynxj.otf") format("opentype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Special Elite';
-  src: url('/fonts/SpecialElite-Regular.ttf') format('truetype');
+  font-family: "Special Elite";
+  src: url("/fonts/SpecialElite-Regular.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Optima';
-  src: url('/fonts/unicode.optima.ttf') format('truetype');
+  font-family: "Optima";
+  src: url("/fonts/unicode.optima.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Roman New Times';
-  src: url('/fonts/Roman_New_Times.otf') format('opentype');
+  font-family: "Roman New Times";
+  src: url("/fonts/Roman_New_Times.otf") format("opentype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Keyes';
-  src: url('/fonts/keyes.ttf') format('truetype');
+  font-family: "Keyes";
+  src: url("/fonts/keyes.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Westsac';
-  src: url('/fonts/westsac.ttf') format('truetype');
+  font-family: "Westsac";
+  src: url("/fonts/westsac.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'FStein';
-  src: url('/fonts/F-STEIN_.TTF') format('truetype');
+  font-family: "FStein";
+  src: url("/fonts/F-STEIN_.TTF") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Reappeat';
-  src: url('/fonts/Reappeat.ttf') format('truetype');
+  font-family: "Reappeat";
+  src: url("/fonts/Reappeat.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: '215000E';
-  src: url('/fonts/215000E.ttf') format('truetype');
+  font-family: "215000E";
+  src: url("/fonts/215000E.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -443,8 +466,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
 @utility liquid-glass-dock {
@@ -455,9 +478,10 @@ h1, h2, h3, h4, h5, h6 {
   );
   border: 1px solid color-mix(in srgb, var(--secondary-border, #3f3f4e) 60%, transparent);
   border-top-color: color-mix(in srgb, var(--secondary-pure, #ffffff) 25%, transparent);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--secondary-pure, #ffffff) 15%, transparent),
-              0 18px 40px rgba(0, 0, 0, 0.38),
-              0 4px 12px rgba(0, 0, 0, 0.24);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--secondary-pure, #ffffff) 15%, transparent),
+    0 18px 40px rgba(0, 0, 0, 0.38),
+    0 4px 12px rgba(0, 0, 0, 0.24);
   backdrop-filter: blur(48px) saturate(1.35);
   -webkit-backdrop-filter: blur(48px) saturate(1.35);
 }
@@ -470,9 +494,10 @@ h1, h2, h3, h4, h5, h6 {
   );
   border: 1px solid color-mix(in srgb, var(--secondary-border, #cbd5e1) 70%, transparent);
   border-top-color: color-mix(in srgb, #ffffff 85%, transparent);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8),
-              0 14px 34px color-mix(in srgb, var(--dominant-pure, #000000) 12%, transparent),
-              0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 14px 34px color-mix(in srgb, var(--dominant-pure, #000000) 12%, transparent),
+    0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 @utility liquid-glass-panel {
@@ -483,9 +508,10 @@ h1, h2, h3, h4, h5, h6 {
   );
   border: 1px solid color-mix(in srgb, var(--secondary-border, #3f3f4e) 65%, transparent);
   border-top-color: color-mix(in srgb, var(--secondary-pure, #ffffff) 28%, transparent);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--secondary-pure, #ffffff) 16%, transparent),
-              0 18px 40px rgba(0, 0, 0, 0.45),
-              0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--secondary-pure, #ffffff) 16%, transparent),
+    0 18px 40px rgba(0, 0, 0, 0.45),
+    0 4px 12px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(48px) saturate(1.35);
   -webkit-backdrop-filter: blur(48px) saturate(1.35);
 }
@@ -498,23 +524,26 @@ h1, h2, h3, h4, h5, h6 {
   );
   border: 1px solid color-mix(in srgb, var(--secondary-border, #cbd5e1) 75%, transparent);
   border-top-color: color-mix(in srgb, #ffffff 90%, transparent);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9),
-              0 16px 36px color-mix(in srgb, var(--dominant-pure, #000000) 15%, transparent),
-              0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 16px 36px color-mix(in srgb, var(--dominant-pure, #000000) 15%, transparent),
+    0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 @utility liquid-glass-pill {
   background: color-mix(in srgb, var(--accent-primary, #a855f7) 22%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent-vibrant, #c084fc) 45%, transparent);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16),
-              0 0 18px var(--accent-glow, rgba(168, 85, 247, 0.2));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 0 18px var(--accent-glow, rgba(168, 85, 247, 0.2));
 }
 
 [data-theme-mode="light"] .liquid-glass-pill {
   background: color-mix(in srgb, var(--accent-primary, #a855f7) 20%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent-primary, #a855f7) 45%, transparent);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7),
-              0 2px 12px var(--accent-glow, rgba(168, 85, 247, 0.15));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 2px 12px var(--accent-glow, rgba(168, 85, 247, 0.15));
 }
 
 @utility liquid-glass-tab-active {
@@ -533,7 +562,10 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @utility liquid-glass-interactive {
-  transition: transform calc(220ms * var(--motion-factor, 1)) cubic-bezier(0.34, 1.56, 0.64, 1), color calc(180ms * var(--motion-factor, 1)) ease, background-color calc(180ms * var(--motion-factor, 1)) ease;
+  transition:
+    transform calc(220ms * var(--motion-factor, 1)) cubic-bezier(0.34, 1.56, 0.64, 1),
+    color calc(180ms * var(--motion-factor, 1)) ease,
+    background-color calc(180ms * var(--motion-factor, 1)) ease;
   &:active {
     transform: scale(0.96);
   }
@@ -550,7 +582,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Escala e Arredondamento Dinâmico de UI */
-svg.lucide, .lucide, .font-dings {
+svg.lucide,
+.lucide,
+.font-dings {
   transform: scale(var(--theme-icon-scale, 1));
   transform-origin: center;
   transition: transform calc(150ms * var(--motion-factor, 1)) ease;
@@ -559,29 +593,79 @@ svg.lucide, .lucide, .font-dings {
 /* =============================================================================
    Sincronização Dinâmica de Bordas Arredondadas (UI Customizer)
    ============================================================================= */
-.rounded { border-radius: var(--theme-radius, var(--radius)) !important; }
-.rounded-xs { border-radius: var(--theme-radius-xs, var(--radius-xs)) !important; }
-.rounded-sm { border-radius: var(--theme-radius-sm, var(--radius-sm)) !important; }
-.rounded-md { border-radius: var(--theme-radius-md, var(--radius-md)) !important; }
-.rounded-lg { border-radius: var(--theme-radius-lg, var(--radius-lg)) !important; }
-.rounded-xl { border-radius: var(--theme-radius-xl, var(--radius-xl)) !important; }
-.rounded-2xl { border-radius: var(--theme-radius-2xl, var(--radius-2xl)) !important; }
-.rounded-3xl { border-radius: var(--theme-radius-3xl, var(--radius-3xl)) !important; }
+.rounded {
+  border-radius: var(--theme-radius, var(--radius)) !important;
+}
+.rounded-xs {
+  border-radius: var(--theme-radius-xs, var(--radius-xs)) !important;
+}
+.rounded-sm {
+  border-radius: var(--theme-radius-sm, var(--radius-sm)) !important;
+}
+.rounded-md {
+  border-radius: var(--theme-radius-md, var(--radius-md)) !important;
+}
+.rounded-lg {
+  border-radius: var(--theme-radius-lg, var(--radius-lg)) !important;
+}
+.rounded-xl {
+  border-radius: var(--theme-radius-xl, var(--radius-xl)) !important;
+}
+.rounded-2xl {
+  border-radius: var(--theme-radius-2xl, var(--radius-2xl)) !important;
+}
+.rounded-3xl {
+  border-radius: var(--theme-radius-3xl, var(--radius-3xl)) !important;
+}
 
-.rounded-t-sm { border-top-left-radius: var(--theme-radius-sm, var(--radius-sm)) !important; border-top-right-radius: var(--theme-radius-sm, var(--radius-sm)) !important; }
-.rounded-t-md { border-top-left-radius: var(--theme-radius-md, var(--radius-md)) !important; border-top-right-radius: var(--theme-radius-md, var(--radius-md)) !important; }
-.rounded-t-lg { border-top-left-radius: var(--theme-radius-lg, var(--radius-lg)) !important; border-top-right-radius: var(--theme-radius-lg, var(--radius-lg)) !important; }
-.rounded-t-xl { border-top-left-radius: var(--theme-radius-xl, var(--radius-xl)) !important; border-top-right-radius: var(--theme-radius-xl, var(--radius-xl)) !important; }
-.rounded-t-2xl { border-top-left-radius: var(--theme-radius-2xl, var(--radius-2xl)) !important; border-top-right-radius: var(--theme-radius-2xl, var(--radius-2xl)) !important; }
+.rounded-t-sm {
+  border-top-left-radius: var(--theme-radius-sm, var(--radius-sm)) !important;
+  border-top-right-radius: var(--theme-radius-sm, var(--radius-sm)) !important;
+}
+.rounded-t-md {
+  border-top-left-radius: var(--theme-radius-md, var(--radius-md)) !important;
+  border-top-right-radius: var(--theme-radius-md, var(--radius-md)) !important;
+}
+.rounded-t-lg {
+  border-top-left-radius: var(--theme-radius-lg, var(--radius-lg)) !important;
+  border-top-right-radius: var(--theme-radius-lg, var(--radius-lg)) !important;
+}
+.rounded-t-xl {
+  border-top-left-radius: var(--theme-radius-xl, var(--radius-xl)) !important;
+  border-top-right-radius: var(--theme-radius-xl, var(--radius-xl)) !important;
+}
+.rounded-t-2xl {
+  border-top-left-radius: var(--theme-radius-2xl, var(--radius-2xl)) !important;
+  border-top-right-radius: var(--theme-radius-2xl, var(--radius-2xl)) !important;
+}
 
-.rounded-b-sm { border-bottom-left-radius: var(--theme-radius-sm, var(--radius-sm)) !important; border-bottom-right-radius: var(--theme-radius-sm, var(--radius-sm)) !important; }
-.rounded-b-md { border-bottom-left-radius: var(--theme-radius-md, var(--radius-md)) !important; border-bottom-right-radius: var(--theme-radius-md, var(--radius-md)) !important; }
-.rounded-b-lg { border-bottom-left-radius: var(--theme-radius-lg, var(--radius-lg)) !important; border-bottom-right-radius: var(--theme-radius-lg, var(--radius-lg)) !important; }
-.rounded-b-xl { border-bottom-left-radius: var(--theme-radius-xl, var(--radius-xl)) !important; border-bottom-right-radius: var(--theme-radius-xl, var(--radius-xl)) !important; }
-.rounded-b-2xl { border-bottom-left-radius: var(--theme-radius-2xl, var(--radius-2xl)) !important; border-bottom-right-radius: var(--theme-radius-2xl, var(--radius-2xl)) !important; }
+.rounded-b-sm {
+  border-bottom-left-radius: var(--theme-radius-sm, var(--radius-sm)) !important;
+  border-bottom-right-radius: var(--theme-radius-sm, var(--radius-sm)) !important;
+}
+.rounded-b-md {
+  border-bottom-left-radius: var(--theme-radius-md, var(--radius-md)) !important;
+  border-bottom-right-radius: var(--theme-radius-md, var(--radius-md)) !important;
+}
+.rounded-b-lg {
+  border-bottom-left-radius: var(--theme-radius-lg, var(--radius-lg)) !important;
+  border-bottom-right-radius: var(--theme-radius-lg, var(--radius-lg)) !important;
+}
+.rounded-b-xl {
+  border-bottom-left-radius: var(--theme-radius-xl, var(--radius-xl)) !important;
+  border-bottom-right-radius: var(--theme-radius-xl, var(--radius-xl)) !important;
+}
+.rounded-b-2xl {
+  border-bottom-left-radius: var(--theme-radius-2xl, var(--radius-2xl)) !important;
+  border-bottom-right-radius: var(--theme-radius-2xl, var(--radius-2xl)) !important;
+}
 
-.rounded-none { border-radius: 0px !important; }
-.rounded-full { border-radius: 9999px !important; }
+.rounded-none {
+  border-radius: 0px !important;
+}
+.rounded-full {
+  border-radius: 9999px !important;
+}
 
 /* =============================================================================
    Sistema de Movimento (Animações, Transições e Efeitos)
@@ -626,11 +710,15 @@ svg.lucide, .lucide, .font-dings {
 }
 
 @keyframes lm-fade-in {
-  from { opacity: 0; }
+  from {
+    opacity: 0;
+  }
 }
 
 @keyframes lm-fade-out {
-  to { opacity: 0; }
+  to {
+    opacity: 0;
+  }
 }
 
 @keyframes lm-toast-in {
@@ -641,28 +729,62 @@ svg.lucide, .lucide, .font-dings {
 }
 
 @keyframes lm-pop {
-  0% { opacity: 0; transform: scale(max(0.6, calc(1 - (1 - var(--motion-press-scale)) * 12))); }
-  60% { opacity: 1; transform: scale(calc(1 + (1 - var(--motion-press-scale)) * 1.5)); }
-  100% { transform: scale(1); }
+  0% {
+    opacity: 0;
+    transform: scale(max(0.6, calc(1 - (1 - var(--motion-press-scale)) * 12)));
+  }
+  60% {
+    opacity: 1;
+    transform: scale(calc(1 + (1 - var(--motion-press-scale)) * 1.5));
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 @keyframes lm-breathe {
-  50% { opacity: 0.6; }
+  50% {
+    opacity: 0.6;
+  }
 }
 
 /* Interações básicas (camada base: utilitários do Tailwind têm prioridade) */
 @layer base {
-  :where(button, a[href], [role="button"], [role="tab"], [role="switch"], summary, select, input, textarea) {
-    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, box-shadow, opacity, scale;
+  :where(
+    button,
+    a[href],
+    [role="button"],
+    [role="tab"],
+    [role="switch"],
+    summary,
+    select,
+    input,
+    textarea
+  ) {
+    transition-property:
+      color, background-color, border-color, outline-color, text-decoration-color, fill, stroke,
+      box-shadow, opacity, scale;
     transition-duration: var(--motion-d-fast);
     transition-timing-function: var(--motion-ease);
   }
 
-  :root:not([data-motion-off~="interactions"]) :where(button, [role="button"], [role="tab"]):where(:not(:disabled)):active {
+  :root:not([data-motion-off~="interactions"])
+    :where(button, [role="button"], [role="tab"]):where(:not(:disabled)):active {
     scale: var(--motion-press-scale);
   }
 
-  :root[data-motion-off~="interactions"] :where(button, a[href], [role="button"], [role="tab"], [role="switch"], summary, select, input, textarea) {
+  :root[data-motion-off~="interactions"]
+    :where(
+      button,
+      a[href],
+      [role="button"],
+      [role="tab"],
+      [role="switch"],
+      summary,
+      select,
+      input,
+      textarea
+    ) {
     transition-duration: 0s;
   }
 }
@@ -675,11 +797,22 @@ svg.lucide, .lucide, .font-dings {
   }
 
   /* Modais, painéis, menus e as classes animate-in/fade-in já usadas pela aplicação */
-  :root:not([data-motion-off~="overlays"]) :where([role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], .motion-dialog, .animate-in, .animate-fade-in, .animate-fade) {
+  :root:not([data-motion-off~="overlays"])
+    :where(
+      [role="dialog"],
+      [role="alertdialog"],
+      [role="menu"],
+      [role="listbox"],
+      .motion-dialog,
+      .animate-in,
+      .animate-fade-in,
+      .animate-fade
+    ) {
     animation: lm-enter var(--motion-d-base) var(--motion-ease) backwards;
   }
 
-  :root:not([data-motion-off~="overlays"]) :where(.motion-backdrop, .fixed.inset-0[class*="bg-black/"]) {
+  :root:not([data-motion-off~="overlays"])
+    :where(.motion-backdrop, .fixed.inset-0[class*="bg-black/"]) {
     animation: lm-fade-in var(--motion-d-fast) ease-out backwards;
   }
 
@@ -724,24 +857,51 @@ svg.lucide, .lucide, .font-dings {
   }
 }
 
-:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(2) { animation-delay: calc(45ms * var(--motion-factor, 1)); }
-:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(3) { animation-delay: calc(90ms * var(--motion-factor, 1)); }
-:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(4) { animation-delay: calc(135ms * var(--motion-factor, 1)); }
-:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(5) { animation-delay: calc(180ms * var(--motion-factor, 1)); }
-:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(6) { animation-delay: calc(225ms * var(--motion-factor, 1)); }
-:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(7) { animation-delay: calc(270ms * var(--motion-factor, 1)); }
-:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(8) { animation-delay: calc(315ms * var(--motion-factor, 1)); }
-:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(9) { animation-delay: calc(360ms * var(--motion-factor, 1)); }
-:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(10) { animation-delay: calc(405ms * var(--motion-factor, 1)); }
-:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(11) { animation-delay: calc(450ms * var(--motion-factor, 1)); }
-:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(12) { animation-delay: calc(495ms * var(--motion-factor, 1)); }
-:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(n + 13) { animation-delay: calc(540ms * var(--motion-factor, 1)); }
+:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(2) {
+  animation-delay: calc(45ms * var(--motion-factor, 1));
+}
+:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(3) {
+  animation-delay: calc(90ms * var(--motion-factor, 1));
+}
+:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(4) {
+  animation-delay: calc(135ms * var(--motion-factor, 1));
+}
+:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(5) {
+  animation-delay: calc(180ms * var(--motion-factor, 1));
+}
+:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(6) {
+  animation-delay: calc(225ms * var(--motion-factor, 1));
+}
+:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(7) {
+  animation-delay: calc(270ms * var(--motion-factor, 1));
+}
+:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(8) {
+  animation-delay: calc(315ms * var(--motion-factor, 1));
+}
+:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(9) {
+  animation-delay: calc(360ms * var(--motion-factor, 1));
+}
+:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(10) {
+  animation-delay: calc(405ms * var(--motion-factor, 1));
+}
+:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(11) {
+  animation-delay: calc(450ms * var(--motion-factor, 1));
+}
+:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(12) {
+  animation-delay: calc(495ms * var(--motion-factor, 1));
+}
+:root:not([data-motion-off~="lists"]) :where(.motion-stagger) > :nth-child(n + 13) {
+  animation-delay: calc(540ms * var(--motion-factor, 1));
+}
 
 /* Elevação no hover para cartões interativos */
 @media (hover: hover) {
   :root:not([data-motion-off~="interactions"]) .motion-lift {
-    transition: transform var(--motion-d-fast) var(--motion-ease), box-shadow var(--motion-d-fast) var(--motion-ease),
-      border-color var(--motion-d-fast) var(--motion-ease), background-color var(--motion-d-fast) var(--motion-ease);
+    transition:
+      transform var(--motion-d-fast) var(--motion-ease),
+      box-shadow var(--motion-d-fast) var(--motion-ease),
+      border-color var(--motion-d-fast) var(--motion-ease),
+      background-color var(--motion-d-fast) var(--motion-ease);
   }
 
   :root:not([data-motion-off~="interactions"]) .motion-lift:hover {
@@ -756,17 +916,42 @@ svg.lucide, .lucide, .font-dings {
 }
 
 /* Durações explícitas do Tailwind também seguem a velocidade escolhida */
-.duration-75 { --tw-duration: calc(75ms * var(--motion-factor, 1)); transition-duration: calc(75ms * var(--motion-factor, 1)); }
-.duration-100 { --tw-duration: calc(100ms * var(--motion-factor, 1)); transition-duration: calc(100ms * var(--motion-factor, 1)); }
-.duration-150 { --tw-duration: calc(150ms * var(--motion-factor, 1)); transition-duration: calc(150ms * var(--motion-factor, 1)); }
-.duration-200 { --tw-duration: calc(200ms * var(--motion-factor, 1)); transition-duration: calc(200ms * var(--motion-factor, 1)); }
-.duration-300 { --tw-duration: calc(300ms * var(--motion-factor, 1)); transition-duration: calc(300ms * var(--motion-factor, 1)); }
-.duration-500 { --tw-duration: calc(500ms * var(--motion-factor, 1)); transition-duration: calc(500ms * var(--motion-factor, 1)); }
-.duration-700 { --tw-duration: calc(700ms * var(--motion-factor, 1)); transition-duration: calc(700ms * var(--motion-factor, 1)); }
-.duration-1000 { --tw-duration: calc(1000ms * var(--motion-factor, 1)); transition-duration: calc(1000ms * var(--motion-factor, 1)); }
+.duration-75 {
+  --tw-duration: calc(75ms * var(--motion-factor, 1));
+  transition-duration: calc(75ms * var(--motion-factor, 1));
+}
+.duration-100 {
+  --tw-duration: calc(100ms * var(--motion-factor, 1));
+  transition-duration: calc(100ms * var(--motion-factor, 1));
+}
+.duration-150 {
+  --tw-duration: calc(150ms * var(--motion-factor, 1));
+  transition-duration: calc(150ms * var(--motion-factor, 1));
+}
+.duration-200 {
+  --tw-duration: calc(200ms * var(--motion-factor, 1));
+  transition-duration: calc(200ms * var(--motion-factor, 1));
+}
+.duration-300 {
+  --tw-duration: calc(300ms * var(--motion-factor, 1));
+  transition-duration: calc(300ms * var(--motion-factor, 1));
+}
+.duration-500 {
+  --tw-duration: calc(500ms * var(--motion-factor, 1));
+  transition-duration: calc(500ms * var(--motion-factor, 1));
+}
+.duration-700 {
+  --tw-duration: calc(700ms * var(--motion-factor, 1));
+  transition-duration: calc(700ms * var(--motion-factor, 1));
+}
+.duration-1000 {
+  --tw-duration: calc(1000ms * var(--motion-factor, 1));
+  transition-duration: calc(1000ms * var(--motion-factor, 1));
+}
 
 /* Efeitos contínuos desligados */
-:root[data-motion-off~="ambient"] :is(.animate-pulse, .animate-ping, .animate-bounce, .animate-spin-slow) {
+:root[data-motion-off~="ambient"]
+  :is(.animate-pulse, .animate-ping, .animate-bounce, .animate-spin-slow) {
   animation: none !important;
 }
 

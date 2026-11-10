@@ -41,12 +41,14 @@ Vincula um personagem existente do jogador autenticado a uma campanha específic
 #### Requisição
 
 **Headers:**
+
 ```
 Authorization: Bearer <session-token>
 Content-Type: application/json
 ```
 
 **Body:**
+
 ```json
 {
   "characterId": "550e8400-e29b-41d4-a716-446655440000"
@@ -59,7 +61,7 @@ O endpoint aplica as seguintes validações na ordem:
 
 1. **Autenticação obrigatória** (401)
    - O usuário deve estar autenticado
-   
+
 2. **Formato UUID válido** (400)
    - `characterId` deve ser um UUID válido
 
@@ -79,6 +81,7 @@ O endpoint aplica as seguintes validações na ordem:
 #### Respostas
 
 **201 Created** — Vínculo criado com sucesso
+
 ```json
 {
   "success": true,
@@ -92,6 +95,7 @@ O endpoint aplica as seguintes validações na ordem:
 ```
 
 **400 Bad Request** — UUID inválido
+
 ```json
 {
   "success": false,
@@ -101,6 +105,7 @@ O endpoint aplica as seguintes validações na ordem:
 ```
 
 **401 Unauthorized** — Não autenticado
+
 ```json
 {
   "success": false,
@@ -109,6 +114,7 @@ O endpoint aplica as seguintes validações na ordem:
 ```
 
 **403 Forbidden** — Sem convite ativo
+
 ```json
 {
   "success": false,
@@ -117,6 +123,7 @@ O endpoint aplica as seguintes validações na ordem:
 ```
 
 **404 Not Found** — Personagem não encontrado ou não pertence ao usuário
+
 ```json
 {
   "success": false,
@@ -125,6 +132,7 @@ O endpoint aplica as seguintes validações na ordem:
 ```
 
 **409 Conflict** — Personagem já vinculado
+
 ```json
 {
   "success": false,
@@ -133,6 +141,7 @@ O endpoint aplica as seguintes validações na ordem:
 ```
 
 **500 Internal Server Error** — Erro interno
+
 ```json
 {
   "success": false,
@@ -207,13 +216,16 @@ Isso força o refetch da lista de campanhas, atualizando a UI com o personagem r
 ## Arquivos Relacionados
 
 ### Backend
+
 - `src/app/api/campaigns/[id]/import-character/route.ts` — Endpoint de importação
 - `src/app/api/campaigns/[id]/import-character/__tests__/route.test.ts` — Testes de API
 
 ### Frontend
+
 - `src/components/player/PlayerDashboard.tsx` — Modal de importação e integração de UI
 - `src/components/player/__tests__/PlayerDashboard.import.test.tsx` — Testes de UI
 - `src/lib/client/queryKeys.ts` — Chaves de query para cache
 
 ### Documentação
+
 - `docs/character-campaign-import.md` — Este documento

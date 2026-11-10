@@ -871,11 +871,7 @@ export async function removeUserFromCampaign(
   masterId: string,
   userId: string,
 ): Promise<void> {
-  const [campaign] = await db
-    .select()
-    .from(campaigns)
-    .where(eq(campaigns.id, campaignId))
-    .limit(1);
+  const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, campaignId)).limit(1);
 
   if (!campaign) {
     throw new Error("Campanha não encontrada");
@@ -933,7 +929,12 @@ export async function buildSharePayload(input: ShareInput, actorId: string): Pro
     const rows = await db
       .select()
       .from(table)
-      .where(and(eq(getContentIdColumn(contentType), input.id), isNull(getContentCampaignColumn(contentType))))
+      .where(
+        and(
+          eq(getContentIdColumn(contentType), input.id),
+          isNull(getContentCampaignColumn(contentType)),
+        ),
+      )
       .limit(1);
     const row = rows[0] as Record<string, unknown> | undefined;
     if (!row) {
@@ -1011,11 +1012,7 @@ export async function buildSharePayload(input: ShareInput, actorId: string): Pro
   }
 
   // kind === "campaign"
-  const [campaign] = await db
-    .select()
-    .from(campaigns)
-    .where(eq(campaigns.id, input.id))
-    .limit(1);
+  const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, input.id)).limit(1);
   if (!campaign) {
     throw new Error("Campanha não encontrada");
   }
