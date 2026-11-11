@@ -8,6 +8,12 @@
 import React from "react";
 import type { FalloutBodyLocation, FalloutBodyPart } from "@/lib/systems/fallout/types";
 import { FALLOUT_BODY_LOCATIONS } from "@/lib/systems/fallout/types";
+import {
+  getPaperdollImage,
+  getPaperdollPartState,
+  PIPBOY_GREEN_FILTER,
+  type PaperdollActorKind,
+} from "@/lib/systems/fallout/assets";
 import { Shield, Zap, Skull, Biohazard } from "lucide-react";
 
 interface PipBoyPaperdollProps {
@@ -15,6 +21,7 @@ interface PipBoyPaperdollProps {
   onUpdateBodyPart?: (location: FalloutBodyLocation, patch: Partial<FalloutBodyPart>) => void;
   readOnly?: boolean;
   className?: string;
+  actorKind?: PaperdollActorKind;
 }
 
 export function PipBoyPaperdoll({
@@ -22,6 +29,7 @@ export function PipBoyPaperdoll({
   onUpdateBodyPart,
   readOnly = false,
   className = "",
+  actorKind = "character",
 }: PipBoyPaperdollProps) {
   const toggleInjury = (location: FalloutBodyLocation) => {
     if (readOnly || !onUpdateBodyPart) return;
@@ -115,6 +123,30 @@ export function PipBoyPaperdoll({
           Monitor de Membros &amp; Armadura
         </h4>
         <span className="text-[10px] text-emerald-400/70">Tabela de Localização d20</span>
+      </div>
+
+      {/* Silhueta oficial em camadas (Vault Boy / Mister Handy) */}
+      <div
+        data-testid="pipboy-paperdoll-figure"
+        className="relative mx-auto mb-3 aspect-square w-full max-w-[220px] select-none"
+        aria-hidden="true"
+      >
+        {FALLOUT_BODY_LOCATIONS.map((loc) => {
+          const part = bodyParts[loc];
+          if (!part) return null;
+          const state = getPaperdollPartState(part.injuries);
+          return (
+            <div
+              key={loc}
+              className="pointer-events-none absolute inset-0 bg-no-repeat"
+              style={{
+                backgroundImage: `url(${getPaperdollImage(actorKind, loc, state)})`,
+                backgroundSize: "100% 100%",
+                filter: PIPBOY_GREEN_FILTER,
+              }}
+            />
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">

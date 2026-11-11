@@ -12,6 +12,7 @@ import {
   campaignInvites,
   missingHabitants,
   missingActionLedger,
+  falloutCharacters,
 } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { eq, and } from "drizzle-orm";
@@ -26,7 +27,8 @@ const importCharacterSchema = z.object({
 
 /**
  * POST /api/campaigns/:id/import-character
- * Vincula um personagem (d20) ou habitante (MISSING) existente do jogador a uma campanha.
+ * Vincula uma ficha existente do jogador à campanha, respeitando o motor de regras:
+ * d20 (characters + characterCampaigns), MISSING (habitante) ou Fallout 2d20 (sobrevivente).
  */
 export async function POST(request: NextRequest, { params }: RouteContext) {
   try {
@@ -148,7 +150,48 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       );
     }
 
-    // 4. Fluxo existente para personagens d20 (characters + characterCampaigns)
+    // 4. Rota específica para Fallout 2d20 (vínculo via campaignId da ficha)
+    if (campaign.rulesEngine === "fallout_2d20") {
+      const [falloutCharacter] = await db
+        .select()
+        .from(falloutCharacters)
+        .where(
+          and(eq(falloutCharacters.id, characterId), eq(falloutCharacters.ownerId, session.user.id)),
+        )
+        .limit(1);
+
+      if (!falloutCharacter) {
+        return NextResponse.json(
+          { success: false, error: "Sobrevivente não encontrado" },
+          { status: 404 },
+        );
+      }
+
+      if (falloutCharacter.campaignId === campaignId) {
+        return NextResponse.json(
+          { success: false, error: "Este sobrevivente já está nesta campanha" },
+          { status: 409 },
+        );
+      }
+
+      await db
+        .update(falloutCharacters)
+        .set({ campaignId, updatedAt: new Date() })
+        .where(eq(falloutCharacters.id, falloutCharacter.id));
+
+      return NextResponse.json(
+        {
+          success: true,
+          data: {
+            characterId: falloutCharacter.id,
+            campaignId,
+          },
+        },
+        { status: 201 },
+      );
+    }
+
+    // 5. Fluxo existente para personagens d20 (characters + characterCampaigns)
     const [character] = await db
       .select()
       .from(characters)

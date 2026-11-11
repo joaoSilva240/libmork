@@ -1,0 +1,46 @@
+Assets de interface do sistema Fallout 2d20
+===========================================
+
+Origem: https://github.com/Muttley/foundryvtt-fallout
+(sistema comunitário "Fallout: The Roleplaying Game" para Foundry VTT)
+
+Licença do software: MIT License
+Copyright (c) 2020 Asacolips Projects / Foundry Mods
+Copyright (c) 2023 Paul Maskelyne
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+AVISO SOBRE DIREITOS AUTORAIS DOS ASSETS
+----------------------------------------
+Conforme o repositório de origem:
+
+  "All copyright assets used with explicit consent from Modiphius Entertainment.
+   The developer holds no claim to underlying copyrighted assets."
+
+A arte (paperdoll do Vault Boy/Mister Handy, faces dos dados de combate,
+ícones e demais imagens) é propriedade da Modiphius Entertainment / Bethesda
+Softworks, incluída no sistema Foundry VTT com consentimento explícito da
+Modiphius para aquele projeto. O consentimento original não se estende
+automaticamente a outros produtos. Estes arquivos são mantidos aqui para uso
+em mesas privadas/educacionais; antes de qualquer distribuição pública ou
+comercial do Libmork com esta arte, obtenha autorização própria da Modiphius
+ou substitua os assets por arte original/licenciada.
+
+Os ícones em public/assets/conditions/ provêm da mesma origem
+(system/assets/icons/conditions/) e estão sujeitos ao mesmo aviso.

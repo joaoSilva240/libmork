@@ -17,11 +17,18 @@ import {
   type FalloutRollResult,
   type CombatDiceRollResult,
   type FalloutCharacter,
+  type FalloutBodyLocation,
 } from "@/lib/systems/fallout/types";
 import { roll2d20, rollCombatDice, calculateHitLocation } from "@/lib/systems/fallout/rules";
+import {
+  getCombatDieFace,
+  getD20Icon,
+  getHitLocationIcon,
+  type D20DieState,
+} from "@/lib/systems/fallout/assets";
 import { showDice3D } from "@/lib/dice3d";
 import { useSocket } from "@/context/SocketContext";
-import { Dices, Crosshair, Zap, AlertTriangle, CheckCircle2, Flame } from "lucide-react";
+import { Dices, Zap, AlertTriangle, CheckCircle2, Flame } from "lucide-react";
 
 interface FalloutDiceRollerModalProps {
   isOpen: boolean;
@@ -119,6 +126,7 @@ export function FalloutDiceRollerModal({
         }`,
         hit: result.isSuccess,
         rolledDice: result.dice.map((d) => ({ sides: 20 as const, value: d.value })),
+        system: "fallout_2d20",
       });
 
       emitFalloutDiceRoll({
@@ -157,6 +165,7 @@ export function FalloutDiceRollerModal({
         damage: result.totalDamage,
         diceDetail: `${weaponLabel}: ${result.totalDamage} de Dano e ${result.totalEffects} Efeito(s) [${facesStr}]`,
         rolledDice: result.dice.map((d) => ({ sides: 6 as const, value: d.dieValue })),
+        system: "fallout_2d20",
       });
     }
   };
@@ -373,24 +382,49 @@ export function FalloutDiceRollerModal({
 
                 {/* Dados individuais */}
                 <div className="flex flex-wrap gap-2 pt-1">
-                  {last2d20Result.dice.map((d, idx) => (
-                    <div
-                      key={idx}
-                      className={`px-2.5 py-1.5 rounded border text-xs font-bold flex items-center gap-1 ${
-                        d.isCritical
-                          ? "bg-amber-500/30 border-amber-300 text-amber-200"
-                          : d.isComplication
-                            ? "bg-red-600/30 border-red-400 text-red-200"
-                            : d.successes > 0
-                              ? "bg-emerald-600/30 border-emerald-400 text-emerald-200"
-                              : "bg-zinc-900 border-zinc-700 text-zinc-400"
-                      }`}
-                    >
-                      <span>d20: {d.value}</span>
-                      {d.isCritical && <span title="Acerto Crítico (2 sucessos)">★2</span>}
-                      {d.isComplication && <span title="Complicação!">⚠️</span>}
-                    </div>
-                  ))}
+                  {last2d20Result.dice.map((d, idx) => {
+                    const state: D20DieState = d.isCritical
+                      ? "crit"
+                      : d.isComplication
+                        ? "complication"
+                        : d.successes > 0
+                          ? "success"
+                          : "neutral";
+                    return (
+                      <div
+                        key={idx}
+                        className="relative h-11 w-11"
+                        title={
+                          d.isCritical
+                            ? "Acerto Crítico (2 sucessos)"
+                            : d.isComplication
+                              ? "Complicação!"
+                              : d.successes > 0
+                                ? "Sucesso"
+                                : "Falha"
+                        }
+                      >
+                        <img
+                          src={getD20Icon(state)}
+                          alt=""
+                          aria-hidden="true"
+                          className="absolute inset-0 h-full w-full"
+                        />
+                        <span
+                          className={`absolute inset-0 flex items-center justify-center text-sm font-black ${
+                            state === "complication" ? "text-white" : "text-zinc-900"
+                          }`}
+                        >
+                          {d.value}
+                        </span>
+                        {d.isCritical && (
+                          <span className="absolute -right-1 -top-1 rounded-full bg-amber-400 px-1 text-[9px] font-black text-black shadow">
+                            ★2
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <div className="flex items-center justify-between text-xs pt-1 border-t border-emerald-500/20">
@@ -403,9 +437,14 @@ export function FalloutDiceRollerModal({
                   )}
 
                   {lastHitLocation && (
-                    <span className="text-emerald-200 flex items-center gap-1">
-                      <Crosshair size={12} /> Local: <strong>{lastHitLocation.label}</strong> (
-                      {lastHitLocation.roll})
+                    <span className="text-emerald-200 flex items-center gap-1.5">
+                      <img
+                        src={getHitLocationIcon(lastHitLocation.location as FalloutBodyLocation)}
+                        alt=""
+                        aria-hidden="true"
+                        className="h-6 w-6"
+                      />
+                      Local: <strong>{lastHitLocation.label}</strong> ({lastHitLocation.roll})
                     </span>
                   )}
                 </div>
@@ -443,9 +482,21 @@ export function FalloutDiceRollerModal({
               </div>
             </div>
 
-            <div className="text-[11px] text-amber-300/80 bg-amber-950/20 border border-amber-500/30 rounded p-2.5">
-              Faces do Dado de Combate ($DC$): <strong>[1]</strong> = 1 Dano | <strong>[2]</strong>{" "}
-              = 2 Danos | <strong>[3-4]</strong> = 0 | <strong>[5-6]</strong> = 1 Dano + 1 Efeito ⚡
+            <div className="bg-amber-950/20 border border-amber-500/30 rounded p-2.5 space-y-1.5">
+              <div className="text-[11px] text-amber-300/80">Faces do Dado de Combate (DC):</div>
+              <div className="flex items-center gap-2">
+                {[1, 2, 3, 4, 5, 6].map((face) => (
+                  <img
+                    key={face}
+                    src={getCombatDieFace(face)}
+                    alt={`Face ${face}`}
+                    className="h-7 w-7"
+                  />
+                ))}
+              </div>
+              <div className="text-[10px] text-amber-300/70">
+                1 = 1 dano · 2 = 2 danos · 3-4 = 0 · 5-6 = 1 dano + efeito ⚡
+              </div>
             </div>
 
             <button
@@ -470,19 +521,22 @@ export function FalloutDiceRollerModal({
 
                 <div className="flex flex-wrap gap-1.5 pt-1">
                   {lastCombatResult.dice.map((d, i) => (
-                    <span
+                    <div
                       key={i}
-                      className={`px-2 py-1 rounded border text-xs font-bold ${
-                        d.effect
-                          ? "bg-amber-500/30 border-amber-300 text-amber-100"
-                          : d.damage > 0
-                            ? "bg-emerald-900/40 border-emerald-500/50 text-emerald-200"
-                            : "bg-zinc-900 border-zinc-700 text-zinc-500"
-                      }`}
+                      className="relative h-9 w-9"
+                      title={`Face ${d.dieValue}: ${d.damage} de dano${d.effect ? " + efeito" : ""}`}
                     >
-                      [{d.dieValue}] → {d.damage}
-                      {d.effect ? " + ⚡" : ""}
-                    </span>
+                      <img
+                        src={getCombatDieFace(d.dieValue)}
+                        alt={`Dado de combate: ${d.damage} de dano`}
+                        className="h-full w-full"
+                      />
+                      {d.effect && (
+                        <span className="absolute -right-1 -top-1 rounded-full bg-amber-400 px-0.5 text-[9px] font-black text-black shadow">
+                          ⚡
+                        </span>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>

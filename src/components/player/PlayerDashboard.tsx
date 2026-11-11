@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import type { Character, PlayerCampaign, PlayerCampaignDetails } from "@/types";
 import type { MissingHabitant, EquipmentStatus } from "@/lib/systems/missing/types";
 import type { FalloutCharacter } from "@/lib/systems/fallout/types";
+import { getCharacterCreationHref, getCharacterNoun } from "@/lib/systems/rules-engine";
 import { CharacterCard } from "@/components/characters/CharacterCard";
 import { MissingHabitantCard } from "@/components/systems/missing/MissingHabitantCard";
 import { MissingHabitantSheet } from "@/components/systems/missing/MissingHabitantSheet";
@@ -32,6 +33,10 @@ import { JukeboxAudioBridge } from "@/components/audio/JukeboxAudioBridge";
 import { PlayerAssetOverlay } from "@/components/campaigns/PlayerAssetOverlay";
 import { ThemeConfigPanel } from "@/components/theme/ThemeConfigPanel";
 import { useTheme } from "@/context/ThemeContext";
+
+function capitalizeNoun(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
 
 /**
  * Mapeia o nível de reputação (reputationLevel / trustLevel) para exatamente 0 a 4 pontos (dots):
@@ -104,6 +109,9 @@ export function PlayerDashboard() {
   const [importingCampaignId, setImportingCampaignId] = useState<string | null>(null);
   const [importableCharacters, setImportableCharacters] = useState<Character[]>([]);
   const [importableHabitants, setImportableHabitants] = useState<MissingHabitant[]>([]);
+  const [importableFalloutCharacters, setImportableFalloutCharacters] = useState<FalloutCharacter[]>(
+    [],
+  );
   const [isLoadingImport, setIsLoadingImport] = useState(false);
   const [importSearch, setImportSearch] = useState("");
 
@@ -386,6 +394,7 @@ export function PlayerDashboard() {
       campaigns.find((c) => c.id === campaignId);
 
     const isMissing = targetCampaign?.rulesEngine === "missing_zero";
+    const isFallout = targetCampaign?.rulesEngine === "fallout_2d20";
 
     if (isMissing) {
       const available = missingHabitants.filter((h) => h.campaignId !== campaignId);
@@ -397,6 +406,23 @@ export function PlayerDashboard() {
 
       setImportableHabitants(available);
       setImportableCharacters([]);
+      setImportableFalloutCharacters([]);
+      setImportingCampaignId(campaignId);
+      setImportSearch("");
+      return;
+    }
+
+    if (isFallout) {
+      const available = falloutCharacters.filter((fc) => fc.campaignId !== campaignId);
+
+      if (available.length === 0) {
+        addToast("Você não tem sobreviventes para importar", "info");
+        return;
+      }
+
+      setImportableFalloutCharacters(available);
+      setImportableCharacters([]);
+      setImportableHabitants([]);
       setImportingCampaignId(campaignId);
       setImportSearch("");
       return;
@@ -412,6 +438,7 @@ export function PlayerDashboard() {
 
     setImportableCharacters(available);
     setImportableHabitants([]);
+    setImportableFalloutCharacters([]);
     setImportingCampaignId(campaignId);
     setImportSearch("");
   }
@@ -424,7 +451,8 @@ export function PlayerDashboard() {
       const targetCampaign =
         (selectedCampaign?.id === importingCampaignId ? selectedCampaign : null) ||
         campaigns.find((c) => c.id === importingCampaignId);
-      const isMissing = targetCampaign?.rulesEngine === "missing_zero";
+      const noun = getCharacterNoun(targetCampaign?.rulesEngine ?? "");
+      const nounCapitalized = noun.singular.charAt(0).toUpperCase() + noun.singular.slice(1);
 
       const response = await fetch(`/api/campaigns/${importingCampaignId}/import-character`, {
         method: "POST",
@@ -434,35 +462,25 @@ export function PlayerDashboard() {
       });
 
       if (response.status === 201) {
-        addToast(
-          isMissing ? "Habitante vinculado com sucesso!" : "Personagem vinculado com sucesso!",
-          "success",
-        );
+        addToast(`${nounCapitalized} vinculado com sucesso!`, "success");
 
-        // Recarregar campanhas e recarregar habitantes
-        await Promise.all([loadCampaigns(), loadMissingHabitants()]);
+        // Recarregar campanhas e as fichas de cada sistema
+        await Promise.all([loadCampaigns(), loadMissingHabitants(), loadFalloutCharacters()]);
 
         setImportingCampaignId(null);
         setImportableCharacters([]);
         setImportableHabitants([]);
+        setImportableFalloutCharacters([]);
         return;
       }
 
       if (response.status === 409) {
-        addToast(
-          isMissing
-            ? "Este habitante já está nesta campanha"
-            : "Este personagem já está nesta campanha",
-          "warning",
-        );
+        addToast(`Este ${noun.singular} já está nesta campanha`, "warning");
         return;
       }
 
       const data = await response.json().catch(() => ({}));
-      addToast(
-        data.error || (isMissing ? "Erro ao importar habitante" : "Erro ao importar personagem"),
-        "error",
-      );
+      addToast(data.error || `Erro ao importar ${noun.singular}`, "error");
     } catch {
       addToast("Erro de conexão. Tente novamente.", "error");
     } finally {
@@ -599,6 +617,10 @@ export function PlayerDashboard() {
     h.name.toLowerCase().includes(importSearch.toLowerCase()),
   );
 
+  const filteredImportableFalloutCharacters = importableFalloutCharacters.filter((fc) =>
+    fc.name.toLowerCase().includes(importSearch.toLowerCase()),
+  );
+
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -606,6 +628,7 @@ export function PlayerDashboard() {
         setImportingCampaignId(null);
         setImportableCharacters([]);
         setImportableHabitants([]);
+        setImportableFalloutCharacters([]);
         setSelectedHabitant(null);
         setSelectedFalloutCharacter(null);
       }
@@ -1745,17 +1768,14 @@ export function PlayerDashboard() {
                     {campaignDetailsTab === "resumo" && !hasAliveCharacter && (
                       <div className="space-y-2 border-t border-secondary-border pt-4">
                         <Link
-                          href={
-                            isMissing
-                              ? `/player/characters/new?campaignId=${selectedCampaign.id}&system=missing_zero`
-                              : `/player/characters/new?campaignId=${selectedCampaign.id}`
-                          }
+                          href={getCharacterCreationHref(
+                            selectedCampaign.rulesEngine,
+                            selectedCampaign.id,
+                          )}
                           className="block"
                         >
                           <Button variant="primary" className="w-full justify-center">
-                            {isMissing
-                              ? "+ Criar Habitante nesta Campanha"
-                              : "+ Criar Personagem nesta Campanha"}
+                            {`+ Criar ${capitalizeNoun(getCharacterNoun(selectedCampaign.rulesEngine).singular)} nesta Campanha`}
                           </Button>
                         </Link>
                         <button
@@ -1765,9 +1785,7 @@ export function PlayerDashboard() {
                           }
                           className="w-full rounded-xl border border-accent/40 bg-accent-glow py-2 text-sm font-semibold text-accent-vibrant [data-theme-mode=light]:text-accent-primary hover:bg-accent/20 transition-colors"
                         >
-                          {isMissing
-                            ? "↩ Importar Habitante Existente"
-                            : "↩ Importar Personagem Existente"}
+                          {`↩ Importar ${capitalizeNoun(getCharacterNoun(selectedCampaign.rulesEngine).singular)} Existente`}
                         </button>
                       </div>
                     )}
@@ -1784,6 +1802,9 @@ export function PlayerDashboard() {
               (selectedCampaign?.id === importingCampaignId ? selectedCampaign : null) ||
               campaigns.find((c) => c.id === importingCampaignId);
             const isImportingMissing = importingCampaign?.rulesEngine === "missing_zero";
+            const isImportingFallout = importingCampaign?.rulesEngine === "fallout_2d20";
+            const importNoun = getCharacterNoun(importingCampaign?.rulesEngine ?? "");
+            const importTitle = `Importar ${importNoun.singular.charAt(0).toUpperCase() + importNoun.singular.slice(1)}`;
 
             return (
               <div
@@ -1792,6 +1813,7 @@ export function PlayerDashboard() {
                   setImportingCampaignId(null);
                   setImportableCharacters([]);
                   setImportableHabitants([]);
+                  setImportableFalloutCharacters([]);
                   setImportSearch("");
                 }}
                 role="presentation"
@@ -1803,15 +1825,14 @@ export function PlayerDashboard() {
                   aria-modal="true"
                 >
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-bold text-secondary-pure">
-                      {isImportingMissing ? "Importar Habitante" : "Importar Personagem"}
-                    </h2>
+                    <h2 className="text-lg font-bold text-secondary-pure">{importTitle}</h2>
                     <button
                       type="button"
                       onClick={() => {
                         setImportingCampaignId(null);
                         setImportableCharacters([]);
                         setImportableHabitants([]);
+                        setImportableFalloutCharacters([]);
                         setImportSearch("");
                       }}
                       className="rounded-lg p-1.5 text-secondary-muted hover:bg-dominant-container hover:text-secondary-pure transition-colors"
@@ -1883,6 +1904,62 @@ export function PlayerDashboard() {
                                 disabled={isLoadingImport}
                                 onClick={() => handleImportCharacter(habitant.id)}
                                 className="shrink-0 rounded-lg border border-red-900/60 bg-red-950/60 px-3 py-1.5 text-xs font-semibold text-red-300 hover:bg-red-900/60 transition-colors disabled:opacity-50"
+                              >
+                                {isLoadingImport ? "…" : "Vincular"}
+                              </button>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  ) : isImportingFallout ? (
+                    <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+                      {filteredImportableFalloutCharacters.length === 0 ? (
+                        <p className="py-4 text-center text-sm text-emerald-700">
+                          Nenhum sobrevivente encontrado
+                        </p>
+                      ) : (
+                        filteredImportableFalloutCharacters.map((fc) => {
+                          const initials =
+                            fc.name
+                              .split(" ")
+                              .map((w) => w[0])
+                              .filter(Boolean)
+                              .slice(0, 2)
+                              .join("")
+                              .toUpperCase() || "S";
+
+                          return (
+                            <div
+                              key={fc.id}
+                              className="flex items-center justify-between rounded-lg border border-emerald-900/60 bg-[#0b120e] p-2.5 font-mono shadow-xs"
+                            >
+                              <div className="flex items-center gap-2.5 overflow-hidden">
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-950 border border-emerald-700/60 text-emerald-300 font-bold text-xs select-none">
+                                  {initials}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <p className="truncate text-xs font-semibold text-emerald-100">
+                                      {fc.name}
+                                    </p>
+                                    <span className="rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800/60 px-1.5 py-0.2 text-[9px] font-bold uppercase tracking-wider">
+                                      ☢ {fc.origin.replace(/_/g, " ")}
+                                    </span>
+                                  </div>
+                                  <p className="text-[11px] text-emerald-600">
+                                    Nível {fc.level} · PV:{" "}
+                                    <span className="text-emerald-300 font-medium">
+                                      {fc.hpCurrent}/{fc.hpMax}
+                                    </span>
+                                  </p>
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                disabled={isLoadingImport}
+                                onClick={() => handleImportCharacter(fc.id)}
+                                className="shrink-0 rounded-lg border border-emerald-700/60 bg-emerald-950/60 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-900/60 transition-colors disabled:opacity-50"
                               >
                                 {isLoadingImport ? "…" : "Vincular"}
                               </button>

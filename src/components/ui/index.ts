@@ -7,4 +7,5 @@ export { Modal } from "./Modal";
 export { ResizeHandle } from "./ResizeHandle";
 export type { ResizeHandleProps, ResizeHandlePosition } from "./ResizeHandle";
 export { OfflineSyncIndicator } from "./OfflineSyncIndicator";
+export { ConditionIcon } from "./ConditionIcon";
 export * from "./OptimizedImage";

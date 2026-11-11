@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/client/queryKeys";
+import { getConditionIconPath } from "@/lib/utils/conditionIcons";
 import {
   useCharacterContentQuery,
   useCharacterGalleryContentQuery,
@@ -386,10 +387,12 @@ function ContentImageIcon({
   src,
   type,
   iconClassName,
+  name,
 }: {
   src?: unknown;
   type: ContentType;
   iconClassName?: string;
+  name?: string;
 }) {
   const [hasError, setHasError] = useState(false);
   const imageUrl = typeof src === "string" ? src.trim() : "";
@@ -412,6 +415,17 @@ function ContentImageIcon({
   }
 
   if (type === "conditions") {
+    const conditionIcon = name ? getConditionIconPath(name) : null;
+    if (conditionIcon) {
+      return (
+        <img
+          src={conditionIcon}
+          alt=""
+          aria-hidden="true"
+          className="h-12 w-12 object-contain opacity-90"
+        />
+      );
+    }
     return (
       <span className={iconClassName || "text-3xl select-none leading-none text-rose-400"}>⚡</span>
     );
@@ -1457,6 +1471,7 @@ export function CharacterContent({
                           <ContentImageIcon
                             src={row.content.imageUrl}
                             type="conditions"
+                            name={conditionName}
                             iconClassName="text-4xl text-rose-400/80"
                           />
                         </div>

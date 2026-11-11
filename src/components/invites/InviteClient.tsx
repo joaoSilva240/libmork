@@ -4,7 +4,16 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Character } from "@/types";
+import type { MissingHabitant } from "@/lib/systems/missing/types";
+import type { FalloutCharacter } from "@/lib/systems/fallout/types";
 import type { PublicInvite } from "@/lib/server/public-invite";
+import {
+  getCharacterCreationHref,
+  getCharacterNoun,
+  getCreationSystem,
+  getRulesEngineLabel,
+  type CreationSystem,
+} from "@/lib/systems/rules-engine";
 import { Button } from "@/components/ui";
 
 type SessionUser = {
@@ -13,6 +22,8 @@ type SessionUser = {
   displayName: string;
   role: string;
 };
+
+type SelectableCharacter = { id: string; name: string; subtitle: string };
 
 type InviteClientProps = { invite: PublicInvite; token: string };
 const REQUEST_TIMEOUT_MS = 12_000;
@@ -57,10 +68,56 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<{ data: T;
   }
 }
 
+/** Carrega apenas as fichas do mesmo sistema da campanha, prontas para vínculo. */
+async function loadSelectableCharacters(
+  system: CreationSystem,
+  campaignId: string,
+): Promise<SelectableCharacter[]> {
+  if (system === "missing_zero") {
+    const { data } = await fetchJson<MissingHabitant[]>("/api/systems/missing/habitants");
+    return data
+      .filter((habitant) => habitant.campaignId !== campaignId)
+      .map((habitant) => {
+        const readableLines = habitant.lines.filter((line) => !line.isErased).length;
+        return {
+          id: habitant.id,
+          name: habitant.name,
+          subtitle: `${readableLines} ${readableLines === 1 ? "linha" : "linhas"}`,
+        };
+      });
+  }
+
+  if (system === "fallout_2d20") {
+    const { data } = await fetchJson<FalloutCharacter[]>("/api/systems/fallout/characters");
+    return data
+      .filter((character) => character.campaignId !== campaignId)
+      .map((character) => ({
+        id: character.id,
+        name: character.name,
+        subtitle: `Nível ${character.level} · ${character.origin.replace(/_/g, " ")}`,
+      }));
+  }
+
+  const { data } = await fetchJson<Character[]>("/api/characters");
+  return data.map((character) => ({
+    id: character.id,
+    name: character.name,
+    subtitle: `Nível ${character.level}`,
+  }));
+}
+
+function capitalize(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 export function InviteClient({ invite, token }: InviteClientProps) {
   const router = useRouter();
+  const creationSystem = getCreationSystem(invite.rulesEngine);
+  const noun = getCharacterNoun(invite.rulesEngine);
+  const createHref = getCharacterCreationHref(invite.rulesEngine, invite.campaignId);
+
   const [user, setUser] = useState<SessionUser | null>(null);
-  const [characters, setCharacters] = useState<Character[]>([]);
+  const [options, setOptions] = useState<SelectableCharacter[]>([]);
   const [selectedCharacterId, setSelectedCharacterId] = useState("");
   const [isSessionLoading, setIsSessionLoading] = useState(true);
   const [isJoining, setIsJoining] = useState(false);
@@ -86,14 +143,14 @@ export function InviteClient({ invite, token }: InviteClientProps) {
         if (cancelled) return;
         setUser(sessionResult.data);
         try {
-          const charactersResult = await fetchJson<Character[]>("/api/characters");
-          if (!cancelled) setCharacters(charactersResult.data);
+          const selectable = await loadSelectableCharacters(creationSystem, invite.campaignId);
+          if (!cancelled) setOptions(selectable);
         } catch (requestError) {
           if (!cancelled) {
             setCharactersError(
               requestError instanceof InviteRequestError
                 ? requestError.message
-                : "Não foi possível carregar seus personagens",
+                : `Não foi possível carregar seus ${noun.plural}`,
             );
           }
         }
@@ -115,7 +172,7 @@ export function InviteClient({ invite, token }: InviteClientProps) {
     return () => {
       cancelled = true;
     };
-  }, [retryCount]);
+  }, [retryCount, creationSystem, invite.campaignId, noun.plural]);
 
   const handleJoin = async () => {
     if (!selectedCharacterId) return;
@@ -148,7 +205,7 @@ export function InviteClient({ invite, token }: InviteClientProps) {
           </p>
           <h1 className="text-2xl font-bold text-secondary-pure">{invite.campaignName}</h1>
           <p className="mt-1 text-sm text-secondary-muted">
-            Motor: {invite.rulesEngine === "d20_mod" ? "d20 + modificador" : "2d20 somado"}
+            Motor: {getRulesEngineLabel(invite.rulesEngine)}
             {invite.pvpEnabled ? " · PvP ativado" : ""}
           </p>
           {error && (
@@ -183,31 +240,31 @@ export function InviteClient({ invite, token }: InviteClientProps) {
                   Tentar novamente
                 </Button>
               </div>
-            ) : characters.length === 0 ? (
+            ) : options.length === 0 ? (
               <div className="text-center">
                 <p className="mb-4 text-secondary-muted">
-                  Você ainda não tem personagens. Crie um para entrar na campanha.
+                  Você ainda não tem {noun.plural} deste sistema. Crie um para entrar na campanha.
                 </p>
-                <Link href="/player/characters/new" className="inline-block">
+                <Link href={createHref} className="inline-block">
                   <Button variant="primary" className="px-6 py-3 font-semibold">
-                    Criar Personagem
+                    Criar {capitalize(noun.singular)}
                   </Button>
                 </Link>
               </div>
             ) : (
               <div>
                 <label className="mb-2 block text-sm font-medium text-secondary-muted">
-                  Escolha o personagem que vai entrar na campanha
+                  Escolha o {noun.singular} que vai entrar na campanha
                 </label>
                 <select
                   value={selectedCharacterId}
                   onChange={(event) => setSelectedCharacterId(event.target.value)}
                   className="w-full rounded-lg border border-secondary-border bg-dominant-dark px-4 py-2 text-secondary-pure focus:border-accent-vibrant focus:outline-none focus:ring-2 focus:ring-accent"
                 >
-                  <option value="">Selecione um personagem</option>
-                  {characters.map((character) => (
+                  <option value="">Selecione um {noun.singular}</option>
+                  {options.map((character) => (
                     <option key={character.id} value={character.id}>
-                      {character.name} (Nível {character.level})
+                      {character.name} ({character.subtitle})
                     </option>
                   ))}
                 </select>
@@ -221,6 +278,16 @@ export function InviteClient({ invite, token }: InviteClientProps) {
                 >
                   Entrar na Campanha
                 </Button>
+                <p className="mt-3 text-center text-xs text-secondary-muted">
+                  Ou{" "}
+                  <Link
+                    href={createHref}
+                    className="font-semibold text-accent-vibrant hover:underline"
+                  >
+                    crie um novo {noun.singular}
+                  </Link>{" "}
+                  para esta campanha.
+                </p>
               </div>
             )}
           </div>

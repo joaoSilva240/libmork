@@ -42,6 +42,11 @@ vi.mock("@/lib/db/schema", () => ({
     campaignId: "missingHabitants.campaignId",
   },
   missingActionLedger: {},
+  falloutCharacters: {
+    id: "falloutCharacters.id",
+    ownerId: "falloutCharacters.ownerId",
+    campaignId: "falloutCharacters.campaignId",
+  },
 }));
 
 vi.mock("@/lib/auth/session", () => ({
@@ -451,6 +456,140 @@ describe("POST /api/campaigns/:id/import-character", () => {
         actorRole: "writer",
         eventType: "system",
       }),
+    );
+  });
+
+  // Tests for Fallout 2d20
+  it("should return 404 when fallout character does not exist or does not belong to user", async () => {
+    mockRequireAuth.mockResolvedValue({
+      user: { id: "user-1", email: "test@example.com", role: "player" },
+    });
+
+    const mockCampaignQuery = createSelectChain([
+      { id: "camp-fallout", masterId: "master-user", rulesEngine: "fallout_2d20" },
+    ]);
+    const mockInviteQuery = createSelectChain([
+      { userId: "user-1", campaignId: "camp-fallout", revoked: false },
+    ]);
+    const mockFalloutQuery = createSelectChain([]);
+
+    let callCount = 0;
+    mockDb.select.mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) return mockCampaignQuery;
+      if (callCount === 2) return mockInviteQuery;
+      return mockFalloutQuery;
+    });
+
+    const request = new NextRequest(
+      "http://localhost/api/campaigns/camp-fallout/import-character",
+      {
+        method: "POST",
+        body: JSON.stringify({ characterId: "550e8400-e29b-41d4-a716-446655440000" }),
+      },
+    );
+
+    const response = await POST(request, { params: Promise.resolve({ id: "camp-fallout" }) });
+    const data = await response.json();
+
+    expect(response.status).toBe(404);
+    expect(data.error).toBe("Sobrevivente não encontrado");
+  });
+
+  it("should return 409 when fallout character is already in this campaign", async () => {
+    mockRequireAuth.mockResolvedValue({
+      user: { id: "user-1", email: "test@example.com", role: "player" },
+    });
+
+    const mockCampaignQuery = createSelectChain([
+      { id: "camp-fallout", masterId: "master-user", rulesEngine: "fallout_2d20" },
+    ]);
+    const mockInviteQuery = createSelectChain([
+      { userId: "user-1", campaignId: "camp-fallout", revoked: false },
+    ]);
+    const mockFalloutQuery = createSelectChain([
+      {
+        id: "550e8400-e29b-41d4-a716-446655440000",
+        ownerId: "user-1",
+        campaignId: "camp-fallout",
+      },
+    ]);
+
+    let callCount = 0;
+    mockDb.select.mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) return mockCampaignQuery;
+      if (callCount === 2) return mockInviteQuery;
+      return mockFalloutQuery;
+    });
+
+    const request = new NextRequest(
+      "http://localhost/api/campaigns/camp-fallout/import-character",
+      {
+        method: "POST",
+        body: JSON.stringify({ characterId: "550e8400-e29b-41d4-a716-446655440000" }),
+      },
+    );
+
+    const response = await POST(request, { params: Promise.resolve({ id: "camp-fallout" }) });
+    const data = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(data.error).toBe("Este sobrevivente já está nesta campanha");
+  });
+
+  it("should update fallout character campaignId and return 201", async () => {
+    mockRequireAuth.mockResolvedValue({
+      user: { id: "user-1", email: "test@example.com", role: "player" },
+    });
+
+    const mockCampaignQuery = createSelectChain([
+      { id: "camp-fallout", masterId: "master-user", rulesEngine: "fallout_2d20" },
+    ]);
+    const mockInviteQuery = createSelectChain([
+      { userId: "user-1", campaignId: "camp-fallout", revoked: false },
+    ]);
+    const mockFalloutQuery = createSelectChain([
+      {
+        id: "550e8400-e29b-41d4-a716-446655440000",
+        name: "Cooper Howard",
+        ownerId: "user-1",
+        campaignId: null,
+      },
+    ]);
+
+    let callCount = 0;
+    mockDb.select.mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) return mockCampaignQuery;
+      if (callCount === 2) return mockInviteQuery;
+      return mockFalloutQuery;
+    });
+
+    const mockSet = vi.fn().mockReturnValue({
+      where: vi.fn().mockResolvedValue([{ id: "550e8400-e29b-41d4-a716-446655440000" }]),
+    });
+    mockDb.update.mockReturnValue({ set: mockSet });
+
+    const request = new NextRequest(
+      "http://localhost/api/campaigns/camp-fallout/import-character",
+      {
+        method: "POST",
+        body: JSON.stringify({ characterId: "550e8400-e29b-41d4-a716-446655440000" }),
+      },
+    );
+
+    const response = await POST(request, { params: Promise.resolve({ id: "camp-fallout" }) });
+    const data = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(data.success).toBe(true);
+    expect(data.data).toEqual({
+      characterId: "550e8400-e29b-41d4-a716-446655440000",
+      campaignId: "camp-fallout",
+    });
+    expect(mockSet).toHaveBeenCalledWith(
+      expect.objectContaining({ campaignId: "camp-fallout" }),
     );
   });
 });

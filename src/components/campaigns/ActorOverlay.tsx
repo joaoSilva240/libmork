@@ -6,6 +6,7 @@ import { getModifier, getBlockValue } from "@/lib/engine/attributes";
 import { getDefenseValue } from "@/lib/engine/combat";
 import type { CombatSessionState, Combatant } from "@/lib/engine";
 import { TargetSelectionModal } from "@/components/combat/TargetSelectionModal";
+import { ConditionIcon } from "@/components/ui";
 import {
   spendSpell,
   spendCombatActions,
@@ -1513,6 +1514,7 @@ export function ActorOverlay({
                               disabled={isBusy}
                               className="h-3.5 w-3.5 accent-purple-600"
                             />
+                            <ConditionIcon name={condition.name} className="h-4 w-4" />
                             {condition.name}
                           </label>
                         );

@@ -67,6 +67,7 @@ export interface RollDataPayload {
   senderRole?: "master" | "player";
   senderSocketId?: string;
   rolledDice?: Dice3DDie[];
+  system?: string;
 }
 
 import type { CombatSessionState, PendingDefenseReaction } from "@/lib/engine";

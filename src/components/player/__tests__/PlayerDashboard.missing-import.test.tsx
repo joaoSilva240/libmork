@@ -179,7 +179,7 @@ describe("PlayerDashboard - MISSING Campaign Import and Sheet Integration", () =
     const createBtn = screen.getByText("+ Criar Habitante nesta Campanha");
     expect(createBtn.closest("a")).toHaveAttribute(
       "href",
-      "/player/characters/new?campaignId=camp-missing-1&system=missing_zero",
+      "/player/characters/new?system=missing_zero&campaignId=camp-missing-1",
     );
 
     expect(screen.getByText("↩ Importar Habitante Existente")).toBeInTheDocument();

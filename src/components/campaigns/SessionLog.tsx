@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Droplet, Droplets, HeartCrack, HeartPulse, Shield, User } from "lucide-react";
 import type { CampaignLog } from "@/types";
-import { Spinner } from "@/components/ui";
+import { Spinner, ConditionIcon } from "@/components/ui";
 import { useSocket, type RollDataPayload } from "@/context/SocketContext";
+import { getCombatDieFace, getD20Icon } from "@/lib/systems/fallout/assets";
 
 type SessionLogProps = {
   campaignId: string;
@@ -162,11 +163,37 @@ function StatBadge({ kind, delta }: { kind: "hp" | "mana"; delta: number }) {
 function ConditionChip({ name }: { name: string }) {
   return (
     <span
-      className="mx-0.5 inline-block rounded-full border border-purple-400/60 bg-purple-950/80 px-2 py-0.5 text-[11px] font-bold text-purple-200"
+      className="mx-0.5 inline-flex items-center gap-1 rounded-full border border-purple-400/60 bg-purple-950/80 px-2 py-0.5 text-[11px] font-bold text-purple-200"
       data-testid="condition-chip"
     >
+      <ConditionIcon name={name} className="h-3 w-3" />
       {name}
     </span>
+  );
+}
+
+/** Dados individuais de uma rolagem Fallout 2d20 (d20 vetorial ou face de combate). */
+function FalloutDiceStrip({ dice }: { dice: NonNullable<RollDataPayload["rolledDice"]> }) {
+  return (
+    <div className="flex shrink-0 flex-wrap items-center gap-1" data-testid="fallout-dice-strip">
+      {dice.map((die, idx) =>
+        die.sides === 6 ? (
+          <img
+            key={idx}
+            src={getCombatDieFace(die.value)}
+            alt={`Dado de combate: ${die.value}`}
+            className="h-8 w-8"
+          />
+        ) : (
+          <div key={idx} className="relative h-8 w-8">
+            <img src={getD20Icon("neutral")} alt="" aria-hidden="true" className="h-full w-full" />
+            <span className="absolute inset-0 flex items-center justify-center text-[11px] font-black text-zinc-900">
+              {die.value}
+            </span>
+          </div>
+        ),
+      )}
+    </div>
   );
 }
 
@@ -430,7 +457,11 @@ export function SessionLog({ campaignId, showDiceRolls = true }: SessionLogProps
           </div>
 
           <div className="mt-1.5 flex items-center gap-2">
-            <DieGlyph sides={dieSidesOf(roll.formula)} value={roll.result} />
+            {roll.system === "fallout_2d20" && roll.rolledDice?.length ? (
+              <FalloutDiceStrip dice={roll.rolledDice} />
+            ) : (
+              <DieGlyph sides={dieSidesOf(roll.formula)} value={roll.result} />
+            )}
             <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-wide text-amber-400/90">
                 {roll.formula}
