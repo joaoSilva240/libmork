@@ -270,7 +270,7 @@ export function CampaignForm() {
                 <label className="block text-xs font-medium text-gray-300 mb-2">
                   Motor de Resolução de Testes
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   {/* Card d20_mod */}
                   <div
                     onClick={() => !isLoading && setRulesEngine("d20_mod")}
@@ -334,6 +334,29 @@ export function CampaignForm() {
                     </div>
                     <p className="text-[11px] text-gray-400">
                       Horror analógico com dados d6, registro pautado e ameaças de cena.
+                    </p>
+                  </div>
+
+                  {/* Card fallout_2d20 */}
+                  <div
+                    onClick={() => !isLoading && setRulesEngine("fallout_2d20")}
+                    className={`cursor-pointer rounded-xl border p-3.5 transition-all select-none ${
+                      rulesEngine === "fallout_2d20"
+                        ? "border-emerald-500 bg-emerald-950/40 shadow-md ring-1 ring-emerald-500/60"
+                        : "border-gray-800 bg-gray-950/70 hover:border-gray-700 hover:bg-gray-950"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1 min-h-[24px]">
+                      <span className="font-bold text-xs text-emerald-300 font-mono">
+                        Fallout 2d20
+                      </span>
+                      {rulesEngine === "fallout_2d20" && (
+                        <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                      )}
+                    </div>
+                    <p className="text-[11px] text-gray-400">
+                      Sobrevivência pós-apocalíptica S.P.E.C.I.A.L., dados de combate, radiação e
+                      Pip-Boy.
                     </p>
                   </div>
                 </div>

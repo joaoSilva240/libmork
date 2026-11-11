@@ -5,9 +5,11 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import type { Character, PlayerCampaign, PlayerCampaignDetails } from "@/types";
 import type { MissingHabitant, EquipmentStatus } from "@/lib/systems/missing/types";
+import type { FalloutCharacter } from "@/lib/systems/fallout/types";
 import { CharacterCard } from "@/components/characters/CharacterCard";
 import { MissingHabitantCard } from "@/components/systems/missing/MissingHabitantCard";
 import { MissingHabitantSheet } from "@/components/systems/missing/MissingHabitantSheet";
+import { PipBoySheet } from "@/components/systems/fallout";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { Spinner, Button } from "@/components/ui";
 import { BottomNav } from "@/components/ui/BottomNav";
@@ -74,6 +76,10 @@ export function PlayerDashboard() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [missingHabitants, setMissingHabitants] = useState<MissingHabitant[]>([]);
   const [selectedHabitant, setSelectedHabitant] = useState<MissingHabitant | null>(null);
+  const [falloutCharacters, setFalloutCharacters] = useState<FalloutCharacter[]>([]);
+  const [selectedFalloutCharacter, setSelectedFalloutCharacter] = useState<FalloutCharacter | null>(
+    null,
+  );
   const [settingsSubTab, setSettingsSubTab] = useState<"themes_colors" | "fonts" | "ui_details">(
     "themes_colors",
   );
@@ -244,6 +250,22 @@ export function PlayerDashboard() {
     }
   };
 
+  const loadFalloutCharacters = async () => {
+    try {
+      const response = await fetch("/api/systems/fallout/characters", {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        setFalloutCharacters([]);
+        return;
+      }
+      const data = await response.json().catch(() => ({}));
+      setFalloutCharacters(data.data || []);
+    } catch {
+      setFalloutCharacters([]);
+    }
+  };
+
   const loadWealth = async () => {
     try {
       const response = await fetch("/api/player/wealth", {
@@ -268,6 +290,7 @@ export function PlayerDashboard() {
   useEffect(() => {
     void loadCharacters();
     void loadMissingHabitants();
+    void loadFalloutCharacters();
     void loadCampaigns();
     void loadWealth();
     void loadPlayerName();
@@ -545,6 +568,29 @@ export function PlayerDashboard() {
     }
   };
 
+  const handleUpdateFalloutCharacter = async (patch: Partial<FalloutCharacter>) => {
+    if (!selectedFalloutCharacter) return;
+    try {
+      const res = await fetch(`/api/systems/fallout/characters/${selectedFalloutCharacter.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(patch),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const updated: FalloutCharacter = json.data;
+        setSelectedFalloutCharacter(updated);
+        setFalloutCharacters((prev) => prev.map((fc) => (fc.id === updated.id ? updated : fc)));
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        addToast(errData.error || "Erro ao atualizar personagem", "error");
+      }
+    } catch {
+      addToast("Erro de conexão ao atualizar personagem", "error");
+    }
+  };
+
   const filteredImportableCharacters = importableCharacters.filter((c) =>
     c.name.toLowerCase().includes(importSearch.toLowerCase()),
   );
@@ -561,6 +607,7 @@ export function PlayerDashboard() {
         setImportableCharacters([]);
         setImportableHabitants([]);
         setSelectedHabitant(null);
+        setSelectedFalloutCharacter(null);
       }
     };
     window.addEventListener("keydown", handleEscape);
@@ -669,7 +716,9 @@ export function PlayerDashboard() {
               <div className="rounded-lg border border-accent-vibrant/40 bg-accent-dark/30 p-4 text-secondary-pure">
                 {charactersError}
               </div>
-            ) : characters.length === 0 && missingHabitants.length === 0 ? (
+            ) : characters.length === 0 &&
+              missingHabitants.length === 0 &&
+              falloutCharacters.length === 0 ? (
               <div className="rounded-xl border border-gray-800 bg-gray-900/60 py-16 text-center">
                 <p className="mb-4 text-secondary-muted">Você ainda não tem personagens.</p>
                 <Link href="/player/characters/new">
@@ -772,6 +821,59 @@ export function PlayerDashboard() {
                       onOpen={(h) => setSelectedHabitant(h)}
                     />
                   ))}
+                  {falloutCharacters.map((fc) =>
+                    viewMode === "gallery" ? (
+                      <button
+                        key={fc.id}
+                        type="button"
+                        onClick={() => setSelectedFalloutCharacter(fc)}
+                        aria-label={`Abrir Pip-Boy de ${fc.name}`}
+                        className="group relative overflow-hidden rounded-xl border border-emerald-800/60 bg-[#0b120e] p-4 text-left transition-all hover:border-emerald-500 hover:shadow-[0_0_20px_rgba(16,185,129,0.15)]"
+                      >
+                        <div className="mb-2 flex items-center justify-between">
+                          <span className="rounded-full border border-emerald-700/60 bg-emerald-950/70 px-2 py-0.5 font-mono text-[10px] font-bold tracking-widest text-emerald-400">
+                            FALLOUT 2d20
+                          </span>
+                          <span className="text-lg">☢️</span>
+                        </div>
+                        <h3 className="truncate font-mono text-sm font-bold text-emerald-300 group-hover:text-emerald-200">
+                          {fc.name}
+                        </h3>
+                        <p className="mt-1 truncate text-xs text-emerald-600">
+                          Nv. {fc.level} · {fc.origin}
+                        </p>
+                        <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-emerald-950">
+                          <div
+                            className="h-full bg-emerald-500"
+                            style={{
+                              width: `${Math.min(100, Math.round((fc.hpCurrent / Math.max(1, fc.hpMax)) * 100))}%`,
+                            }}
+                          />
+                        </div>
+                        <p className="mt-1 font-mono text-[10px] text-emerald-600">
+                          HP {fc.hpCurrent}/{fc.hpMax}
+                        </p>
+                      </button>
+                    ) : (
+                      <button
+                        key={fc.id}
+                        type="button"
+                        onClick={() => setSelectedFalloutCharacter(fc)}
+                        aria-label={`Abrir Pip-Boy de ${fc.name}`}
+                        className="flex items-center gap-3 rounded-xl border border-emerald-800/60 bg-[#0b120e] p-3 text-left transition-colors hover:border-emerald-500"
+                      >
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-950 text-lg ring-2 ring-emerald-700">
+                          ☢️
+                        </div>
+                        <span className="min-w-0 flex-1 truncate font-mono font-semibold text-emerald-300">
+                          {fc.name}
+                        </span>
+                        <span className="shrink-0 rounded border border-emerald-700/50 bg-emerald-950/70 px-2 py-1 font-mono text-xs font-semibold text-emerald-400">
+                          Nv. {fc.level} · {fc.origin}
+                        </span>
+                      </button>
+                    ),
+                  )}
                 </div>
               </div>
             )}
@@ -917,6 +1019,10 @@ export function PlayerDashboard() {
                                 ) : campaign.rulesEngine === "missing_zero" ? (
                                   <span className="text-red-300 font-semibold font-mono">
                                     MISSING — Edição ZERO
+                                  </span>
+                                ) : campaign.rulesEngine === "fallout_2d20" ? (
+                                  <span className="text-emerald-300 font-semibold font-mono">
+                                    Fallout 2d20
                                   </span>
                                 ) : (
                                   "2d20 somado"
@@ -1204,6 +1310,10 @@ export function PlayerDashboard() {
                         ) : selectedCampaign.rulesEngine === "missing_zero" ? (
                           <span className="inline-flex items-center gap-1 rounded bg-red-950/90 border border-red-900/60 px-2.5 py-0.5 text-red-300 text-[11px] font-semibold tracking-wider font-mono drop-shadow-sm">
                             MISSING — Edição ZERO
+                          </span>
+                        ) : selectedCampaign.rulesEngine === "fallout_2d20" ? (
+                          <span className="inline-flex items-center gap-1 rounded bg-emerald-950/90 border border-emerald-500/60 px-2.5 py-0.5 text-emerald-300 text-[11px] font-semibold tracking-wider font-mono drop-shadow-sm">
+                            Fallout 2d20
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 rounded bg-dominant-dark/90 border border-dominant-border px-2 py-0.5 text-white text-[11px] font-medium drop-shadow-sm">
@@ -1852,6 +1962,36 @@ export function PlayerDashboard() {
               onAddLine={handleAddHabitantLine}
               onUpdateEquipment={handleUpdateHabitantEquipment}
             />
+          </div>
+        )}
+
+        {/* Modal / Overlay em Tela Cheia do Pip-Boy (Fallout 2d20) */}
+        {selectedFalloutCharacter !== null && (
+          <div
+            className="fixed inset-0 z-50 flex flex-col bg-[#050a07] overflow-hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Pip-Boy de ${selectedFalloutCharacter.name}`}
+          >
+            <div className="flex items-center justify-between border-b border-emerald-900/60 bg-[#0b120e] px-4 py-2">
+              <span className="font-mono text-xs font-bold tracking-widest text-emerald-400">
+                ROBCO INDUSTRIES (TM) TERMLINK — PIP-BOY 3000
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedFalloutCharacter(null)}
+                aria-label="Fechar Pip-Boy"
+                className="rounded-md border border-emerald-800/60 px-3 py-1 font-mono text-xs font-bold text-emerald-400 transition-colors hover:bg-emerald-900/40"
+              >
+                ✕ Fechar
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <PipBoySheet
+                character={selectedFalloutCharacter}
+                onUpdateCharacter={handleUpdateFalloutCharacter}
+              />
+            </div>
           </div>
         )}
 

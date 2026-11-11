@@ -428,6 +428,17 @@ findAvailablePort(initialPort)
           io.to(`campaign:${payload.campaignId}`).emit("session:cancelled", payload);
         });
 
+        // Fallout 2d20 — Realtime AP Pool e Rolagens
+        socket.on("fallout:ap-update", (payload) => {
+          if (!payload || !payload.campaignId) return;
+          io.to(`campaign:${payload.campaignId}`).emit("fallout:ap-updated", payload);
+        });
+
+        socket.on("fallout:roll-dice", (payload) => {
+          if (!payload || !payload.campaignId) return;
+          io.to(`campaign:${payload.campaignId}`).emit("fallout:dice-rolled", payload);
+        });
+
         // Sair explicitamente de uma campanha
         socket.on("leave-campaign", ({ campaignId }) => {
           if (!campaignId) return;

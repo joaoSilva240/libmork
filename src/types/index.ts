@@ -460,7 +460,8 @@ export type PaginatedResponse<T> = {
 };
 
 // =============================================================================
-// Tipos de Domínio: MISSING — Edição ZERO
+// Tipos de Domínio: MISSING — Edição ZERO & Fallout 2d20
 // =============================================================================
 
 export type * from "@/lib/systems/missing";
+export type * from "@/lib/systems/fallout";

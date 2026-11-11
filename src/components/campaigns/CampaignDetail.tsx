@@ -11,6 +11,7 @@ import { useSocket } from "@/context/SocketContext";
 import { MasterRoster } from "@/components/campaigns/MasterRoster";
 import { SessionLog } from "@/components/campaigns/SessionLog";
 import { MissingSessionLog } from "@/components/systems/missing/MissingSessionLog";
+import { APTrackerWidget } from "@/components/systems/fallout";
 import { ContentOverlay } from "@/components/campaigns/ContentOverlay";
 import { WorldOverlay } from "@/components/campaigns/WorldOverlay";
 import { CampaignSettingsModal } from "./CampaignSettingsModal";
@@ -421,6 +422,10 @@ export function CampaignDetail() {
               <span className="shrink-0 rounded bg-rose-950/90 border border-rose-800 px-2 py-0.5 text-[10px] text-rose-300 font-bold uppercase tracking-wider font-mono">
                 <span>MISSING — Edição ZERO</span> {/* ARQUIVO CONFIDENCIAL */}
               </span>
+            ) : campaign.rulesEngine === "fallout_2d20" ? (
+              <span className="shrink-0 rounded bg-emerald-950/90 border border-emerald-500/60 px-2 py-0.5 text-[10px] text-emerald-300 font-bold uppercase tracking-wider font-mono">
+                Fallout 2d20
+              </span>
             ) : (
               <span className="hidden sm:inline-flex rounded bg-accent/20 border border-accent/40 px-2 py-0.5 text-[10px] text-accent-hover font-medium">
                 {campaign.rulesEngine === "dual_d20_sum" ? "2d20 somado" : "d20 + mod"}
@@ -429,6 +434,9 @@ export function CampaignDetail() {
           </div>
 
           <div className="flex items-center gap-2">
+            {campaign.rulesEngine === "fallout_2d20" && (
+              <APTrackerWidget campaignId={campaign.id} isMaster />
+            )}
             {!isMissing && (
               <button
                 type="button"

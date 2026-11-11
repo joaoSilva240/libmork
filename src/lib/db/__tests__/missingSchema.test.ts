@@ -28,7 +28,9 @@ import type {
 describe("MISSING — Edição ZERO: Constantes e Motores de Regra", () => {
   it("deve incluir 'missing_zero' em RULES_ENGINES", () => {
     expect(RULES_ENGINES).toContain("missing_zero");
-    expect(RULES_ENGINES).toEqual(["d20_mod", "dual_d20_sum", "missing_zero"]);
+    expect(RULES_ENGINES).toContain("d20_mod");
+    expect(RULES_ENGINES).toContain("dual_d20_sum");
+    expect(RULES_ENGINES).toContain("fallout_2d20");
   });
 
   it("tipo RulesEngine deve aceitar 'missing_zero'", () => {

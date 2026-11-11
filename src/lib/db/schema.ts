@@ -883,6 +883,70 @@ export const missingActionLedger = pgTable(
 );
 
 // =============================================================================
+// FALLOUT 2d20 — Modiphius Entertainment (Sistema Pós-Apocalíptico)
+// =============================================================================
+
+/**
+ * FALLOUT_CAMPAIGN_STATES — Estado compartilhado da campanha (AP da Equipe e do Supervisor).
+ */
+export const falloutCampaignStates = pgTable(
+  "fallout_campaign_states",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    campaignId: uuid("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" })
+      .unique(),
+    partyAP: integer("party_ap").notNull().default(0),
+    maxPartyAP: integer("max_party_ap").notNull().default(6),
+    overseerAP: integer("overseer_ap").notNull().default(0),
+    scarcityLevel: varchar("scarcity_level", { length: 20 }).notNull().default("standard"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [index("idx_fallout_campaign_states_campaign").on(table.campaignId)],
+);
+
+/**
+ * FALLOUT_CHARACTERS — Ficha completa do personagem em Fallout 2d20.
+ */
+export const falloutCharacters = pgTable(
+  "fallout_characters",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    campaignId: uuid("campaign_id").references(() => campaigns.id, { onDelete: "cascade" }),
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 100 }).notNull(),
+    origin: varchar("origin", { length: 50 }).notNull().default("vault_dweller"),
+    level: integer("level").notNull().default(1),
+    xp: integer("xp").notNull().default(0),
+    caps: integer("caps").notNull().default(0),
+    hpCurrent: integer("hp_current").notNull().default(10),
+    hpMax: integer("hp_max").notNull().default(10),
+    radiation: integer("radiation").notNull().default(0),
+    luckPointsCurrent: integer("luck_points_current").notNull().default(5),
+    defense: integer("defense").notNull().default(1),
+    initiative: integer("initiative").notNull().default(10),
+    meleeDamageBonus: integer("melee_damage_bonus").notNull().default(0),
+    carryWeightMax: integer("carry_weight_max").notNull().default(200),
+    attributes: jsonb("attributes").notNull().default({}),
+    skills: jsonb("skills").notNull().default({}),
+    tagSkills: jsonb("tag_skills").notNull().default([]),
+    bodyParts: jsonb("body_parts").notNull().default({}),
+    items: jsonb("items").notNull().default([]),
+    perks: jsonb("perks").notNull().default([]),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_fallout_characters_campaign").on(table.campaignId),
+    index("idx_fallout_characters_owner").on(table.ownerId),
+  ],
+);
+
+// =============================================================================
 // RELATIONS — Drizzle relational queries
 // =============================================================================
 
@@ -893,6 +957,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   campaignInvites: many(campaignInvites),
   missingHabitants: many(missingHabitants),
   missingActionLedger: many(missingActionLedger),
+  falloutCharacters: many(falloutCharacters),
   communityPosts: many(communityPosts),
   communityLikes: many(communityLikes),
   communityComments: many(communityComments),
@@ -944,6 +1009,8 @@ export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
   missingCampaignState: one(missingCampaignStates),
   missingHabitants: many(missingHabitants),
   missingActionLedger: many(missingActionLedger),
+  falloutCampaignState: one(falloutCampaignStates),
+  falloutCharacters: many(falloutCharacters),
   audioTracks: many(campaignAudioTracks),
   assets: many(campaignAssets),
   activeAsset: one(campaignAssets, {
@@ -1197,6 +1264,24 @@ export const missingActionLedgerRelations = relations(missingActionLedger, ({ on
   }),
   actor: one(users, {
     fields: [missingActionLedger.actorId],
+    references: [users.id],
+  }),
+}));
+
+export const falloutCampaignStatesRelations = relations(falloutCampaignStates, ({ one }) => ({
+  campaign: one(campaigns, {
+    fields: [falloutCampaignStates.campaignId],
+    references: [campaigns.id],
+  }),
+}));
+
+export const falloutCharactersRelations = relations(falloutCharacters, ({ one }) => ({
+  campaign: one(campaigns, {
+    fields: [falloutCharacters.campaignId],
+    references: [campaigns.id],
+  }),
+  owner: one(users, {
+    fields: [falloutCharacters.ownerId],
     references: [users.id],
   }),
 }));

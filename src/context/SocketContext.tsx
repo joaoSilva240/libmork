@@ -260,6 +260,17 @@ interface SocketContextValue {
   subscribeSessionApplied: (callback: (payload: Record<string, unknown>) => void) => () => void;
   subscribeSessionConfirmed: (callback: (payload: Record<string, unknown>) => void) => () => void;
   subscribeSessionCancelled: (callback: (payload: Record<string, unknown>) => void) => () => void;
+  // Fallout 2d20
+  emitFalloutApUpdate: (payload: {
+    campaignId: string;
+    partyAP: number;
+    overseerAP: number;
+  }) => void;
+  subscribeFalloutApUpdate: (
+    callback: (payload: { campaignId: string; partyAP: number; overseerAP: number }) => void,
+  ) => () => void;
+  emitFalloutDiceRoll: (payload: Record<string, unknown>) => void;
+  subscribeFalloutDiceRoll: (callback: (payload: Record<string, unknown>) => void) => () => void;
 }
 
 const SocketContext = createContext<SocketContextValue | undefined>(undefined);
@@ -1316,6 +1327,60 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     [socket],
   );
 
+  // ============================= Fallout 2d20 =============================
+
+  const emitFalloutApUpdate = useCallback(
+    (payload: { campaignId: string; partyAP: number; overseerAP: number }) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("fallout:ap-update", payload);
+      }
+    },
+    [socket],
+  );
+
+  const subscribeFalloutApUpdate = useCallback(
+    (callback: (payload: { campaignId: string; partyAP: number; overseerAP: number }) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on("fallout:ap-updated", callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off("fallout:ap-updated", callback);
+        }
+      };
+    },
+    [socket],
+  );
+
+  const emitFalloutDiceRoll = useCallback(
+    (payload: Record<string, unknown>) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("fallout:roll-dice", payload);
+      }
+    },
+    [socket],
+  );
+
+  const subscribeFalloutDiceRoll = useCallback(
+    (callback: (payload: Record<string, unknown>) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on("fallout:dice-rolled", callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off("fallout:dice-rolled", callback);
+        }
+      };
+    },
+    [socket],
+  );
+
   const contextValue = useMemo<SocketContextValue>(
     () => ({
       socket,
@@ -1395,6 +1460,10 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       subscribeSessionApplied,
       subscribeSessionConfirmed,
       subscribeSessionCancelled,
+      emitFalloutApUpdate,
+      subscribeFalloutApUpdate,
+      emitFalloutDiceRoll,
+      subscribeFalloutDiceRoll,
     }),
     [
       socket,
@@ -1474,6 +1543,10 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       subscribeSessionApplied,
       subscribeSessionConfirmed,
       subscribeSessionCancelled,
+      emitFalloutApUpdate,
+      subscribeFalloutApUpdate,
+      emitFalloutDiceRoll,
+      subscribeFalloutDiceRoll,
     ],
   );
 
