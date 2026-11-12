@@ -192,6 +192,7 @@ describe("Fallout 2d20 — Motor de Regras (Rules Engine)", () => {
             luc: 5,
           },
           tagSkills: ["small_guns", "science", "lockpick"],
+          perks: [],
           caps: 50,
         },
         "user-1",

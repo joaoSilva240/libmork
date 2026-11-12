@@ -44,3 +44,25 @@ ou substitua os assets por arte original/licenciada.
 
 Os ícones em public/assets/conditions/ provêm da mesma origem
 (system/assets/icons/conditions/) e estão sujeitos ao mesmo aviso.
+
+CONTEÚDO DA BIBLIOTECA GLOBAL (ITENS E PERKS)
+---------------------------------------------
+Os itens (armas, vestimentas, consumíveis, munição, mods, livros,
+miscelânea, módulos de robô) e perks importados para a biblioteca global
+do Libmork provêm dos compendios em data/packs/ do mesmo repositório
+(Muttley/foundryvtt-fallout, branch develop).
+
+Conforme o LICENSE.txt de origem, a licença MIT se aplica ao software,
+NÃO ao conteúdo dos packs: "This license does not apply to the compendium
+content listed in this software's packs directory." O texto dessas
+entradas deriva do livro de regras de Fallout: The Roleplaying Game
+(Modiphius Entertainment), utilizado pelo projeto Foundry com
+consentimento explícito da Modiphius.
+
+Regras desta mesa:
+- Uso privado/educacional, sem distribuição pública do conteúdo importado.
+- Texto importado em inglês; tradução para pt-BR pendente.
+- Antes de qualquer uso público/comercial, obtenha autorização da
+  Modiphius Entertainment ou remova o conteúdo importado.
+- Dados de origem preservados em source_data (JSON) de cada item para
+  rastreabilidade (foundryId, pack, slug, atributos do sistema).

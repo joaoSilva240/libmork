@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CharacterWizard } from "@/components/characters/CharacterWizard";
 import { MissingHabitantCreateForm } from "@/components/systems/missing/MissingHabitantCreateForm";
-import { FalloutCharacterCreateForm } from "@/components/systems/fallout";
+import { FalloutCharacterWizard } from "@/components/systems/fallout";
 import { Spinner } from "@/components/ui";
 
 function NewCharacterContent() {
@@ -41,8 +41,8 @@ function NewCharacterContent() {
 
   if (selectedSystem === "fallout_2d20") {
     return (
-      <div className="mx-auto w-full max-w-4xl py-6 px-4">
-        <FalloutCharacterCreateForm
+      <div className="mx-auto w-full max-w-5xl py-6 px-4">
+        <FalloutCharacterWizard
           campaignId={campaignId}
           onSuccess={() => router.push("/player")}
           onCancel={!systemParam ? () => setSelectedSystem(null) : undefined}

@@ -307,7 +307,7 @@ export function createInitialFalloutCharacter(
     caps: input.caps || 0,
     bodyParts: initializeFalloutBodyParts(),
     items: [],
-    perks: [],
+    perks: [...(input.perks || [])],
     createdAt: now,
     updatedAt: now,
   };

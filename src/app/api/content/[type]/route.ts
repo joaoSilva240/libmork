@@ -9,6 +9,8 @@ import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth/session";
 import {
   contentTypeSchema,
+  ruleSystemSchema,
+  ruleSystemFilterValues,
   getContentCreateValidator,
   CONTENT_LABELS,
 } from "@/lib/validators/content";
@@ -17,7 +19,7 @@ import {
   getContentCampaignColumn,
   getContentIdColumn,
 } from "@/lib/db/content-registry";
-import { isNull } from "drizzle-orm";
+import { and, inArray, isNull } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ type: string }> };
@@ -46,10 +48,34 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 
     const table = getContentTable(parsed.data);
 
+    // Filtro opcional por sistema de regras: 'generic' entra junto apenas
+    // para os sistemas que o compartilham (Libmork d20 / Pathfinder 2e);
+    // Fallout 2d20 filtra somente o próprio conteúdo.
+    const ruleSystemParam = request.nextUrl.searchParams.get("ruleSystem");
+    const ruleSystemParsed = ruleSystemParam
+      ? ruleSystemSchema.safeParse(ruleSystemParam)
+      : null;
+    if (ruleSystemParsed && !ruleSystemParsed.success) {
+      return NextResponse.json(
+        { success: false, error: "Sistema de regras inválido" },
+        { status: 400 },
+      );
+    }
+
+    const conditions = [isNull(getContentCampaignColumn(parsed.data))];
+    if (ruleSystemParsed?.data && ruleSystemParsed.data !== "generic") {
+      const ruleSystemColumn = (table as unknown as Record<string, unknown>)[
+        "ruleSystem"
+      ] as Parameters<typeof inArray>[0];
+      if (ruleSystemColumn) {
+        conditions.push(inArray(ruleSystemColumn, ruleSystemFilterValues(ruleSystemParsed.data)));
+      }
+    }
+
     const result = await db
       .select()
       .from(table)
-      .where(isNull(getContentCampaignColumn(parsed.data)))
+      .where(and(...conditions))
       .orderBy(getContentIdColumn(parsed.data));
 
     return NextResponse.json({

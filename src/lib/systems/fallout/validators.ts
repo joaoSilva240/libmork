@@ -76,6 +76,7 @@ export const createFalloutCharacterSchema = z.object({
     luc: 5,
   }),
   tagSkills: z.array(falloutSkillNameSchema).max(3).default([]),
+  perks: z.array(z.string()).default([]),
   caps: z.number().int().min(0).default(0),
 });
 

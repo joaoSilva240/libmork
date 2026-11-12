@@ -8,5 +8,6 @@ export { PipBoyPortrait } from "./PipBoyPortrait";
 export { PipBoyRollFab } from "./PipBoyRollFab";
 export { FalloutDiceRollerModal } from "./FalloutDiceRollerModal";
 export { PipBoySheet } from "./PipBoySheet";
+export { PipBoySlider } from "./PipBoySlider";
 export { PipBoyTabNav } from "./PipBoyTabNav";
-export { FalloutCharacterCreateForm } from "./FalloutCharacterCreateForm";
+export { FalloutCharacterWizard } from "./FalloutCharacterWizard";

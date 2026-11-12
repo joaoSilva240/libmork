@@ -28,7 +28,11 @@ import {
 } from "@/lib/systems/fallout/assets";
 import { showDice3D } from "@/lib/dice3d";
 import { useSocket } from "@/context/SocketContext";
-import { Dices, Zap, AlertTriangle, CheckCircle2, Flame } from "lucide-react";
+import { PipBoySlider } from "./PipBoySlider";
+import { Dices, Zap, AlertTriangle, CheckCircle2, Flame, Target } from "lucide-react";
+
+// Custo em Action Points para cada quantidade de dados extras (0 a 3).
+const EXTRA_DICE_AP_COST = [0, 1, 3, 6];
 
 interface FalloutDiceRollerModalProps {
   isOpen: boolean;
@@ -172,21 +176,19 @@ export function FalloutDiceRollerModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} ariaLabel="Terminal de Rolagem Pip-Boy 2d20">
-      <div className="font-mono text-emerald-400 bg-black/90 border border-emerald-500/40 rounded-lg p-4 space-y-4">
-        <div className="flex items-center justify-between border-b border-emerald-500/40 pb-2">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-emerald-200">
-            Terminal de Rolagem Pip-Boy 2d20
-          </h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-xs text-emerald-500 hover:text-emerald-200 cursor-pointer"
-          >
-            ✕
-          </button>
-        </div>
+      <div className="relative flex max-h-[calc(100dvh-5rem)] flex-col font-mono text-emerald-400 bg-black/90 border border-emerald-500/40 rounded-lg p-4">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Fechar rolador"
+          title="Fechar"
+          className="absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-emerald-500/40 bg-black/70 text-xs text-emerald-400 hover:border-emerald-300 hover:text-emerald-200 cursor-pointer"
+        >
+          ✕
+        </button>
+        <div className="pipboy-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
         {/* Seletor de Modo */}
-        <div className="grid grid-cols-2 gap-2 border-b border-emerald-500/30 pb-3">
+        <div className="grid grid-cols-2 gap-2 border-b border-emerald-500/30 pb-3 pr-8">
           <button
             type="button"
             onClick={() => setMode("test2d20")}
@@ -284,53 +286,62 @@ export function FalloutDiceRollerModal({
               </div>
             </div>
 
-            {/* Parâmetros de Dificuldade e Dados Extras */}
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <label className="block text-[10px] uppercase text-emerald-500 mb-1">
-                  Dificuldade (0-5)
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  max={5}
-                  value={difficulty}
-                  onChange={(e) => setDifficulty(Number(e.target.value))}
-                  className="w-full bg-black border border-emerald-600/50 rounded px-2 py-1 text-xs text-emerald-200"
-                />
-              </div>
+            {/* Parâmetros do teste em sliders temáticos do Pip-Boy */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <PipBoySlider
+                label="Dificuldade"
+                icon={<Target size={12} />}
+                min={0}
+                max={5}
+                value={difficulty}
+                onChange={setDifficulty}
+                readout={difficulty}
+                ticks={[0, 1, 2, 3, 4, 5].map((v) => ({ value: v, label: String(v) }))}
+                hint={
+                  difficulty === 0
+                    ? "Sem sucessos exigidos (teste automático)"
+                    : `Exige ${difficulty} sucesso(s) no teste`
+                }
+              />
 
-              <div>
-                <label className="block text-[10px] uppercase text-emerald-500 mb-1">
-                  Dados Extras (+AP)
-                </label>
-                <select
-                  aria-label="Dados Extras"
-                  value={extraDice}
-                  onChange={(e) => setExtraDice(Number(e.target.value))}
-                  className="w-full bg-black border border-emerald-600/50 rounded px-2 py-1 text-xs text-emerald-200"
-                >
-                  <option value={0}>2d20 (Padrão)</option>
-                  <option value={1}>3d20 (+1 AP)</option>
-                  <option value={2}>4d20 (+3 AP)</option>
-                  <option value={3}>5d20 (+6 AP)</option>
-                </select>
-              </div>
+              <PipBoySlider
+                label="Dados Extras"
+                icon={<Dices size={12} />}
+                min={0}
+                max={3}
+                value={extraDice}
+                onChange={setExtraDice}
+                readout={`${2 + extraDice}d20`}
+                ticks={[0, 1, 2, 3].map((v) => ({ value: v, label: `${2 + v}d20` }))}
+                hint={
+                  extraDice === 0 ? (
+                    "Rolagem padrão sem custo de AP"
+                  ) : (
+                    <>
+                      Custo:{" "}
+                      <span className="font-bold text-amber-300">
+                        {EXTRA_DICE_AP_COST[extraDice]} AP
+                      </span>
+                    </>
+                  )
+                }
+              />
 
-              <div>
-                <label className="block text-[10px] uppercase text-emerald-500 mb-1">
-                  Complicação
-                </label>
-                <select
-                  value={complicationRange}
-                  onChange={(e) => setComplicationRange(Number(e.target.value))}
-                  className="w-full bg-black border border-emerald-600/50 rounded px-2 py-1 text-xs text-emerald-200"
-                >
-                  <option value={20}>20</option>
-                  <option value={19}>19-20</option>
-                  <option value={18}>18-20</option>
-                </select>
-              </div>
+              <PipBoySlider
+                label="Complicação"
+                icon={<AlertTriangle size={12} />}
+                min={18}
+                max={20}
+                value={complicationRange}
+                onChange={setComplicationRange}
+                readout={complicationRange === 20 ? "20" : `${complicationRange}-20`}
+                ticks={[18, 19, 20].map((v) => ({ value: v, label: String(v) }))}
+                hint={
+                  complicationRange === 20
+                    ? "Complica apenas em 20 natural"
+                    : `Complica em resultados ${complicationRange}-20`
+                }
+              />
             </div>
 
             <label className="flex items-center gap-2 text-xs text-emerald-300 cursor-pointer">
@@ -543,6 +554,7 @@ export function FalloutDiceRollerModal({
             )}
           </div>
         )}
+        </div>
       </div>
     </Modal>
   );

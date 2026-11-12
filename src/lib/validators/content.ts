@@ -9,6 +9,30 @@ import { ATTRIBUTES } from "@/lib/utils/constants";
 import { NPC_DAMAGE_TYPES } from "@/lib/engine/npc-attack";
 
 /**
+ * Sistema de regras ao qual o conteúdo pertence.
+ * 'generic' = compartilhado (Libmork d20 / Pathfinder 2e).
+ */
+export const CONTENT_RULE_SYSTEMS = ["generic", "libmork", "pathfinder", "fallout_2d20"] as const;
+export type ContentRuleSystem = (typeof CONTENT_RULE_SYSTEMS)[number];
+
+export const ruleSystemSchema = z.enum(CONTENT_RULE_SYSTEMS, {
+  message: "Sistema de regras inválido",
+});
+
+/**
+ * Sistemas que compartilham o conteúdo 'generic' (base d20 comum). Fallout
+ * 2d20 é mecanicamente distinto, então seu filtro exclui o genérico.
+ */
+export const GENERIC_SHARED_SYSTEMS = ["libmork", "pathfinder"] as const;
+
+/** Valores de rule_system aplicáveis quando o usuário filtra por sistema. */
+export function ruleSystemFilterValues(ruleSystem: ContentRuleSystem): string[] {
+  return (GENERIC_SHARED_SYSTEMS as readonly string[]).includes(ruleSystem)
+    ? ["generic", ruleSystem]
+    : [ruleSystem];
+}
+
+/**
  * Schema de perícia/habilidade (RF-031, D-20, D-35).
  */
 export const skillSchema = z.object({
@@ -16,6 +40,7 @@ export const skillSchema = z.object({
   description: z.string().max(5000).optional().nullable(),
   rollExpression: z.string().max(200).optional().nullable(),
   keyAttribute: z.enum(ATTRIBUTES, { message: "Atributo chave inválido" }),
+  ruleSystem: ruleSystemSchema.default("generic"),
 });
 
 /**
@@ -43,6 +68,7 @@ export const spellSchema = z.object({
   structuredEffects: z.any().optional().nullable(),
   castingTime: z.string().max(100).optional().nullable(),
   translation: z.any().optional().nullable(),
+  ruleSystem: ruleSystemSchema.default("generic"),
 });
 
 /**
@@ -56,6 +82,7 @@ export const itemSchema = z.object({
   imageUrl: z.url().optional().nullable(),
   sourceData: z.record(z.string(), z.unknown()).optional().nullable(),
   translation: z.any().optional().nullable(),
+  ruleSystem: ruleSystemSchema.default("generic"),
 });
 
 /**
@@ -64,6 +91,7 @@ export const itemSchema = z.object({
 export const conditionSchema = z.object({
   name: z.string().min(2, "Nome deve ter no mínimo 2 caracteres").max(100),
   description: z.string().max(5000).optional().nullable(),
+  ruleSystem: ruleSystemSchema.default("generic"),
 });
 
 /**
@@ -92,6 +120,7 @@ export const updateSpellSchema = z.object({
   structuredEffects: z.any().optional().nullable(),
   castingTime: z.string().max(100).optional().nullable(),
   translation: z.any().optional().nullable(),
+  ruleSystem: ruleSystemSchema.optional(),
 });
 
 /**

@@ -7,7 +7,7 @@ import {
 } from "@/lib/content/pf2e-item-formatter";
 import { useEffect, useRef, useState } from "react";
 import { ATTRIBUTES } from "@/lib/utils/constants";
-import type { ContentType } from "@/lib/validators/content";
+import type { ContentType, ContentRuleSystem } from "@/lib/validators/content";
 import { Button, Form, Input, Spinner } from "@/components/ui";
 import type { Spell } from "@/types";
 
@@ -165,6 +165,33 @@ const CONTENT_TYPE_ORDER: ManagerContentType[] = [
   "npcs",
   "worlds",
   "documents",
+];
+
+const RULE_SYSTEM_FILTER_OPTIONS: {
+  value: "all" | ContentRuleSystem;
+  label: string;
+  activeClass: string;
+}[] = [
+  {
+    value: "all",
+    label: "Todos",
+    activeClass: "border-gray-400 bg-gray-500/20 text-gray-100",
+  },
+  {
+    value: "libmork",
+    label: "Libmork d20",
+    activeClass: "border-purple-500 bg-purple-600/20 text-purple-200",
+  },
+  {
+    value: "pathfinder",
+    label: "Pathfinder 2e",
+    activeClass: "border-red-500 bg-red-600/20 text-red-200",
+  },
+  {
+    value: "fallout_2d20",
+    label: "Fallout 2d20",
+    activeClass: "border-emerald-500 bg-emerald-600/20 text-emerald-200",
+  },
 ];
 
 type ContentManagerProps = {
@@ -436,6 +463,8 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
   // Overlay de criação, busca, filtro e importação de conteúdo
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchContent, setSearchContent] = useState("");
+  // Filtro por sistema de regras (biblioteca global)
+  const [ruleSystemFilter, setRuleSystemFilter] = useState<"all" | ContentRuleSystem>("all");
   const [isImportingDnd, setIsImportingDnd] = useState(false);
   // State de Filtros Avançados - Magias
   const [spellCircleFilter, setSpellCircleFilter] = useState<number | "all">("all");
@@ -466,6 +495,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
   }, [
     activeType,
     searchContent,
+    ruleSystemFilter,
     spellCircleFilter,
     spellManaMin,
     spellManaMax,
@@ -712,9 +742,16 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
 
   const config = TYPE_CONFIGS[activeType];
 
+  const libraryQuery =
+    !isCampaignContext && ruleSystemFilter !== "all"
+      ? `?ruleSystem=${ruleSystemFilter}`
+      : "";
+
   const loadItems = async () => {
     try {
-      const response = await fetch(`${basePath}/${activeType}`, { credentials: "include" });
+      const response = await fetch(`${basePath}/${activeType}${libraryQuery}`, {
+        credentials: "include",
+      });
       const data = await response.json();
 
       if (!response.ok) {
@@ -749,7 +786,9 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await fetch(`${basePath}/${activeType}`, { credentials: "include" });
+        const response = await fetch(`${basePath}/${activeType}${libraryQuery}`, {
+          credentials: "include",
+        });
         const data = await response.json();
 
         if (cancelled) return;
@@ -774,7 +813,7 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
     return () => {
       cancelled = true;
     };
-  }, [basePath, activeType]);
+  }, [basePath, activeType, libraryQuery]);
 
   const buildPayload = (source: Record<string, string>) => {
     const payload: Record<string, unknown> = {};
@@ -1160,6 +1199,31 @@ export function ContentManager({ basePath, title }: ContentManagerProps) {
                 onChange={(e) => setSearchContent(e.target.value)}
                 className="w-full rounded-xl border border-gray-800 bg-gray-900 px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none transition"
               />
+            )}
+
+          {/* Filtro por sistema de regras (biblioteca global) */}
+          {!isCampaignContext &&
+            (activeType === "skills" ||
+              activeType === "spells" ||
+              activeType === "items" ||
+              activeType === "conditions") && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-secondary-muted">Sistema:</span>
+                {RULE_SYSTEM_FILTER_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setRuleSystemFilter(option.value)}
+                    className={`rounded-full border px-3 py-1 text-[11px] font-bold transition-all cursor-pointer ${
+                      ruleSystemFilter === option.value
+                        ? option.activeClass
+                        : "border-gray-800 bg-gray-900 text-secondary-muted hover:text-secondary-pure"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             )}
         </div>
 

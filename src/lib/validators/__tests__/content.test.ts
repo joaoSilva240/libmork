@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { itemSchema, getContentUpdateValidator } from "../content";
+import { itemSchema, getContentUpdateValidator, ruleSystemFilterValues } from "../content";
 
 describe("Content Item Validator Schemas", () => {
   it("should ignore formula fields on global item creation", () => {
@@ -32,5 +32,16 @@ describe("Content Item Validator Schemas", () => {
       expect("hitRoll" in result.data).toBe(false);
       expect("damageRoll" in result.data).toBe(false);
     }
+  });
+});
+
+describe("ruleSystemFilterValues", () => {
+  it("Libmork d20 e Pathfinder 2e compartilham o conteúdo genérico", () => {
+    expect(ruleSystemFilterValues("libmork")).toEqual(["generic", "libmork"]);
+    expect(ruleSystemFilterValues("pathfinder")).toEqual(["generic", "pathfinder"]);
+  });
+
+  it("Fallout 2d20 filtra apenas o próprio conteúdo", () => {
+    expect(ruleSystemFilterValues("fallout_2d20")).toEqual(["fallout_2d20"]);
   });
 });

@@ -648,6 +648,7 @@ h6 {
   scrollbar-width: thin;
   scrollbar-color: #10b981 #06110c;
   &::-webkit-scrollbar {
+    width: 6px;
     height: 6px;
   }
   &::-webkit-scrollbar-track {
@@ -707,6 +708,84 @@ h6 {
 @media (prefers-reduced-motion: reduce) {
   .pipboy-roll-fab {
     animation: none;
+  }
+}
+
+/* Sliders temáticos do Pip-Boy (rolador 2d20): trilho de fósforo verde com
+   preenchimento progressivo via --pipboy-fill, thumb luminoso e foco visível. */
+.pipboy-range {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 8px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    #34d399 0%,
+    #10b981 var(--pipboy-fill, 50%),
+    color-mix(in srgb, #10b981 14%, transparent) var(--pipboy-fill, 50%),
+    color-mix(in srgb, #10b981 14%, transparent) 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, #10b981 45%, transparent),
+    inset 0 1px 2px rgba(0, 0, 0, 0.6),
+    0 0 10px rgba(16, 185, 129, 0.25);
+  outline: none;
+  cursor: pointer;
+}
+.pipboy-range::-webkit-slider-runnable-track {
+  height: 8px;
+  background: transparent;
+  border-radius: 9999px;
+}
+.pipboy-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -5px;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 50% 35%, #6ee7b7, #10b981 70%);
+  border: 2px solid #06110c;
+  box-shadow:
+    0 0 0 2px #34d399,
+    0 0 12px rgba(52, 211, 153, 0.8);
+  cursor: grab;
+  transition: transform calc(120ms * var(--motion-factor, 1)) var(--motion-ease, ease);
+}
+.pipboy-range::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+.pipboy-range:active::-webkit-slider-thumb {
+  cursor: grabbing;
+  transform: scale(1.2);
+}
+.pipboy-range::-moz-range-track {
+  height: 8px;
+  background: transparent;
+  border-radius: 9999px;
+}
+.pipboy-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 50% 35%, #6ee7b7, #10b981 70%);
+  border: 2px solid #06110c;
+  box-shadow:
+    0 0 0 2px #34d399,
+    0 0 12px rgba(52, 211, 153, 0.8);
+  cursor: grab;
+}
+.pipboy-range:focus-visible {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, #10b981 45%, transparent),
+    0 0 0 2px #06110c,
+    0 0 0 4px #34d399;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pipboy-range::-webkit-slider-thumb {
+    transition: none;
   }
 }
 

@@ -31,6 +31,7 @@ describe("PipBoySheet & Componentes Fallout 2d20", () => {
         luc: 6,
       },
       tagSkills: ["small_guns", "survival", "speech"],
+      perks: [],
       caps: 250,
     },
     "user-1",
@@ -134,9 +135,21 @@ describe("PipBoySheet & Componentes Fallout 2d20", () => {
     expect(fab).toHaveAttribute("aria-label", "Rolar 2d20 / DC");
 
     fireEvent.click(screen.getByRole("button", { name: /Rolar 2d20 \/ DC/i }));
-    expect(screen.getByText("Terminal de Rolagem Pip-Boy 2d20")).toBeInTheDocument();
+    // Cabeçalho com título removido; o dialog mantém o nome acessível.
+    expect(screen.queryByText("Terminal de Rolagem Pip-Boy 2d20")).toBeNull();
+    expect(
+      screen.getByRole("dialog", { name: "Terminal de Rolagem Pip-Boy 2d20" }),
+    ).toBeInTheDocument();
 
-    const rollBtn = screen.getByRole("button", { name: /Executar Teste \(2d20\)/i });
+    // Dificuldade, Dados Extras e Complicação agora são sliders temáticos.
+    expect(screen.getAllByRole("slider")).toHaveLength(3);
+    expect(screen.getByRole("slider", { name: "Dificuldade" })).toBeInTheDocument();
+    expect(screen.getByRole("slider", { name: "Complicação" })).toBeInTheDocument();
+
+    const extraSlider = screen.getByRole("slider", { name: "Dados Extras" });
+    fireEvent.change(extraSlider, { target: { value: "3" } });
+
+    const rollBtn = screen.getByRole("button", { name: /Executar Teste \(5d20\)/i });
     fireEvent.click(rollBtn);
 
     expect(screen.getByTestId("fallout-2d20-result")).toBeInTheDocument();

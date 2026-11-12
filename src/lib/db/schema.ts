@@ -559,6 +559,7 @@ export const skills = pgTable(
     description: text("description"),
     rollExpression: varchar("roll_expression", { length: 200 }),
     keyAttribute: varchar("key_attribute", { length: 20 }).notNull(),
+    ruleSystem: varchar("rule_system", { length: 20 }).notNull().default("generic"),
   },
   (table) => [index("idx_skill_campaign").on(table.campaignId)],
 );
@@ -588,6 +589,7 @@ export const spells = pgTable(
     structuredEffects: jsonb("structured_effects"),
     castingTime: varchar("casting_time", { length: 100 }),
     translation: jsonb("translation"),
+    ruleSystem: varchar("rule_system", { length: 20 }).notNull().default("generic"),
   },
   (table) => [index("idx_spell_campaign").on(table.campaignId)],
 );
@@ -608,6 +610,7 @@ export const items = pgTable(
     imageUrl: varchar("image_url", { length: 500 }),
     sourceData: jsonb("source_data"),
     translation: jsonb("translation"),
+    ruleSystem: varchar("rule_system", { length: 20 }).notNull().default("generic"),
   },
   (table) => [
     index("idx_item_campaign").on(table.campaignId),
@@ -625,6 +628,7 @@ export const conditions = pgTable(
     campaignId: uuid("campaign_id").references(() => campaigns.id, { onDelete: "cascade" }),
     name: varchar("name", { length: 100 }).notNull(),
     description: text("description"),
+    ruleSystem: varchar("rule_system", { length: 20 }).notNull().default("generic"),
   },
   (table) => [index("idx_condition_campaign").on(table.campaignId)],
 );
