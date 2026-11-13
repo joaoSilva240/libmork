@@ -154,4 +154,40 @@ describe("PipBoySheet & Componentes Fallout 2d20", () => {
 
     expect(screen.getByTestId("fallout-2d20-result")).toBeInTheDocument();
   });
+
+  it("abre o modal com a perícia e atributo correspondente selecionados ao clicar em Rolar de uma perícia específica", () => {
+    render(<PipBoySheet character={sampleCharacter} />);
+
+    fireEvent.click(screen.getByRole("tab", { name: "S.P.E.C.I.A.L." }));
+
+    // Clica em Rolar para Ciência (science -> default attribute int)
+    const rollScienceBtn = screen.getByTestId("btn-roll-skill-science");
+    fireEvent.click(rollScienceBtn);
+
+    expect(
+      screen.getByRole("dialog", { name: "Terminal de Rolagem Pip-Boy 2d20" }),
+    ).toBeInTheDocument();
+
+    const skillSelect = screen.getByRole("combobox", { name: "Perícia" });
+    const attrSelect = screen.getByRole("combobox", { name: "Atributo S.P.E.C.I.A.L." });
+
+    expect(skillSelect).toHaveValue("science");
+    expect(attrSelect).toHaveValue("int");
+
+    // Fecha o modal pelo botão fechar
+    fireEvent.click(screen.getByRole("button", { name: "Fechar rolador" }));
+
+    // Clica em Rolar para Sobrevivência (survival -> default attribute end)
+    const rollSurvivalBtn = screen.getByTestId("btn-roll-skill-survival");
+    fireEvent.click(rollSurvivalBtn);
+
+    expect(screen.getByRole("combobox", { name: "Perícia" })).toHaveValue("survival");
+    expect(screen.getByRole("combobox", { name: "Atributo S.P.E.C.I.A.L." })).toHaveValue("end");
+
+    // Permite trocar o atributo manualmente dentro do modal para uma rolagem mista (ex: Sobrevivência + Percepção)
+    fireEvent.change(screen.getByRole("combobox", { name: "Atributo S.P.E.C.I.A.L." }), {
+      target: { value: "per" },
+    });
+    expect(screen.getByRole("combobox", { name: "Atributo S.P.E.C.I.A.L." })).toHaveValue("per");
+  });
 });

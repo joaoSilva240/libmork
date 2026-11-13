@@ -5,7 +5,7 @@
 // Suporta compra de dados extras com AP, Tag Skills, Localização e Dados 3D
 // =============================================================================
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/Modal";
 import {
   FALLOUT_ATTRIBUTES,
@@ -76,6 +76,19 @@ export function FalloutDiceRollerModal({
   const [combatDiceCount, setCombatDiceCount] = useState<number>(4);
   const [weaponLabel, setWeaponLabel] = useState<string>("Pistola 10mm");
   const [lastCombatResult, setLastCombatResult] = useState<CombatDiceRollResult | null>(null);
+
+  // Sincroniza perícia e atributo selecionados sempre que o modal for aberto ou as props mudarem
+  useEffect(() => {
+    if (isOpen) {
+      if (initialAttribute) setSelectedAttr(initialAttribute);
+      if (initialSkill) setSelectedSkill(initialSkill);
+      setMode("test2d20");
+      setExtraDice(0);
+      setLast2d20Result(null);
+      setLastHitLocation(null);
+      setLastCombatResult(null);
+    }
+  }, [isOpen, initialAttribute, initialSkill]);
 
   // Valores extraídos do personagem (ou padrão)
   const attrVal = character?.attributes?.[selectedAttr] ?? 6;

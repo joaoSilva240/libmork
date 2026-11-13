@@ -300,6 +300,8 @@ export function PipBoySheet({
                       <button
                         type="button"
                         onClick={() => openSkillRoll(sk)}
+                        data-testid={`btn-roll-skill-${sk}`}
+                        title={`Rolar ${cfg.label}`}
                         className="px-2 py-0.5 rounded bg-emerald-500/20 hover:bg-emerald-500/40 border border-emerald-400/50 text-emerald-200 text-[10px] font-bold uppercase cursor-pointer"
                       >
                         Rolar
