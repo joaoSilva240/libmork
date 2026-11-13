@@ -49,7 +49,7 @@ describe("CharacterCarousel Component", () => {
         actors={[mockHabitantActive, mockHabitantMissing]}
         onSelect={vi.fn()}
         isMissing={true}
-      />
+      />,
     );
 
     // Nomes
@@ -71,11 +71,7 @@ describe("CharacterCarousel Component", () => {
   it("aciona onSelect ao clicar no card de um habitante", () => {
     const handleSelect = vi.fn();
     render(
-      <CharacterCarousel
-        actors={[mockHabitantActive]}
-        onSelect={handleSelect}
-        isMissing={true}
-      />
+      <CharacterCarousel actors={[mockHabitantActive]} onSelect={handleSelect} isMissing={true} />,
     );
 
     fireEvent.click(screen.getByText("Agente Marcos"));

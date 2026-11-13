@@ -15,10 +15,7 @@ export async function GET() {
   try {
     const session = await requireAuth();
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const results = PF2E_RACES.map((race) => ({
@@ -43,7 +40,7 @@ export async function GET() {
     logger.error({ err: error }, "Erro ao carregar catálogo Pathfinder 2e");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

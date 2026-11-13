@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   Plus,
   Play,
@@ -85,6 +85,19 @@ export function MasterJukebox({
       [playlistId]: !prev[playlistId],
     }));
   };
+
+  useEffect(() => {
+    const handleGlobalTogglePlay = () => {
+      const playingCount = playingTrackIds ? playingTrackIds.size : playingTrackId ? 1 : 0;
+      if (playingCount > 0) {
+        stopAll();
+      } else if (tracks.length > 0) {
+        togglePlay(tracks[0].id);
+      }
+    };
+    window.addEventListener("libmork:jukebox-toggle-play", handleGlobalTogglePlay);
+    return () => window.removeEventListener("libmork:jukebox-toggle-play", handleGlobalTogglePlay);
+  }, [playingTrackIds, playingTrackId, stopAll, togglePlay, tracks]);
 
   const handleAdd = () => {
     const result = addScene

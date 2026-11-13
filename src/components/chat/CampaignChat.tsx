@@ -63,8 +63,7 @@ export function CampaignChat({ currentUser, initialGroupId }: CampaignChatProps)
         setGroups(data.data);
         if (!activeGroupId && data.data.length > 0) {
           const preferred =
-            initialGroupId &&
-            data.data.some((g: ChatGroupSummary) => g.id === initialGroupId)
+            initialGroupId && data.data.some((g: ChatGroupSummary) => g.id === initialGroupId)
               ? initialGroupId
               : data.data[0].id;
           setActiveGroupId(preferred);
@@ -227,9 +226,7 @@ export function CampaignChat({ currentUser, initialGroupId }: CampaignChatProps)
       } else {
         setGroups((prev) =>
           prev.map((g) =>
-            g.id === payload.groupId
-              ? { ...g, membersCount: Math.max(0, g.membersCount - 1) }
-              : g,
+            g.id === payload.groupId ? { ...g, membersCount: Math.max(0, g.membersCount - 1) } : g,
           ),
         );
       }

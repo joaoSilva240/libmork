@@ -23,7 +23,7 @@ export function NfcManager({ characterId }: { characterId: string }) {
     (async () => {
       try {
         const response = await fetch(`/api/characters/${characterId}/nfc`, {
-          credentials: "include"
+          credentials: "include",
         });
         const data = await response.json();
 
@@ -130,9 +130,7 @@ export function NfcManager({ characterId }: { characterId: string }) {
 
       {tag ? (
         <div>
-          <p className="mb-2 text-sm text-gray-400">
-            Gravar esta URL NDEF na etiqueta NFC:
-          </p>
+          <p className="mb-2 text-sm text-gray-400">Gravar esta URL NDEF na etiqueta NFC:</p>
           <div className="flex items-center gap-2">
             <input
               type="text"
@@ -149,8 +147,7 @@ export function NfcManager({ characterId }: { characterId: string }) {
             </button>
           </div>
           <p className="mt-2 text-xs text-gray-500">
-            Ao encostar o celular na etiqueta, o personagem é desbloqueado
-            automaticamente (RF-022).
+            Ao encostar o celular na etiqueta, o personagem é desbloqueado automaticamente (RF-022).
           </p>
           <div className="mt-3">
             <button

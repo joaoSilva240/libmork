@@ -22,7 +22,9 @@ describe("MotionSettingsPanel", () => {
     render(<MotionSettingsPanel />);
     fireEvent.click(screen.getByRole("button", { name: "Rápida" }));
     expect(screen.getByTestId("motion-speed")).toHaveTextContent("1,5x");
-    fireEvent.change(screen.getByLabelText("Velocidade das animações"), { target: { value: "0.75" } });
+    fireEvent.change(screen.getByLabelText("Velocidade das animações"), {
+      target: { value: "0.75" },
+    });
     expect(getMotionPreferences().speed).toBe(0.75);
 
     fireEvent.click(screen.getByRole("radio", { name: /Zoom/ }));

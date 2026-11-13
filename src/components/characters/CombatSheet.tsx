@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import type { Character, Skill, Spell } from "@/types";
 import { Spinner } from "@/components/ui";
 import { useSocket, DICE_ROLL_LOADING_DELAY } from "@/context/SocketContext";
-import { d20s, showDice3D } from "@/lib/dice3d";
+import { d20s, showDice3D, type Dice3DDie } from "@/lib/dice3d";
 
 type CombatSheetProps = {
   characterId: string;
@@ -29,7 +29,7 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
     const load = async () => {
       try {
         const response = await fetch(`/api/characters/${characterId}`, {
-          credentials: "include"
+          credentials: "include",
         });
         const result = await response.json();
 
@@ -65,11 +65,20 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
   }
 
   const { character, skills, spells } = data;
-  const hpPercent = Math.min(100, Math.max(0, (character.hitPointsCurrent / Math.max(character.hitPointsMax, 1)) * 100));
+  const hpPercent = Math.min(
+    100,
+    Math.max(0, (character.hitPointsCurrent / Math.max(character.hitPointsMax, 1)) * 100),
+  );
   const currentCampaignId = character.campaignId ?? "";
 
   // Helper function to roll dice with 3-second delay
-  const rollWithLoading = (rollType: string, formula: string, result: number, detail: string) => {
+  const rollWithLoading = (
+    rollType: string,
+    formula: string,
+    result: number,
+    detail: string,
+    rolledDice?: Dice3DDie[],
+  ) => {
     if (!currentCampaignId) return;
     setIsRollingDice(true);
     setTimeout(() => {
@@ -81,6 +90,8 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
         formula,
         result,
         diceDetail: detail,
+        senderRole: "player",
+        rolledDice,
       });
       setIsRollingDice(false);
     }, DICE_ROLL_LOADING_DELAY);
@@ -126,7 +137,9 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
         <div className="rounded-lg border border-red-900/60 bg-red-950/20 p-2">
           <div className="flex justify-between text-xs font-semibold text-red-400 mb-1">
             <span>VIDA (HP)</span>
-            <span>{character.hitPointsCurrent} / {character.hitPointsMax}</span>
+            <span>
+              {character.hitPointsCurrent} / {character.hitPointsMax}
+            </span>
           </div>
           <div className="h-3 w-full overflow-hidden rounded-full bg-gray-900">
             <div className="h-full bg-red-600 transition-all" style={{ width: `${hpPercent}%` }} />
@@ -136,7 +149,9 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
         <div className="rounded-lg border border-blue-900/60 bg-blue-950/20 p-2">
           <div className="flex justify-between text-xs font-semibold text-blue-400 mb-1">
             <span>MANA (MP)</span>
-            <span>{character.manaPointsCurrent} / {character.manaPointsMax}</span>
+            <span>
+              {character.manaPointsCurrent} / {character.manaPointsMax}
+            </span>
           </div>
           <div
             className="flex h-3 w-full items-center gap-0.5 overflow-hidden"
@@ -148,22 +163,28 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
             data-testid="mana-bar-segmented"
           >
             {Math.max(0, Math.floor(character.manaPointsMax || 0)) > 0 ? (
-              Array.from({ length: Math.max(0, Math.floor(character.manaPointsMax || 0)) }, (_, index) => {
-                const isFilled = index < Math.max(0, Math.min(character.manaPointsMax, character.manaPointsCurrent || 0));
-                return (
-                  <div
-                    key={index}
-                    data-testid="mana-segment"
-                    data-filled={isFilled ? "true" : "false"}
-                    className={`h-full flex-1 rounded-sm transition-all duration-200 ${
-                      isFilled
-                        ? "bg-blue-600"
-                        : "bg-gray-900 border border-gray-800/80"
-                    }`}
-                    title={`Mana ${index + 1}/${character.manaPointsMax}: ${isFilled ? "Ativo" : "Gasto"}`}
-                  />
-                );
-              })
+              Array.from(
+                { length: Math.max(0, Math.floor(character.manaPointsMax || 0)) },
+                (_, index) => {
+                  const isFilled =
+                    index <
+                    Math.max(
+                      0,
+                      Math.min(character.manaPointsMax, character.manaPointsCurrent || 0),
+                    );
+                  return (
+                    <div
+                      key={index}
+                      data-testid="mana-segment"
+                      data-filled={isFilled ? "true" : "false"}
+                      className={`h-full flex-1 rounded-sm transition-all duration-200 ${
+                        isFilled ? "bg-blue-600" : "bg-gray-900 border border-gray-800/80"
+                      }`}
+                      title={`Mana ${index + 1}/${character.manaPointsMax}: ${isFilled ? "Ativo" : "Gasto"}`}
+                    />
+                  );
+                },
+              )
             ) : (
               <div className="h-full w-full rounded-sm bg-gray-900 border border-gray-800/80" />
             )}
@@ -235,6 +256,8 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
                         formula: "1d20 + Força",
                         result: total,
                         diceDetail: `Rolou [${d20}] + ${character.attributes.forca} = ${total}`,
+                        senderRole: "player",
+                        rolledDice: d20s(d20),
                       });
                       setIsRollingDice(false);
                     }, DICE_ROLL_LOADING_DELAY);
@@ -272,6 +295,8 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
                         formula: "1d20 + Destreza",
                         result: total,
                         diceDetail: `Rolou [${d20}] + ${character.attributes.destreza} = ${total}`,
+                        senderRole: "player",
+                        rolledDice: d20s(d20),
                       });
                       setIsRollingDice(false);
                     }, DICE_ROLL_LOADING_DELAY);
@@ -286,13 +311,16 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
           </div>
         )}
 
-        {activeTab === "skills" && (
-          skills.length === 0 ? (
+        {activeTab === "skills" &&
+          (skills.length === 0 ? (
             <p className="text-gray-500 text-center py-4">Nenhuma habilidade treinada</p>
           ) : (
             <div className="space-y-2">
               {skills.map((s) => (
-                <div key={s.id} className="rounded-lg border border-gray-800 bg-gray-900 p-2 flex justify-between items-center">
+                <div
+                  key={s.id}
+                  className="rounded-lg border border-gray-800 bg-gray-900 p-2 flex justify-between items-center"
+                >
                   <div>
                     <p className="font-bold text-white">{s.name}</p>
                     <p className="text-gray-400 text-[10px]">{s.keyAttribute}</p>
@@ -310,6 +338,7 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
                         const match = rollExpr.trim().match(/^(\d+)d(\d+)(?:\s*([+-])\s*(\d+))?$/i);
                         let result = 0;
                         let detail = rollExpr;
+                        let rolledDice: Dice3DDie[] = [];
                         if (match) {
                           const count = parseInt(match[1], 10);
                           const sides = parseInt(match[2], 10);
@@ -324,11 +353,13 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
                           }
                           result = sum + mod;
                           detail = `Rolou [${rolls.join(", ")}]${mod !== 0 ? (mod > 0 ? ` + ${mod}` : ` - ${Math.abs(mod)}`) : ""} = ${result}`;
-                          showDice3D(rolls.map((value) => ({ sides, value })));
+                          rolledDice = rolls.map((value) => ({ sides, value }));
+                          showDice3D(rolledDice);
                         } else {
                           result = Math.floor(Math.random() * 20) + 1;
                           detail = `Rolou [${result}]`;
-                          showDice3D(d20s(result));
+                          rolledDice = d20s(result);
+                          showDice3D(rolledDice);
                         }
                         setTimeout(() => {
                           rollDice({
@@ -339,6 +370,8 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
                             formula: rollExpr,
                             result,
                             diceDetail: detail,
+                            senderRole: "player",
+                            rolledDice,
                           });
                           setIsRollingDice(false);
                         }, DICE_ROLL_LOADING_DELAY);
@@ -352,19 +385,23 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
                 </div>
               ))}
             </div>
-          )
-        )}
+          ))}
 
-        {activeTab === "spells" && (
-          spells.length === 0 ? (
+        {activeTab === "spells" &&
+          (spells.length === 0 ? (
             <p className="text-gray-500 text-center py-4">Nenhuma magia aprendida</p>
           ) : (
             <div className="space-y-2">
               {spells.map((sp) => (
-                <div key={sp.id} className="rounded-lg border border-gray-800 bg-gray-900 p-2 flex justify-between items-center">
+                <div
+                  key={sp.id}
+                  className="rounded-lg border border-gray-800 bg-gray-900 p-2 flex justify-between items-center"
+                >
                   <div>
                     <p className="font-bold text-white">{sp.name}</p>
-                    <p className="text-gray-400 text-[10px]">Custo: {sp.manaCost} Mana · Círculo {sp.circle}</p>
+                    <p className="text-gray-400 text-[10px]">
+                      Custo: {sp.manaCost} Mana · Círculo {sp.circle}
+                    </p>
                   </div>
                   {isRollingDice ? (
                     <div className="flex items-center gap-2">
@@ -386,6 +423,8 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
                             formula: "1d20",
                             result: d20,
                             diceDetail: `Magia ${sp.name}: [${d20}]`,
+                            senderRole: "player",
+                            rolledDice: d20s(d20),
                           });
                           setIsRollingDice(false);
                         }, DICE_ROLL_LOADING_DELAY);
@@ -399,8 +438,7 @@ export function CombatSheet({ characterId, onClose }: CombatSheetProps) {
                 </div>
               ))}
             </div>
-          )
-        )}
+          ))}
       </div>
     </div>
   );

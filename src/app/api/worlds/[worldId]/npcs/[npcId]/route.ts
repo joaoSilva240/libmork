@@ -13,11 +13,7 @@ import { logger } from "@/lib/logger";
 type RouteContext = { params: Promise<{ worldId: string; npcId: string }> };
 
 async function isWorldMaster(worldId: string, userId: string): Promise<boolean> {
-  const [world] = await db
-    .select()
-    .from(worlds)
-    .where(eq(worlds.id, worldId))
-    .limit(1);
+  const [world] = await db.select().from(worlds).where(eq(worlds.id, worldId)).limit(1);
 
   if (!world || !world.campaignId) return false;
 
@@ -39,10 +35,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { worldId, npcId } = await params;
@@ -52,21 +45,14 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     if (!isMaster) {
       return NextResponse.json(
         { success: false, error: "Sem permissão para acessar este NPC" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
-    const [npc] = await db
-      .select()
-      .from(npcs)
-      .where(eq(npcs.id, npcId))
-      .limit(1);
+    const [npc] = await db.select().from(npcs).where(eq(npcs.id, npcId)).limit(1);
 
     if (!npc || npc.worldId !== worldId) {
-      return NextResponse.json(
-        { success: false, error: "NPC não encontrado" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "NPC não encontrado" }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -74,10 +60,10 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: npc,
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao obter NPC');
+    logger.error({ err: error }, "Erro ao obter NPC");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -91,10 +77,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { worldId, npcId } = await params;
@@ -104,21 +87,14 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     if (!isMaster) {
       return NextResponse.json(
         { success: false, error: "Apenas o mestre da campanha pode editar NPCs" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
-    const [existing] = await db
-      .select()
-      .from(npcs)
-      .where(eq(npcs.id, npcId))
-      .limit(1);
+    const [existing] = await db.select().from(npcs).where(eq(npcs.id, npcId)).limit(1);
 
     if (!existing || existing.worldId !== worldId) {
-      return NextResponse.json(
-        { success: false, error: "NPC não encontrado" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "NPC não encontrado" }, { status: 404 });
     }
 
     const body = await request.json();
@@ -131,7 +107,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
           error: "Dados inválidos",
           errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -146,10 +122,10 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       data: updated,
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao atualizar NPC');
+    logger.error({ err: error }, "Erro ao atualizar NPC");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -163,10 +139,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { worldId, npcId } = await params;
@@ -176,21 +149,14 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     if (!isMaster) {
       return NextResponse.json(
         { success: false, error: "Apenas o mestre da campanha pode excluir NPCs" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
-    const [existing] = await db
-      .select()
-      .from(npcs)
-      .where(eq(npcs.id, npcId))
-      .limit(1);
+    const [existing] = await db.select().from(npcs).where(eq(npcs.id, npcId)).limit(1);
 
     if (!existing || existing.worldId !== worldId) {
-      return NextResponse.json(
-        { success: false, error: "NPC não encontrado" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "NPC não encontrado" }, { status: 404 });
     }
 
     await db.delete(npcs).where(eq(npcs.id, npcId));
@@ -200,10 +166,10 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       message: "NPC excluído com sucesso",
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao excluir NPC');
+    logger.error({ err: error }, "Erro ao excluir NPC");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

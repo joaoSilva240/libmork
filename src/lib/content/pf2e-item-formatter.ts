@@ -121,11 +121,11 @@ export const PF2E_USAGE_PT: Record<string, string> = {
 
 export function formatPrice(price: unknown, lang: "pt" | "en" = "pt"): string {
   if (price === null || price === undefined) return "";
-  
+
   if (typeof price === "number") {
     return lang === "pt" ? `${price} PO` : `${price} gp`;
   }
-  
+
   if (typeof price === "string") {
     const trimmed = price.trim();
     if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
@@ -138,18 +138,19 @@ export function formatPrice(price: unknown, lang: "pt" | "en" = "pt"): string {
     }
     return trimmed;
   }
-  
+
   if (typeof price === "object") {
     let valueObj = price as Record<string, unknown>;
     if (valueObj.value && typeof valueObj.value === "object") {
       valueObj = valueObj.value as Record<string, unknown>;
     }
-    
+
     const parts: string[] = [];
-    const units = lang === "pt"
-      ? { pp: "PE", gp: "PO", sp: "PP", cp: "PC" }
-      : { pp: "pp", gp: "gp", sp: "sp", cp: "cp" };
-      
+    const units =
+      lang === "pt"
+        ? { pp: "PE", gp: "PO", sp: "PP", cp: "PC" }
+        : { pp: "pp", gp: "gp", sp: "sp", cp: "cp" };
+
     const order: Array<"pp" | "gp" | "sp" | "cp"> = ["pp", "gp", "sp", "cp"];
     let hasAny = false;
     for (const key of order) {
@@ -161,11 +162,11 @@ export function formatPrice(price: unknown, lang: "pt" | "en" = "pt"): string {
         }
       }
     }
-    
+
     if (parts.length > 0) {
       return parts.join(", ");
     }
-    
+
     if (hasAny) {
       for (const key of order) {
         if (valueObj[key] !== undefined && valueObj[key] !== null) {
@@ -173,16 +174,16 @@ export function formatPrice(price: unknown, lang: "pt" | "en" = "pt"): string {
         }
       }
     }
-    
+
     return "";
   }
-  
+
   return String(price);
 }
 
 export function formatDamage(damage: unknown, lang: "pt" | "en" = "pt"): string {
   if (damage === null || damage === undefined) return "";
-  
+
   if (typeof damage === "string") {
     const trimmed = damage.trim();
     if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
@@ -195,16 +196,16 @@ export function formatDamage(damage: unknown, lang: "pt" | "en" = "pt"): string 
     }
     return trimmed;
   }
-  
+
   if (typeof damage === "object") {
     let target = damage as Record<string, unknown>;
     if (target.value && typeof target.value === "object") {
       target = target.value as Record<string, unknown>;
     }
-    
+
     const dice = target.dice !== undefined && target.dice !== null ? String(target.dice) : "";
     const die = target.die !== undefined && target.die !== null ? String(target.die) : "";
-    
+
     let formula = "";
     if (dice && die) {
       formula = `${dice}${die}`;
@@ -213,12 +214,12 @@ export function formatDamage(damage: unknown, lang: "pt" | "en" = "pt"): string 
     } else if (dice) {
       formula = dice;
     }
-    
+
     const damageType = target.damageType;
     if (!damageType) {
       return formula;
     }
-    
+
     const typeStr = String(damageType).trim().toLowerCase();
     if (lang === "pt") {
       const translated = PF2E_DAMAGE_TYPES_PT[typeStr] || typeStr;
@@ -227,13 +228,13 @@ export function formatDamage(damage: unknown, lang: "pt" | "en" = "pt"): string 
       return formula ? `${formula} ${typeStr}` : typeStr;
     }
   }
-  
+
   return String(damage);
 }
 
 export function formatTraits(traits: unknown, lang: "pt" | "en" = "pt"): string {
   if (traits === null || traits === undefined) return "";
-  
+
   let list: unknown[] = [];
   if (Array.isArray(traits)) {
     list = traits;
@@ -247,7 +248,10 @@ export function formatTraits(traits: unknown, lang: "pt" | "en" = "pt"): string 
         return trimmed;
       }
     }
-    list = trimmed.split(",").map(t => t.trim()).filter(Boolean);
+    list = trimmed
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
   } else if (typeof traits === "object") {
     const traitsObj = traits as Record<string, unknown>;
     if (Array.isArray(traitsObj.value)) {
@@ -256,25 +260,26 @@ export function formatTraits(traits: unknown, lang: "pt" | "en" = "pt"): string 
       return formatTraits(traitsObj.value, lang);
     } else {
       const keys = Object.keys(traitsObj);
-      if (keys.length > 0 && keys.every(k => typeof traitsObj[k] === "boolean")) {
-        list = keys.filter(k => traitsObj[k]);
+      if (keys.length > 0 && keys.every((k) => typeof traitsObj[k] === "boolean")) {
+        list = keys.filter((k) => traitsObj[k]);
       } else {
         list = Object.values(traitsObj);
       }
     }
   }
-  
-  const mapped = list.map(item => {
-    const str = typeof item === "object" && item !== null && "value" in item
-      ? String((item as Record<string, unknown>).value).trim()
-      : String(item).trim();
+
+  const mapped = list.map((item) => {
+    const str =
+      typeof item === "object" && item !== null && "value" in item
+        ? String((item as Record<string, unknown>).value).trim()
+        : String(item).trim();
     if (lang === "pt") {
       const lower = str.toLowerCase();
       return PF2E_TRAITS_PT[lower] || str;
     }
     return str;
   });
-  
+
   return mapped.filter(Boolean).join(", ");
 }
 
@@ -283,7 +288,10 @@ export function formatCategory(category: unknown, lang: "pt" | "en" = "pt"): str
   let valStr = "";
   if (typeof category === "object") {
     const catObj = category as Record<string, unknown>;
-    valStr = catObj.value !== undefined && catObj.value !== null ? String(catObj.value) : JSON.stringify(category);
+    valStr =
+      catObj.value !== undefined && catObj.value !== null
+        ? String(catObj.value)
+        : JSON.stringify(category);
   } else {
     valStr = String(category);
   }
@@ -300,7 +308,10 @@ export function formatGroup(group: unknown, lang: "pt" | "en" = "pt"): string {
   let valStr = "";
   if (typeof group === "object") {
     const grpObj = group as Record<string, unknown>;
-    valStr = grpObj.value !== undefined && grpObj.value !== null ? String(grpObj.value) : JSON.stringify(group);
+    valStr =
+      grpObj.value !== undefined && grpObj.value !== null
+        ? String(grpObj.value)
+        : JSON.stringify(group);
   } else {
     valStr = String(group);
   }
@@ -317,7 +328,10 @@ export function formatUsage(usage: unknown, lang: "pt" | "en" = "pt"): string {
   let valStr = "";
   if (typeof usage === "object") {
     const useObj = usage as Record<string, unknown>;
-    valStr = useObj.value !== undefined && useObj.value !== null ? String(useObj.value) : JSON.stringify(usage);
+    valStr =
+      useObj.value !== undefined && useObj.value !== null
+        ? String(useObj.value)
+        : JSON.stringify(usage);
   } else {
     valStr = String(usage);
   }
@@ -329,11 +343,15 @@ export function formatUsage(usage: unknown, lang: "pt" | "en" = "pt"): string {
   return valStr;
 }
 
-export function formatTechnicalField(key: string, value: unknown, lang: "pt" | "en" = "pt"): string {
+export function formatTechnicalField(
+  key: string,
+  value: unknown,
+  lang: "pt" | "en" = "pt",
+): string {
   if (value === null || value === undefined) return "";
-  
+
   const normKey = key.trim().toLowerCase();
-  
+
   switch (normKey) {
     case "price":
       return formatPrice(value, lang);
@@ -358,7 +376,7 @@ export function formatTechnicalField(key: string, value: unknown, lang: "pt" | "
         }
       }
       if (extracted === null || extracted === undefined) return "";
-      
+
       if (typeof extracted === "string") {
         const trimmed = extracted.trim();
         if (trimmed.startsWith("{") || trimmed.startsWith("[")) {

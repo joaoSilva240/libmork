@@ -1,20 +1,24 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoutButton } from "@/components/auth/LogoutButton";
-import { Dices, Library, Globe2, Settings, ChevronLeft, ChevronRight } from "lucide-react";
+import { useDesktopClient } from "@/hooks/useDesktopClient";
+import { Dices, Library, Globe2, Settings, ChevronLeft, ChevronRight, Server } from "lucide-react";
 
 const STORAGE_KEY = "libmork-master-sidebar-collapsed";
 
 export function MasterSidebar() {
   const pathname = usePathname();
-  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored !== null ? stored === "true" : false;
-  });
+  const { isDesktop, disconnectServer } = useDesktopClient();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Restaurado pós-hidratação para não divergir do HTML renderizado no servidor
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsCollapsed(localStorage.getItem(STORAGE_KEY) === "true");
+  }, []);
 
   const toggleCollapse = () => {
     setIsCollapsed((prev) => {
@@ -104,7 +108,21 @@ export function MasterSidebar() {
       </div>
 
       {/* Footer / Logout */}
-      <div className="p-4 border-t border-dominant-border flex items-center justify-center">
+      <div className="p-4 border-t border-dominant-border flex flex-col gap-2 items-center justify-center">
+        {isDesktop && (
+          <button
+            type="button"
+            onClick={disconnectServer}
+            className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-xs font-medium hover:bg-dominant-container text-secondary-muted hover:text-secondary-pure transition-colors cursor-pointer ${
+              isCollapsed ? "justify-center px-0" : ""
+            }`}
+            title="Trocar Servidor (Gateway)"
+            aria-label="Trocar Servidor (Gateway)"
+          >
+            <Server className="h-4 w-4 shrink-0" aria-hidden="true" />
+            {!isCollapsed && <span className="truncate">Trocar Servidor</span>}
+          </button>
+        )}
         {isCollapsed ? (
           <LogoutButton iconOnly={true} />
         ) : (

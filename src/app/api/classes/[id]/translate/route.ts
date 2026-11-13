@@ -36,14 +36,14 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!session) {
       return NextResponse.json(
         { success: false, error: "Não autenticado", code: "unauthenticated" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     if (session.user.role !== "master") {
       return NextResponse.json(
         { success: false, error: "Apenas mestres podem traduzir classes", code: "forbidden" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!existingClass) {
       return NextResponse.json(
         { success: false, error: "Classe não encontrada", code: "not_found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -91,7 +91,11 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       }),
     };
 
-    const translated = await translateContentWithLLM("class", payloadToTranslate, CLASS_SYSTEM_PROMPT);
+    const translated = await translateContentWithLLM(
+      "class",
+      payloadToTranslate,
+      CLASS_SYSTEM_PROMPT,
+    );
 
     let finalName = existingClass.name;
     let finalDescription = existingClass.description;
@@ -109,12 +113,16 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       finalProficiencies = {
         weapons: Array.isArray(tp.weapons) ? (tp.weapons as string[]) : proficiencies.weapons,
         armor: Array.isArray(tp.armor) ? (tp.armor as string[]) : proficiencies.armor,
-        languages: Array.isArray(tp.languages) ? (tp.languages as string[]) : proficiencies.languages,
+        languages: Array.isArray(tp.languages)
+          ? (tp.languages as string[])
+          : proficiencies.languages,
         tools: Array.isArray(tp.tools) ? (tp.tools as string[]) : proficiencies.tools,
       };
     }
     if (Array.isArray(translated.initialItems)) {
-      finalInitialItems = (translated.initialItems as Array<{ name?: string; quantity?: number; description?: string }>).map((item, idx) => ({
+      finalInitialItems = (
+        translated.initialItems as Array<{ name?: string; quantity?: number; description?: string }>
+      ).map((item, idx) => ({
         item_id: initialItems[idx]?.item_id || null,
         name: item.name || initialItems[idx]?.name || "Item",
         quantity: Number(item.quantity) || initialItems[idx]?.quantity || 1,
@@ -137,7 +145,11 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
     // Atualiza benefícios de nível
     if (Array.isArray(translated.benefits) && rawBenefits.length > 0) {
-      const transBenefits = translated.benefits as Array<{ level?: number; advantages?: string[]; description?: string }>;
+      const transBenefits = translated.benefits as Array<{
+        level?: number;
+        advantages?: string[];
+        description?: string;
+      }>;
       for (let i = 0; i < rawBenefits.length; i++) {
         const current = rawBenefits[i];
         const tb = transBenefits.find((b) => b.level === current.level) || transBenefits[i];
@@ -145,8 +157,11 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
           const currentBenefitsObj = (current.benefits as unknown as ClassLevelBenefit) || {};
           const newBenefitsObj: ClassLevelBenefit = {
             ...currentBenefitsObj,
-            advantages: Array.isArray(tb.advantages) ? tb.advantages : currentBenefitsObj.advantages,
-            description: typeof tb.description === "string" ? tb.description : currentBenefitsObj.description,
+            advantages: Array.isArray(tb.advantages)
+              ? tb.advantages
+              : currentBenefitsObj.advantages,
+            description:
+              typeof tb.description === "string" ? tb.description : currentBenefitsObj.description,
           };
           await db
             .update(classLevelBenefits)
@@ -175,14 +190,17 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const durationMs = Date.now() - start;
     const err = error as { code?: string; status?: number; message?: string; causeCode?: string };
     const rawCode = err?.code ?? extractErrorCode(error);
-    const isTranslationCode = typeof rawCode === "string" && rawCode.startsWith("translation_provider_");
-    const mappedCode: TranslationErrorCode = isTranslationCode ? (rawCode as TranslationErrorCode) : "translation_provider_unreachable";
+    const isTranslationCode =
+      typeof rawCode === "string" && rawCode.startsWith("translation_provider_");
+    const mappedCode: TranslationErrorCode = isTranslationCode
+      ? (rawCode as TranslationErrorCode)
+      : "translation_provider_unreachable";
 
     const status = isTranslationCode ? getStatusForCode(mappedCode) : 502;
     const details = (err?.message || "").slice(0, 500);
 
     logger.error(
-      `[translateClass] classId=${classIdForLog} durationMs=${durationMs} error.code=${mappedCode} status=${status} details=${details.slice(0, 200)}`
+      `[translateClass] classId=${classIdForLog} durationMs=${durationMs} error.code=${mappedCode} status=${status} details=${details.slice(0, 200)}`,
     );
 
     return NextResponse.json(
@@ -192,7 +210,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         code: mappedCode,
         details: details.slice(0, 500),
       },
-      { status }
+      { status },
     );
   }
 }

@@ -34,12 +34,7 @@ export function resolvePdfEmbedUrl(doc: {
 
   // Candidatos em ordem de prioridade para embed de PDF direto
   // IMPORTANTE: webReaderUrl NUNCA deve ser embutido como embedUrl de PDF para evitar tela quebrada do leitor web
-  const candidates = [
-    doc.pdfProxyUrl,
-    doc.acquisitionUrl,
-    doc.externalUrl,
-    doc.url,
-  ];
+  const candidates = [doc.pdfProxyUrl, doc.acquisitionUrl, doc.externalUrl, doc.url];
 
   let rawCandidate: string | null = null;
   for (const c of candidates) {
@@ -63,7 +58,11 @@ export function resolvePdfEmbedUrl(doc: {
     return { embedUrl: null, isDirectEmbedPossible: false };
   }
 
-  if (provider === "smb" || rawCandidate.startsWith("smb://") || rawCandidate.startsWith("smb:\\")) {
+  if (
+    provider === "smb" ||
+    rawCandidate.startsWith("smb://") ||
+    rawCandidate.startsWith("smb:\\")
+  ) {
     const streamUrl = `/api/library/documents/stream?file=${encodeURIComponent(rawCandidate)}`;
     return { embedUrl: streamUrl, isDirectEmbedPossible: true };
   }
@@ -158,12 +157,7 @@ export function PdfViewerModal({
     webReaderUrl,
   });
 
-  const rawTargetCandidates = [
-    pdfProxyUrl,
-    acquisitionUrl,
-    externalUrl,
-    url,
-  ];
+  const rawTargetCandidates = [pdfProxyUrl, acquisitionUrl, externalUrl, url];
   let rawTarget: string | null = null;
   for (const c of rawTargetCandidates) {
     if (typeof c === "string") {
@@ -234,7 +228,12 @@ export function PdfViewerModal({
               >
                 <span>Abrir no Kavita</span>
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                  />
                 </svg>
               </a>
             )}
@@ -250,7 +249,12 @@ export function PdfViewerModal({
               >
                 <span>Abrir original</span>
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                  />
                 </svg>
               </a>
             )}
@@ -280,11 +284,10 @@ export function PdfViewerModal({
           ) : kavitaWebLink ? (
             <div className="flex flex-col items-center justify-center h-full p-6 text-center text-gray-400">
               <span className="text-4xl mb-3">📖</span>
-              <p className="text-sm font-semibold text-gray-200 mb-1">
-                Leitor Web do Kavita
-              </p>
+              <p className="text-sm font-semibold text-gray-200 mb-1">Leitor Web do Kavita</p>
               <p className="text-xs text-gray-400 max-w-md mb-4">
-                Este documento não possui download direto de arquivo PDF no catálogo OPDS, mas está disponível para leitura no Kavita.
+                Este documento não possui download direto de arquivo PDF no catálogo OPDS, mas está
+                disponível para leitura no Kavita.
               </p>
               <a
                 href={kavitaWebLink}
@@ -294,7 +297,12 @@ export function PdfViewerModal({
               >
                 <span>Abrir no Kavita</span>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                  />
                 </svg>
               </a>
             </div>
@@ -318,10 +326,13 @@ export function PdfViewerModal({
               <>Disponível para leitura na interface web do Kavita.</>
             ) : originalLink ? (
               <>
-                Caso o leitor embutido falhe devido às políticas do provedor ({provider}), use o botão <strong>Abrir original</strong> acima.
+                Caso o leitor embutido falhe devido às políticas do provedor ({provider}), use o
+                botão <strong>Abrir original</strong> acima.
               </>
             ) : (
-              <>Provedor: <span className="uppercase font-semibold">{provider}</span></>
+              <>
+                Provedor: <span className="uppercase font-semibold">{provider}</span>
+              </>
             )}
           </span>
           <button

@@ -1,5 +1,5 @@
-require('dotenv').config({ path: '.env.local' });
-const { Client } = require('pg');
+require("dotenv").config({ path: ".env.local" });
+const { Client } = require("pg");
 
 async function addColumns() {
   const client = new Client({
@@ -8,7 +8,7 @@ async function addColumns() {
 
   try {
     await client.connect();
-    console.log('Connected to database');
+    console.log("Connected to database");
 
     const sqlStatements = [
       `ALTER TABLE "worlds" ADD COLUMN IF NOT EXISTS "cover_url" TEXT;`,
@@ -29,18 +29,18 @@ async function addColumns() {
       ORDER BY ordinal_position;
     `);
 
-    console.log('\nVerified columns:');
+    console.log("\nVerified columns:");
     result.rows.forEach((row) => {
       console.log(`  - ${row.column_name} (${row.data_type})`);
     });
 
-    console.log('\nDone!');
+    console.log("\nDone!");
   } catch (error) {
-    console.error('Error:', error.message);
+    console.error("Error:", error.message);
     process.exit(1);
   } finally {
     await client.end();
-    console.log('Database connection closed');
+    console.log("Database connection closed");
   }
 }
 

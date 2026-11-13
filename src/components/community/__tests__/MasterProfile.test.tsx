@@ -76,19 +76,13 @@ describe("MasterProfile Component", () => {
     });
 
     render(
-      <MasterProfile
-        userId="user-123"
-        profileData={mockProfile}
-        currentUserId="user-other"
-      />
+      <MasterProfile userId="user-123" profileData={mockProfile} currentUserId="user-other" />,
     );
 
     // Nome de Mestre e Handle
     expect(screen.getByText("Gandalf, o Cinzento")).toBeInTheDocument();
     expect(screen.getByText("@mestre_gandalf")).toBeInTheDocument();
-    expect(
-      screen.getByText("Um mago nunca se atrasa, nem se adianta.")
-    ).toBeInTheDocument();
+    expect(screen.getByText("Um mago nunca se atrasa, nem se adianta.")).toBeInTheDocument();
 
     // Badges de estatísticas
     expect(screen.getByText("Campanhas")).toBeInTheDocument();
@@ -115,13 +109,7 @@ describe("MasterProfile Component", () => {
       json: async () => ({ data: [] }),
     });
 
-    render(
-      <MasterProfile
-        userId="user-123"
-        profileData={mockProfile}
-        currentUserId="user-123"
-      />
-    );
+    render(<MasterProfile userId="user-123" profileData={mockProfile} currentUserId="user-123" />);
 
     const editBtn = screen.getByRole("button", { name: /editar perfil/i });
     expect(editBtn).toBeInTheDocument();
@@ -156,13 +144,7 @@ describe("MasterProfile Component", () => {
 
     global.fetch = fetchMock;
 
-    render(
-      <MasterProfile
-        userId="user-123"
-        profileData={mockProfile}
-        currentUserId="user-123"
-      />
-    );
+    render(<MasterProfile userId="user-123" profileData={mockProfile} currentUserId="user-123" />);
 
     // Clica na tab "Clonados"
     const clonedTab = screen.getByRole("button", { name: "Clonados" });
@@ -170,7 +152,7 @@ describe("MasterProfile Component", () => {
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining("/api/community/profile/user-123/cloned")
+        expect.stringContaining("/api/community/profile/user-123/cloned"),
       );
     });
 
@@ -185,18 +167,10 @@ describe("MasterProfile Component", () => {
       json: async () => ({ data: [] }),
     });
 
-    render(
-      <MasterProfile
-        userId="user-123"
-        profileData={mockProfile}
-        currentUserId="user-123"
-      />
-    );
+    render(<MasterProfile userId="user-123" profileData={mockProfile} currentUserId="user-123" />);
 
     await waitFor(() => {
-      expect(
-        screen.getByText("Nenhuma publicação criada por este mestre.")
-      ).toBeInTheDocument();
+      expect(screen.getByText("Nenhuma publicação criada por este mestre.")).toBeInTheDocument();
     });
   });
 });

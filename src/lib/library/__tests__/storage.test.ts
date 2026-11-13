@@ -31,17 +31,13 @@ describe("Library Storage Path Resolver", () => {
   it("resolve caminho seguro para subpastas", () => {
     const result = resolveSafeLibraryPath("dnd5e/livros/jogador.pdf");
     expect(result.success).toBe(true);
-    expect(result.resolvedPath).toBe(
-      path.join(mockBaseDir, "dnd5e", "livros", "jogador.pdf")
-    );
+    expect(result.resolvedPath).toBe(path.join(mockBaseDir, "dnd5e", "livros", "jogador.pdf"));
   });
 
   it("remove prefixo smb:// corretamente", () => {
     const result = resolveSafeLibraryPath("smb://compartilhamento/livro.pdf");
     expect(result.success).toBe(true);
-    expect(result.resolvedPath).toBe(
-      path.join(mockBaseDir, "compartilhamento", "livro.pdf")
-    );
+    expect(result.resolvedPath).toBe(path.join(mockBaseDir, "compartilhamento", "livro.pdf"));
   });
 
   it("bloqueia tentativas com .. (Path Traversal)", () => {

@@ -52,10 +52,7 @@ export async function POST(request: NextRequest) {
         request.url,
       );
     } else {
-      return NextResponse.json(
-        { success: false, error: "Dados inválidos" },
-        { status: 400 },
-      );
+      return NextResponse.json({ success: false, error: "Dados inválidos" }, { status: 400 });
     }
 
     const validation = registerSchema.safeParse(body);
@@ -63,12 +60,12 @@ export async function POST(request: NextRequest) {
     if (!validation.success) {
       if (!isJson) return formErrorResponse(request, "invalid_data");
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: "Dados inválidos",
-          errors: validation.error.issues 
+          errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -84,10 +81,7 @@ export async function POST(request: NextRequest) {
 
     if (existingUser.length > 0) {
       if (!isJson) return formErrorResponse(request, "email_exists");
-      return NextResponse.json(
-        { success: false, error: "E-mail já cadastrado" },
-        { status: 409 }
-      );
+      return NextResponse.json({ success: false, error: "E-mail já cadastrado" }, { status: 409 });
     }
 
     // Cria o usuário
@@ -106,10 +100,7 @@ export async function POST(request: NextRequest) {
     // Cria a sessão
     const destination = redirect || "/";
     if (!isJson) {
-      const response = NextResponse.redirect(
-        new URL(destination, getPublicOrigin(request)),
-        303,
-      );
+      const response = NextResponse.redirect(new URL(destination, getPublicOrigin(request)), 303);
       response.headers.set("Cache-Control", "no-store");
       try {
         await createSession(newUser.id, request, response);
@@ -137,7 +128,7 @@ export async function POST(request: NextRequest) {
       logger.error({ err }, "Erro ao criar sessão após registro");
       return NextResponse.json(
         { success: false, error: "Erro interno do servidor" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -147,16 +138,13 @@ export async function POST(request: NextRequest) {
     if (!isJson) return formErrorResponse(request, "server_error");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function GET(request: NextRequest) {
-  const response = NextResponse.redirect(
-    new URL("/register", getPublicOrigin(request)),
-    303,
-  );
+  const response = NextResponse.redirect(new URL("/register", getPublicOrigin(request)), 303);
   response.headers.set("Cache-Control", "no-store");
   return response;
 }

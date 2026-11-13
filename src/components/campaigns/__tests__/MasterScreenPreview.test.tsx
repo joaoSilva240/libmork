@@ -10,7 +10,7 @@ describe("MasterScreenPreview Component", () => {
         showSessionLog={true}
         showCanvas={true}
         showMap={true}
-      />
+      />,
     );
 
     const preview = screen.getByRole("img", {
@@ -32,7 +32,7 @@ describe("MasterScreenPreview Component", () => {
         showSessionLog={false}
         showCanvas={true}
         showMap={true}
-      />
+      />,
     );
 
     expect(screen.getByText("Gestão")).toBeInTheDocument();
@@ -48,7 +48,7 @@ describe("MasterScreenPreview Component", () => {
         showSessionLog={true}
         showCanvas={true}
         showMap={true}
-      />
+      />,
     );
 
     expect(screen.getByText("Gestão")).toBeInTheDocument();
@@ -64,7 +64,7 @@ describe("MasterScreenPreview Component", () => {
         showSessionLog={true}
         showCanvas={false}
         showMap={false}
-      />
+      />,
     );
 
     expect(screen.queryByText("Canvas/Mapa")).not.toBeInTheDocument();
@@ -81,7 +81,7 @@ describe("MasterScreenPreview Component", () => {
         showSessionLog={true}
         showCanvas={true}
         showMap={false}
-      />
+      />,
     );
 
     expect(screen.getByText("Canvas/Mapa")).toBeInTheDocument();
@@ -95,7 +95,7 @@ describe("MasterScreenPreview Component", () => {
         showSessionLog={true}
         showCanvas={false}
         showMap={true}
-      />
+      />,
     );
 
     expect(screen.getByText("Canvas/Mapa")).toBeInTheDocument();
@@ -109,10 +109,50 @@ describe("MasterScreenPreview Component", () => {
         showSessionLog={true}
         showCanvas={true}
         showMap={true}
-      />
+      />,
     );
 
     const transitionElements = container.querySelectorAll(".transition-all.duration-300");
     expect(transitionElements.length).toBeGreaterThan(0);
+  });
+});
+
+describe("MasterScreenPreview Component (Issue #75)", () => {
+  it("renders modules in their configured columns", () => {
+    render(
+      <MasterScreenPreview
+        showRoster={true}
+        showSessionLog={true}
+        showCanvas={true}
+        showMap={true}
+        showJukebox={true}
+        showAssets={true}
+        leftColumnOrder={["worlds"]}
+        rightColumnOrder={["sessionLog", "jukebox"]}
+      />,
+    );
+
+    const leftCol = screen.getByTestId("preview-left-col");
+    const rightCol = screen.getByTestId("preview-right-col");
+
+    expect(leftCol).toHaveTextContent(/Mundos/i);
+    expect(rightCol).toHaveTextContent(/Jukebox/i);
+    expect(rightCol).toHaveTextContent(/Logs/i);
+  });
+
+  it("hides assets when showAssets is false", () => {
+    render(
+      <MasterScreenPreview
+        showRoster={true}
+        showSessionLog={true}
+        showCanvas={true}
+        showMap={true}
+        showAssets={false}
+        leftColumnOrder={["assets"]}
+        rightColumnOrder={["sessionLog"]}
+      />,
+    );
+
+    expect(screen.queryByText(/Assets/i)).not.toBeInTheDocument();
   });
 });

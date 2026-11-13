@@ -34,16 +34,14 @@ export default function HomePage() {
             priority
             sizes="(max-width: 768px) 100vw, 65vw"
             className={`object-cover object-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform transform-gpu group-hover:scale-110 group-hover:brightness-105 ${
-              hovered === "master"
-                ? "blur-[2px] brightness-75"
-                : "blur-0 brightness-100"
+              hovered === "master" ? "blur-[2px] brightness-75" : "blur-0 brightness-100"
             }`}
           />
         </div>
 
         {/* Camada de Gradiente / Overlay Atmosférico */}
         <div className="absolute inset-0 z-1 bg-gradient-to-t from-dominant-deep/90 via-dominant-pure/60 to-dominant-pure/40 transition-opacity duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-75 md:bg-gradient-to-r md:from-dominant-deep/85 md:via-dominant-pure/55 md:to-transparent" />
-        
+
         {/* Efeito de iluminação / vignette azulada sutil para o Jogador */}
         <div className="absolute inset-0 z-2 bg-radial from-blue-950/20 via-transparent to-black/60 transition-colors duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:from-blue-900/30 group-hover:to-black/40" />
 
@@ -81,16 +79,14 @@ export default function HomePage() {
             priority
             sizes="(max-width: 768px) 100vw, 65vw"
             className={`object-cover object-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform transform-gpu group-hover:scale-110 group-hover:brightness-105 ${
-              hovered === "player"
-                ? "blur-[2px] brightness-75"
-                : "blur-0 brightness-100"
+              hovered === "player" ? "blur-[2px] brightness-75" : "blur-0 brightness-100"
             }`}
           />
         </div>
 
         {/* Camada de Gradiente / Overlay Atmosférico */}
         <div className="absolute inset-0 z-1 bg-gradient-to-t from-dominant-deep/90 via-dominant-pure/60 to-dominant-pure/40 transition-opacity duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-75 md:bg-gradient-to-l md:from-dominant-deep/85 md:via-dominant-pure/55 md:to-transparent" />
-        
+
         {/* Efeito de iluminação / vignette arroxeada misteriosa para o Mestre */}
         <div className="absolute inset-0 z-2 bg-radial from-purple-950/25 via-transparent to-black/60 transition-colors duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:from-purple-900/35 group-hover:to-black/40" />
 
@@ -108,4 +104,3 @@ export default function HomePage() {
     </main>
   );
 }
-

@@ -102,10 +102,9 @@ export function SharePickerModal({ isOpen, onClose, onPick }: SharePickerModalPr
       void (async () => {
         setLibraryLoading(true);
         try {
-          const res = await fetch(
-            `/api/chat/search?q=${encodeURIComponent(libraryQuery)}`,
-            { credentials: "include" },
-          );
+          const res = await fetch(`/api/chat/search?q=${encodeURIComponent(libraryQuery)}`, {
+            credentials: "include",
+          });
           const body = (await res.json()) as {
             success?: boolean;
             data?: { users?: unknown[]; libraryItems?: LibrarySearchItem[] };
@@ -167,16 +166,16 @@ export function SharePickerModal({ isOpen, onClose, onPick }: SharePickerModalPr
       isOpen={isOpen}
       onClose={onClose}
       ariaLabel="Compartilhar conteúdo"
-      className="max-w-md bg-secondary-card border border-secondary-border rounded-xl"
+      className="mx-auto max-w-lg overflow-hidden bg-secondary-card border border-secondary-border rounded-2xl shadow-2xl"
     >
-      <Modal.Header className="flex items-center justify-between border-b border-secondary-border p-4">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/20 text-accent">
+      <Modal.Header className="flex items-center justify-between border-b border-secondary-border bg-dominant-deep/50 px-5 py-4">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent/15 border border-accent/30 text-accent">
             <Share2 className="h-4 w-4" />
           </div>
           <h3 className="text-base font-bold text-secondary-pure">Compartilhar</h3>
         </div>
-        <Modal.CloseButton />
+        <Modal.CloseButton className="rounded-lg p-1.5 text-secondary-muted hover:text-secondary-pure hover:bg-secondary-input transition-colors cursor-pointer" />
       </Modal.Header>
 
       <div className="flex items-center gap-1 border-b border-secondary-border px-4 pt-3">
@@ -287,9 +286,7 @@ export function SharePickerModal({ isOpen, onClose, onPick }: SharePickerModalPr
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-xs font-bold text-secondary-pure">{post.title}</p>
-                  <p className="truncate text-[10px] text-secondary-muted">
-                    Por {post.authorName}
-                  </p>
+                  <p className="truncate text-[10px] text-secondary-muted">Por {post.authorName}</p>
                 </div>
               </button>
             ))}
@@ -328,9 +325,7 @@ export function SharePickerModal({ isOpen, onClose, onPick }: SharePickerModalPr
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-bold text-secondary-pure">
-                    {campaign.name}
-                  </p>
+                  <p className="truncate text-xs font-bold text-secondary-pure">{campaign.name}</p>
                 </div>
               </button>
             ))}

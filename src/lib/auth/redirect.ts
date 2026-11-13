@@ -24,11 +24,7 @@ function isPublicOrigin(value: string): boolean {
 
 function getForwardedOrigin(request: NextRequest): string | null {
   const host = request.headers.get("x-forwarded-host")?.split(",", 1)[0]?.trim();
-  const protocol = request.headers
-    .get("x-forwarded-proto")
-    ?.split(",", 1)[0]
-    ?.trim()
-    .toLowerCase();
+  const protocol = request.headers.get("x-forwarded-proto")?.split(",", 1)[0]?.trim().toLowerCase();
 
   if (
     !host ||
@@ -66,10 +62,7 @@ export function getPublicOrigin(request: NextRequest): string {
  * authentication destination. Redirects must stay relative so an internal
  * proxy origin can never leak into a Location header.
  */
-export function getSafeRedirect(
-  value: string | null | undefined,
-  origin?: string,
-): string | null {
+export function getSafeRedirect(value: string | null | undefined, origin?: string): string | null {
   if (
     !value ||
     !value.startsWith("/") ||
@@ -88,7 +81,11 @@ export function getSafeRedirect(
     }
 
     const path = destination.pathname;
-    if (DISALLOWED_REDIRECT_PATHS.some((disallowed) => path === disallowed || path.startsWith(`${disallowed}/`))) {
+    if (
+      DISALLOWED_REDIRECT_PATHS.some(
+        (disallowed) => path === disallowed || path.startsWith(`${disallowed}/`),
+      )
+    ) {
       return null;
     }
     const isAllowed = INTERNAL_REDIRECT_ROOTS.some(

@@ -27,10 +27,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { token } = await params;
@@ -38,15 +35,13 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const [invite] = await db
       .select()
       .from(campaignInvites)
-      .where(
-        and(eq(campaignInvites.token, token), eq(campaignInvites.revoked, false))
-      )
+      .where(and(eq(campaignInvites.token, token), eq(campaignInvites.revoked, false)))
       .limit(1);
 
     if (!invite) {
       return NextResponse.json(
         { success: false, error: "Convite inválido ou revogado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -60,7 +55,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
           error: "Dados inválidos",
           errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -69,15 +64,13 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const [character] = await db
       .select()
       .from(characters)
-      .where(
-        and(eq(characters.id, characterId), eq(characters.ownerId, session.user.id))
-      )
+      .where(and(eq(characters.id, characterId), eq(characters.ownerId, session.user.id)))
       .limit(1);
 
     if (!character) {
       return NextResponse.json(
         { success: false, error: "Personagem não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -88,15 +81,15 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       .where(
         and(
           eq(characterCampaigns.characterId, characterId),
-          eq(characterCampaigns.campaignId, invite.campaignId)
-        )
+          eq(characterCampaigns.campaignId, invite.campaignId),
+        ),
       )
       .limit(1);
 
     if (existingLink) {
       return NextResponse.json(
         { success: false, error: "Este personagem já participa da campanha" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -115,13 +108,13 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         success: true,
         data: newLink,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao entrar na campanha');
+    logger.error({ err: error }, "Erro ao entrar na campanha");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -1,6 +1,9 @@
 import { offlineDb, CharacterDraft, OfflineMutation } from "./db";
 
-export async function saveCharacterDraft(characterId: string, data: Record<string, unknown>): Promise<void> {
+export async function saveCharacterDraft(
+  characterId: string,
+  data: Record<string, unknown>,
+): Promise<void> {
   if (!offlineDb) return;
   await offlineDb.characterDrafts.put({
     id: characterId,
@@ -14,7 +17,9 @@ export async function getCharacterDraft(characterId: string): Promise<CharacterD
   return await offlineDb.characterDrafts.get(characterId);
 }
 
-export async function enqueueOfflineMutation(mutation: Omit<OfflineMutation, "id" | "timestamp" | "status">): Promise<number | undefined> {
+export async function enqueueOfflineMutation(
+  mutation: Omit<OfflineMutation, "id" | "timestamp" | "status">,
+): Promise<number | undefined> {
   if (!offlineDb) return undefined;
   return await offlineDb.mutationQueue.add({
     ...mutation,

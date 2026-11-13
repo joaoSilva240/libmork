@@ -7,7 +7,8 @@ function renderWithQuery(ui: ReactNode) {
   const rendered = render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
   return {
     ...rendered,
-    rerender: (nextUi: ReactNode) => rendered.rerender(<QueryClientProvider client={queryClient}>{nextUi}</QueryClientProvider>),
+    rerender: (nextUi: ReactNode) =>
+      rendered.rerender(<QueryClientProvider client={queryClient}>{nextUi}</QueryClientProvider>),
   };
 }
 import { describe, it, expect, beforeEach, vi } from "vitest";
@@ -48,7 +49,13 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
     const mockSpells = [
       {
         junction: { id: "spell-j1" },
-        content: { id: "sp-1", name: "Bola de Fogo", circle: 2, manaCost: 4, actionCostOverride: 2 },
+        content: {
+          id: "sp-1",
+          name: "Bola de Fogo",
+          circle: 2,
+          manaCost: 4,
+          actionCostOverride: 2,
+        },
       },
     ];
     const mockItems = [
@@ -94,7 +101,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         characterId="char-123"
         defaultType="items"
         allowedTypes={["items", "spells", "conditions"]}
-      />
+      />,
     );
 
     // Wait for all 3 carousels to render
@@ -106,7 +113,16 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
 
     // Verify card contents and sizing (#UI-006, #UI-007, #UI-008)
     const spellCard = screen.getByText("Bola de Fogo").closest(".snap-start");
-    expect(spellCard).toHaveClass("w-[28%]", "min-w-[92px]", "max-w-[110px]", "aspect-square", "p-2", "snap-start", "relative", "overflow-hidden");
+    expect(spellCard).toHaveClass(
+      "w-[28%]",
+      "min-w-[92px]",
+      "max-w-[110px]",
+      "aspect-square",
+      "p-2",
+      "snap-start",
+      "relative",
+      "overflow-hidden",
+    );
     expect(spellCard?.parentElement).toHaveClass("flex", "gap-2", "overflow-x-auto");
 
     expect(screen.getByText("Bola de Fogo")).toBeInTheDocument();
@@ -114,13 +130,31 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
     expect(screen.getByText("4 Mana")).toBeInTheDocument();
 
     const itemCard = screen.getByText("Poção de Vida").closest(".snap-start");
-    expect(itemCard).toHaveClass("w-[28%]", "min-w-[92px]", "max-w-[110px]", "aspect-square", "p-2", "snap-start", "relative", "overflow-hidden");
+    expect(itemCard).toHaveClass(
+      "w-[28%]",
+      "min-w-[92px]",
+      "max-w-[110px]",
+      "aspect-square",
+      "p-2",
+      "snap-start",
+      "relative",
+      "overflow-hidden",
+    );
 
     expect(screen.getByText("Poção de Vida")).toBeInTheDocument();
     expect(screen.getByText("Qtd: 3")).toBeInTheDocument();
 
     const conditionCard = screen.getByText("Envenenado").closest(".snap-start");
-    expect(conditionCard).toHaveClass("w-[28%]", "min-w-[92px]", "max-w-[110px]", "aspect-square", "p-2", "snap-start", "relative", "overflow-hidden");
+    expect(conditionCard).toHaveClass(
+      "w-[28%]",
+      "min-w-[92px]",
+      "max-w-[110px]",
+      "aspect-square",
+      "p-2",
+      "snap-start",
+      "relative",
+      "overflow-hidden",
+    );
 
     expect(screen.getByText("Envenenado")).toBeInTheDocument();
     expect(screen.getByText("Permanente")).toBeInTheDocument();
@@ -131,13 +165,25 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
     expect(spellBg).toHaveClass("absolute", "inset-0", "z-0", "pointer-events-none");
 
     const spellGradient = spellCard?.querySelector(".bg-gradient-to-t");
-    expect(spellGradient).toHaveClass("absolute", "inset-0", "z-10", "from-gray-950", "pointer-events-none");
+    expect(spellGradient).toHaveClass(
+      "absolute",
+      "inset-0",
+      "z-10",
+      "from-gray-950",
+      "pointer-events-none",
+    );
 
     const itemBg = itemCard?.querySelector(".opacity-60");
     expect(itemBg).toHaveClass("absolute", "inset-0", "z-0", "pointer-events-none");
 
     const itemGradient = itemCard?.querySelector(".bg-gradient-to-t");
-    expect(itemGradient).toHaveClass("absolute", "inset-0", "z-10", "from-gray-950", "pointer-events-none");
+    expect(itemGradient).toHaveClass(
+      "absolute",
+      "inset-0",
+      "z-10",
+      "from-gray-950",
+      "pointer-events-none",
+    );
 
     // Action cost indicator dots (#UI-007)
     const spellCostBadge = screen.getByLabelText("Custo: 2 ação(ões)");
@@ -167,7 +213,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
       Promise.resolve({
         ok: true,
         json: () => Promise.resolve({ data: { linked: [], available: [] } }),
-      })
+      }),
     );
 
     renderWithQuery(
@@ -175,7 +221,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         characterId="char-123"
         defaultType="items"
         allowedTypes={["items", "spells", "conditions"]}
-      />
+      />,
     );
 
     await waitFor(() => {
@@ -217,7 +263,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         characterId="char-123"
         defaultType="items"
         allowedTypes={["items", "spells", "conditions"]}
-      />
+      />,
     );
 
     await waitFor(() => {
@@ -231,7 +277,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
     await waitFor(() => {
       expect(globalThis.fetch).toHaveBeenCalledWith(
         "/api/characters/char-123/content/conditions/cond-j1",
-        expect.objectContaining({ method: "DELETE" })
+        expect.objectContaining({ method: "DELETE" }),
       );
     });
   });
@@ -258,11 +304,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
     });
 
     renderWithQuery(
-      <CharacterContent
-        characterId="char-123"
-        defaultType="skills"
-        allowedTypes={["skills"]}
-      />
+      <CharacterContent characterId="char-123" defaultType="skills" allowedTypes={["skills"]} />,
     );
 
     await waitFor(() => {
@@ -280,7 +322,13 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
     const mockSpells = [
       {
         junction: { id: "spell-j2" },
-        content: { id: "sp-2", name: "Ritual Supremo", circle: 4, actionCostOverride: 3, manaCost: 10 },
+        content: {
+          id: "sp-2",
+          name: "Ritual Supremo",
+          circle: 4,
+          actionCostOverride: 3,
+          manaCost: 10,
+        },
       },
     ];
     const mockItems = [
@@ -326,7 +374,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         characterId="char-123"
         defaultType="items"
         allowedTypes={["items", "spells", "conditions"]}
-      />
+      />,
     );
 
     await waitFor(() => {
@@ -362,7 +410,14 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
     const mockSpells = [
       {
         junction: { id: "spell-j1" },
-        content: { id: "sp-1", name: "Bola de Fogo", circle: 2, manaCost: 4, actionCostOverride: 2, description: "Cria uma explosão flamejante." },
+        content: {
+          id: "sp-1",
+          name: "Bola de Fogo",
+          circle: 2,
+          manaCost: 4,
+          actionCostOverride: 2,
+          description: "Cria uma explosão flamejante.",
+        },
       },
     ];
 
@@ -384,7 +439,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         characterId="char-123"
         defaultType="items"
         allowedTypes={["items", "spells", "conditions"]}
-      />
+      />,
     );
 
     await waitFor(() => {
@@ -415,7 +470,12 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
     const mockItems = [
       {
         junction: { id: "item-j1", quantity: 2 },
-        content: { id: "it-sword-1", name: "Espada Longa", rollExpression: "1d20+3", damage: "1d8+2" },
+        content: {
+          id: "it-sword-1",
+          name: "Espada Longa",
+          rollExpression: "1d20+3",
+          damage: "1d8+2",
+        },
       },
     ];
 
@@ -437,7 +497,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         characterId="char-123"
         defaultType="items"
         allowedTypes={["items", "spells", "conditions"]}
-      />
+      />,
     );
 
     await waitFor(() => {
@@ -463,7 +523,9 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
     fireEvent.click(equipBtn);
 
     expect(screen.getByText("Item equipado")).toBeInTheDocument();
-    expect(localStorage.getItem("libmork_equipped_items_char-123")).toBe(JSON.stringify(["it-sword-1"]));
+    expect(localStorage.getItem("libmork_equipped_items_char-123")).toBe(
+      JSON.stringify(["it-sword-1"]),
+    );
     expect(within(screen.getByRole("dialog")).getByText("Equipado")).toBeInTheDocument();
     expect(within(itemCard as HTMLElement).getByText("Equipado")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /🛡️ Desequipar/i })).toBeInTheDocument();
@@ -549,7 +611,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         combatants={mockCombatState.combatants}
         onCombatStateChange={onCombatStateChange}
         onActorStatusChange={onActorStatusChange}
-      />
+      />,
     );
 
     await waitFor(() => {
@@ -573,11 +635,13 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
             actionsRemaining: 1,
           }),
         ],
-      })
+      }),
     );
     expect(onActorStatusChange).toHaveBeenCalled();
     expect(screen.getByText("Item equipado (-1 ação)")).toBeInTheDocument();
-    expect(localStorage.getItem("libmork_equipped_items_char-123")).toBe(JSON.stringify(["it-shield-1"]));
+    expect(localStorage.getItem("libmork_equipped_items_char-123")).toBe(
+      JSON.stringify(["it-shield-1"]),
+    );
   });
 
   it("blocks equip in combat when not player turn or when actions are insufficient (#UI-008)", async () => {
@@ -655,7 +719,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         allowedTypes={["items", "spells", "conditions"]}
         combatState={mockCombatStateOtherTurn}
         combatants={mockCombatStateOtherTurn.combatants}
-      />
+      />,
     );
 
     await waitFor(() => {
@@ -665,7 +729,9 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
     fireEvent.click(screen.getByText("Anel Mágico").closest(".snap-start")!);
     fireEvent.click(screen.getByRole("button", { name: /🗡️ Equipar \(1 ação\)/i }));
 
-    expect(screen.getByText("Seu personagem não está no turno atual do combate.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Seu personagem não está no turno atual do combate."),
+    ).toBeInTheDocument();
     expect(localStorage.getItem("libmork_equipped_items_char-123")).toBeNull();
 
     // Now test with 0 actions remaining on player's turn
@@ -705,7 +771,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         allowedTypes={["items", "spells", "conditions"]}
         combatState={mockCombatStateNoActions}
         combatants={mockCombatStateNoActions.combatants}
-      />
+      />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: /🗡️ Equipar \(1 ação\)/i }));
@@ -757,7 +823,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         defaultType="items"
         allowedTypes={["items", "spells", "conditions"]}
         onActionResult={onActionResult}
-      />
+      />,
     );
 
     await waitFor(() => {
@@ -777,13 +843,13 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         actorId: "char-123",
         rollType: "Arco Curto (Livre)",
         result: expect.any(Number),
-      })
+      }),
     );
     expect(onActionResult).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "Arco Curto (Livre)",
         result: expect.any(Number),
-      })
+      }),
     );
 
     // 2. Roll spell free (no equip needed)
@@ -798,13 +864,13 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         actorId: "char-123",
         rollType: "Mísseis Mágicos (Livre)",
         result: expect.any(Number),
-      })
+      }),
     );
     expect(onActionResult).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "Mísseis Mágicos (Livre)",
         result: expect.any(Number),
-      })
+      }),
     );
   });
 
@@ -840,7 +906,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         characterId="char-123"
         defaultType="items"
         allowedTypes={["items", "spells", "conditions"]}
-      />
+      />,
     );
 
     await waitFor(() => {
@@ -858,7 +924,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
     await waitFor(() => {
       expect(globalThis.fetch).toHaveBeenCalledWith(
         "/api/characters/char-123/content/conditions/cond-modal-1",
-        expect.objectContaining({ method: "DELETE" })
+        expect.objectContaining({ method: "DELETE" }),
       );
     });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -899,7 +965,11 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
     ];
 
     globalThis.fetch = vi.fn().mockImplementation((url: string) => {
-      if (url.includes("/content/spells") || url.includes("/content/items") || url.includes("/content/conditions")) {
+      if (
+        url.includes("/content/spells") ||
+        url.includes("/content/items") ||
+        url.includes("/content/conditions")
+      ) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({ data: { linked: [], available: [] } }),
@@ -924,7 +994,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         characterLevel={3}
         defaultType="items"
         allowedTypes={["items", "spells", "conditions"]}
-      />
+      />,
     );
 
     // Verify 4th carousel title and count of unlocked features
@@ -935,7 +1005,16 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
 
     // Level 1 feature (unlocked)
     const feat1Card = screen.getByText("Ataque Poderoso").closest(".snap-start") as HTMLElement;
-    expect(feat1Card).toHaveClass("w-[28%]", "min-w-[92px]", "max-w-[110px]", "aspect-square", "p-2", "snap-start", "relative", "overflow-hidden");
+    expect(feat1Card).toHaveClass(
+      "w-[28%]",
+      "min-w-[92px]",
+      "max-w-[110px]",
+      "aspect-square",
+      "p-2",
+      "snap-start",
+      "relative",
+      "overflow-hidden",
+    );
     expect(feat1Card).toHaveClass("border-indigo-900/40");
     expect(feat1Card).not.toHaveClass("grayscale");
     expect(within(feat1Card).getByText("Desbloqueada")).toBeInTheDocument();
@@ -970,7 +1049,11 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
     ];
 
     globalThis.fetch = vi.fn().mockImplementation((url: string) => {
-      if (url.includes("/content/spells") || url.includes("/content/items") || url.includes("/content/conditions")) {
+      if (
+        url.includes("/content/spells") ||
+        url.includes("/content/items") ||
+        url.includes("/content/conditions")
+      ) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({ data: { linked: [], available: [] } }),
@@ -995,7 +1078,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         characterLevel={3}
         defaultType="items"
         allowedTypes={["items", "spells", "conditions"]}
-      />
+      />,
     );
 
     await waitFor(() => {
@@ -1009,7 +1092,9 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
     expect(screen.getByRole("dialog", { name: "Ataque Poderoso" })).toBeInTheDocument();
     expect(screen.getByText("Habilidade de Classe · Nível 1")).toBeInTheDocument();
     expect(screen.getByText("Habilidade Desbloqueada")).toBeInTheDocument();
-    expect(screen.getByText(/Disponível para seu personagem \(Nível 3 ≥ 1\)\./i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Disponível para seu personagem \(Nível 3 ≥ 1\)\./i),
+    ).toBeInTheDocument();
     expect(screen.getByText("+5 HP")).toBeInTheDocument();
     expect(screen.getByText("Causa dano adicional ao atingir o alvo.")).toBeInTheDocument();
 
@@ -1033,7 +1118,11 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
     ];
 
     globalThis.fetch = vi.fn().mockImplementation((url: string) => {
-      if (url.includes("/content/spells") || url.includes("/content/items") || url.includes("/content/conditions")) {
+      if (
+        url.includes("/content/spells") ||
+        url.includes("/content/items") ||
+        url.includes("/content/conditions")
+      ) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({ data: { linked: [], available: [] } }),
@@ -1058,7 +1147,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         characterLevel={2}
         defaultType="items"
         allowedTypes={["items", "spells", "conditions"]}
-      />
+      />,
     );
 
     await waitFor(() => {
@@ -1071,7 +1160,9 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
 
     expect(screen.getByRole("dialog", { name: "Tempestade de Golpes" })).toBeInTheDocument();
     expect(screen.getByText("Habilidade Bloqueada")).toBeInTheDocument();
-    expect(screen.getByText(/Requer que o personagem alcance o nível 8 \(Nível atual: 2\)\./i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Requer que o personagem alcance o nível 8 \(Nível atual: 2\)\./i),
+    ).toBeInTheDocument();
     expect(screen.getByText("+10 Mana")).toBeInTheDocument();
     expect(screen.getByText("Desfere múltiplos ataques velozes.")).toBeInTheDocument();
 
@@ -1082,7 +1173,11 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
 
   it("renders empty state when characterClassId is provided but class has no benefits, or when characterClassId is absent (#UI-009)", async () => {
     globalThis.fetch = vi.fn().mockImplementation((url: string) => {
-      if (url.includes("/content/spells") || url.includes("/content/items") || url.includes("/content/conditions")) {
+      if (
+        url.includes("/content/spells") ||
+        url.includes("/content/items") ||
+        url.includes("/content/conditions")
+      ) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({ data: { linked: [], available: [] } }),
@@ -1107,11 +1202,13 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         characterLevel={1}
         defaultType="items"
         allowedTypes={["items", "spells", "conditions"]}
-      />
+      />,
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Nenhuma habilidade cadastrada para esta classe")).toBeInTheDocument();
+      expect(
+        screen.getByText("Nenhuma habilidade cadastrada para esta classe"),
+      ).toBeInTheDocument();
     });
 
     rerender(
@@ -1121,7 +1218,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         characterLevel={1}
         defaultType="items"
         allowedTypes={["items", "spells", "conditions"]}
-      />
+      />,
     );
 
     await waitFor(() => {
@@ -1155,7 +1252,11 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
 
     it("renders the 🧬 Herança de Raça section when characterRaceId is provided with traits and heritages", async () => {
       globalThis.fetch = vi.fn().mockImplementation((url: string) => {
-        if (url.includes("/content/spells") || url.includes("/content/items") || url.includes("/content/conditions")) {
+        if (
+          url.includes("/content/spells") ||
+          url.includes("/content/items") ||
+          url.includes("/content/conditions")
+        ) {
           return Promise.resolve({
             ok: true,
             json: () => Promise.resolve({ data: { linked: [], available: [] } }),
@@ -1179,7 +1280,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
           characterRaceId="race-elf-1"
           defaultType="items"
           allowedTypes={["items", "spells", "conditions"]}
-        />
+        />,
       );
 
       await waitFor(() => {
@@ -1210,7 +1311,11 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
 
     it("opens and closes expanded detail modal when clicking a racial feature card", async () => {
       globalThis.fetch = vi.fn().mockImplementation((url: string) => {
-        if (url.includes("/content/spells") || url.includes("/content/items") || url.includes("/content/conditions")) {
+        if (
+          url.includes("/content/spells") ||
+          url.includes("/content/items") ||
+          url.includes("/content/conditions")
+        ) {
           return Promise.resolve({
             ok: true,
             json: () => Promise.resolve({ data: { linked: [], available: [] } }),
@@ -1234,7 +1339,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
           characterRaceId="race-elf-1"
           defaultType="items"
           allowedTypes={["items", "spells", "conditions"]}
-        />
+        />,
       );
 
       await waitFor(() => {
@@ -1272,9 +1377,15 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
     it("shows only the selected heritage's own bonuses in its modal", async () => {
       globalThis.fetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes("/api/races/race-elf-1")) {
-          return Promise.resolve({ ok: true, json: () => Promise.resolve({ success: true, data: mockRace }) });
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ success: true, data: mockRace }),
+          });
         }
-        return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: { linked: [], available: [] } }) });
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ data: { linked: [], available: [] } }),
+        });
       });
 
       renderWithQuery(
@@ -1284,7 +1395,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
           characterActiveHeritages={["Elfo da Floresta"]}
           defaultType="items"
           allowedTypes={["items", "spells", "conditions"]}
-        />
+        />,
       );
 
       const heritage = await screen.findByText("Elfo da Floresta");
@@ -1310,7 +1421,11 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
       };
 
       globalThis.fetch = vi.fn().mockImplementation((url: string) => {
-        if (url.includes("/content/spells") || url.includes("/content/items") || url.includes("/content/conditions")) {
+        if (
+          url.includes("/content/spells") ||
+          url.includes("/content/items") ||
+          url.includes("/content/conditions")
+        ) {
           return Promise.resolve({
             ok: true,
             json: () => Promise.resolve({ data: { linked: [], available: [] } }),
@@ -1334,17 +1449,23 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
           characterRaceId="race-empty-1"
           defaultType="items"
           allowedTypes={["items", "spells", "conditions"]}
-        />
+        />,
       );
 
       await waitFor(() => {
-        expect(screen.getByText("Nenhuma característica cadastrada para esta raça")).toBeInTheDocument();
+        expect(
+          screen.getByText("Nenhuma característica cadastrada para esta raça"),
+        ).toBeInTheDocument();
       });
     });
 
     it("renders message when characterRaceId is not provided", async () => {
       globalThis.fetch = vi.fn().mockImplementation((url: string) => {
-        if (url.includes("/content/spells") || url.includes("/content/items") || url.includes("/content/conditions")) {
+        if (
+          url.includes("/content/spells") ||
+          url.includes("/content/items") ||
+          url.includes("/content/conditions")
+        ) {
           return Promise.resolve({
             ok: true,
             json: () => Promise.resolve({ data: { linked: [], available: [] } }),
@@ -1362,7 +1483,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
           characterRaceId={null}
           defaultType="items"
           allowedTypes={["items", "spells", "conditions"]}
-        />
+        />,
       );
 
       await waitFor(() => {
@@ -1375,7 +1496,11 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
       let activeHeritagesState = ["Elfo da Floresta"];
 
       globalThis.fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
-        if (url.includes("/content/spells") || url.includes("/content/items") || url.includes("/content/conditions")) {
+        if (
+          url.includes("/content/spells") ||
+          url.includes("/content/items") ||
+          url.includes("/content/conditions")
+        ) {
           return Promise.resolve({
             ok: true,
             json: () => Promise.resolve({ data: { linked: [], available: [] } }),
@@ -1424,7 +1549,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
           onCharacterUpdate={onCharacterUpdateMock}
           defaultType="items"
           allowedTypes={["items", "spells", "conditions"]}
-        />
+        />,
       );
 
       await waitFor(() => {
@@ -1446,7 +1571,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
       fireEvent.click(deactivateBtn);
       await waitFor(() => {
         expect(onCharacterUpdateMock).toHaveBeenCalledWith(
-          expect.objectContaining({ activeHeritages: [] })
+          expect.objectContaining({ activeHeritages: [] }),
         );
       });
 
@@ -1462,7 +1587,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
           onCharacterUpdate={onCharacterUpdateMock}
           defaultType="items"
           allowedTypes={["items", "spells", "conditions"]}
-        />
+        />,
       );
 
       await waitFor(() => {
@@ -1477,348 +1602,378 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
       // Click locked card to open modal
       fireEvent.click(desertCard);
       expect(
-        screen.getByText(/Limite de 2 heranças ativas atingido\. Desative outra herança para ativar esta\./i)
+        screen.getByText(
+          /Limite de 2 heranças ativas atingido\. Desative outra herança para ativar esta\./i,
+        ),
       ).toBeInTheDocument();
       const lockedBtn = screen.getByRole("button", { name: /🔒 Travada/i });
       expect(lockedBtn).toBeDisabled();
     });
   });
 
-    describe("Racial Heritages - Activation, Deactivation, and Limit of 2 (#HERITAGE-TESTS)", () => {
-      const mockHeritagesRace = {
-        id: "race-elf-heritages",
-        name: "Elfo Nobre",
-        description: "Uma raça graciosa com profunda conexão mágica.",
-        speed: 30,
-        size: "Médio",
-        hitPointsBonus: 6,
-        attributeBonuses: { destreza: 2 },
-        languages: ["Comum", "Élfico"],
-        traits: [
-          { name: "Visão na Penumbra", description: "Enxerga na penumbra." },
-        ],
-        heritages: [
-          { id: "h1", name: "Elfo da Floresta", description: "Herança da floresta" },
-          { id: "h2", name: "Elfo da Neve", description: "Herança da neve" },
-          { id: "h3", name: "Elfo do Deserto", description: "Herança do deserto" },
-        ],
-      };
+  describe("Racial Heritages - Activation, Deactivation, and Limit of 2 (#HERITAGE-TESTS)", () => {
+    const mockHeritagesRace = {
+      id: "race-elf-heritages",
+      name: "Elfo Nobre",
+      description: "Uma raça graciosa com profunda conexão mágica.",
+      speed: 30,
+      size: "Médio",
+      hitPointsBonus: 6,
+      attributeBonuses: { destreza: 2 },
+      languages: ["Comum", "Élfico"],
+      traits: [{ name: "Visão na Penumbra", description: "Enxerga na penumbra." }],
+      heritages: [
+        { id: "h1", name: "Elfo da Floresta", description: "Herança da floresta" },
+        { id: "h2", name: "Elfo da Neve", description: "Herança da neve" },
+        { id: "h3", name: "Elfo do Deserto", description: "Herança do deserto" },
+      ],
+    };
 
-      it("a) displays correct badges for active ('✓ Ativa'), available ('Herança'), and locked ('🔒 Travada (2/2)') heritages", async () => {
-        globalThis.fetch = vi.fn().mockImplementation((url: string) => {
-          if (url.includes("/content/spells") || url.includes("/content/items") || url.includes("/content/conditions")) {
-            return Promise.resolve({
-              ok: true,
-              json: () => Promise.resolve({ data: { linked: [], available: [] } }),
-            });
-          }
-          if (url.includes("/api/races/race-elf-heritages")) {
-            return Promise.resolve({
-              ok: true,
-              json: () => Promise.resolve({ success: true, data: mockHeritagesRace }),
-            });
-          }
+    it("a) displays correct badges for active ('✓ Ativa'), available ('Herança'), and locked ('🔒 Travada (2/2)') heritages", async () => {
+      globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+        if (
+          url.includes("/content/spells") ||
+          url.includes("/content/items") ||
+          url.includes("/content/conditions")
+        ) {
           return Promise.resolve({
-            ok: false,
-            json: () => Promise.resolve({ error: "Not found" }),
+            ok: true,
+            json: () => Promise.resolve({ data: { linked: [], available: [] } }),
           });
+        }
+        if (url.includes("/api/races/race-elf-heritages")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ success: true, data: mockHeritagesRace }),
+          });
+        }
+        return Promise.resolve({
+          ok: false,
+          json: () => Promise.resolve({ error: "Not found" }),
         });
-
-        // 1 active heritage: Elfo da Floresta (active), Elfo da Neve (available 'Herança'), Elfo do Deserto (available 'Herança')
-        const { rerender } = renderWithQuery(
-          <CharacterContent
-            characterId="char-123"
-            characterRaceId="race-elf-heritages"
-            characterActiveHeritages={["Elfo da Floresta"]}
-            defaultType="items"
-            allowedTypes={["items", "spells", "conditions"]}
-          />
-        );
-
-        await waitFor(() => {
-          expect(screen.getByText(/\(1\/2 heranças ativas\)/i)).toBeInTheDocument();
-        });
-
-        const cardFloresta = screen.getByText("Elfo da Floresta").closest(".snap-start")!;
-        expect(within(cardFloresta as HTMLElement).getByText("✓ Ativa")).toBeInTheDocument();
-        expect(cardFloresta).toHaveClass("border-teal-500");
-
-        const cardNeve = screen.getByText("Elfo da Neve").closest(".snap-start")!;
-        expect(within(cardNeve as HTMLElement).getByText("Herança")).toBeInTheDocument();
-        expect(cardNeve).toHaveClass("border-teal-900/40");
-
-        // Rerender with 2 active heritages: Elfo do Deserto should now display '🔒 Travada (2/2)'
-        rerender(
-          <CharacterContent
-            characterId="char-123"
-            characterRaceId="race-elf-heritages"
-            characterActiveHeritages={["Elfo da Floresta", "Elfo da Neve"]}
-            defaultType="items"
-            allowedTypes={["items", "spells", "conditions"]}
-          />
-        );
-
-        await waitFor(() => {
-          expect(screen.getByText(/\(2\/2 heranças ativas\)/i)).toBeInTheDocument();
-        });
-
-        const cardDeserto = screen.getByText("Elfo do Deserto").closest(".snap-start")!;
-        expect(within(cardDeserto as HTMLElement).getByText("🔒 Travada (2/2)")).toBeInTheDocument();
-        expect(cardDeserto).toHaveClass("grayscale-[40%]");
       });
 
-      it("b) opens detail modal with appropriate activate/deactivate button according to heritage state", async () => {
-        globalThis.fetch = vi.fn().mockImplementation((url: string) => {
-          if (url.includes("/content/spells") || url.includes("/content/items") || url.includes("/content/conditions")) {
-            return Promise.resolve({
-              ok: true,
-              json: () => Promise.resolve({ data: { linked: [], available: [] } }),
-            });
-          }
-          if (url.includes("/api/races/race-elf-heritages")) {
-            return Promise.resolve({
-              ok: true,
-              json: () => Promise.resolve({ success: true, data: mockHeritagesRace }),
-            });
-          }
-          return Promise.resolve({
-            ok: false,
-            json: () => Promise.resolve({ error: "Not found" }),
-          });
-        });
+      // 1 active heritage: Elfo da Floresta (active), Elfo da Neve (available 'Herança'), Elfo do Deserto (available 'Herança')
+      const { rerender } = renderWithQuery(
+        <CharacterContent
+          characterId="char-123"
+          characterRaceId="race-elf-heritages"
+          characterActiveHeritages={["Elfo da Floresta"]}
+          defaultType="items"
+          allowedTypes={["items", "spells", "conditions"]}
+        />,
+      );
 
-        renderWithQuery(
-          <CharacterContent
-            characterId="char-123"
-            characterRaceId="race-elf-heritages"
-            characterActiveHeritages={["Elfo da Floresta"]}
-            defaultType="items"
-            allowedTypes={["items", "spells", "conditions"]}
-          />
-        );
-
-        await waitFor(() => {
-          expect(screen.getByText("Elfo da Floresta")).toBeInTheDocument();
-        });
-
-        // 1. Check active heritage modal: shows "✕ Desativar Herança" and "Herança Ativa"
-        const cardActive = screen.getByText("Elfo da Floresta").closest(".snap-start")!;
-        fireEvent.click(cardActive);
-
-        const activeDialog = screen.getByRole("dialog", { name: "Elfo da Floresta" });
-        expect(activeDialog).toBeInTheDocument();
-        expect(within(activeDialog).getByText("Herança Ativa")).toBeInTheDocument();
-        expect(within(activeDialog).getByRole("button", { name: "✕ Desativar Herança" })).toBeInTheDocument();
-
-        fireEvent.click(within(activeDialog).getByLabelText("Fechar"));
-        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-
-        // 2. Check available inactive heritage modal: shows "✨ Ativar Herança (Slot livre: 1/2)" and "Herança Inativa"
-        const cardAvailable = screen.getByText("Elfo da Neve").closest(".snap-start")!;
-        fireEvent.click(cardAvailable);
-
-        const availableDialog = screen.getByRole("dialog", { name: "Elfo da Neve" });
-        expect(availableDialog).toBeInTheDocument();
-        expect(within(availableDialog).getByText("Herança Inativa")).toBeInTheDocument();
-        expect(
-          within(availableDialog).getByRole("button", { name: /✨ Ativar Herança \(Slot livre: 1\/2\)/i })
-        ).toBeInTheDocument();
-
-        fireEvent.click(within(availableDialog).getByLabelText("Fechar"));
+      await waitFor(() => {
+        expect(screen.getByText(/\(1\/2 heranças ativas\)/i)).toBeInTheDocument();
       });
 
-      it("c) deactivates an active heritage by sending PATCH to /api/characters/:id", async () => {
-        const onCharacterUpdateMock = vi.fn();
+      const cardFloresta = screen.getByText("Elfo da Floresta").closest(".snap-start")!;
+      expect(within(cardFloresta as HTMLElement).getByText("✓ Ativa")).toBeInTheDocument();
+      expect(cardFloresta).toHaveClass("border-teal-500");
 
-        globalThis.fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
-          if (url.includes("/content/spells") || url.includes("/content/items") || url.includes("/content/conditions")) {
-            return Promise.resolve({
-              ok: true,
-              json: () => Promise.resolve({ data: { linked: [], available: [] } }),
-            });
-          }
-          if (url.includes("/api/races/race-elf-heritages")) {
-            return Promise.resolve({
-              ok: true,
-              json: () => Promise.resolve({ success: true, data: mockHeritagesRace }),
-            });
-          }
-          if (url.includes("/api/characters/char-123") && init?.method === "PATCH") {
-            const body = JSON.parse(init.body as string);
-            return Promise.resolve({
-              ok: true,
-              json: () =>
-                Promise.resolve({
-                  success: true,
-                  data: { id: "char-123", activeHeritages: body.activeHeritages, hitPointsMax: 18 },
-                }),
-            });
-          }
-          return Promise.resolve({
-            ok: false,
-            json: () => Promise.resolve({ error: "Not found" }),
-          });
-        });
+      const cardNeve = screen.getByText("Elfo da Neve").closest(".snap-start")!;
+      expect(within(cardNeve as HTMLElement).getByText("Herança")).toBeInTheDocument();
+      expect(cardNeve).toHaveClass("border-teal-900/40");
 
-        renderWithQuery(
-          <CharacterContent
-            characterId="char-123"
-            characterRaceId="race-elf-heritages"
-            characterActiveHeritages={["Elfo da Floresta"]}
-            onCharacterUpdate={onCharacterUpdateMock}
-            defaultType="items"
-            allowedTypes={["items", "spells", "conditions"]}
-          />
-        );
+      // Rerender with 2 active heritages: Elfo do Deserto should now display '🔒 Travada (2/2)'
+      rerender(
+        <CharacterContent
+          characterId="char-123"
+          characterRaceId="race-elf-heritages"
+          characterActiveHeritages={["Elfo da Floresta", "Elfo da Neve"]}
+          defaultType="items"
+          allowedTypes={["items", "spells", "conditions"]}
+        />,
+      );
 
-        await waitFor(() => {
-          expect(screen.getByText("Elfo da Floresta")).toBeInTheDocument();
-        });
-
-        // Open modal
-        fireEvent.click(screen.getByText("Elfo da Floresta").closest(".snap-start")!);
-        const deactivateBtn = screen.getByRole("button", { name: "✕ Desativar Herança" });
-        fireEvent.click(deactivateBtn);
-
-        await waitFor(() => {
-          expect(globalThis.fetch).toHaveBeenCalledWith(
-            "/api/characters/char-123",
-            expect.objectContaining({
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ activeHeritages: [] }),
-            })
-          );
-          expect(onCharacterUpdateMock).toHaveBeenCalledWith(
-            expect.objectContaining({ activeHeritages: [] })
-          );
-        });
-
-        expect(screen.getByText('Herança "Elfo da Floresta" desativada.')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText(/\(2\/2 heranças ativas\)/i)).toBeInTheDocument();
       });
 
-      it("d) blocks activation when 2 heritages are already active (button disabled and warning displayed)", async () => {
-        globalThis.fetch = vi.fn().mockImplementation((url: string) => {
-          if (url.includes("/content/spells") || url.includes("/content/items") || url.includes("/content/conditions")) {
-            return Promise.resolve({
-              ok: true,
-              json: () => Promise.resolve({ data: { linked: [], available: [] } }),
-            });
-          }
-          if (url.includes("/api/races/race-elf-heritages")) {
-            return Promise.resolve({
-              ok: true,
-              json: () => Promise.resolve({ success: true, data: mockHeritagesRace }),
-            });
-          }
-          return Promise.resolve({
-            ok: false,
-            json: () => Promise.resolve({ error: "Not found" }),
-          });
-        });
-
-        renderWithQuery(
-          <CharacterContent
-            characterId="char-123"
-            characterRaceId="race-elf-heritages"
-            characterActiveHeritages={["Elfo da Floresta", "Elfo da Neve"]}
-            defaultType="items"
-            allowedTypes={["items", "spells", "conditions"]}
-          />
-        );
-
-        await waitFor(() => {
-          expect(screen.getByText(/\(2\/2 heranças ativas\)/i)).toBeInTheDocument();
-        });
-
-        // Click locked heritage "Elfo do Deserto"
-        const cardDeserto = screen.getByText("Elfo do Deserto").closest(".snap-start")!;
-        fireEvent.click(cardDeserto);
-
-        const dialog = screen.getByRole("dialog", { name: "Elfo do Deserto" });
-        expect(dialog).toBeInTheDocument();
-
-        // Warning message must be displayed
-        expect(
-          within(dialog).getByText(/Limite de 2 heranças ativas atingido\. Desative outra herança para ativar esta\./i)
-        ).toBeInTheDocument();
-
-        // Activation button must be disabled
-        const lockedButton = within(dialog).getByRole("button", { name: "🔒 Travada (2/2 em uso)" });
-        expect(lockedButton).toBeInTheDocument();
-        expect(lockedButton).toBeDisabled();
-      });
-
-      it("activates an available heritage when under the limit by sending PATCH to /api/characters/:id", async () => {
-        const onCharacterUpdateMock = vi.fn();
-
-        globalThis.fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
-          if (url.includes("/content/spells") || url.includes("/content/items") || url.includes("/content/conditions")) {
-            return Promise.resolve({
-              ok: true,
-              json: () => Promise.resolve({ data: { linked: [], available: [] } }),
-            });
-          }
-          if (url.includes("/api/races/race-elf-heritages")) {
-            return Promise.resolve({
-              ok: true,
-              json: () => Promise.resolve({ success: true, data: mockHeritagesRace }),
-            });
-          }
-          if (url.includes("/api/characters/char-123") && init?.method === "PATCH") {
-            const body = JSON.parse(init.body as string);
-            return Promise.resolve({
-              ok: true,
-              json: () =>
-                Promise.resolve({
-                  success: true,
-                  data: { id: "char-123", activeHeritages: body.activeHeritages, hitPointsMax: 20 },
-                }),
-            });
-          }
-          return Promise.resolve({
-            ok: false,
-            json: () => Promise.resolve({ error: "Not found" }),
-          });
-        });
-
-        renderWithQuery(
-          <CharacterContent
-            characterId="char-123"
-            characterRaceId="race-elf-heritages"
-            characterActiveHeritages={[]}
-            onCharacterUpdate={onCharacterUpdateMock}
-            defaultType="items"
-            allowedTypes={["items", "spells", "conditions"]}
-          />
-        );
-
-        await waitFor(() => {
-          expect(screen.getByText(/\(0\/2 heranças ativas\)/i)).toBeInTheDocument();
-        });
-
-        // Click Elfo da Floresta to open modal
-        fireEvent.click(screen.getByText("Elfo da Floresta").closest(".snap-start")!);
-        const activateBtn = screen.getByRole("button", { name: /✨ Ativar Herança \(Slot livre: 2\/2\)/i });
-        fireEvent.click(activateBtn);
-
-        await waitFor(() => {
-          expect(globalThis.fetch).toHaveBeenCalledWith(
-            "/api/characters/char-123",
-            expect.objectContaining({
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ activeHeritages: ["Elfo da Floresta"] }),
-            })
-          );
-          expect(onCharacterUpdateMock).toHaveBeenCalledWith(
-            expect.objectContaining({ activeHeritages: ["Elfo da Floresta"] })
-          );
-        });
-
-        expect(screen.getByText('Herança "Elfo da Floresta" ativada com sucesso!')).toBeInTheDocument();
-      });
+      const cardDeserto = screen.getByText("Elfo do Deserto").closest(".snap-start")!;
+      expect(within(cardDeserto as HTMLElement).getByText("🔒 Travada (2/2)")).toBeInTheDocument();
+      expect(cardDeserto).toHaveClass("grayscale-[40%]");
     });
+
+    it("b) opens detail modal with appropriate activate/deactivate button according to heritage state", async () => {
+      globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+        if (
+          url.includes("/content/spells") ||
+          url.includes("/content/items") ||
+          url.includes("/content/conditions")
+        ) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ data: { linked: [], available: [] } }),
+          });
+        }
+        if (url.includes("/api/races/race-elf-heritages")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ success: true, data: mockHeritagesRace }),
+          });
+        }
+        return Promise.resolve({
+          ok: false,
+          json: () => Promise.resolve({ error: "Not found" }),
+        });
+      });
+
+      renderWithQuery(
+        <CharacterContent
+          characterId="char-123"
+          characterRaceId="race-elf-heritages"
+          characterActiveHeritages={["Elfo da Floresta"]}
+          defaultType="items"
+          allowedTypes={["items", "spells", "conditions"]}
+        />,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("Elfo da Floresta")).toBeInTheDocument();
+      });
+
+      // 1. Check active heritage modal: shows "✕ Desativar Herança" and "Herança Ativa"
+      const cardActive = screen.getByText("Elfo da Floresta").closest(".snap-start")!;
+      fireEvent.click(cardActive);
+
+      const activeDialog = screen.getByRole("dialog", { name: "Elfo da Floresta" });
+      expect(activeDialog).toBeInTheDocument();
+      expect(within(activeDialog).getByText("Herança Ativa")).toBeInTheDocument();
+      expect(
+        within(activeDialog).getByRole("button", { name: "✕ Desativar Herança" }),
+      ).toBeInTheDocument();
+
+      fireEvent.click(within(activeDialog).getByLabelText("Fechar"));
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+      // 2. Check available inactive heritage modal: shows "✨ Ativar Herança (Slot livre: 1/2)" and "Herança Inativa"
+      const cardAvailable = screen.getByText("Elfo da Neve").closest(".snap-start")!;
+      fireEvent.click(cardAvailable);
+
+      const availableDialog = screen.getByRole("dialog", { name: "Elfo da Neve" });
+      expect(availableDialog).toBeInTheDocument();
+      expect(within(availableDialog).getByText("Herança Inativa")).toBeInTheDocument();
+      expect(
+        within(availableDialog).getByRole("button", {
+          name: /✨ Ativar Herança \(Slot livre: 1\/2\)/i,
+        }),
+      ).toBeInTheDocument();
+
+      fireEvent.click(within(availableDialog).getByLabelText("Fechar"));
+    });
+
+    it("c) deactivates an active heritage by sending PATCH to /api/characters/:id", async () => {
+      const onCharacterUpdateMock = vi.fn();
+
+      globalThis.fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+        if (
+          url.includes("/content/spells") ||
+          url.includes("/content/items") ||
+          url.includes("/content/conditions")
+        ) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ data: { linked: [], available: [] } }),
+          });
+        }
+        if (url.includes("/api/races/race-elf-heritages")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ success: true, data: mockHeritagesRace }),
+          });
+        }
+        if (url.includes("/api/characters/char-123") && init?.method === "PATCH") {
+          const body = JSON.parse(init.body as string);
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({
+                success: true,
+                data: { id: "char-123", activeHeritages: body.activeHeritages, hitPointsMax: 18 },
+              }),
+          });
+        }
+        return Promise.resolve({
+          ok: false,
+          json: () => Promise.resolve({ error: "Not found" }),
+        });
+      });
+
+      renderWithQuery(
+        <CharacterContent
+          characterId="char-123"
+          characterRaceId="race-elf-heritages"
+          characterActiveHeritages={["Elfo da Floresta"]}
+          onCharacterUpdate={onCharacterUpdateMock}
+          defaultType="items"
+          allowedTypes={["items", "spells", "conditions"]}
+        />,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("Elfo da Floresta")).toBeInTheDocument();
+      });
+
+      // Open modal
+      fireEvent.click(screen.getByText("Elfo da Floresta").closest(".snap-start")!);
+      const deactivateBtn = screen.getByRole("button", { name: "✕ Desativar Herança" });
+      fireEvent.click(deactivateBtn);
+
+      await waitFor(() => {
+        expect(globalThis.fetch).toHaveBeenCalledWith(
+          "/api/characters/char-123",
+          expect.objectContaining({
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ activeHeritages: [] }),
+          }),
+        );
+        expect(onCharacterUpdateMock).toHaveBeenCalledWith(
+          expect.objectContaining({ activeHeritages: [] }),
+        );
+      });
+
+      expect(screen.getByText('Herança "Elfo da Floresta" desativada.')).toBeInTheDocument();
+    });
+
+    it("d) blocks activation when 2 heritages are already active (button disabled and warning displayed)", async () => {
+      globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+        if (
+          url.includes("/content/spells") ||
+          url.includes("/content/items") ||
+          url.includes("/content/conditions")
+        ) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ data: { linked: [], available: [] } }),
+          });
+        }
+        if (url.includes("/api/races/race-elf-heritages")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ success: true, data: mockHeritagesRace }),
+          });
+        }
+        return Promise.resolve({
+          ok: false,
+          json: () => Promise.resolve({ error: "Not found" }),
+        });
+      });
+
+      renderWithQuery(
+        <CharacterContent
+          characterId="char-123"
+          characterRaceId="race-elf-heritages"
+          characterActiveHeritages={["Elfo da Floresta", "Elfo da Neve"]}
+          defaultType="items"
+          allowedTypes={["items", "spells", "conditions"]}
+        />,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText(/\(2\/2 heranças ativas\)/i)).toBeInTheDocument();
+      });
+
+      // Click locked heritage "Elfo do Deserto"
+      const cardDeserto = screen.getByText("Elfo do Deserto").closest(".snap-start")!;
+      fireEvent.click(cardDeserto);
+
+      const dialog = screen.getByRole("dialog", { name: "Elfo do Deserto" });
+      expect(dialog).toBeInTheDocument();
+
+      // Warning message must be displayed
+      expect(
+        within(dialog).getByText(
+          /Limite de 2 heranças ativas atingido\. Desative outra herança para ativar esta\./i,
+        ),
+      ).toBeInTheDocument();
+
+      // Activation button must be disabled
+      const lockedButton = within(dialog).getByRole("button", { name: "🔒 Travada (2/2 em uso)" });
+      expect(lockedButton).toBeInTheDocument();
+      expect(lockedButton).toBeDisabled();
+    });
+
+    it("activates an available heritage when under the limit by sending PATCH to /api/characters/:id", async () => {
+      const onCharacterUpdateMock = vi.fn();
+
+      globalThis.fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+        if (
+          url.includes("/content/spells") ||
+          url.includes("/content/items") ||
+          url.includes("/content/conditions")
+        ) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ data: { linked: [], available: [] } }),
+          });
+        }
+        if (url.includes("/api/races/race-elf-heritages")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ success: true, data: mockHeritagesRace }),
+          });
+        }
+        if (url.includes("/api/characters/char-123") && init?.method === "PATCH") {
+          const body = JSON.parse(init.body as string);
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({
+                success: true,
+                data: { id: "char-123", activeHeritages: body.activeHeritages, hitPointsMax: 20 },
+              }),
+          });
+        }
+        return Promise.resolve({
+          ok: false,
+          json: () => Promise.resolve({ error: "Not found" }),
+        });
+      });
+
+      renderWithQuery(
+        <CharacterContent
+          characterId="char-123"
+          characterRaceId="race-elf-heritages"
+          characterActiveHeritages={[]}
+          onCharacterUpdate={onCharacterUpdateMock}
+          defaultType="items"
+          allowedTypes={["items", "spells", "conditions"]}
+        />,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText(/\(0\/2 heranças ativas\)/i)).toBeInTheDocument();
+      });
+
+      // Click Elfo da Floresta to open modal
+      fireEvent.click(screen.getByText("Elfo da Floresta").closest(".snap-start")!);
+      const activateBtn = screen.getByRole("button", {
+        name: /✨ Ativar Herança \(Slot livre: 2\/2\)/i,
+      });
+      fireEvent.click(activateBtn);
+
+      await waitFor(() => {
+        expect(globalThis.fetch).toHaveBeenCalledWith(
+          "/api/characters/char-123",
+          expect.objectContaining({
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ activeHeritages: ["Elfo da Floresta"] }),
+          }),
+        );
+        expect(onCharacterUpdateMock).toHaveBeenCalledWith(
+          expect.objectContaining({ activeHeritages: ["Elfo da Floresta"] }),
+        );
+      });
+
+      expect(
+        screen.getByText('Herança "Elfo da Floresta" ativada com sucesso!'),
+      ).toBeInTheDocument();
+    });
+  });
 
   describe("AI Translation with API Fallback (#UI-011)", () => {
     it("prioritizes AI translation (name, description, extraEffect) over original API fields in cards and detail modal", async () => {
@@ -1898,7 +2053,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
           characterId="char-123"
           defaultType="items"
           allowedTypes={["items", "spells", "conditions"]}
-        />
+        />,
       );
 
       // Verify translated names in gallery cards
@@ -1931,7 +2086,9 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
 
       expect(screen.getByRole("dialog", { name: "Poção de Cura" })).toBeInTheDocument();
       expect(screen.getByText("Um líquido mágico vermelho que restaura vida.")).toBeInTheDocument();
-      expect(screen.queryByText("A magical red liquid that restores health.")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("A magical red liquid that restores health."),
+      ).not.toBeInTheDocument();
 
       fireEvent.click(screen.getByLabelText("Fechar"));
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -2020,7 +2177,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
           characterId="char-123"
           defaultType="items"
           allowedTypes={["items", "spells", "conditions"]}
-        />
+        />,
       );
 
       // Verify fallback names in gallery cards
@@ -2032,7 +2189,9 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
 
       // Verify fallback description in spell modal
       fireEvent.click(screen.getByText("Fireball").closest(".snap-start")!);
-      expect(screen.getByText("A bright streak flashes from your pointing finger.")).toBeInTheDocument();
+      expect(
+        screen.getByText("A bright streak flashes from your pointing finger."),
+      ).toBeInTheDocument();
       fireEvent.click(screen.getByLabelText("Fechar"));
 
       // Verify fallback description in item modal
@@ -2042,7 +2201,9 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
 
       // Verify fallback to sourceData.system.description.value in condition modal
       fireEvent.click(screen.getByText("Blinded").closest(".snap-start")!);
-      expect(screen.getByText("A blinded creature can't see and automatically fails ability checks.")).toBeInTheDocument();
+      expect(
+        screen.getByText("A blinded creature can't see and automatically fails ability checks."),
+      ).toBeInTheDocument();
       fireEvent.click(screen.getByLabelText("Fechar"));
     });
 
@@ -2089,7 +2250,11 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
       ];
 
       globalThis.fetch = vi.fn().mockImplementation((url: string) => {
-        if (url.includes("/content/spells") || url.includes("/content/items") || url.includes("/content/conditions")) {
+        if (
+          url.includes("/content/spells") ||
+          url.includes("/content/items") ||
+          url.includes("/content/conditions")
+        ) {
           return Promise.resolve({
             ok: true,
             json: () => Promise.resolve({ data: { linked: [], available: [] } }),
@@ -2114,7 +2279,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
           characterLevel={3}
           defaultType="items"
           allowedTypes={["items", "spells", "conditions"]}
-        />
+        />,
       );
 
       // Verify translated and fallback feature names in gallery
@@ -2130,14 +2295,20 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
       // Open translated feat modal
       fireEvent.click(screen.getByText("Retomar o Fôlego").closest(".snap-start")!);
       expect(screen.getByRole("dialog", { name: "Retomar o Fôlego" })).toBeInTheDocument();
-      expect(screen.getByText("Você possui uma reserva limitada de vigor da qual pode extrair forças.")).toBeInTheDocument();
-      expect(screen.queryByText("You have a limited well of stamina that you can draw upon.")).not.toBeInTheDocument();
+      expect(
+        screen.getByText("Você possui uma reserva limitada de vigor da qual pode extrair forças."),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByText("You have a limited well of stamina that you can draw upon."),
+      ).not.toBeInTheDocument();
       fireEvent.click(screen.getByLabelText("Fechar"));
 
       // Open fallback feat modal
       fireEvent.click(screen.getByText("Extra Attack").closest(".snap-start")!);
       expect(screen.getByRole("dialog", { name: "Extra Attack" })).toBeInTheDocument();
-      expect(screen.getByText("You can attack twice whenever you take the Attack action.")).toBeInTheDocument();
+      expect(
+        screen.getByText("You can attack twice whenever you take the Attack action."),
+      ).toBeInTheDocument();
       fireEvent.click(screen.getByLabelText("Fechar"));
     });
 
@@ -2146,31 +2317,42 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
       expect(getContentName(null, "Fallback")).toBe("Fallback");
       expect(getContentName({}, "Fallback")).toBe("Fallback");
       expect(getContentName({ name: "API Name" })).toBe("API Name");
-      expect(getContentName({ name: "API Name", translation: { name: "Traduzido" } })).toBe("Traduzido");
+      expect(getContentName({ name: "API Name", translation: { name: "Traduzido" } })).toBe(
+        "Traduzido",
+      );
       expect(getContentName({ name: "API Name", translation: { name: "  " } })).toBe("API Name");
 
       // getContentDescription
       expect(getContentDescription(null, "Fallback")).toBe("Fallback");
       expect(getContentDescription({}, "Fallback")).toBe("Fallback");
       expect(getContentDescription({ description: "Desc API" })).toBe("Desc API");
-      expect(getContentDescription({ description: "Desc API", translation: { description: "Desc IA" } })).toBe("Desc IA");
+      expect(
+        getContentDescription({ description: "Desc API", translation: { description: "Desc IA" } }),
+      ).toBe("Desc IA");
       expect(
         getContentDescription({
           translation: { system: { description: { value: "Desc IA System" } } },
-        })
+        }),
       ).toBe("Desc IA System");
       expect(
         getContentDescription({
           sourceData: { system: { description: { value: "Desc Source System" } } },
-        })
+        }),
       ).toBe("Desc Source System");
 
       // getContentExtraEffect
       expect(getContentExtraEffect(null)).toBeNull();
       expect(getContentExtraEffect({})).toBeNull();
       expect(getContentExtraEffect({ extraEffect: "API Extra" })).toBe("API Extra");
-      expect(getContentExtraEffect({ extraEffect: "API Extra", translation: { extraEffect: "IA Extra" } })).toBe("IA Extra");
-      expect(getContentExtraEffect({ translation: { extra_effect: "IA Snake Extra" } })).toBe("IA Snake Extra");
+      expect(
+        getContentExtraEffect({
+          extraEffect: "API Extra",
+          translation: { extraEffect: "IA Extra" },
+        }),
+      ).toBe("IA Extra");
+      expect(getContentExtraEffect({ translation: { extra_effect: "IA Snake Extra" } })).toBe(
+        "IA Snake Extra",
+      );
 
       // parseClassBenefits
       const parsed = parseClassBenefits([
@@ -2192,7 +2374,9 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         {
           level: 3,
           benefits: {
-            translation: { description: "Descrição que ultrapassa trinta e cinco caracteres para teste de corte" },
+            translation: {
+              description: "Descrição que ultrapassa trinta e cinco caracteres para teste de corte",
+            },
           },
         },
         {
@@ -2211,7 +2395,14 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
     const mockSpells = [
       {
         junction: { id: "spell-j1" },
-        content: { id: "sp-1", name: "Bola de Fogo", circle: 3, manaCost: 5, rollExpression: "1d20", damage: "8d6" },
+        content: {
+          id: "sp-1",
+          name: "Bola de Fogo",
+          circle: 3,
+          manaCost: 5,
+          rollExpression: "1d20",
+          damage: "8d6",
+        },
       },
     ];
 
@@ -2236,7 +2427,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
           characterManaMax={10}
           defaultType="items"
           allowedTypes={["items", "spells", "conditions"]}
-        />
+        />,
       );
 
       await waitFor(() => {
@@ -2281,7 +2472,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
           onActorStatusChange={onActorStatusChange}
           onPersistActorStatus={onPersistActorStatus}
           onActionResult={onActionResult}
-        />
+        />,
       );
 
       await waitFor(() => {
@@ -2295,7 +2486,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         expect.objectContaining({
           id: "char-123",
           manaCurrent: 5,
-        })
+        }),
       );
       expect(onPersistActorStatus).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -2303,14 +2494,14 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
           manaCurrent: 5,
         }),
         expect.any(Number),
-        5
+        5,
       );
       expect(mockRollDice).toHaveBeenCalledWith(
         expect.objectContaining({
           campaignId: "camp-xyz",
           actorId: "char-123",
           rollType: "Bola de Fogo (Livre)",
-        })
+        }),
       );
     });
 
@@ -2341,7 +2532,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
           allowedTypes={["items", "spells", "conditions"]}
           onActorStatusChange={onActorStatusChange}
           onActionResult={onActionResult}
-        />
+        />,
       );
 
       await waitFor(() => {
@@ -2355,7 +2546,7 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
         expect.objectContaining({
           id: "char-456",
           manaCurrent: 3,
-        })
+        }),
       );
       expect(globalThis.fetch).toHaveBeenCalledWith(
         "/api/characters/char-456",
@@ -2363,13 +2554,13 @@ describe("CharacterContent - Gallery Mode (#UI-005)", () => {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ manaPointsCurrent: 3, reason: "magia livre" }),
-        })
+        }),
       );
       expect(mockRollDice).toHaveBeenCalledWith(
         expect.objectContaining({
           actorId: "char-456",
           rollType: "Bola de Fogo (Livre)",
-        })
+        }),
       );
     });
   });

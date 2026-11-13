@@ -5,7 +5,7 @@ import { users, campaigns, communityPosts } from "@/lib/db/schema";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ userId: string }> }
+  { params }: { params: Promise<{ userId: string }> },
 ) {
   try {
     const { userId } = await params;
@@ -73,9 +73,6 @@ export async function GET(
     });
   } catch (error) {
     console.error("Erro ao buscar perfil de mestre:", error);
-    return NextResponse.json(
-      { error: "Erro ao buscar perfil de mestre" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Erro ao buscar perfil de mestre" }, { status: 500 });
   }
 }

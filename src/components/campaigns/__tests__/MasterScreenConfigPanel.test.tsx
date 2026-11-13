@@ -4,43 +4,34 @@ import { MasterScreenConfigPanel } from "../MasterScreenConfigPanel";
 import {
   useMasterScreenConfig,
   masterScreenConfigKey,
+  DEFAULT_MASTER_SCREEN_CONFIG,
 } from "@/hooks/useMasterScreenConfig";
 import type { MasterScreenConfig } from "@/hooks/useMasterScreenConfig";
 
 describe("MasterScreenConfigPanel Component", () => {
   const defaultConfig: MasterScreenConfig = {
-    showRoster: true,
-    showSessionLog: true,
-    showCanvas: true,
-    showMap: true,
-    showJukebox: true,
-    showDiceRolls: true,
-    showCharactersNpcs: true,
-    showPlayers: true,
+    ...DEFAULT_MASTER_SCREEN_CONFIG,
   };
 
-  it("renders all eight toggles and reset button", () => {
-    render(
-      <MasterScreenConfigPanel
-        config={defaultConfig}
-        onUpdate={vi.fn()}
-        onReset={vi.fn()}
-      />
-    );
+  it("renders all nine toggles and reset button", () => {
+    render(<MasterScreenConfigPanel config={defaultConfig} onUpdate={vi.fn()} onReset={vi.fn()} />);
 
     expect(screen.getByText("Visibilidade do Escudo")).toBeInTheDocument();
     expect(screen.getByText("Carrossel de Personagens")).toBeInTheDocument();
     expect(screen.getByText("Rolagens da Mesa")).toBeInTheDocument();
     expect(screen.getByText("Canvas Infinito")).toBeInTheDocument();
     expect(screen.getByText("Mapa Tático")).toBeInTheDocument();
-    expect(screen.getByText("Jukebox de Áudio")).toBeInTheDocument();
+    // Estes rótulos também aparecem nos cards do organizador de módulos,
+    // por isso usamos getAllByText e verificamos a primeira ocorrência.
+    expect(screen.getAllByText("Jukebox de Áudio")[0]).toBeInTheDocument();
     expect(screen.getByText("Personagens e NPCs")).toBeInTheDocument();
-    expect(screen.getByText("Jogadores Conectados")).toBeInTheDocument();
-    expect(screen.getByText("Log da Sessão")).toBeInTheDocument();
+    expect(screen.getAllByText("Jogadores Conectados")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("Log da Sessão")[0]).toBeInTheDocument();
+    expect(screen.getByText("Assets e Handouts")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Restaurar Padrão" })).toBeInTheDocument();
 
     const checkboxes = screen.getAllByRole("checkbox");
-    expect(checkboxes).toHaveLength(8);
+    expect(checkboxes).toHaveLength(9);
     checkboxes.forEach((cb) => {
       expect(cb).toBeChecked();
     });
@@ -49,11 +40,7 @@ describe("MasterScreenConfigPanel Component", () => {
   it("calls onUpdate with toggled flag when each checkbox is clicked", () => {
     const handleUpdate = vi.fn();
     render(
-      <MasterScreenConfigPanel
-        config={defaultConfig}
-        onUpdate={handleUpdate}
-        onReset={vi.fn()}
-      />
+      <MasterScreenConfigPanel config={defaultConfig} onUpdate={handleUpdate} onReset={vi.fn()} />,
     );
 
     const checkboxes = screen.getAllByRole("checkbox");
@@ -79,12 +66,16 @@ describe("MasterScreenConfigPanel Component", () => {
     fireEvent.click(checkboxes[6]); // showPlayers
     expect(handleUpdate).toHaveBeenCalledWith({ showPlayers: false });
 
-    fireEvent.click(checkboxes[7]); // showSessionLog
+    fireEvent.click(checkboxes[7]); // showAssets
+    expect(handleUpdate).toHaveBeenCalledWith({ showAssets: false });
+
+    fireEvent.click(checkboxes[8]); // showSessionLog
     expect(handleUpdate).toHaveBeenCalledWith({ showSessionLog: false });
   });
 
   it("reflects unchecked state when flags are false", () => {
     const offConfig: MasterScreenConfig = {
+      ...DEFAULT_MASTER_SCREEN_CONFIG,
       showRoster: false,
       showSessionLog: false,
       showCanvas: false,
@@ -93,15 +84,10 @@ describe("MasterScreenConfigPanel Component", () => {
       showDiceRolls: false,
       showCharactersNpcs: false,
       showPlayers: false,
+      showAssets: false,
     };
 
-    render(
-      <MasterScreenConfigPanel
-        config={offConfig}
-        onUpdate={vi.fn()}
-        onReset={vi.fn()}
-      />
-    );
+    render(<MasterScreenConfigPanel config={offConfig} onUpdate={vi.fn()} onReset={vi.fn()} />);
 
     const checkboxes = screen.getAllByRole("checkbox");
     checkboxes.forEach((cb) => {
@@ -114,6 +100,7 @@ describe("MasterScreenConfigPanel Component", () => {
     render(
       <MasterScreenConfigPanel
         config={{
+          ...DEFAULT_MASTER_SCREEN_CONFIG,
           showRoster: false,
           showSessionLog: false,
           showCanvas: false,
@@ -122,10 +109,11 @@ describe("MasterScreenConfigPanel Component", () => {
           showDiceRolls: false,
           showCharactersNpcs: false,
           showPlayers: false,
+          showAssets: false,
         }}
         onUpdate={vi.fn()}
         onReset={handleReset}
-      />
+      />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Restaurar Padrão" }));
@@ -142,11 +130,7 @@ describe("MasterScreenConfigPanel + useMasterScreenConfig Integration", () => {
     function TestWrapper() {
       const { config, updateConfig, resetConfig } = useMasterScreenConfig();
       return (
-        <MasterScreenConfigPanel
-          config={config}
-          onUpdate={updateConfig}
-          onReset={resetConfig}
-        />
+        <MasterScreenConfigPanel config={config} onUpdate={updateConfig} onReset={resetConfig} />
       );
     }
 
@@ -170,11 +154,7 @@ describe("MasterScreenConfigPanel + useMasterScreenConfig Integration", () => {
     function TestWrapper() {
       const { config, updateConfig, resetConfig } = useMasterScreenConfig();
       return (
-        <MasterScreenConfigPanel
-          config={config}
-          onUpdate={updateConfig}
-          onReset={resetConfig}
-        />
+        <MasterScreenConfigPanel config={config} onUpdate={updateConfig} onReset={resetConfig} />
       );
     }
 

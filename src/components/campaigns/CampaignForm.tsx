@@ -3,6 +3,18 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import {
+  ArrowLeft,
+  Dices,
+  FolderOpen,
+  Image as ImageIcon,
+  Link2,
+  Palette,
+  ScrollText,
+  Sparkles,
+  Upload,
+  X,
+} from "lucide-react";
 import { Button, Form, Input } from "@/components/ui";
 import { InitialContentModal } from "@/components/campaigns/InitialContentModal";
 import type { RulesEngine } from "@/lib/utils/constants";
@@ -50,13 +62,13 @@ export function CampaignForm() {
 
   const handleToggleNpc = (npcId: string) => {
     setSelectedNpcIds((prev) =>
-      prev.includes(npcId) ? prev.filter((id) => id !== npcId) : [...prev, npcId]
+      prev.includes(npcId) ? prev.filter((id) => id !== npcId) : [...prev, npcId],
     );
   };
 
   const handleToggleWorld = (worldId: string) => {
     setSelectedWorldIds((prev) =>
-      prev.includes(worldId) ? prev.filter((id) => id !== worldId) : [...prev, worldId]
+      prev.includes(worldId) ? prev.filter((id) => id !== worldId) : [...prev, worldId],
     );
   };
 
@@ -116,10 +128,7 @@ export function CampaignForm() {
     setInitialAssets((prev) => prev.filter((_, idx) => idx !== index));
   };
 
-  const handleFileUpload = async (
-    file: File,
-    type: "cover" | "map"
-  ) => {
+  const handleFileUpload = async (file: File, type: "cover" | "map") => {
     setUploadError(null);
     if (type === "cover") setIsUploadingCover(true);
     else setIsUploadingMap(true);
@@ -175,7 +184,8 @@ export function CampaignForm() {
           description: description || null,
           rulesEngine,
           pvpEnabled: rulesEngine === "missing_zero" ? false : pvpEnabled,
-          difficultyModifierShadowPoints: rulesEngine === "missing_zero" ? 0 : difficultyModifierShadowPoints,
+          difficultyModifierShadowPoints:
+            rulesEngine === "missing_zero" ? 0 : difficultyModifierShadowPoints,
           coverImageUrl: coverImageUrl || null,
           worldMapUrl: worldMapUrl || null,
           theme: selectedTheme,
@@ -201,37 +211,79 @@ export function CampaignForm() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-6xl pb-8">
-      {/* Header com Navegação */}
-      <div className="mb-6 flex items-center justify-between border-b border-gray-800 pb-3">
+    <div className="mx-auto w-full max-w-6xl pb-12">
+      {/* Header minimalista com navegação rápida */}
+      <header className="mb-6 flex flex-col gap-4 border-b border-gray-800/80 pb-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Link
-              href="/master"
-              className="text-xs font-semibold text-purple-400 hover:text-purple-300 transition-colors"
-            >
-              ← Painel do Mestre
-            </Link>
-            <span className="text-gray-600 text-xs">/</span>
-            <span className="text-gray-400 text-xs">Nova Campanha</span>
-          </div>
-          <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
-            <span>✨</span> Criar Nova Campanha (Studio)
+          <Link
+            href="/master"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-400 hover:text-purple-300 transition-colors"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>Painel do Mestre</span>
+          </Link>
+          <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-purple-400" />
+            <span>Criar Nova Campanha (Studio)</span>
           </h1>
+          <p className="mt-1 text-xs text-gray-400">
+            Configure a identidade, o motor de regras, o tema visual e a mídia inicial da sua mesa.
+          </p>
         </div>
-      </div>
+
+        <nav
+          aria-label="Navegação de seções do Studio"
+          className="flex flex-wrap items-center gap-1.5 rounded-xl border border-gray-800 bg-gray-900/70 p-1 text-xs"
+        >
+          <a
+            href="#studio-identidade"
+            className="rounded-lg px-2.5 py-1 font-medium text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+          >
+            1. Identidade
+          </a>
+          <a
+            href="#studio-regras"
+            className="rounded-lg px-2.5 py-1 font-medium text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+          >
+            2. Regras
+          </a>
+          <a
+            href="#studio-midia"
+            className="rounded-lg px-2.5 py-1 font-medium text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+          >
+            3. Mídia
+          </a>
+          <a
+            href="#studio-tema"
+            className="rounded-lg px-2.5 py-1 font-medium text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+          >
+            4. Tema & Conteúdo
+          </a>
+        </nav>
+      </header>
 
       <Form onSubmit={handleSubmit} error={error ?? undefined}>
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* ========================================================================= */}
-          {/* COLUNA 1: Parâmetros e Regras (7 Colunas no Desktop)                      */}
+          {/* COLUNA PRINCIPAL: Formulário em seções limpas (7 Colunas)                  */}
           {/* ========================================================================= */}
-          <div className="lg:col-span-7 space-y-6">
-            {/* Bloco 1: Informações Básicas */}
-            <div className="rounded-2xl border border-gray-800/80 bg-gray-900/60 p-5 shadow-lg backdrop-blur-sm space-y-4">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
-                <span>📜</span> Informações Gerais
-              </h2>
+          <div className="lg:col-span-7 space-y-5">
+            {/* Seção 1: Informações Gerais */}
+            <section
+              id="studio-identidade"
+              className="rounded-2xl border border-gray-800/80 bg-gray-900/50 p-5 space-y-4"
+            >
+              <div className="flex items-center gap-2 border-b border-gray-800/70 pb-3">
+                <ScrollText className="h-4 w-4 text-purple-400" />
+                <div>
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-gray-200">
+                    Informações Gerais
+                  </h2>
+                  <p className="text-[11px] text-gray-400">
+                    Título principal e premissa narrativa da campanha
+                  </p>
+                </div>
+              </div>
 
               <Input
                 label="Nome da Campanha"
@@ -252,34 +304,45 @@ export function CampaignForm() {
                 </label>
                 <textarea
                   name="description"
-                  rows={4}
+                  rows={3}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   disabled={isLoading}
                   placeholder="Descreva o cenário, premissa, clima da mesa ou regras gerais..."
-                  className="w-full rounded-xl border border-gray-800 bg-gray-950 px-3.5 py-2.5 text-white placeholder-gray-500 focus:ring-2 focus:ring-purple-600 focus:border-transparent outline-none text-xs transition"
+                  className="w-full rounded-xl border border-gray-800 bg-gray-950 px-3.5 py-2.5 text-white placeholder-gray-500 focus:ring-1 focus:ring-purple-500 focus:border-purple-500 outline-none text-xs transition"
                 />
               </div>
-            </div>
+            </section>
 
-            {/* Bloco 2: Motor de Regras e Mecânicas */}
-            <div className="rounded-2xl border border-gray-800/80 bg-gray-900/60 p-5 shadow-lg backdrop-blur-sm space-y-4">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
-                <span>🎲</span> Sistema e Regras (RF-019 / RF-053)
-              </h2>
+            {/* Seção 2: Motor de Regras e Mecânicas */}
+            <section
+              id="studio-regras"
+              className="rounded-2xl border border-gray-800/80 bg-gray-900/50 p-5 space-y-4"
+            >
+              <div className="flex items-center gap-2 border-b border-gray-800/70 pb-3">
+                <Dices className="h-4 w-4 text-purple-400" />
+                <div>
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-gray-200">
+                    Sistema e Regras
+                  </h2>
+                  <p className="text-[11px] text-gray-400">
+                    Escolha o motor de dados e ajustes mecânicos da sessão
+                  </p>
+                </div>
+              </div>
 
               <div>
                 <label className="block text-xs font-medium text-gray-300 mb-2">
                   Motor de Resolução de Testes
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   {/* Card d20_mod */}
                   <div
                     onClick={() => !isLoading && setRulesEngine("d20_mod")}
                     className={`cursor-pointer rounded-xl border p-3.5 transition-all select-none ${
                       rulesEngine === "d20_mod"
-                        ? "border-purple-500 bg-purple-950/50 shadow-md ring-1 ring-purple-500/60"
-                        : "border-gray-800 bg-gray-950/70 hover:border-gray-700 hover:bg-gray-950"
+                        ? "border-purple-500 bg-purple-950/40 ring-1 ring-purple-500/50"
+                        : "border-gray-800 bg-gray-950/60 hover:border-gray-700"
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1.5 min-h-[24px]">
@@ -287,13 +350,13 @@ export function CampaignForm() {
                       <img
                         src="/DD-Logo.png"
                         alt="D&D Logo"
-                        className="h-6 w-auto object-contain"
+                        className="h-5 w-auto object-contain"
                       />
                       {rulesEngine === "d20_mod" && (
                         <span className="h-2 w-2 rounded-full bg-purple-400" />
                       )}
                     </div>
-                    <p className="text-[11px] text-gray-400">
+                    <p className="text-[11px] text-gray-400 leading-relaxed">
                       Sistema adaptado misturando D&D, Pathfinder 2e e regras da mesa.
                     </p>
                   </div>
@@ -303,18 +366,19 @@ export function CampaignForm() {
                     onClick={() => !isLoading && setRulesEngine("dual_d20_sum")}
                     className={`cursor-pointer rounded-xl border p-3.5 transition-all select-none ${
                       rulesEngine === "dual_d20_sum"
-                        ? "border-purple-500 bg-purple-950/50 shadow-md ring-1 ring-purple-500/60"
-                        : "border-gray-800 bg-gray-950/70 hover:border-gray-700 hover:bg-gray-950"
+                        ? "border-purple-500 bg-purple-950/40 ring-1 ring-purple-500/50"
+                        : "border-gray-800 bg-gray-950/60 hover:border-gray-700"
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-1 min-h-[24px]">
+                    <div className="flex items-center justify-between mb-1.5 min-h-[24px]">
                       <span className="font-bold text-xs text-white">2d20 Somado (Dual)</span>
                       {rulesEngine === "dual_d20_sum" && (
                         <span className="h-2 w-2 rounded-full bg-purple-400" />
                       )}
                     </div>
-                    <p className="text-[11px] text-gray-400">
-                      Curva de sino com soma direta de 2 dados d20 para resultados concentrados e épicos.
+                    <p className="text-[11px] text-gray-400 leading-relaxed">
+                      Curva de sino com soma direta de 2 dados d20 para resultados concentrados e
+                      épicos.
                     </p>
                   </div>
 
@@ -323,52 +387,55 @@ export function CampaignForm() {
                     onClick={() => !isLoading && setRulesEngine("missing_zero")}
                     className={`cursor-pointer rounded-xl border p-3.5 transition-all select-none ${
                       rulesEngine === "missing_zero"
-                        ? "border-purple-500 bg-purple-950/50 shadow-md ring-1 ring-purple-500/60"
-                        : "border-gray-800 bg-gray-950/70 hover:border-gray-700 hover:bg-gray-950"
+                        ? "border-purple-500 bg-purple-950/40 ring-1 ring-purple-500/50"
+                        : "border-gray-800 bg-gray-950/60 hover:border-gray-700"
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-1 min-h-[24px]">
+                    <div className="flex items-center justify-between mb-1.5 min-h-[24px]">
                       <span className="font-bold text-xs text-white">MISSING — Edição ZERO</span>
                       {rulesEngine === "missing_zero" && (
                         <span className="h-2 w-2 rounded-full bg-purple-400" />
                       )}
                     </div>
-                    <p className="text-[11px] text-gray-400">
+                    <p className="text-[11px] text-gray-400 leading-relaxed">
                       Horror analógico com dados d6, registro pautado e ameaças de cena.
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* PvP Toggle */}
               {rulesEngine !== "missing_zero" && (
-                <div className="flex items-center justify-between p-3 rounded-xl border border-gray-800 bg-gray-950/60">
-                  <div>
-                    <div className="text-xs font-bold text-white">Combate entre Jogadores (PvP)</div>
-                    <div className="text-[11px] text-gray-400">
-                      Permite desafios de duelo direto e ataques de alvo entre fichas de jogadores.
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  {/* PvP Toggle */}
+                  <div className="flex items-center justify-between gap-3 p-3 rounded-xl border border-gray-800 bg-gray-950/60">
+                    <div>
+                      <div className="text-xs font-semibold text-white">
+                        Combate entre Jogadores (PvP)
+                      </div>
+                      <div className="text-[11px] text-gray-400">Duelos diretos entre fichas</div>
                     </div>
+                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={pvpEnabled}
+                        onChange={(e) => setPvpEnabled(e.target.checked)}
+                        disabled={isLoading}
+                        className="sr-only peer"
+                      />
+                      <div className="w-10 h-5 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
+                    </label>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={pvpEnabled}
-                      onChange={(e) => setPvpEnabled(e.target.checked)}
-                      disabled={isLoading}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                  </label>
-                </div>
-              )}
 
-              {/* Modificador de Sombra */}
-              {rulesEngine !== "missing_zero" && (
-                <div>
-                  <label className="block text-xs font-medium text-gray-300 mb-1">
-                    Modificador de Dificuldade por Pontos de Sombra
-                  </label>
-                  <div className="flex items-center gap-3">
+                  {/* Modificador de Sombra */}
+                  <div className="p-3 rounded-xl border border-gray-800 bg-gray-950/60">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-semibold text-gray-200">
+                        Modificador de Dificuldade por Pontos de Sombra
+                      </label>
+                      <span className="font-mono font-bold text-[11px] bg-purple-950/80 border border-purple-800/60 rounded px-1.5 py-0.5 text-purple-300">
+                        +{difficultyModifierShadowPoints}
+                      </span>
+                    </div>
                     <input
                       type="range"
                       min={0}
@@ -376,29 +443,29 @@ export function CampaignForm() {
                       value={difficultyModifierShadowPoints}
                       onChange={(e) => setDifficultyModifierShadowPoints(Number(e.target.value))}
                       disabled={isLoading}
-                      className="flex-1 accent-purple-600 bg-gray-950 h-2 rounded-lg cursor-pointer"
+                      className="w-full accent-purple-600 bg-gray-900 h-1.5 rounded-lg cursor-pointer"
                     />
-                    <span className="w-10 text-center font-mono font-bold text-xs bg-purple-950/80 border border-purple-800/60 rounded px-2 py-1 text-purple-300">
-                      +{difficultyModifierShadowPoints}
-                    </span>
                   </div>
-                  <p className="text-[10px] text-gray-500 mt-1">
-                    Aumenta os limiares de testes em proporção à corrupção pela Sombra da campanha.
-                  </p>
                 </div>
               )}
-            </div>
+            </section>
 
-            {/* Bloco 3: Conteúdo Inicial (NPCs e Mundos) */}
-            <div className="rounded-2xl border border-gray-800/80 bg-gray-900/60 p-5 shadow-lg backdrop-blur-sm space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
-                    <span>📦</span> Conteúdo Inicial
-                  </h2>
-                  <p className="text-[11px] text-gray-400 mt-0.5">
-                    Importe criaturas, aliados e mundos da biblioteca central para a campanha de imediato.
-                  </p>
+            {/* Seção 3: Conteúdo Inicial (NPCs e Mundos) */}
+            <section
+              id="studio-conteudo"
+              className="rounded-2xl border border-gray-800/80 bg-gray-900/50 p-5 space-y-3"
+            >
+              <div className="flex items-start justify-between gap-3 border-b border-gray-800/70 pb-3">
+                <div className="flex items-center gap-2">
+                  <FolderOpen className="h-4 w-4 text-purple-400" />
+                  <div>
+                    <h2 className="text-xs font-bold uppercase tracking-wider text-gray-200">
+                      Conteúdo Inicial
+                    </h2>
+                    <p className="text-[11px] text-gray-400">
+                      Importe criaturas, aliados e mundos da biblioteca central
+                    </p>
+                  </div>
                 </div>
                 <button
                   type="button"
@@ -480,14 +547,25 @@ export function CampaignForm() {
                   )}
                 </div>
               )}
-            </div>
+            </section>
 
-            {/* Bloco 3: Tema e Acessibilidade da Campanha */}
-            <div className="rounded-2xl border border-gray-800/80 bg-gray-900/60 p-5 shadow-lg backdrop-blur-sm space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
-                  <span>🎨</span> Tema Visual da Campanha
-                </h2>
+            {/* Seção 4: Tema Visual da Campanha */}
+            <section
+              id="studio-tema"
+              className="rounded-2xl border border-gray-800/80 bg-gray-900/50 p-5 space-y-3"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-800/70 pb-3">
+                <div className="flex items-center gap-2">
+                  <Palette className="h-4 w-4 text-purple-400" />
+                  <div>
+                    <h2 className="text-xs font-bold uppercase tracking-wider text-gray-200">
+                      Tema Visual da Campanha
+                    </h2>
+                    <p className="text-[11px] text-gray-400">
+                      Identidade visual calibrada com contraste AAA
+                    </p>
+                  </div>
+                </div>
                 <div className="flex items-center gap-1 bg-gray-950 p-1 rounded-lg border border-gray-800 text-[11px]">
                   <button
                     type="button"
@@ -525,10 +603,6 @@ export function CampaignForm() {
                 </div>
               </div>
 
-              <p className="text-xs text-gray-400">
-                Selecione a identidade visual e atmosfera desta mesa. Todos os temas são calibrados com padrão AAA de contraste.
-              </p>
-
               <div
                 className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-72 overflow-y-auto pr-1"
                 role="radiogroup"
@@ -562,9 +636,7 @@ export function CampaignForm() {
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="font-bold text-xs text-white truncate">
-                              {t.label}
-                            </span>
+                            <span className="font-bold text-xs text-white truncate">{t.label}</span>
                             <span
                               className={`text-[9px] px-1.5 py-0.2 rounded font-mono ${
                                 t.mode === "dark"
@@ -580,9 +652,7 @@ export function CampaignForm() {
                           )}
                         </div>
 
-                        <p className="text-[11px] text-gray-400 line-clamp-1">
-                          {t.description}
-                        </p>
+                        <p className="text-[11px] text-gray-400 line-clamp-1">{t.description}</p>
 
                         <div className="flex items-center justify-between pt-1 border-t border-gray-800/60">
                           {/* Amostras das 4 cores do sistema */}
@@ -617,10 +687,10 @@ export function CampaignForm() {
                     );
                   })}
               </div>
-            </div>
+            </section>
 
             {/* Ação de Submissão */}
-            <div className="pt-2">
+            <div className="pt-1">
               <Button
                 type="submit"
                 variant="master"
@@ -633,23 +703,34 @@ export function CampaignForm() {
           </div>
 
           {/* ========================================================================= */}
-          {/* COLUNA 2: Mídia, Uploaders e Live Preview (5 Colunas no Desktop)           */}
+          {/* COLUNA LATERAL: Mídia, Assets e Live Preview (5 Colunas no Desktop)        */}
           {/* ========================================================================= */}
-          <div className="lg:col-span-5 space-y-6">
-            {/* Bloco de Uploaders de Imagens */}
-            <div className="rounded-2xl border border-gray-800/80 bg-gray-900/60 p-5 shadow-lg backdrop-blur-sm space-y-4">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
-                <span>🖼️</span> Mídia da Campanha
-              </h2>
+          <div className="lg:col-span-5 space-y-5">
+            {/* Seção: Mídia da Campanha */}
+            <section
+              id="studio-midia"
+              className="rounded-2xl border border-gray-800/80 bg-gray-900/50 p-5 space-y-4"
+            >
+              <div className="flex items-center gap-2 border-b border-gray-800/70 pb-3">
+                <ImageIcon className="h-4 w-4 text-purple-400" />
+                <div>
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-gray-200">
+                    Mídia da Campanha
+                  </h2>
+                  <p className="text-[11px] text-gray-400">
+                    Envie um arquivo ou cole a URL direta da imagem
+                  </p>
+                </div>
+              </div>
 
               {uploadError && (
-                <div className="rounded-lg border border-red-800 bg-red-950/40 p-2.5 text-xs text-red-300">
+                <div className="rounded-xl border border-red-800 bg-red-950/40 px-3 py-2 text-xs text-red-300">
                   {uploadError}
                 </div>
               )}
 
-              {/* Upload da Capa */}
-              <div className="space-y-1.5">
+              {/* Imagem de Capa */}
+              <div className="space-y-2">
                 <span className="block text-xs font-semibold text-gray-300">
                   Imagem de Capa (Banner da Campanha)
                 </span>
@@ -665,7 +746,7 @@ export function CampaignForm() {
                 />
                 <div className="flex items-center gap-3">
                   {coverImageUrl ? (
-                    <div className="relative h-14 w-24 overflow-hidden rounded-lg border border-purple-800/50 bg-gray-950 shadow">
+                    <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-purple-800/50 bg-gray-950">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={coverImageUrl}
@@ -674,39 +755,56 @@ export function CampaignForm() {
                       />
                     </div>
                   ) : (
-                    <div className="flex h-14 w-24 items-center justify-center rounded-lg border border-dashed border-gray-800 bg-gray-950 text-[10px] text-gray-500">
+                    <div className="flex h-16 w-24 shrink-0 items-center justify-center rounded-lg border border-dashed border-gray-800 bg-gray-950 text-[10px] text-gray-500">
                       Sem Capa
                     </div>
                   )}
 
-                  <div className="flex-1 space-y-1">
-                    <button
-                      type="button"
-                      disabled={isUploadingCover}
-                      onClick={() => coverInputRef.current?.click()}
-                      className="rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 px-3 py-1.5 text-xs font-semibold text-white transition disabled:opacity-50"
-                    >
-                      {isUploadingCover
-                        ? "Enviando Capa..."
-                        : coverImageUrl
-                        ? "Trocar Imagem"
-                        : "Upload da Capa"}
-                    </button>
-                    {coverImageUrl && (
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <Link2 className="h-3.5 w-3.5 shrink-0 text-gray-500" />
+                      <input
+                        type="url"
+                        aria-label="URL da imagem de capa"
+                        placeholder="https://exemplo.com/capa.jpg"
+                        value={coverImageUrl ?? ""}
+                        onChange={(e) => setCoverImageUrl(e.target.value || null)}
+                        disabled={isLoading}
+                        className="w-full rounded-lg border border-gray-800 bg-gray-950 px-2.5 py-1.5 text-xs font-mono text-white placeholder-gray-600 outline-none focus:border-purple-500"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => setCoverImageUrl(null)}
-                        className="block text-[11px] text-gray-500 hover:text-red-400 transition"
+                        disabled={isUploadingCover}
+                        onClick={() => coverInputRef.current?.click()}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-700 bg-gray-800 px-2.5 py-1 text-[11px] font-semibold text-white transition hover:bg-gray-700 disabled:opacity-50"
                       >
-                        Remover capa
+                        <Upload className="h-3 w-3" />
+                        {isUploadingCover
+                          ? "Enviando..."
+                          : coverImageUrl
+                            ? "Trocar Arquivo"
+                            : "Upload"}
                       </button>
-                    )}
+                      {coverImageUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setCoverImageUrl(null)}
+                          className="inline-flex items-center gap-1 text-[11px] text-gray-500 transition hover:text-red-400"
+                        >
+                          <X className="h-3 w-3" />
+                          Remover
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Upload do Mapa Mundi */}
-              <div className="space-y-1.5 pt-3 border-t border-gray-800/70">
+              {/* Mapa Mundi */}
+              <div className="space-y-2 border-t border-gray-800/70 pt-3">
                 <span className="block text-xs font-semibold text-gray-300">
                   Mapa Mundi Geral (Opcional)
                 </span>
@@ -722,7 +820,7 @@ export function CampaignForm() {
                 />
                 <div className="flex items-center gap-3">
                   {worldMapUrl ? (
-                    <div className="relative h-14 w-24 overflow-hidden rounded-lg border border-purple-800/50 bg-gray-950 shadow">
+                    <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-purple-800/50 bg-gray-950">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={worldMapUrl}
@@ -731,51 +829,67 @@ export function CampaignForm() {
                       />
                     </div>
                   ) : (
-                    <div className="flex h-14 w-24 items-center justify-center rounded-lg border border-dashed border-gray-800 bg-gray-950 text-[10px] text-gray-500">
+                    <div className="flex h-16 w-24 shrink-0 items-center justify-center rounded-lg border border-dashed border-gray-800 bg-gray-950 text-[10px] text-gray-500">
                       Sem Mapa
                     </div>
                   )}
 
-                  <div className="flex-1 space-y-1">
-                    <button
-                      type="button"
-                      disabled={isUploadingMap}
-                      onClick={() => mapInputRef.current?.click()}
-                      className="rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 px-3 py-1.5 text-xs font-semibold text-white transition disabled:opacity-50"
-                    >
-                      {isUploadingMap
-                        ? "Enviando Mapa..."
-                        : worldMapUrl
-                        ? "Trocar Imagem"
-                        : "Upload do Mapa"}
-                    </button>
-                    {worldMapUrl && (
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <Link2 className="h-3.5 w-3.5 shrink-0 text-gray-500" />
+                      <input
+                        type="url"
+                        aria-label="URL da imagem do mapa mundi"
+                        placeholder="https://exemplo.com/mapa.jpg"
+                        value={worldMapUrl ?? ""}
+                        onChange={(e) => setWorldMapUrl(e.target.value || null)}
+                        disabled={isLoading}
+                        className="w-full rounded-lg border border-gray-800 bg-gray-950 px-2.5 py-1.5 text-xs font-mono text-white placeholder-gray-600 outline-none focus:border-purple-500"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => setWorldMapUrl(null)}
-                        className="block text-[11px] text-gray-500 hover:text-red-400 transition"
+                        disabled={isUploadingMap}
+                        onClick={() => mapInputRef.current?.click()}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-700 bg-gray-800 px-2.5 py-1 text-[11px] font-semibold text-white transition hover:bg-gray-700 disabled:opacity-50"
                       >
-                        Remover mapa
+                        <Upload className="h-3 w-3" />
+                        {isUploadingMap ? "Enviando..." : worldMapUrl ? "Trocar Arquivo" : "Upload"}
                       </button>
-                    )}
+                      {worldMapUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setWorldMapUrl(null)}
+                          className="inline-flex items-center gap-1 text-[11px] text-gray-500 transition hover:text-red-400"
+                        >
+                          <X className="h-3 w-3" />
+                          Remover
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </section>
 
-            {/* Bloco de Assets e Handouts Iniciais (Issue #61) */}
-            <div className="rounded-2xl border border-gray-800/80 bg-gray-900/60 p-5 shadow-lg backdrop-blur-sm space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
-                    <span>📜</span> Assets e Handouts da Campanha (Opcional)
-                  </h2>
-                  <p className="text-[11px] text-gray-400 mt-0.5">
-                    Pré-carregue ilustrações, mapas e documentos para compartilhar durante as sessões.
-                  </p>
+            {/* Seção: Assets e Handouts Iniciais */}
+            <section className="rounded-2xl border border-gray-800/80 bg-gray-900/50 p-5 space-y-4">
+              <div className="flex items-center justify-between border-b border-gray-800/70 pb-3">
+                <div className="flex items-center gap-2">
+                  <ScrollText className="h-4 w-4 text-purple-400" />
+                  <div>
+                    <h2 className="text-xs font-bold uppercase tracking-wider text-gray-200">
+                      Assets e Handouts
+                    </h2>
+                    <p className="text-[11px] text-gray-400">
+                      Ilustrações, mapas e documentos para as sessões
+                    </p>
+                  </div>
                 </div>
                 {initialAssets.length > 0 && (
-                  <span className="rounded-full bg-purple-950 border border-purple-700/60 px-2.5 py-0.5 text-xs font-bold text-purple-300">
+                  <span className="rounded-full border border-purple-700/60 bg-purple-950 px-2.5 py-0.5 text-[11px] font-bold text-purple-300">
                     {initialAssets.length}
                   </span>
                 )}
@@ -912,21 +1026,26 @@ export function CampaignForm() {
                   ))}
                 </div>
               )}
-            </div>
+            </section>
 
             {/* Live Preview em Tempo Real */}
-            <div className="rounded-2xl border border-gray-800/80 bg-gray-900/60 p-5 shadow-lg backdrop-blur-sm space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
-                  <span>👁️</span> Live Preview do Card
-                </h2>
-                <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-gray-800 text-gray-400">
+            <section className="rounded-2xl border border-gray-800/80 bg-gray-900/50 p-5 space-y-3">
+              <div className="flex items-center justify-between border-b border-gray-800/70 pb-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-purple-400" />
+                  <div>
+                    <h2 className="text-xs font-bold uppercase tracking-wider text-gray-200">
+                      Live Preview do Card
+                    </h2>
+                    <p className="text-[11px] text-gray-400">
+                      Como a campanha aparecerá nas listas
+                    </p>
+                  </div>
+                </div>
+                <span className="rounded-full border border-gray-700 bg-gray-800 px-2 py-0.5 text-[10px] font-mono uppercase text-gray-400">
                   Tempo Real
                 </span>
               </div>
-              <p className="text-[11px] text-gray-400">
-                Visualização de como o card aparecerá nas listas do Mestre e dos Jogadores:
-              </p>
 
               {/* Card Simulado */}
               {(() => {
@@ -1030,7 +1149,8 @@ export function CampaignForm() {
                         )}
                         {selectedWorldIds.length > 0 && (
                           <span className="rounded bg-blue-950/80 border border-blue-700/50 px-2 py-1 text-blue-300 text-[11px] drop-shadow-sm">
-                            {selectedWorldIds.length} {selectedWorldIds.length === 1 ? "Mundo" : "Mundos"}
+                            {selectedWorldIds.length}{" "}
+                            {selectedWorldIds.length === 1 ? "Mundo" : "Mundos"}
                           </span>
                         )}
                       </div>
@@ -1038,7 +1158,7 @@ export function CampaignForm() {
                   </div>
                 );
               })()}
-            </div>
+            </section>
           </div>
         </div>
       </Form>

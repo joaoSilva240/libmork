@@ -14,11 +14,7 @@ type RouteContext = {
 };
 
 async function isWorldMaster(worldId: string, userId: string): Promise<boolean> {
-  const [world] = await db
-    .select()
-    .from(worlds)
-    .where(eq(worlds.id, worldId))
-    .limit(1);
+  const [world] = await db.select().from(worlds).where(eq(worlds.id, worldId)).limit(1);
 
   if (!world || !world.campaignId) return false;
 
@@ -40,10 +36,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { worldId, pinId } = await params;
@@ -53,21 +46,14 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     if (!isMaster) {
       return NextResponse.json(
         { success: false, error: "Apenas o mestre da campanha pode remover pins do mapa" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
-    const [pin] = await db
-      .select()
-      .from(mapPins)
-      .where(eq(mapPins.id, pinId))
-      .limit(1);
+    const [pin] = await db.select().from(mapPins).where(eq(mapPins.id, pinId)).limit(1);
 
     if (!pin || pin.worldId !== worldId) {
-      return NextResponse.json(
-        { success: false, error: "Pin não encontrado" },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: "Pin não encontrado" }, { status: 404 });
     }
 
     await db.delete(mapPins).where(eq(mapPins.id, pinId));
@@ -77,10 +63,10 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       message: "Pin removido com sucesso",
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao remover pin do mapa');
+    logger.error({ err: error }, "Erro ao remover pin do mapa");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

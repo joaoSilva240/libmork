@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { communityComments, communityLikes, communityPostVotes, communityPosts, users } from "@/lib/db/schema";
+import {
+  communityComments,
+  communityLikes,
+  communityPostVotes,
+  communityPosts,
+  users,
+} from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ userId: string }> }
+  { params }: { params: Promise<{ userId: string }> },
 ) {
   try {
     const session = await requireAuth();
@@ -70,16 +76,13 @@ export async function GET(
           downvotes: Number(downvotes),
           score: Number(score),
           userVote: userVote !== null ? Number(userVote) : null,
-        })
+        }),
       ),
       page,
       limit,
     });
   } catch (error) {
     console.error("Erro ao buscar posts do usuário:", error);
-    return NextResponse.json(
-      { error: "Erro ao buscar posts do usuário" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Erro ao buscar posts do usuário" }, { status: 500 });
   }
 }

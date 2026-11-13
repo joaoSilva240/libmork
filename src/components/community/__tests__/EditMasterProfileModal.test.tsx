@@ -11,13 +11,7 @@ describe("EditMasterProfileModal Component", () => {
   };
 
   it("renderiza campos preenchidos com os dados atuais", () => {
-    render(
-      <EditMasterProfileModal
-        profile={mockProfile}
-        onClose={vi.fn()}
-        onSaved={vi.fn()}
-      />
-    );
+    render(<EditMasterProfileModal profile={mockProfile} onClose={vi.fn()} onSaved={vi.fn()} />);
 
     expect(screen.getByDisplayValue("Gandalf Antigo")).toBeInTheDocument();
     expect(screen.getByDisplayValue("https://example.com/old-avatar.jpg")).toBeInTheDocument();
@@ -43,11 +37,7 @@ describe("EditMasterProfileModal Component", () => {
     });
 
     render(
-      <EditMasterProfileModal
-        profile={mockProfile}
-        onClose={onCloseMock}
-        onSaved={onSavedMock}
-      />
+      <EditMasterProfileModal profile={mockProfile} onClose={onCloseMock} onSaved={onSavedMock} />,
     );
 
     // Altera o nome
@@ -90,13 +80,7 @@ describe("EditMasterProfileModal Component", () => {
       }),
     });
 
-    render(
-      <EditMasterProfileModal
-        profile={mockProfile}
-        onClose={vi.fn()}
-        onSaved={vi.fn()}
-      />
-    );
+    render(<EditMasterProfileModal profile={mockProfile} onClose={vi.fn()} onSaved={vi.fn()} />);
 
     const saveBtn = screen.getByRole("button", { name: /salvar/i });
     fireEvent.click(saveBtn);
@@ -110,11 +94,7 @@ describe("EditMasterProfileModal Component", () => {
     const onCloseMock = vi.fn();
 
     render(
-      <EditMasterProfileModal
-        profile={mockProfile}
-        onClose={onCloseMock}
-        onSaved={vi.fn()}
-      />
+      <EditMasterProfileModal profile={mockProfile} onClose={onCloseMock} onSaved={vi.fn()} />,
     );
 
     const cancelBtn = screen.getByRole("button", { name: /cancelar/i });

@@ -21,7 +21,10 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
 
     return NextResponse.json({ success: true, message: "Estabelecimento excluído com sucesso" });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao excluir estabelecimento');
-    return NextResponse.json({ success: false, error: "Erro interno do servidor" }, { status: 500 });
+    logger.error({ err: error }, "Erro ao excluir estabelecimento");
+    return NextResponse.json(
+      { success: false, error: "Erro interno do servidor" },
+      { status: 500 },
+    );
   }
 }

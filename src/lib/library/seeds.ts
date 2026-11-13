@@ -7,7 +7,8 @@ export const OFFICIAL_LIBRARY_DOCUMENTS: LibraryDocument[] = [
   {
     id: "official-libmork-core-rules",
     title: "Libmork — Livro de Regras Base & Guia do Jogador",
-    description: "Manual central de regras do sistema Libmork, ficha de personagem e mecânicas de d20.",
+    description:
+      "Manual central de regras do sistema Libmork, ficha de personagem e mecânicas de d20.",
     coverUrl: null,
     externalUrl: "https://libmork.example.com/docs/core-rules.pdf",
     provider: "external",

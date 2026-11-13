@@ -160,8 +160,23 @@ findAvailablePort(initialPort)
         // Evento de rolagem de dados em tempo real - RF-041, RF-046
         socket.on("roll-dice", (rollData) => {
           if (!rollData) return;
-          if (rollData.campaignId)
-            io.to(`campaign:${rollData.campaignId}`).emit("dice-rolled", rollData);
+          if (rollData.campaignId) {
+            io.to(`campaign:${rollData.campaignId}`).emit("dice-rolled", {
+              ...rollData,
+              senderSocketId: socket.id,
+            });
+          }
+        });
+
+        // Configurações de Dados 3D da Campanha (Issue #74)
+        socket.on("campaign:dice3d-settings-update", (payload) => {
+          if (
+            !payload ||
+            !payload.campaignId ||
+            !socket.rooms.has("campaign:" + payload.campaignId)
+          )
+            return;
+          io.to(`campaign:${payload.campaignId}`).emit("campaign:dice3d-settings-updated", payload);
         });
 
         // Eventos do Motor de Combate (Fase 4 - RF-039, RF-040, RF-041, RF-047, RF-066)
@@ -396,6 +411,27 @@ findAvailablePort(initialPort)
         socket.on("chat:member-removed", (payload) => {
           if (!payload || !payload.groupId) return;
           io.to(`chat:${payload.groupId}`).emit("chat:member-removed", payload);
+        });
+
+        // Sessões agendadas em tempo real (Issue #63)
+        socket.on("session:publish", (payload) => {
+          if (!payload || !payload.campaignId) return;
+          io.to(`campaign:${payload.campaignId}`).emit("session:published", payload);
+        });
+
+        socket.on("session:apply", (payload) => {
+          if (!payload || !payload.campaignId) return;
+          io.to(`campaign:${payload.campaignId}`).emit("session:applied", payload);
+        });
+
+        socket.on("session:confirm", (payload) => {
+          if (!payload || !payload.campaignId) return;
+          io.to(`campaign:${payload.campaignId}`).emit("session:confirmed", payload);
+        });
+
+        socket.on("session:cancel", (payload) => {
+          if (!payload || !payload.campaignId) return;
+          io.to(`campaign:${payload.campaignId}`).emit("session:cancelled", payload);
         });
 
         // Sair explicitamente de uma campanha

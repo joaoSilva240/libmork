@@ -52,10 +52,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id, encounterId, participantId } = await params;
@@ -64,7 +61,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     if (!encounter) {
       return NextResponse.json(
         { success: false, error: "Encontro não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -74,28 +71,26 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       .where(
         and(
           eq(encounterParticipants.id, participantId),
-          eq(encounterParticipants.encounterId, encounterId)
-        )
+          eq(encounterParticipants.encounterId, encounterId),
+        ),
       )
       .limit(1);
 
     if (!participant) {
       return NextResponse.json(
         { success: false, error: "Participante não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
-    await db
-      .delete(encounterParticipants)
-      .where(eq(encounterParticipants.id, participantId));
+    await db.delete(encounterParticipants).where(eq(encounterParticipants.id, participantId));
 
     return NextResponse.json({ success: true, message: "Participante removido com sucesso" });
   } catch (error) {
     logger.error({ err: error }, "Erro ao remover participante");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

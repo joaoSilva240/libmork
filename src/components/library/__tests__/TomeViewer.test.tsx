@@ -56,12 +56,7 @@ describe("TomeViewer", () => {
   });
 
   it("accepts custom url and className in desktop mode", () => {
-    render(
-      <TomeViewer
-        url="http://example.com/tome"
-        className="custom-class"
-      />
-    );
+    render(<TomeViewer url="http://example.com/tome" className="custom-class" />);
 
     const container = screen.getByTestId("tome-inline-viewer");
     expect(container).toHaveClass("custom-class");
@@ -70,5 +65,3 @@ describe("TomeViewer", () => {
     expect(iframe).toHaveAttribute("src", "http://example.com/tome");
   });
 });
-
-

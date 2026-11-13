@@ -22,7 +22,10 @@ export async function GET() {
     });
 
     if (!res.ok) {
-      return NextResponse.json({ success: false, error: "Erro ao consultar API D&D 5e" }, { status: 500 });
+      return NextResponse.json(
+        { success: false, error: "Erro ao consultar API D&D 5e" },
+        { status: 500 },
+      );
     }
 
     const data = await res.json();
@@ -33,7 +36,10 @@ export async function GET() {
       results: data.results, // Array de { index, name, url }
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao carregar catálogo D&D 5e');
-    return NextResponse.json({ success: false, error: "Erro interno do servidor" }, { status: 500 });
+    logger.error({ err: error }, "Erro ao carregar catálogo D&D 5e");
+    return NextResponse.json(
+      { success: false, error: "Erro interno do servidor" },
+      { status: 500 },
+    );
   }
 }

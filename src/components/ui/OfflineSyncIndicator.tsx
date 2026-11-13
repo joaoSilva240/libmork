@@ -21,7 +21,9 @@ export function OfflineSyncIndicator({ characterId }: { characterId?: string }) 
       ) : isOffline ? (
         <>
           <span className="text-sm">📡</span>
-          <span>Modo Offline ({pendingCount} pendente{pendingCount !== 1 ? "s" : ""})</span>
+          <span>
+            Modo Offline ({pendingCount} pendente{pendingCount !== 1 ? "s" : ""})
+          </span>
         </>
       ) : (
         <>

@@ -66,7 +66,9 @@ export function CharacterCarousel({
           isMissing ? "border-zinc-800 bg-[#0d0e11]/60" : "border-gray-800"
         }`}
       >
-        <p className={`text-xs font-semibold ${isMissing ? "font-mono text-zinc-400" : "text-purple-400"}`}>
+        <p
+          className={`text-xs font-semibold ${isMissing ? "font-mono text-zinc-400" : "text-purple-400"}`}
+        >
           {isMissing ? "📋 Nenhum Habitante Registrado" : "⚡ Mesa Vazia"}
         </p>
       </div>
@@ -98,11 +100,11 @@ export function CharacterCarousel({
 
           const hpPercent = Math.min(
             100,
-            Math.max(0, (actor.hitPoints / Math.max(actor.hitPointsMax, 1)) * 100)
+            Math.max(0, (actor.hitPoints / Math.max(actor.hitPointsMax, 1)) * 100),
           );
           const manaPercent = Math.min(
             100,
-            Math.max(0, (actor.manaPoints / Math.max(actor.manaPointsMax, 1)) * 100)
+            Math.max(0, (actor.manaPoints / Math.max(actor.manaPointsMax, 1)) * 100),
           );
 
           return (
@@ -113,16 +115,13 @@ export function CharacterCarousel({
                 isMissing
                   ? "w-32 border-zinc-800 bg-[#121316] hover:border-amber-600/70 hover:scale-105"
                   : isActiveTurn
-                  ? "w-36 scale-110 border-purple-500 bg-purple-950/60 ring-2 ring-purple-500 z-10 shadow-2xl shadow-purple-950/80"
-                  : isCombatActive
-                  ? "w-28 scale-90 opacity-70 border-gray-800 bg-gray-900/60 hover:opacity-100 hover:scale-95"
-                  : "w-32 border-gray-800 bg-gray-900 hover:border-purple-600 hover:scale-105"
+                    ? "w-36 scale-110 border-purple-500 bg-purple-950/60 ring-2 ring-purple-500 z-10 shadow-2xl shadow-purple-950/80"
+                    : isCombatActive
+                      ? "w-28 scale-90 opacity-70 border-gray-800 bg-gray-900/60 hover:opacity-100 hover:scale-95"
+                      : "w-32 border-gray-800 bg-gray-900 hover:border-purple-600 hover:scale-105"
               }`}
             >
-              <button
-                onClick={() => onSelect(actor)}
-                className="h-full w-full text-left"
-              >
+              <button onClick={() => onSelect(actor)} className="h-full w-full text-left">
                 {actor.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -157,7 +156,9 @@ export function CharacterCarousel({
                     {actor.status === "missing" ? "DESAPARECIDO" : "ATIVO"}
                   </span>
                 ) : (
-                  <div className={`absolute right-1.5 flex flex-col items-end gap-1 ${isActiveTurn ? "top-6" : "top-1.5"}`}>
+                  <div
+                    className={`absolute right-1.5 flex flex-col items-end gap-1 ${isActiveTurn ? "top-6" : "top-1.5"}`}
+                  >
                     <span className="rounded-full bg-black/80 px-1.5 py-0.5 text-[10px] font-bold text-white shadow">
                       Nv {actor.level}
                     </span>
@@ -182,9 +183,7 @@ export function CharacterCarousel({
                 )}
 
                 <div className="absolute inset-x-0 bottom-0 p-1.5">
-                  <p className="truncate text-xs font-bold text-white drop-shadow">
-                    {actor.name}
-                  </p>
+                  <p className="truncate text-xs font-bold text-white drop-shadow">{actor.name}</p>
 
                   {/* Ações Restantes (se combate ativo) */}
                   {!isMissing && combatant && (
@@ -220,7 +219,8 @@ export function CharacterCarousel({
                         </div>
                       </div>
                       <p className="mt-0.5 text-[9px] text-gray-300">
-                        HP {actor.hitPoints}/{actor.hitPointsMax} · MP {actor.manaPoints}/{actor.manaPointsMax}
+                        HP {actor.hitPoints}/{actor.hitPointsMax} · MP {actor.manaPoints}/
+                        {actor.manaPointsMax}
                       </p>
                     </>
                   ) : (

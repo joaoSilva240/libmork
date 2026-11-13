@@ -47,8 +47,6 @@ RPGPEDIA - jozo siivaoliver40O gmail.com
 
 <!-- Página 3 -->
 
-
-
 ---
 
 <!-- Página 4 -->
@@ -154,17 +152,17 @@ investigar.
 Não seja um observador.
 
 3. Inclusão
-A ideia de encontrar todas as
-respostas sozinho pode parecer
-atraente de vez em quando, mas
-lembre-se que MISSING é um jogo
-cooperativo. Se há outro habitante
-com habilidades perfeitas para
-solucionar um problema, deixe-o
-tentar primeiro, afinal você está em
-um time e todos devem ter o seu
-momento de brilhar.
-Não seja um egoísta.
+   A ideia de encontrar todas as
+   respostas sozinho pode parecer
+   atraente de vez em quando, mas
+   lembre-se que MISSING é um jogo
+   cooperativo. Se há outro habitante
+   com habilidades perfeitas para
+   solucionar um problema, deixe-o
+   tentar primeiro, afinal você está em
+   um time e todos devem ter o seu
+   momento de brilhar.
+   Não seja um egoísta.
 
 6
 RPGPEDIA - jozo siivaoliver40O gmail.com
@@ -183,31 +181,32 @@ sede para resolver um mistério. À
 seguir, encontram-se as regras para
 criar e utilizar todos os aspectos
 necessários de um habitante:
+
 1. Passado.
-Em um lado da folha pautada,
-você deve redigir sobre o
-passado do seu Habitante antes
-de ingressar no mistério atual.
-Escreva sobre experiências
-vividas, motivações, traumas e
-desejos que nunca se cumpriram.
-Toda informação escrita aqui
-pode ser utilizada à seu favor
-durante o jogo, então faça
-questão de destacar o momentos e
-características mais marcantes
-de suas vivências. Essa página
-recebe o nome de Registro de
-Habitante.
-Seu passado define quem você foi
-e quem você deixará de ser. Ao
-mesmo tempo que é seu maior
-tesouro, também pode ser sua
-maior ruína. Use o máximo de
-linhas que conseguir, mas não
-ultrapasse o limite da folha.
-8
-RPGPEDIA - jozo siivaoliver40O gmail.com
+   Em um lado da folha pautada,
+   você deve redigir sobre o
+   passado do seu Habitante antes
+   de ingressar no mistério atual.
+   Escreva sobre experiências
+   vividas, motivações, traumas e
+   desejos que nunca se cumpriram.
+   Toda informação escrita aqui
+   pode ser utilizada à seu favor
+   durante o jogo, então faça
+   questão de destacar o momentos e
+   características mais marcantes
+   de suas vivências. Essa página
+   recebe o nome de Registro de
+   Habitante.
+   Seu passado define quem você foi
+   e quem você deixará de ser. Ao
+   mesmo tempo que é seu maior
+   tesouro, também pode ser sua
+   maior ruína. Use o máximo de
+   linhas que conseguir, mas não
+   ultrapasse o limite da folha.
+   8
+   RPGPEDIA - jozo siivaoliver40O gmail.com
 
 ---
 
@@ -299,19 +298,13 @@ RPGPEDIA - jozo siivaoliver40O gmail.com
 
 <!-- Página 11 -->
 
-
-
 ---
 
 <!-- Página 12 -->
 
-
-
 ---
 
 <!-- Página 13 -->
-
-
 
 ---
 
@@ -354,8 +347,8 @@ ser respondidas:
 e Qual foi o Ponto de Partida dessa
 história?
 
-* Como cada Habitante se conecta à
-axer
+- Como cada Habitante se conecta à
+  axer
 
 e Por que cada Habitante deseja
 compreender o mistério por trás
@@ -446,8 +439,6 @@ RPGPEDIA - jozo siivaoliver40O gmail.com
 
 <!-- Página 18 -->
 
-
-
 ---
 
 <!-- Página 19 -->
@@ -471,8 +462,6 @@ RPGPEDIA - jozo siivaoliver40O gmail.com
 
 <!-- Página 20 -->
 
-
-
 ---
 
 <!-- Página 21 -->
@@ -486,25 +475,26 @@ seu feedback para que possamos
 melhorar ainda mais a experiência de
 jogar.
 INSPIRAÇÕES
-* Local 58 (WebSérie)
-* Marble Hornets (WebSérie)
-e The Mandela Catalogue (WebSérie
-e The Ring (Filme)
-e Pulse (Filme)
-e Trevor Henderson (Ilustrador
-e Backrooms (Creepypasta)
-e Slenderman (Creepypasta)
-e SMILE.JPG (Creepypasta)
-e ERRATAS (Creepypasta)
-e Shadows of Doubt (Jogo Digital)
-e World of Horror (Jogo Digital
-e Infaernum (Jogo de RPG)
-Nenhuma inteligência artificial foi
-utilizada na produção desse material.
-[Elgg]
-Envie seu feedback através
-do QR CODE ou acesse: 4 Fr
-nttps://forms.gle/NuDloqVmecX761869
-[a] CATA
-23
-RPGPEDIA - jozo siivaoliver40O gmail.com
+
+- Local 58 (WebSérie)
+- Marble Hornets (WebSérie)
+  e The Mandela Catalogue (WebSérie
+  e The Ring (Filme)
+  e Pulse (Filme)
+  e Trevor Henderson (Ilustrador
+  e Backrooms (Creepypasta)
+  e Slenderman (Creepypasta)
+  e SMILE.JPG (Creepypasta)
+  e ERRATAS (Creepypasta)
+  e Shadows of Doubt (Jogo Digital)
+  e World of Horror (Jogo Digital
+  e Infaernum (Jogo de RPG)
+  Nenhuma inteligência artificial foi
+  utilizada na produção desse material.
+  [Elgg]
+  Envie seu feedback através
+  do QR CODE ou acesse: 4 Fr
+  nttps://forms.gle/NuDloqVmecX761869
+  [a] CATA
+  23
+  RPGPEDIA - jozo siivaoliver40O gmail.com

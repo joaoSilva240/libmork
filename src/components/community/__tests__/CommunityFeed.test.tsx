@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent, within } from "@testing-library/react";
 import CommunityFeed from "../CommunityFeed";
 import type { CommunityPost } from "../CommunityCard";
 
@@ -94,7 +94,7 @@ describe("CommunityFeed Component", () => {
     // Aguarda carregar e exibe contagem
     await waitFor(() => {
       expect(screen.getByText(/criações compartilhadas/i)).toHaveTextContent(
-        "Mostrando 2 criações compartilhadas"
+        "Mostrando 2 criações compartilhadas",
       );
     });
   });
@@ -180,25 +180,30 @@ describe("CommunityFeed Component", () => {
   });
 
   it("alterna likes ao clicar no botão de curtir", async () => {
-    global.fetch = vi.fn().mockImplementation((url: string | URL | Request, options?: RequestInit) => {
-      const urlStr = url.toString();
-      if (urlStr.startsWith("/api/community/posts?") || urlStr === "/api/community/posts") {
+    global.fetch = vi
+      .fn()
+      .mockImplementation((url: string | URL | Request, options?: RequestInit) => {
+        const urlStr = url.toString();
+        if (urlStr.startsWith("/api/community/posts?") || urlStr === "/api/community/posts") {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ data: [mockPosts[0]], page: 1, limit: 12 }),
+          });
+        }
+        if (
+          urlStr === `/api/community/posts/${mockPosts[0].id}/like` &&
+          options?.method === "POST"
+        ) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ isLiked: true, likesCount: 11 }),
+          });
+        }
         return Promise.resolve({
           ok: true,
-          json: async () => ({ data: [mockPosts[0]], page: 1, limit: 12 }),
+          json: async () => ({ data: [] }),
         });
-      }
-      if (urlStr === `/api/community/posts/${mockPosts[0].id}/like` && options?.method === "POST") {
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({ isLiked: true, likesCount: 11 }),
-        });
-      }
-      return Promise.resolve({
-        ok: true,
-        json: async () => ({ data: [] }),
       });
-    });
 
     render(<CommunityFeed />);
 
@@ -237,11 +242,13 @@ describe("CommunityFeed Component", () => {
     await waitFor(() => {
       expect(screen.getByText("Nenhuma criação encontrada")).toBeInTheDocument();
       expect(
-        screen.getByText(/Não encontramos publicações com esses filtros/i)
+        screen.getByText(/Não encontramos publicações com esses filtros/i),
       ).toBeInTheDocument();
     });
 
-    expect(screen.getByRole("button", { name: /\+ Criar Primeira Publicação/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /\+ Criar Primeira Publicação/i }),
+    ).toBeInTheDocument();
   });
 
   it("abre o modal de criação ao clicar em '+ Publicar Criação'", async () => {
@@ -335,7 +342,7 @@ describe("CommunityFeed Component", () => {
       Promise.resolve({
         ok: true,
         json: async () => ({ data: [], page: 1, limit: 12 }),
-      })
+      }),
     );
 
     const currentUser = {
@@ -354,5 +361,81 @@ describe("CommunityFeed Component", () => {
     const profileLink = screen.getByRole("link", { name: /mestre iniciante/i });
     expect(profileLink).toHaveAttribute("href", "/master/community/profile/master-99");
     expect(screen.queryByRole("img", { name: /avatar/i })).not.toBeInTheDocument();
+  });
+
+  it("abre o overlay da publicação centralizado e em formato retangular ao clicar em um card", async () => {
+    global.fetch = vi.fn().mockImplementation((url: string | URL | Request) => {
+      const urlStr = url.toString();
+      if (urlStr.startsWith("/api/community/posts?")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ data: [mockPosts[0]], page: 1, limit: 12 }),
+        });
+      }
+      if (urlStr === `/api/community/posts/${mockPosts[0].id}/comments`) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ data: [] }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ data: [] }),
+      });
+    });
+
+    render(<CommunityFeed />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Bola de Fogo Ancestral")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText("Bola de Fogo Ancestral"));
+
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog).toHaveClass("mx-auto", "max-w-5xl");
+    expect(screen.getByText("Comentários e Adaptações")).toBeInTheDocument();
+  });
+
+  it("abre o modal de importação sobreposto (z-index 60) acima do overlay da publicação", async () => {
+    global.fetch = vi.fn().mockImplementation((url: string | URL | Request) => {
+      const urlStr = url.toString();
+      if (urlStr.startsWith("/api/community/posts?")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ data: [mockPosts[0]], page: 1, limit: 12 }),
+        });
+      }
+      if (urlStr === `/api/community/posts/${mockPosts[0].id}/comments`) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ data: [] }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ data: [] }),
+      });
+    });
+
+    render(<CommunityFeed />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Bola de Fogo Ancestral")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText("Bola de Fogo Ancestral"));
+    const postDialog = await screen.findByRole("dialog");
+
+    const importBtn = within(postDialog).getByRole("button", { name: /^importar$/i });
+    fireEvent.click(importBtn);
+
+    const importHeading = await screen.findByText("Personalizar antes de importar");
+    expect(importHeading).toBeInTheDocument();
+
+    const dialogs = screen.getAllByRole("dialog");
+    expect(dialogs.length).toBe(2);
+    const topOverlay = dialogs[1].closest(".fixed");
+    expect(topOverlay).toHaveClass("z-[60]");
   });
 });

@@ -20,7 +20,9 @@ describe("Kavita Config & SSRF Protection", () => {
 
   it("bloqueia endpoints de metadados de nuvem e AWS", () => {
     expect(validateKavitaTargetUrl("http://169.254.169.254/latest/meta-data/").valid).toBe(false);
-    expect(validateKavitaTargetUrl("http://metadata.google.internal/computeMetadata/v1/").valid).toBe(false);
+    expect(
+      validateKavitaTargetUrl("http://metadata.google.internal/computeMetadata/v1/").valid,
+    ).toBe(false);
     expect(validateKavitaTargetUrl("http://100.100.100.100/").valid).toBe(false);
   });
 
@@ -226,7 +228,9 @@ describe("Kavita Catalog Service", () => {
     expect(res.items.length).toBe(1);
     expect(res.items[0].hasPdf).toBe(false);
     expect(res.items[0].pdfProxyUrl).toBeUndefined();
-    expect(res.items[0].webReaderUrl).toBe("http://100.122.171.83:5150/library/4/series/99/pdf/123?incognitoMode=false");
+    expect(res.items[0].webReaderUrl).toBe(
+      "http://100.122.171.83:5150/library/4/series/99/pdf/123?incognitoMode=false",
+    );
   });
 
   it("expande coleção com múltiplos volumes/PDFs gerando itens individuais", async () => {

@@ -44,7 +44,7 @@ export function WorldSelectorModal({
   }, [loadWorlds]);
 
   const filteredWorlds = allWorlds.filter((w) =>
-    w.name.toLowerCase().includes(searchQuery.toLowerCase())
+    w.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleAddWorld = async (worldId: string) => {
@@ -83,7 +83,9 @@ export function WorldSelectorModal({
             <span className="text-2xl">🌍</span>
             <div>
               <h2 className="text-lg font-bold text-white">Selecionar Mundo</h2>
-              <p className="text-xs text-purple-300">Escolha um mundo da biblioteca para adicionar à campanha</p>
+              <p className="text-xs text-purple-300">
+                Escolha um mundo da biblioteca para adicionar à campanha
+              </p>
             </div>
           </div>
           <button
@@ -120,7 +122,9 @@ export function WorldSelectorModal({
           ) : filteredWorlds.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center py-12 text-center">
               <p className="text-sm text-gray-400">
-                {searchQuery ? "Nenhum mundo encontrado com este termo." : "Nenhum mundo na biblioteca."}
+                {searchQuery
+                  ? "Nenhum mundo encontrado com este termo."
+                  : "Nenhum mundo na biblioteca."}
               </p>
               {searchQuery && (
                 <button
@@ -144,9 +148,7 @@ export function WorldSelectorModal({
                         : "border-gray-700 bg-gray-900/50 hover:border-purple-500/50 hover:bg-gray-800"
                     }`}
                     style={
-                      world.coverUrl
-                        ? { backgroundImage: `url(${world.coverUrl})` }
-                        : undefined
+                      world.coverUrl ? { backgroundImage: `url(${world.coverUrl})` } : undefined
                     }
                   >
                     {/* Overlay de fundo com gradiente */}
@@ -155,14 +157,16 @@ export function WorldSelectorModal({
                         world.coverUrl
                           ? "bg-gradient-to-br from-dominant-dark/95 via-dominant-dark/80 to-dominant-dark/60"
                           : isSelected
-                          ? "bg-purple-900/20"
-                          : "bg-gray-950/80"
+                            ? "bg-purple-900/20"
+                            : "bg-gray-950/80"
                       }`}
                     />
-                    
+
                     <div className="relative z-10 flex flex-col gap-2">
                       <div>
-                        <h3 className="font-bold text-white text-sm drop-shadow-md">{world.name}</h3>
+                        <h3 className="font-bold text-white text-sm drop-shadow-md">
+                          {world.name}
+                        </h3>
                         {world.description && (
                           <p className="text-xs text-gray-300/90 line-clamp-2 drop-shadow-sm mt-1">
                             {world.description}
@@ -172,9 +176,7 @@ export function WorldSelectorModal({
 
                       {world.coverUrl && (
                         <div className="mt-2">
-                          <p className="text-[10px] text-gray-400">
-                            Imagem de capa configurada
-                          </p>
+                          <p className="text-[10px] text-gray-400">Imagem de capa configurada</p>
                         </div>
                       )}
 

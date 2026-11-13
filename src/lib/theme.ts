@@ -292,7 +292,8 @@ export const FONT_PRESETS: Record<FontPresetId, FontPresetDefinition> = {
   "vecna-handbook": {
     id: "vecna-handbook",
     label: "Guia Oficial de Aventuras (D&D)",
-    description: "Títulos com a clássica fonte Vecna dos manuais e leitura refinada humanista em Optima.",
+    description:
+      "Títulos com a clássica fonte Vecna dos manuais e leitura refinada humanista em Optima.",
     headingId: "vecna",
     bodyId: "optima",
     tag: "D&D Clássico",
@@ -308,7 +309,8 @@ export const FONT_PRESETS: Record<FontPresetId, FontPresetDefinition> = {
   "medieval-tavern": {
     id: "medieval-tavern",
     label: "Taverna Medieval & Bardos",
-    description: "Títulos com a consagrada MedievalSharp do Google Fonts e corpo estilizado com Almendra.",
+    description:
+      "Títulos com a consagrada MedievalSharp do Google Fonts e corpo estilizado com Almendra.",
     headingId: "medievalsharp",
     bodyId: "almendra",
     tag: "Taverna",
@@ -324,7 +326,8 @@ export const FONT_PRESETS: Record<FontPresetId, FontPresetDefinition> = {
   "celtic-lore": {
     id: "celtic-lore",
     label: "Pergaminho Celta & Druídico",
-    description: "Títulos em Uncial Antiqua sagrada e crônicas com a caligrafia élfica de Eagle Lake.",
+    description:
+      "Títulos em Uncial Antiqua sagrada e crônicas com a caligrafia élfica de Eagle Lake.",
     headingId: "uncial-antiqua",
     bodyId: "eagle-lake",
     tag: "Druídico",
@@ -709,10 +712,7 @@ export function evaluateThemeContrast(theme: ThemeConfig): {
   offwhiteOnDeepRatio: number;
   mutedOnCardRatio: number;
 } {
-  const textOnDeepRatio = getContrastRatio(
-    theme.colors.secondary.pure,
-    theme.colors.dominant.deep,
-  );
+  const textOnDeepRatio = getContrastRatio(theme.colors.secondary.pure, theme.colors.dominant.deep);
   const textOnCardRatio = getContrastRatio(
     theme.colors.secondary.pure,
     theme.colors.secondary.card,

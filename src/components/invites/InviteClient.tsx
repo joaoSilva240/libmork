@@ -40,7 +40,10 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<{ data: T;
       throw new InviteRequestError("Resposta inválida do servidor", response.status);
     }
     if (!response.ok) {
-      throw new InviteRequestError(payload.error || "Não foi possível concluir a solicitação", response.status);
+      throw new InviteRequestError(
+        payload.error || "Não foi possível concluir a solicitação",
+        response.status,
+      );
     }
     return { data: payload.data as T, status: response.status };
   } catch (requestError) {
@@ -87,12 +90,23 @@ export function InviteClient({ invite, token }: InviteClientProps) {
           if (!cancelled) setCharacters(charactersResult.data);
         } catch (requestError) {
           if (!cancelled) {
-            setCharactersError(requestError instanceof InviteRequestError ? requestError.message : "Não foi possível carregar seus personagens");
+            setCharactersError(
+              requestError instanceof InviteRequestError
+                ? requestError.message
+                : "Não foi possível carregar seus personagens",
+            );
           }
         }
       } catch (requestError) {
-        if (!cancelled && (!(requestError instanceof InviteRequestError) || requestError.status !== 401)) {
-          setError(requestError instanceof InviteRequestError ? requestError.message : "Não foi possível verificar a sessão");
+        if (
+          !cancelled &&
+          (!(requestError instanceof InviteRequestError) || requestError.status !== 401)
+        ) {
+          setError(
+            requestError instanceof InviteRequestError
+              ? requestError.message
+              : "Não foi possível verificar a sessão",
+          );
         }
       } finally {
         if (!cancelled) setIsSessionLoading(false);
@@ -115,7 +129,11 @@ export function InviteClient({ invite, token }: InviteClientProps) {
       });
       router.push("/player");
     } catch (requestError) {
-      setError(requestError instanceof InviteRequestError ? requestError.message : "Erro de conexão. Tente novamente.");
+      setError(
+        requestError instanceof InviteRequestError
+          ? requestError.message
+          : "Erro de conexão. Tente novamente.",
+      );
     } finally {
       setIsJoining(false);
     }
@@ -125,39 +143,84 @@ export function InviteClient({ invite, token }: InviteClientProps) {
     <div className="min-h-screen bg-dominant-deep py-8 text-secondary-pure">
       <div className="mx-auto max-w-lg px-4">
         <div className="rounded-lg border border-dominant-border bg-secondary-card p-6 shadow-xl">
-          <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-accent-vibrant">Convite de campanha</p>
+          <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-accent-vibrant">
+            Convite de campanha
+          </p>
           <h1 className="text-2xl font-bold text-secondary-pure">{invite.campaignName}</h1>
           <p className="mt-1 text-sm text-secondary-muted">
             Motor: {invite.rulesEngine === "d20_mod" ? "d20 + modificador" : "2d20 somado"}
             {invite.pvpEnabled ? " · PvP ativado" : ""}
           </p>
-          {error && <div className="mt-4 rounded-lg border border-accent-vibrant/40 bg-accent-dark/30 p-3 text-sm text-secondary-pure">{error}</div>}
+          {error && (
+            <div className="mt-4 rounded-lg border border-accent-vibrant/40 bg-accent-dark/30 p-3 text-sm text-secondary-pure">
+              {error}
+            </div>
+          )}
           <div className="mt-6">
-            {isSessionLoading && <p className="mb-4 text-center text-sm text-secondary-muted">Verificando sessão...</p>}
+            {isSessionLoading && (
+              <p className="mb-4 text-center text-sm text-secondary-muted">Verificando sessão...</p>
+            )}
             {!user ? (
               <div className="text-center">
-                <p className="mb-4 text-secondary-muted">Entre na sua conta para aceitar o convite.</p>
+                <p className="mb-4 text-secondary-muted">
+                  Entre na sua conta para aceitar o convite.
+                </p>
                 <Link href={loginHref} className="inline-block">
-                  <Button variant="primary" className="px-6 py-3 font-semibold">Fazer login</Button>
+                  <Button variant="primary" className="px-6 py-3 font-semibold">
+                    Fazer login
+                  </Button>
                 </Link>
               </div>
             ) : charactersError ? (
               <div className="text-center">
                 <p className="mb-4 text-accent-vibrant">{charactersError}</p>
-                <Button type="button" onClick={retry} variant="primary" className="px-6 py-3 font-semibold">Tentar novamente</Button>
+                <Button
+                  type="button"
+                  onClick={retry}
+                  variant="primary"
+                  className="px-6 py-3 font-semibold"
+                >
+                  Tentar novamente
+                </Button>
               </div>
             ) : characters.length === 0 ? (
               <div className="text-center">
-                <p className="mb-4 text-secondary-muted">Você ainda não tem personagens. Crie um para entrar na campanha.</p>
+                <p className="mb-4 text-secondary-muted">
+                  Você ainda não tem personagens. Crie um para entrar na campanha.
+                </p>
                 <Link href="/player/characters/new" className="inline-block">
-                  <Button variant="primary" className="px-6 py-3 font-semibold">Criar Personagem</Button>
+                  <Button variant="primary" className="px-6 py-3 font-semibold">
+                    Criar Personagem
+                  </Button>
                 </Link>
               </div>
             ) : (
               <div>
-                <label className="mb-2 block text-sm font-medium text-secondary-muted">Escolha o personagem que vai entrar na campanha</label>
-                <select value={selectedCharacterId} onChange={(event) => setSelectedCharacterId(event.target.value)} className="w-full rounded-lg border border-secondary-border bg-dominant-dark px-4 py-2 text-secondary-pure focus:border-accent-vibrant focus:outline-none focus:ring-2 focus:ring-accent"><option value="">Selecione um personagem</option>{characters.map((character) => <option key={character.id} value={character.id}>{character.name} (Nível {character.level})</option>)}</select>
-                <Button type="button" onClick={handleJoin} disabled={!selectedCharacterId || isJoining} isLoading={isJoining} variant="master" className="mt-4 w-full py-3 font-semibold">Entrar na Campanha</Button>
+                <label className="mb-2 block text-sm font-medium text-secondary-muted">
+                  Escolha o personagem que vai entrar na campanha
+                </label>
+                <select
+                  value={selectedCharacterId}
+                  onChange={(event) => setSelectedCharacterId(event.target.value)}
+                  className="w-full rounded-lg border border-secondary-border bg-dominant-dark px-4 py-2 text-secondary-pure focus:border-accent-vibrant focus:outline-none focus:ring-2 focus:ring-accent"
+                >
+                  <option value="">Selecione um personagem</option>
+                  {characters.map((character) => (
+                    <option key={character.id} value={character.id}>
+                      {character.name} (Nível {character.level})
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  type="button"
+                  onClick={handleJoin}
+                  disabled={!selectedCharacterId || isJoining}
+                  isLoading={isJoining}
+                  variant="master"
+                  className="mt-4 w-full py-3 font-semibold"
+                >
+                  Entrar na Campanha
+                </Button>
               </div>
             )}
           </div>

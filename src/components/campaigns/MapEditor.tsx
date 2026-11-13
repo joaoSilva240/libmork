@@ -59,9 +59,11 @@ export function MapEditor({ worldId, mapUrl, onSave, isMissing = false }: MapEdi
         // Configurar ícones de marker
         delete (L.Icon.Default.prototype as any)._getIconUrl;
         L.Icon.Default.mergeOptions({
-          iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+          iconRetinaUrl:
+            "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
           iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-          shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+          shadowUrl:
+            "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
         });
 
         // Criar mapa com estilo RPG/escuro
@@ -83,12 +85,15 @@ export function MapEditor({ worldId, mapUrl, onSave, isMissing = false }: MapEdi
         (map.options as any).bounceAnimation = true;
 
         // Adicionar tile layer padrão (será removido se usar mapUrl)
-        const tileLayer = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-          attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-          subdomains: "abcd",
-          maxZoom: 19,
-        }).addTo(map);
+        const tileLayer = L.tileLayer(
+          "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+          {
+            attribution:
+              '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: "abcd",
+            maxZoom: 19,
+          },
+        ).addTo(map);
 
         // Função para carregar imagem customizada
         const loadCustomMap = () => {
@@ -345,9 +350,7 @@ export function MapEditor({ worldId, mapUrl, onSave, isMissing = false }: MapEdi
   return (
     <div
       className={`relative h-full w-full overflow-hidden rounded-lg ${
-        isMissing
-          ? "border-2 border-zinc-700 bg-[#0d0e11]"
-          : "bg-gray-950"
+        isMissing ? "border-2 border-zinc-700 bg-[#0d0e11]" : "bg-gray-950"
       }`}
     >
       {/* Container do Mapa */}
@@ -374,18 +377,27 @@ export function MapEditor({ worldId, mapUrl, onSave, isMissing = false }: MapEdi
               : "border border-purple-700/50 bg-gray-900/90 text-purple-300"
           }`}
         >
-          <span className={`text-xs font-semibold ${isMissing ? "text-zinc-300" : "text-purple-300"}`}>
+          <span
+            className={`text-xs font-semibold ${isMissing ? "text-zinc-300" : "text-purple-300"}`}
+          >
             {mapMode === "custom"
               ? isMissing
                 ? "Cartografia de arquivo"
                 : "Mapa customizado"
               : isMissing
-              ? "Topografia global"
-              : "Mapa global"}
+                ? "Topografia global"
+                : "Mapa global"}
           </span>
           <div className="h-4 w-px bg-zinc-700" />
-          <span className={`text-xs font-semibold ${isMissing ? "text-amber-400" : "text-cyan-400"}`}>
-            {pins.length} {isMissing ? (pins.length !== 1 ? "pontos de evidência" : "ponto de evidência") : `pin${pins.length !== 1 ? "s" : ""}`}
+          <span
+            className={`text-xs font-semibold ${isMissing ? "text-amber-400" : "text-cyan-400"}`}
+          >
+            {pins.length}{" "}
+            {isMissing
+              ? pins.length !== 1
+                ? "pontos de evidência"
+                : "ponto de evidência"
+              : `pin${pins.length !== 1 ? "s" : ""}`}
           </span>
           <div className="h-4 w-px bg-zinc-700" />
           <button

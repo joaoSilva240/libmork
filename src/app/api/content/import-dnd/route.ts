@@ -11,14 +11,15 @@ import { fetchPf2eSpellIconFiles, resolvePf2eSpellIcon } from "@/lib/content/pf2
 import { fetchSf2eItems } from "@/lib/content/sf2e-items";
 import { logger } from "@/lib/logger";
 
-const DND_ABILITY_MAP: Record<string, "forca" | "destreza" | "vigor" | "inteligencia" | "empatia"> = {
-  STR: "forca",
-  DEX: "destreza",
-  CON: "vigor",
-  INT: "inteligencia",
-  WIS: "empatia",
-  CHA: "empatia",
-};
+const DND_ABILITY_MAP: Record<string, "forca" | "destreza" | "vigor" | "inteligencia" | "empatia"> =
+  {
+    STR: "forca",
+    DEX: "destreza",
+    CON: "vigor",
+    INT: "inteligencia",
+    WIS: "empatia",
+    CHA: "empatia",
+  };
 
 const PF2ETOOLS_SPELL_INDEX_URL =
   "https://raw.githubusercontent.com/Pf2eToolsOrg/Pf2eTools/dev/data/spells/index.json";
@@ -70,7 +71,11 @@ function formatPf2eText(value: unknown): string {
   if (value && typeof value === "object") {
     const object = value as Record<string, unknown>;
     if (Array.isArray(object.items)) {
-      return object.items.map(formatPf2eText).filter(Boolean).map((item) => `• ${item}`).join("\n");
+      return object.items
+        .map(formatPf2eText)
+        .filter(Boolean)
+        .map((item) => `• ${item}`)
+        .join("\n");
     }
     if (object.entries !== undefined) return formatPf2eText(object.entries);
     if (object.rows && Array.isArray(object.rows)) {
@@ -115,7 +120,7 @@ function getPf2eUseType(spell: Pf2eSpell): string {
   const comps = spell.components;
 
   if (Array.isArray(comps)) {
-    const arr = comps.map(c => String(c).toUpperCase());
+    const arr = comps.map((c) => String(c).toUpperCase());
     if (arr.includes("V")) types.push("verbal");
     if (arr.includes("S")) types.push("somatic");
     if (arr.includes("M") || arr.includes("F")) types.push("manual");
@@ -188,11 +193,30 @@ function getPf2eDamageType(spell: Pf2eSpell): string | null {
       if (d.damageType) return String(d.damageType);
     }
   }
-  const traits = Array.isArray(spell.traits) ? spell.traits.map((t) => String(t).toLowerCase()) : [];
+  const traits = Array.isArray(spell.traits)
+    ? spell.traits.map((t) => String(t).toLowerCase())
+    : [];
   const commonTypes = [
-    "fire", "acid", "electricity", "cold", "sonic", "force", "mental", 
-    "poison", "piercing", "slashing", "bludgeoning", "positive", "negative",
-    "vitality", "void", "good", "evil", "lawful", "chaotic", "spirit"
+    "fire",
+    "acid",
+    "electricity",
+    "cold",
+    "sonic",
+    "force",
+    "mental",
+    "poison",
+    "piercing",
+    "slashing",
+    "bludgeoning",
+    "positive",
+    "negative",
+    "vitality",
+    "void",
+    "good",
+    "evil",
+    "lawful",
+    "chaotic",
+    "spirit",
   ];
   for (const t of commonTypes) {
     if (traits.includes(t)) return t;
@@ -227,40 +251,57 @@ function getPf2eCastingTime(spell: Pf2eSpell): string | null {
 function extractPf2eDamage(spell: Pf2eSpell): any {
   if (!spell.entries) return null;
   const rawText = typeof spell.entries === "string" ? spell.entries : JSON.stringify(spell.entries);
-  
+
   const regex = /\{@(damage|dice)\s+([^}]+)\}/gi;
   const damageTypes = [
-    "fire", "acid", "electricity", "cold", "sonic", "force", "mental", 
-    "poison", "piercing", "slashing", "bludgeoning", "positive", "negative",
-    "vitality", "void", "good", "evil", "lawful", "chaotic", "spirit",
-    "bleed"
+    "fire",
+    "acid",
+    "electricity",
+    "cold",
+    "sonic",
+    "force",
+    "mental",
+    "poison",
+    "piercing",
+    "slashing",
+    "bludgeoning",
+    "positive",
+    "negative",
+    "vitality",
+    "void",
+    "good",
+    "evil",
+    "lawful",
+    "chaotic",
+    "spirit",
+    "bleed",
   ];
-  
+
   const results: Array<{ formula: string; type: string | null }> = [];
   let match: RegExpExecArray | null;
-  
+
   while ((match = regex.exec(rawText)) !== null) {
     const fullMatch = match[0];
     const content = match[2];
-    
+
     // Extract formula (first part before pipe |)
-    const formula = content.split('|')[0].trim();
-    
+    const formula = content.split("|")[0].trim();
+
     // Search the text right after the match (up to 60 characters)
     const afterIndex = match.index + fullMatch.length;
     const searchArea = rawText.substring(afterIndex, afterIndex + 60).toLowerCase();
-    
+
     let detectedType: string | null = null;
-    
+
     // First try with word boundaries
     for (const type of damageTypes) {
-      const typeRegex = new RegExp(`\\b${type}\\b`, 'i');
+      const typeRegex = new RegExp(`\\b${type}\\b`, "i");
       if (typeRegex.test(searchArea)) {
         detectedType = type;
         break;
       }
     }
-    
+
     // Fallback if not matched by word boundary (e.g. adjacent characters)
     if (!detectedType) {
       for (const type of damageTypes) {
@@ -270,10 +311,10 @@ function extractPf2eDamage(spell: Pf2eSpell): any {
         }
       }
     }
-    
+
     results.push({ formula, type: detectedType });
   }
-  
+
   if (results.length === 0) return null;
   if (results.length === 1) return results[0];
   return results;
@@ -315,16 +356,16 @@ Keep the formatting clean and preserve any game mechanics accurately. Do not add
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${NINEROUTER_KEY}`,
+      Authorization: `Bearer ${NINEROUTER_KEY}`,
     },
     body: JSON.stringify({
       model: NINEROUTER_MODEL,
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
+        { role: "user", content: userPrompt },
       ],
       response_format: { type: "json_object" },
-      stream: false
+      stream: false,
     }),
   });
 
@@ -339,7 +380,7 @@ Keep the formatting clean and preserve any game mechanics accurately. Do not add
   }
 
   let cleanContent = content.trim();
-  
+
   // Tenta extrair o bloco markdown do JSON (```json ... ``` ou ``` ... ```)
   const match = cleanContent.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
   if (match) {
@@ -351,23 +392,25 @@ Keep the formatting clean and preserve any game mechanics accurately. Do not add
       .replace(/```\s*$/, "")
       .trim();
   }
-  
+
   // Garantia adicional: extrai tudo que estiver entre o primeiro caractere JSON válido ({ ou [) e o último (} ou ])
   const firstBrace = cleanContent.indexOf("{");
   const firstBracket = cleanContent.indexOf("[");
-  const startIdx = firstBrace !== -1 && firstBracket !== -1 
-    ? Math.min(firstBrace, firstBracket) 
-    : firstBrace !== -1 
-    ? firstBrace 
-    : firstBracket;
+  const startIdx =
+    firstBrace !== -1 && firstBracket !== -1
+      ? Math.min(firstBrace, firstBracket)
+      : firstBrace !== -1
+        ? firstBrace
+        : firstBracket;
 
   const lastBrace = cleanContent.lastIndexOf("}");
   const lastBracket = cleanContent.lastIndexOf("]");
-  const endIdx = lastBrace !== -1 && lastBracket !== -1
-    ? Math.max(lastBrace, lastBracket)
-    : lastBrace !== -1
-    ? lastBrace
-    : lastBracket;
+  const endIdx =
+    lastBrace !== -1 && lastBracket !== -1
+      ? Math.max(lastBrace, lastBracket)
+      : lastBrace !== -1
+        ? lastBrace
+        : lastBracket;
 
   if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
     cleanContent = cleanContent.substring(startIdx, endIdx + 1);
@@ -403,30 +446,41 @@ export async function POST(request: NextRequest) {
         });
         if (!indexRes.ok) throw new Error(`índice HTTP ${indexRes.status}`);
         const indexData: unknown = await indexRes.json();
-        const sourceIndex = indexData && typeof indexData === "object"
-          ? (indexData as Record<string, unknown>)
-          : {};
-        const selectedFiles = [...new Set(Object.values(sourceIndex)
-          .filter((file): file is string => typeof file === "string" && file.length > 0))];
+        const sourceIndex =
+          indexData && typeof indexData === "object" ? (indexData as Record<string, unknown>) : {};
+        const selectedFiles = [
+          ...new Set(
+            Object.values(sourceIndex).filter(
+              (file): file is string => typeof file === "string" && file.length > 0,
+            ),
+          ),
+        ];
         const loadedSpells: Pf2eSpell[] = [];
-        for (let offset = 0; offset < selectedFiles.length; offset += PF2ETOOLS_SOURCE_CONCURRENCY) {
+        for (
+          let offset = 0;
+          offset < selectedFiles.length;
+          offset += PF2ETOOLS_SOURCE_CONCURRENCY
+        ) {
           const batch = selectedFiles.slice(offset, offset + PF2ETOOLS_SOURCE_CONCURRENCY);
-          const batchSpells = await Promise.all(batch.map(async (file) => {
-            try {
-              const response = await fetch(`${PF2ETOOLS_SPELLS_BASE_URL}${file}`, {
-                headers: { Accept: "application/json" },
-              });
-              if (!response.ok) throw new Error(`fonte HTTP ${response.status}`);
-              const data: unknown = await response.json();
-              const entries = data && typeof data === "object"
-                ? (data as Record<string, unknown>).spell
-                : undefined;
-              return Array.isArray(entries) ? entries as Pf2eSpell[] : [];
-            } catch (err) {
-              logger.error({ err, file }, "Erro ao carregar fonte de magias Pathfinder 2e");
-              return [];
-            }
-          }));
+          const batchSpells = await Promise.all(
+            batch.map(async (file) => {
+              try {
+                const response = await fetch(`${PF2ETOOLS_SPELLS_BASE_URL}${file}`, {
+                  headers: { Accept: "application/json" },
+                });
+                if (!response.ok) throw new Error(`fonte HTTP ${response.status}`);
+                const data: unknown = await response.json();
+                const entries =
+                  data && typeof data === "object"
+                    ? (data as Record<string, unknown>).spell
+                    : undefined;
+                return Array.isArray(entries) ? (entries as Pf2eSpell[]) : [];
+              } catch (err) {
+                logger.error({ err, file }, "Erro ao carregar fonte de magias Pathfinder 2e");
+                return [];
+              }
+            }),
+          );
           loadedSpells.push(...batchSpells.flat());
         }
         const seenNames = new Set<string>();
@@ -444,13 +498,18 @@ export async function POST(request: NextRequest) {
         } catch (err) {
           logger.error({ err }, "Erro ao listar ícones de magias Pathfinder 2e");
         }
-        const existingSpells = await db.select({ id: spells.id, name: spells.name, imageUrl: spells.imageUrl }).from(spells).where(isNull(spells.campaignId));
+        const existingSpells = await db
+          .select({ id: spells.id, name: spells.name, imageUrl: spells.imageUrl })
+          .from(spells)
+          .where(isNull(spells.campaignId));
 
         for (const spell of uniqueSpells) {
           const name = spell.name as string;
           const imageUrl = resolvePf2eSpellIcon(name, iconFiles);
-          const existing = existingSpells.find((item) => normalizeSpellName(item.name) === normalizeSpellName(name));
-          
+          const existing = existingSpells.find(
+            (item) => normalizeSpellName(item.name) === normalizeSpellName(name),
+          );
+
           const rawLevel = typeof spell.level === "number" ? spell.level : 1;
           const circle = Math.max(1, Math.min(9, Math.trunc(rawLevel)));
           const description = formatPf2eText(spell.entries).slice(0, 5000);
@@ -478,22 +537,25 @@ export async function POST(request: NextRequest) {
 
           if (existing) {
             try {
-              await db.update(spells).set({
-                circle,
-                manaCost: circle * 2,
-                description,
-                duration,
-                useType,
-                actionCostOverride,
-                imageUrl: existing.imageUrl || imageUrl || null,
-                range,
-                target,
-                area,
-                damage,
-                damageType,
-                structuredEffects: structuredEffectsData,
-                castingTime,
-              }).where(eq(spells.id, existing.id));
+              await db
+                .update(spells)
+                .set({
+                  circle,
+                  manaCost: circle * 2,
+                  description,
+                  duration,
+                  useType,
+                  actionCostOverride,
+                  imageUrl: existing.imageUrl || imageUrl || null,
+                  range,
+                  target,
+                  area,
+                  damage,
+                  damageType,
+                  structuredEffects: structuredEffectsData,
+                  castingTime,
+                })
+                .where(eq(spells.id, existing.id));
               importedCount++;
               importedSpellCount++;
             } catch (err) {
@@ -534,7 +596,9 @@ export async function POST(request: NextRequest) {
         if (spellFailed > 0) {
           logger.error({ spellFailed, totalSpells: uniqueSpells.length }, "Magias com falha");
         }
-        logger.info(`Magias Pathfinder 2e processadas! Criadas/Atualizadas: ${importedSpellCount}, Falhas: ${spellFailed}`);
+        logger.info(
+          `Magias Pathfinder 2e processadas! Criadas/Atualizadas: ${importedSpellCount}, Falhas: ${spellFailed}`,
+        );
       } catch (err) {
         logger.error({ err }, "Erro ao importar magias Pathfinder 2e");
       }
@@ -549,10 +613,22 @@ export async function POST(request: NextRequest) {
       const result = await fetchSf2eItems();
       sf2eFailures = result.failures;
       for (const item of result.items) {
-        const existing = await db.select({ id: items.id, qualityDescription: items.qualityDescription, counterpointDescription: items.counterpointDescription }).from(items)
-          .where(eq(items.sourceKey, item.sourceKey)).then((rows) => rows[0]);
-        const values = { name: item.name, description: item.description, imageUrl: item.imageUrl,
-          sourceData: item.sourceData, campaignId: null as string | null };
+        const existing = await db
+          .select({
+            id: items.id,
+            qualityDescription: items.qualityDescription,
+            counterpointDescription: items.counterpointDescription,
+          })
+          .from(items)
+          .where(eq(items.sourceKey, item.sourceKey))
+          .then((rows) => rows[0]);
+        const values = {
+          name: item.name,
+          description: item.description,
+          imageUrl: item.imageUrl,
+          sourceData: item.sourceData,
+          campaignId: null as string | null,
+        };
         if (existing) {
           await db.update(items).set(values).where(eq(items.id, existing.id));
           sf2eUpdated++;
@@ -566,7 +642,14 @@ export async function POST(request: NextRequest) {
       const failures = result.failures.length;
       const failureText = failures ? `; ${failures} falhas` : "";
       if (contentType === "items") {
-        return NextResponse.json({ success: true, message: `${sf2eCreated} itens SF2e criados, ${sf2eUpdated} atualizados${failureText}`, created: sf2eCreated, updated: sf2eUpdated, failures: result.failures, categories: [...new Set(result.failures.map((failure) => failure.category))] });
+        return NextResponse.json({
+          success: true,
+          message: `${sf2eCreated} itens SF2e criados, ${sf2eUpdated} atualizados${failureText}`,
+          created: sf2eCreated,
+          updated: sf2eUpdated,
+          failures: result.failures,
+          categories: [...new Set(result.failures.map((failure) => failure.category))],
+        });
       }
     }
 
@@ -580,7 +663,10 @@ export async function POST(request: NextRequest) {
         const skillsData = await skillsRes.json();
         const skillList: Array<{ index: string; name: string }> = skillsData.results || [];
 
-        const existingSkills = await db.select({ id: skills.id, name: skills.name }).from(skills).where(isNull(skills.campaignId));
+        const existingSkills = await db
+          .select({ id: skills.id, name: skills.name })
+          .from(skills)
+          .where(isNull(skills.campaignId));
 
         for (const sk of skillList) {
           try {
@@ -593,13 +679,18 @@ export async function POST(request: NextRequest) {
             const name = detail.name;
             const rollExpression = `1d20 + ${keyAttr}`;
 
-            const existing = existingSkills.find((item) => normalizeSpellName(item.name) === normalizeSpellName(name));
+            const existing = existingSkills.find(
+              (item) => normalizeSpellName(item.name) === normalizeSpellName(name),
+            );
             if (existing) {
-              await db.update(skills).set({
-                description,
-                keyAttribute: keyAttr,
-                rollExpression,
-              }).where(eq(skills.id, existing.id));
+              await db
+                .update(skills)
+                .set({
+                  description,
+                  keyAttribute: keyAttr,
+                  rollExpression,
+                })
+                .where(eq(skills.id, existing.id));
             } else {
               await db.insert(skills).values({
                 name,
@@ -628,7 +719,10 @@ export async function POST(request: NextRequest) {
         const condData = await condRes.json();
         const condList: Array<{ index: string; name: string }> = condData.results || [];
 
-        const existingConditions = await db.select({ id: conditions.id, name: conditions.name }).from(conditions).where(isNull(conditions.campaignId));
+        const existingConditions = await db
+          .select({ id: conditions.id, name: conditions.name })
+          .from(conditions)
+          .where(isNull(conditions.campaignId));
 
         for (const cond of condList) {
           try {
@@ -639,11 +733,16 @@ export async function POST(request: NextRequest) {
             const description = Array.isArray(detail.desc) ? detail.desc.join("\n") : "";
             const name = detail.name;
 
-            const existing = existingConditions.find((item) => normalizeSpellName(item.name) === normalizeSpellName(name));
+            const existing = existingConditions.find(
+              (item) => normalizeSpellName(item.name) === normalizeSpellName(name),
+            );
             if (existing) {
-              await db.update(conditions).set({
-                description,
-              }).where(eq(conditions.id, existing.id));
+              await db
+                .update(conditions)
+                .set({
+                  description,
+                })
+                .where(eq(conditions.id, existing.id));
             } else {
               await db.insert(conditions).values({
                 name,
@@ -661,11 +760,12 @@ export async function POST(request: NextRequest) {
     }
 
     const failureSuffix = spellFailed > 0 ? `; ${spellFailed} falha(s) em magias` : "";
-    const message = contentType === "spells"
-      ? `${importedSpellCount} magias Pathfinder 2e importadas com sucesso (${importedCount} registros cadastrados na Biblioteca Global)${failureSuffix}`
-      : contentType === "all"
-      ? `${importedSpellCount} magias Pathfinder 2e e ${importedDndCount} conteúdos D&D 5e importados com sucesso (${importedCount} registros cadastrados na Biblioteca Global)${failureSuffix}`
-      : `${importedDndCount} conteúdos importados com sucesso (${importedCount} registros cadastrados na Biblioteca Global)${failureSuffix}`;
+    const message =
+      contentType === "spells"
+        ? `${importedSpellCount} magias Pathfinder 2e importadas com sucesso (${importedCount} registros cadastrados na Biblioteca Global)${failureSuffix}`
+        : contentType === "all"
+          ? `${importedSpellCount} magias Pathfinder 2e e ${importedDndCount} conteúdos D&D 5e importados com sucesso (${importedCount} registros cadastrados na Biblioteca Global)${failureSuffix}`
+          : `${importedDndCount} conteúdos importados com sucesso (${importedCount} registros cadastrados na Biblioteca Global)${failureSuffix}`;
 
     return NextResponse.json({
       success: true,
@@ -674,10 +774,18 @@ export async function POST(request: NextRequest) {
       importedSpellCount,
       spellFailed,
       failures: spellFailed,
-      sf2e: { created: sf2eCreated, updated: sf2eUpdated, failures: sf2eFailures, failedCategories: [...new Set(sf2eFailures.map((failure) => failure.category))] },
+      sf2e: {
+        created: sf2eCreated,
+        updated: sf2eUpdated,
+        failures: sf2eFailures,
+        failedCategories: [...new Set(sf2eFailures.map((failure) => failure.category))],
+      },
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao importar conteúdo D&D 5e');
-    return NextResponse.json({ success: false, error: "Erro interno do servidor" }, { status: 500 });
+    logger.error({ err: error }, "Erro ao importar conteúdo D&D 5e");
+    return NextResponse.json(
+      { success: false, error: "Erro interno do servidor" },
+      { status: 500 },
+    );
   }
 }

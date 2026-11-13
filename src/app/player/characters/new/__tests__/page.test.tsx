@@ -35,13 +35,9 @@ describe("NewCharacterPage Component", () => {
   it("exibe seleção de sistema quando não houver ?system= na URL", () => {
     render(<NewCharacterPage />);
 
-    expect(
-      screen.getByText("A qual sistema este personagem pertence?"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("A qual sistema este personagem pertence?")).toBeInTheDocument();
     expect(screen.getByText("Libmork Clássico (d20)")).toBeInTheDocument();
-    expect(
-      screen.getByText("MISSING — Edição ZERO (Horror Analógico)"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("MISSING — Edição ZERO (Horror Analógico)")).toBeInTheDocument();
     expect(screen.queryByTestId("character-wizard")).not.toBeInTheDocument();
     expect(screen.queryByTestId("missing-habitant-form")).not.toBeInTheDocument();
   });

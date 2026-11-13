@@ -23,10 +23,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -36,7 +33,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!allowed) {
       return NextResponse.json(
         { success: false, error: "Sem permissão para alterar a imagem deste NPC" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -46,7 +43,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!(file instanceof File)) {
       return NextResponse.json(
         { success: false, error: "Arquivo de imagem não enviado (campo 'image')" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -71,10 +68,10 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       data: updated,
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao enviar imagem do NPC');
+    logger.error({ err: error }, "Erro ao enviar imagem do NPC");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

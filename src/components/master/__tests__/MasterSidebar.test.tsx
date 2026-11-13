@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { MasterSidebar } from "../MasterSidebar";
 
 const mockUsePathname = vi.fn();
@@ -72,5 +72,43 @@ describe("MasterSidebar Component", () => {
     expect(libraryLink.querySelector("svg")).toBeInTheDocument();
     expect(communityLink.querySelector("svg")).toBeInTheDocument();
     expect(settingsLink.querySelector("svg")).toBeInTheDocument();
+  });
+
+  afterEach(() => {
+    delete window.desktopClient;
+  });
+
+  it("exibe o botão 'Trocar Servidor' no rodapé quando executado no Electron Desktop", () => {
+    const disconnectSpy = vi.fn().mockResolvedValue(undefined);
+    window.desktopClient = {
+      isElectron: true,
+      platform: "win32",
+      version: "0.1.0",
+      sendNotification: vi.fn(),
+      getServerList: vi.fn().mockResolvedValue([]),
+      saveServer: vi.fn(),
+      removeServer: vi.fn(),
+      getActiveServer: vi.fn().mockResolvedValue("http://localhost:3000"),
+      setActiveServer: vi.fn(),
+      disconnectServer: disconnectSpy,
+      checkServerHealth: vi.fn(),
+      openExternal: vi.fn(),
+      minimize: vi.fn(),
+      maximize: vi.fn(),
+      close: vi.fn(),
+      isMaximized: vi.fn(),
+      onJukeboxTogglePlay: vi.fn(() => () => {}),
+      onJukeboxMute: vi.fn(() => () => {}),
+      onUpdateAvailable: vi.fn(() => () => {}),
+      onUpdateDownloaded: vi.fn(() => () => {}),
+    };
+
+    mockUsePathname.mockReturnValue("/master");
+    render(<MasterSidebar />);
+
+    const switchBtn = screen.getByRole("button", { name: "Trocar Servidor (Gateway)" });
+    expect(switchBtn).toBeInTheDocument();
+    fireEvent.click(switchBtn);
+    expect(disconnectSpy).toHaveBeenCalledTimes(1);
   });
 });

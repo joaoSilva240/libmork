@@ -18,11 +18,7 @@ export default async function WorldPage({
 
   const { id, worldId } = await params;
 
-  const [world] = await db
-    .select()
-    .from(worlds)
-    .where(eq(worlds.id, worldId))
-    .limit(1);
+  const [world] = await db.select().from(worlds).where(eq(worlds.id, worldId)).limit(1);
 
   if (!world || world.campaignId !== id) {
     notFound();

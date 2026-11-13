@@ -15,7 +15,8 @@ describe("MasterSettingsPage (/master/settings)", () => {
     expect(screen.getByText("Preferências de Visibilidade")).toBeInTheDocument();
     expect(screen.getByText("Visibilidade do Escudo")).toBeInTheDocument();
     expect(screen.getByText("Carrossel de Personagens")).toBeInTheDocument();
-    expect(screen.getByText("Log da Sessão")).toBeInTheDocument();
+    // "Log da Sessão" também aparece como card no organizador de módulos do painel.
+    expect(screen.getAllByText("Log da Sessão")[0]).toBeInTheDocument();
     expect(screen.getByText("Canvas Infinito")).toBeInTheDocument();
     expect(screen.getByText("Mapa Tático")).toBeInTheDocument();
     expect(screen.queryByLabelText("Selecione uma campanha")).not.toBeInTheDocument();
@@ -25,7 +26,9 @@ describe("MasterSettingsPage (/master/settings)", () => {
     render(<MasterSettingsPage />);
 
     expect(screen.getByText("Preview do Layout")).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "Preview do layout do Escudo do Mestre" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: "Preview do layout do Escudo do Mestre" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Gestão")).toBeInTheDocument();
     expect(screen.getByText("Canvas/Mapa")).toBeInTheDocument();
     expect(screen.getByText("Roster")).toBeInTheDocument();
@@ -100,7 +103,9 @@ describe("MasterSettingsPage (/master/settings)", () => {
     // Alterna para a aba de Tela do Mestre & Módulos
     fireEvent.click(screen.getByRole("tab", { name: /Tela do Mestre & Módulos/i }));
 
-    expect(screen.getByText("Inteligência Artificial & Tradução da Biblioteca")).toBeInTheDocument();
+    expect(
+      screen.getByText("Inteligência Artificial & Tradução da Biblioteca"),
+    ).toBeInTheDocument();
 
     const endpointInput = screen.getByPlaceholderText(/https:\/\/api\.openai\.com\/v1/i);
     const apiKeyInput = screen.getByPlaceholderText(/sk-\.\.\. ou sua chave de acesso/i);

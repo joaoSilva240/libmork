@@ -76,7 +76,10 @@ describe("CampaignDetail — contenção do grid do escudo", () => {
           this.pointerId = init.pointerId ?? 0;
         }
       }
-      Object.defineProperty(globalThis, "PointerEvent", { value: TestPointerEvent, configurable: true });
+      Object.defineProperty(globalThis, "PointerEvent", {
+        value: TestPointerEvent,
+        configurable: true,
+      });
     }
     clientWidthSpy = vi
       .spyOn(HTMLElement.prototype, "clientWidth", "get")
@@ -89,7 +92,9 @@ describe("CampaignDetail — contenção do grid do escudo", () => {
       }
       return Promise.resolve({
         ok: true,
-        json: async () => ({ data: { id: "camp-1", name: "Test Campaign", rulesEngine: "d20_mod" } }),
+        json: async () => ({
+          data: { id: "camp-1", name: "Test Campaign", rulesEngine: "d20_mod" },
+        }),
       });
     }) as unknown as typeof fetch;
   });
@@ -149,7 +154,7 @@ describe("CampaignDetail — contenção do grid do escudo", () => {
     await waitFor(() => expect(centerWidth(grid)).toBeGreaterThanOrEqual(SHIELD_CENTER_MIN));
   });
 
-  it("distribui a altura da coluna de gestão em flex, sem altura fixa no painel de mundos", async () => {
+  it("distribui a altura da coluna de gestão em flex, via contêiner de abas (issue #89)", async () => {
     const grid = await renderGrid();
     const leftColumn = grid.firstElementChild as HTMLElement;
 
@@ -157,11 +162,10 @@ describe("CampaignDetail — contenção do grid do escudo", () => {
     expect(leftColumn.className).toContain("gap-3");
     expect(leftColumn.className).toContain("min-h-0");
 
+    // O painel de mundos agora vive dentro do mediaPanel com abas; sem flexBasis fixo.
     const worldsHeading = await screen.findByRole("heading", { name: "Mundos" });
     const worldsPanel = worldsHeading.parentElement as HTMLElement;
     expect(worldsPanel.style.height).toBe("");
-    expect(worldsPanel.style.flexBasis).toBe("320px");
-    expect(worldsPanel.className).toContain("lg:flex-1");
-    expect(worldsPanel.className).toContain("lg:min-h-[180px]");
+    expect(worldsPanel.style.flexBasis).toBe("");
   });
 });

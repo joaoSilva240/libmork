@@ -39,7 +39,14 @@ describe("Race Validator Schemas", () => {
         { name: "Ancestralidade Feérica", description: "Vantagem contra ser encantado." },
       ],
       heritages: [
-        { name: "Elfo da Floresta", description: "Velocidade base aumentada para 35 pés.", speed: 35, size: "Grande", hitPointsBonus: 2, attributeBonuses: { vigor: 1 } },
+        {
+          name: "Elfo da Floresta",
+          description: "Velocidade base aumentada para 35 pés.",
+          speed: 35,
+          size: "Grande",
+          hitPointsBonus: 2,
+          attributeBonuses: { vigor: 1 },
+        },
         { name: "Alto Elfo", description: "Conhece um truque de magia arcana." },
       ],
       imageUrl: "https://example.com/elf.png",
@@ -88,9 +95,15 @@ describe("Race Validator Schemas", () => {
       expect(legacy.data.attributeBonuses).toEqual({});
     }
 
-    expect(raceHeritageSchema.safeParse({ name: "Inválida", hitPointsBonus: -1 }).success).toBe(false);
-    expect(raceHeritageSchema.safeParse({ name: "Inválida", hitPointsBonus: 1.5 }).success).toBe(false);
-    expect(raceHeritageSchema.safeParse({ name: "Inválida", attributeBonuses: { sorte: 1 } }).success).toBe(false);
+    expect(raceHeritageSchema.safeParse({ name: "Inválida", hitPointsBonus: -1 }).success).toBe(
+      false,
+    );
+    expect(raceHeritageSchema.safeParse({ name: "Inválida", hitPointsBonus: 1.5 }).success).toBe(
+      false,
+    );
+    expect(
+      raceHeritageSchema.safeParse({ name: "Inválida", attributeBonuses: { sorte: 1 } }).success,
+    ).toBe(false);
     expect(raceHeritageSchema.safeParse({ name: "Inválida", speed: -1 }).success).toBe(false);
     expect(raceHeritageSchema.safeParse({ name: "Inválida", speed: 30.5 }).success).toBe(false);
     expect(raceHeritageSchema.safeParse({ name: "Inválida", speed: 201 }).success).toBe(false);

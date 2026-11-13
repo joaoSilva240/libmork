@@ -21,7 +21,11 @@ vi.mock("@/lib/db", () => ({
 }));
 
 vi.mock("@/lib/db/schema", () => ({
-  campaigns: { id: "campaigns.id", masterId: "campaigns.masterId", rulesEngine: "campaigns.rulesEngine" },
+  campaigns: {
+    id: "campaigns.id",
+    masterId: "campaigns.masterId",
+    rulesEngine: "campaigns.rulesEngine",
+  },
   characters: { id: "characters.id", ownerId: "characters.ownerId" },
   characterCampaigns: {
     characterId: "characterCampaigns.characterId",
@@ -315,10 +319,13 @@ describe("POST /api/campaigns/:id/import-character", () => {
       return mockHabitantQuery;
     });
 
-    const request = new NextRequest("http://localhost/api/campaigns/camp-missing/import-character", {
-      method: "POST",
-      body: JSON.stringify({ characterId: "550e8400-e29b-41d4-a716-446655440000" }),
-    });
+    const request = new NextRequest(
+      "http://localhost/api/campaigns/camp-missing/import-character",
+      {
+        method: "POST",
+        body: JSON.stringify({ characterId: "550e8400-e29b-41d4-a716-446655440000" }),
+      },
+    );
 
     const params = Promise.resolve({ id: "camp-missing" });
     const response = await POST(request, { params });
@@ -357,10 +364,13 @@ describe("POST /api/campaigns/:id/import-character", () => {
       return mockHabitantQuery;
     });
 
-    const request = new NextRequest("http://localhost/api/campaigns/camp-missing/import-character", {
-      method: "POST",
-      body: JSON.stringify({ characterId: "550e8400-e29b-41d4-a716-446655440000" }),
-    });
+    const request = new NextRequest(
+      "http://localhost/api/campaigns/camp-missing/import-character",
+      {
+        method: "POST",
+        body: JSON.stringify({ characterId: "550e8400-e29b-41d4-a716-446655440000" }),
+      },
+    );
 
     const params = Promise.resolve({ id: "camp-missing" });
     const response = await POST(request, { params });
@@ -407,10 +417,13 @@ describe("POST /api/campaigns/:id/import-character", () => {
     const mockValues = vi.fn().mockResolvedValue([]);
     mockDb.insert.mockReturnValue({ values: mockValues });
 
-    const request = new NextRequest("http://localhost/api/campaigns/camp-missing/import-character", {
-      method: "POST",
-      body: JSON.stringify({ characterId: "550e8400-e29b-41d4-a716-446655440000" }),
-    });
+    const request = new NextRequest(
+      "http://localhost/api/campaigns/camp-missing/import-character",
+      {
+        method: "POST",
+        body: JSON.stringify({ characterId: "550e8400-e29b-41d4-a716-446655440000" }),
+      },
+    );
 
     const params = Promise.resolve({ id: "camp-missing" });
     const response = await POST(request, { params });
@@ -427,7 +440,7 @@ describe("POST /api/campaigns/:id/import-character", () => {
     expect(mockSet).toHaveBeenCalledWith(
       expect.objectContaining({
         campaignId: "camp-missing",
-      })
+      }),
     );
 
     expect(mockDb.insert).toHaveBeenCalled();
@@ -437,7 +450,7 @@ describe("POST /api/campaigns/:id/import-character", () => {
         habitantId: "550e8400-e29b-41d4-a716-446655440000",
         actorRole: "writer",
         eventType: "system",
-      })
+      }),
     );
   });
 });

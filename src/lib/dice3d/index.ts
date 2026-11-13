@@ -102,7 +102,10 @@ export function buildDice3DColorset(theme: ThemeConfig) {
   const foreground = ensureAaaTextColor(background).textPure;
   const outline = theme.colors.accent.dark;
   return {
-    name: `libmork-${theme.name}-${background}-${foreground}-${outline}`.replace(/[^a-zA-Z0-9-]/g, ""),
+    name: `libmork-${theme.name}-${background}-${foreground}-${outline}`.replace(
+      /[^a-zA-Z0-9-]/g,
+      "",
+    ),
     foreground,
     background,
     outline,

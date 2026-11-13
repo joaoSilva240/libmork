@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       if (!doc) {
         return NextResponse.json(
           { success: false, error: "Documento não encontrado" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -51,22 +51,18 @@ export async function GET(request: NextRequest) {
           success: false,
           error: "Parâmetro 'file' ou 'docId' é obrigatório para streaming",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Se for URL externa web (http/https), o streaming local via SMB não se aplica
-    if (
-      targetFilePath.startsWith("http://") ||
-      targetFilePath.startsWith("https://")
-    ) {
+    if (targetFilePath.startsWith("http://") || targetFilePath.startsWith("https://")) {
       return NextResponse.json(
         {
           success: false,
-          error:
-            "Documento é uma URL web externa. Abra diretamente através do link fornecido.",
+          error: "Documento é uma URL web externa. Abra diretamente através do link fornecido.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -74,14 +70,13 @@ export async function GET(request: NextRequest) {
     const pathResolution = resolveSafeLibraryPath(targetFilePath);
 
     if (!pathResolution.success || !pathResolution.resolvedPath) {
-      const isConfigError =
-        pathResolution.error?.includes("LIBRARY_SMB_PATH não está configurado");
+      const isConfigError = pathResolution.error?.includes("LIBRARY_SMB_PATH não está configurado");
       return NextResponse.json(
         {
           success: false,
           error: pathResolution.error || "Acesso a arquivo inválido",
         },
-        { status: isConfigError ? 503 : 400 }
+        { status: isConfigError ? 503 : 400 },
       );
     }
 
@@ -94,7 +89,7 @@ export async function GET(request: NextRequest) {
       if (!stat.isFile()) {
         return NextResponse.json(
           { success: false, error: "O caminho especificado não é um arquivo" },
-          { status: 400 }
+          { status: 400 },
         );
       }
     } catch (err: any) {
@@ -104,7 +99,7 @@ export async function GET(request: NextRequest) {
             success: false,
             error: "Arquivo não encontrado no diretório de biblioteca SMB",
           },
-          { status: 404 }
+          { status: 404 },
         );
       }
       logger.error({ err, fullFilePath }, "Erro ao acessar arquivo no SMB");
@@ -113,7 +108,7 @@ export async function GET(request: NextRequest) {
           success: false,
           error: "Armazenamento SMB indisponível ou erro de permissão",
         },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
@@ -171,7 +166,7 @@ export async function GET(request: NextRequest) {
     logger.error({ err: error }, "Erro inesperado ao realizar streaming de PDF");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

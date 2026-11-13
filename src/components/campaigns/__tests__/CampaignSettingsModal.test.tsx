@@ -3,6 +3,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CampaignSettingsModal } from "../CampaignSettingsModal";
 import type { Campaign } from "@/types";
 
+vi.mock("@/context/SocketContext", () => ({
+  useSocket: () => ({
+    broadcastCampaignDice3DSettings: vi.fn(),
+    setCampaignDice3DSettings: vi.fn(),
+  }),
+}));
+
 describe("CampaignSettingsModal Component", () => {
   const mockCampaign: Campaign = {
     id: "camp-123",
@@ -30,7 +37,7 @@ describe("CampaignSettingsModal Component", () => {
         onClose={vi.fn()}
         onSaved={vi.fn()}
         onDelete={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText("Configurações da Campanha")).toBeInTheDocument();
@@ -64,13 +71,13 @@ describe("CampaignSettingsModal Component", () => {
         onClose={handleClose}
         onSaved={handleSaved}
         onDelete={vi.fn()}
-      />
+      />,
     );
 
     const nameInput = screen.getByDisplayValue("A Maldição de Strahd");
     fireEvent.change(nameInput, { target: { value: "Strahd Redux" } });
 
-    const pvpCheckbox = screen.getByRole("checkbox");
+    const pvpCheckbox = screen.getByRole("checkbox", { name: /Combate entre Jogadores/i });
     fireEvent.click(pvpCheckbox);
 
     const submitBtn = screen.getByRole("button", { name: "Salvar Alterações" });
@@ -83,7 +90,7 @@ describe("CampaignSettingsModal Component", () => {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: expect.stringContaining('"name":"Strahd Redux"'),
-        })
+        }),
       );
       expect(handleSaved).toHaveBeenCalledWith(updatedCampaign);
       expect(handleClose).toHaveBeenCalled();
@@ -99,7 +106,7 @@ describe("CampaignSettingsModal Component", () => {
         onClose={vi.fn()}
         onSaved={vi.fn()}
         onDelete={handleDelete}
-      />
+      />,
     );
 
     // Clica no primeiro botão de exclusão
@@ -108,7 +115,9 @@ describe("CampaignSettingsModal Component", () => {
 
     // Diálogo de confirmação deve aparecer
     expect(
-      screen.getByText(/Tem certeza absoluta que deseja excluir a campanha "A Maldição de Strahd"\?/i)
+      screen.getByText(
+        /Tem certeza absoluta que deseja excluir a campanha "A Maldição de Strahd"\?/i,
+      ),
     ).toBeInTheDocument();
 
     // Confirma a exclusão

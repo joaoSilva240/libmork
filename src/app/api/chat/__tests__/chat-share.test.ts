@@ -13,9 +13,11 @@ vi.mock("@/lib/server/chat-service", () => ({
 vi.mock("@/lib/logger", () => ({ logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));
 
 const { requireAuth } = await import("@/lib/auth/session");
-const { getShareCatalog: getShareCatalogSvc, searchChatMentions, postChatMessage } = await import(
-  "@/lib/server/chat-service"
-);
+const {
+  getShareCatalog: getShareCatalogSvc,
+  searchChatMentions,
+  postChatMessage,
+} = await import("@/lib/server/chat-service");
 
 const mockCatalog = {
   posts: [{ id: "p-1", title: "Post", contentType: "spell", authorName: "Mestre" }],

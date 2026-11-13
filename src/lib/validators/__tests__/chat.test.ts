@@ -102,19 +102,32 @@ describe("Chat & Polls Validators (Issue #62)", () => {
 
 describe("shareInputSchema", () => {
   it("aceita share de perfil com uuid", () => {
-    const r = shareInputSchema.safeParse({ kind: "profile", id: "550e8400-e29b-41d4-a716-446655440000" });
+    const r = shareInputSchema.safeParse({
+      kind: "profile",
+      id: "550e8400-e29b-41d4-a716-446655440000",
+    });
     expect(r.success).toBe(true);
   });
 
   it("exige contentType para library_item", () => {
-    const semTipo = shareInputSchema.safeParse({ kind: "library_item", id: "550e8400-e29b-41d4-a716-446655440000" });
+    const semTipo = shareInputSchema.safeParse({
+      kind: "library_item",
+      id: "550e8400-e29b-41d4-a716-446655440000",
+    });
     expect(semTipo.success).toBe(false);
-    const comTipo = shareInputSchema.safeParse({ kind: "library_item", id: "550e8400-e29b-41d4-a716-446655440000", contentType: "spells" });
+    const comTipo = shareInputSchema.safeParse({
+      kind: "library_item",
+      id: "550e8400-e29b-41d4-a716-446655440000",
+      contentType: "spells",
+    });
     expect(comTipo.success).toBe(true);
   });
 
   it("rejeita kind inválido e id não-uuid", () => {
-    expect(shareInputSchema.safeParse({ kind: "arquivo", id: "550e8400-e29b-41d4-a716-446655440000" }).success).toBe(false);
+    expect(
+      shareInputSchema.safeParse({ kind: "arquivo", id: "550e8400-e29b-41d4-a716-446655440000" })
+        .success,
+    ).toBe(false);
     expect(shareInputSchema.safeParse({ kind: "post", id: "abc" }).success).toBe(false);
   });
 });
@@ -132,7 +145,9 @@ describe("createChatMessageSchema com share", () => {
 
 describe("createDmSchema", () => {
   it("aceita uuid e rejeita inválido", () => {
-    expect(createDmSchema.safeParse({ userId: "550e8400-e29b-41d4-a716-446655440000" }).success).toBe(true);
+    expect(
+      createDmSchema.safeParse({ userId: "550e8400-e29b-41d4-a716-446655440000" }).success,
+    ).toBe(true);
     expect(createDmSchema.safeParse({ userId: "x" }).success).toBe(false);
   });
 });
@@ -148,7 +163,10 @@ describe("updateMemberPermissionsSchema", () => {
 
 describe("removeCampaignMemberSchema", () => {
   it("aceita uuid e rejeita inválido", () => {
-    expect(removeCampaignMemberSchema.safeParse({ userId: "550e8400-e29b-41d4-a716-446655440000" }).success).toBe(true);
+    expect(
+      removeCampaignMemberSchema.safeParse({ userId: "550e8400-e29b-41d4-a716-446655440000" })
+        .success,
+    ).toBe(true);
     expect(removeCampaignMemberSchema.safeParse({ userId: "x" }).success).toBe(false);
   });
 });

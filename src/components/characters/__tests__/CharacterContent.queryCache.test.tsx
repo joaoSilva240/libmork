@@ -132,7 +132,7 @@ describe("CharacterContent - TanStack Query Caching & Remount (#8)", () => {
           defaultType="items"
           allowedTypes={["items", "spells", "conditions"]}
         />
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     // Initial render displays content
@@ -159,7 +159,7 @@ describe("CharacterContent - TanStack Query Caching & Remount (#8)", () => {
           defaultType="items"
           allowedTypes={["items", "spells", "conditions"]}
         />
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     // Immediately shows cached data without loading state or new fetch calls
@@ -186,9 +186,7 @@ describe("CharacterContent - TanStack Query Caching & Remount (#8)", () => {
                     content: { id: "sk-1", name: "Acrobacia", rollExpression: "1d20+DES" },
                   },
                 ],
-                available: [
-                  { id: "sk-2", name: "Arcanismo", rollExpression: "1d20+INT" },
-                ],
+                available: [{ id: "sk-2", name: "Arcanismo", rollExpression: "1d20+INT" }],
               },
             }),
         });
@@ -210,7 +208,7 @@ describe("CharacterContent - TanStack Query Caching & Remount (#8)", () => {
           defaultType="skills"
           allowedTypes={["skills"]}
         />
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     await waitFor(() => {
@@ -223,7 +221,7 @@ describe("CharacterContent - TanStack Query Caching & Remount (#8)", () => {
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(fetchSpy).toHaveBeenCalledWith(
       "/api/characters/char-test-skills/content/skills",
-      expect.anything()
+      expect.anything(),
     );
 
     // Unmount and remount (switching tabs to status and back to skills)
@@ -238,7 +236,7 @@ describe("CharacterContent - TanStack Query Caching & Remount (#8)", () => {
           defaultType="skills"
           allowedTypes={["skills"]}
         />
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     // Reuses cache immediately without new fetch
@@ -258,7 +256,7 @@ describe("CharacterContent - TanStack Query Caching & Remount (#8)", () => {
           defaultType="items"
           allowedTypes={["items", "spells", "conditions"]}
         />
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     // Spinner should be visible
@@ -271,7 +269,7 @@ describe("CharacterContent - TanStack Query Caching & Remount (#8)", () => {
         ok: false,
         statusText: "Internal Server Error",
         json: () => Promise.resolve({ error: "Falha interna no servidor" }),
-      })
+      }),
     );
 
     render(
@@ -281,7 +279,7 @@ describe("CharacterContent - TanStack Query Caching & Remount (#8)", () => {
           defaultType="items"
           allowedTypes={["items", "spells", "conditions"]}
         />
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     await waitFor(() => {
@@ -295,7 +293,7 @@ describe("CharacterContent - TanStack Query Caching & Remount (#8)", () => {
         ok: false,
         statusText: "Forbidden",
         json: () => Promise.resolve({ error: "Personagem não pertence ao usuário" }),
-      })
+      }),
     );
 
     render(
@@ -305,7 +303,7 @@ describe("CharacterContent - TanStack Query Caching & Remount (#8)", () => {
           defaultType="skills"
           allowedTypes={["skills"]}
         />
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     await waitFor(() => {
@@ -356,7 +354,7 @@ describe("CharacterContent - TanStack Query Caching & Remount (#8)", () => {
           defaultType="items"
           allowedTypes={["items", "spells", "conditions"]}
         />
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     await waitFor(() => {

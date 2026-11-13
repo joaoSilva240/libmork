@@ -34,10 +34,14 @@ async function resolveMissingAvatars(logs: Array<typeof campaignLogs.$inferSelec
   if (pending.length === 0) return new Map<string, string | null>();
 
   const characterIds = [
-    ...new Set(pending.filter((log) => log.actorType === "character").map((log) => log.actorId as string)),
+    ...new Set(
+      pending.filter((log) => log.actorType === "character").map((log) => log.actorId as string),
+    ),
   ];
   const npcIds = [
-    ...new Set(pending.filter((log) => log.actorType === "npc").map((log) => log.actorId as string)),
+    ...new Set(
+      pending.filter((log) => log.actorType === "npc").map((log) => log.actorId as string),
+    ),
   ];
 
   const [characterRows, npcRows] = await Promise.all([
@@ -56,7 +60,7 @@ async function resolveMissingAvatars(logs: Array<typeof campaignLogs.$inferSelec
   ]);
 
   return new Map<string, string | null>(
-    [...characterRows, ...npcRows].map((row) => [row.id, row.imageUrl])
+    [...characterRows, ...npcRows].map((row) => [row.id, row.imageUrl]),
   );
 }
 
@@ -68,10 +72,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -81,7 +82,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     if (!campaign) {
       return NextResponse.json(
         { success: false, error: "Campanha não encontrada" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -103,7 +104,10 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 
       return {
         ...log,
-        payload: { ...payload, actorImageUrl: log.actorId ? avatars.get(log.actorId) ?? null : null },
+        payload: {
+          ...payload,
+          actorImageUrl: log.actorId ? (avatars.get(log.actorId) ?? null) : null,
+        },
       };
     });
 
@@ -115,7 +119,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     logger.error({ err: error }, "Erro ao carregar logs");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -19,7 +19,9 @@ export const attributesSchema = z.object({
 });
 
 /** Normalizes persisted legacy characters that predate the luck attribute. */
-export function normalizeAttributes(attributes: Partial<Record<(typeof ATTRIBUTES)[number], number>>): Record<(typeof ATTRIBUTES)[number], number> {
+export function normalizeAttributes(
+  attributes: Partial<Record<(typeof ATTRIBUTES)[number], number>>,
+): Record<(typeof ATTRIBUTES)[number], number> {
   return {
     forca: attributes.forca ?? ATTRIBUTE_BASE_VALUE,
     destreza: attributes.destreza ?? ATTRIBUTE_BASE_VALUE,
@@ -31,13 +33,15 @@ export function normalizeAttributes(attributes: Partial<Record<(typeof ATTRIBUTE
 }
 
 /** Schema JSONB para a carteira de moedas do personagem (Issue #35). */
-export const coinsSchema = z.object({
-  bronze: z.number().int().min(0).default(0),
-  prata: z.number().int().min(0).default(0),
-  ouro: z.number().int().min(0).default(0),
-  platina: z.number().int().min(0).default(0),
-  diamante: z.number().int().min(0).default(0),
-}).strict();
+export const coinsSchema = z
+  .object({
+    bronze: z.number().int().min(0).default(0),
+    prata: z.number().int().min(0).default(0),
+    ouro: z.number().int().min(0).default(0),
+    platina: z.number().int().min(0).default(0),
+    diamante: z.number().int().min(0).default(0),
+  })
+  .strict();
 
 export type CoinsBalance = z.infer<typeof coinsSchema>;
 
@@ -46,48 +50,60 @@ export type CoinsBalance = z.infer<typeof coinsSchema>;
  * Campos mínimos: nome, classe (opcional), atributos
  * Wizard de criação: raça, itens, magias, perícias, descrição, imagem
  */
-export const createCharacterSchema = z.object({
-  name: z.string().min(2, "Nome deve ter no mínimo 2 caracteres").max(100),
-  description: z.string().max(2000).optional().nullable(),
-  classId: z.string().uuid().optional().nullable(),
-  raceId: z.string().uuid().optional().nullable(),
-  activeHeritages: z.array(z.string()).max(2).optional().default([]),
-  campaignId: z.string().uuid().optional().nullable(),
-  imageUrl: z.union([z.string().url(), z.literal("")]).optional().nullable(),
-  attributes: attributesSchema.optional(),
-  skills: z.array(z.string().uuid()).optional().default([]),
-  spells: z.array(z.string().uuid()).optional().default([]),
-  items: z.array(z.object({
-    itemId: z.string().uuid(),
-    quantity: z.number().int().min(1).default(1),
-  })).optional().default([]),
-}).refine(
-  (data) => {
-    // Validar soma de atributos na criação (se fornecidos)
-    if (data.attributes) {
-      const sum = Object.values(data.attributes).reduce((acc, val) => acc + val, 0);
-      const expectedSum = ATTRIBUTES.length * ATTRIBUTE_BASE_VALUE + ATTRIBUTE_FREE_POINTS;
-      return sum === expectedSum;
-    }
-    return true;
-  },
-  {
-    message: `A soma dos atributos deve ser ${ATTRIBUTES.length * ATTRIBUTE_BASE_VALUE + ATTRIBUTE_FREE_POINTS}`,
-  }
-);
+export const createCharacterSchema = z
+  .object({
+    name: z.string().min(2, "Nome deve ter no mínimo 2 caracteres").max(100),
+    description: z.string().max(2000).optional().nullable(),
+    classId: z.string().uuid().optional().nullable(),
+    raceId: z.string().uuid().optional().nullable(),
+    activeHeritages: z.array(z.string()).max(2).optional().default([]),
+    campaignId: z.string().uuid().optional().nullable(),
+    imageUrl: z
+      .union([z.string().url(), z.literal("")])
+      .optional()
+      .nullable(),
+    attributes: attributesSchema.optional(),
+    skills: z.array(z.string().uuid()).optional().default([]),
+    spells: z.array(z.string().uuid()).optional().default([]),
+    items: z
+      .array(
+        z.object({
+          itemId: z.string().uuid(),
+          quantity: z.number().int().min(1).default(1),
+        }),
+      )
+      .optional()
+      .default([]),
+  })
+  .refine(
+    (data) => {
+      // Validar soma de atributos na criação (se fornecidos)
+      if (data.attributes) {
+        const sum = Object.values(data.attributes).reduce((acc, val) => acc + val, 0);
+        const expectedSum = ATTRIBUTES.length * ATTRIBUTE_BASE_VALUE + ATTRIBUTE_FREE_POINTS;
+        return sum === expectedSum;
+      }
+      return true;
+    },
+    {
+      message: `A soma dos atributos deve ser ${ATTRIBUTES.length * ATTRIBUTE_BASE_VALUE + ATTRIBUTE_FREE_POINTS}`,
+    },
+  );
 
 export type CreateCharacterInput = z.infer<typeof createCharacterSchema>;
 
-export const heartAwakeningSchema = z.object({
-  chosenRelic: z.enum(["conflito", "salvaguarda", "segredo"]),
-  sacrificedRelic: z.enum(["conflito", "salvaguarda", "segredo"]),
-  q1Origin: z.enum(["carta", "moeda", "amuleto"]),
-  q2Impulse: z.enum(["colina", "floresta", "mar"]),
-  q3End: z.enum(["luzes", "cidade", "odiar"]),
-}).refine(data => data.chosenRelic !== data.sacrificedRelic, {
-  message: "A relíquia sacrificada deve ser diferente da escolhida",
-  path: ["sacrificedRelic"]
-});
+export const heartAwakeningSchema = z
+  .object({
+    chosenRelic: z.enum(["conflito", "salvaguarda", "segredo"]),
+    sacrificedRelic: z.enum(["conflito", "salvaguarda", "segredo"]),
+    q1Origin: z.enum(["carta", "moeda", "amuleto"]),
+    q2Impulse: z.enum(["colina", "floresta", "mar"]),
+    q3End: z.enum(["luzes", "cidade", "odiar"]),
+  })
+  .refine((data) => data.chosenRelic !== data.sacrificedRelic, {
+    message: "A relíquia sacrificada deve ser diferente da escolhida",
+    path: ["sacrificedRelic"],
+  });
 
 export type HeartAwakeningInput = z.infer<typeof heartAwakeningSchema>;
 
@@ -95,18 +111,21 @@ export type HeartAwakeningInput = z.infer<typeof heartAwakeningSchema>;
  * Schema de atualização de personagem (RF-009).
  * Todos os campos são opcionais
  */
-export const updateCharacterSchema = z.object({
-  name: z.string().min(2).max(100).optional(),
-  classId: z.string().uuid().optional().nullable(),
-  raceId: z.string().uuid().optional().nullable(),
-  activeHeritages: z.array(z.string()).max(2, "Máximo de 2 heranças ativas").optional(),
-  imageUrl: z.string().url().optional().nullable(),
-  attributes: attributesSchema.optional(),
-  hitPointsCurrent: z.number().int().min(0).optional(),
-  manaPointsCurrent: z.number().int().min(0).optional(),
-  block: z.number().int().min(0).optional(),
-  xp: z.number().int().min(0).optional(),
-  coins: coinsSchema.optional(),
-}).partial();
+export const updateCharacterSchema = z
+  .object({
+    name: z.string().min(2).max(100).optional(),
+    description: z.string().max(2000).optional().nullable(),
+    classId: z.string().uuid().optional().nullable(),
+    raceId: z.string().uuid().optional().nullable(),
+    activeHeritages: z.array(z.string()).max(2, "Máximo de 2 heranças ativas").optional(),
+    imageUrl: z.string().url().optional().nullable(),
+    attributes: attributesSchema.optional(),
+    hitPointsCurrent: z.number().int().min(0).optional(),
+    manaPointsCurrent: z.number().int().min(0).optional(),
+    block: z.number().int().min(0).optional(),
+    xp: z.number().int().min(0).optional(),
+    coins: coinsSchema.optional(),
+  })
+  .partial();
 
 export type UpdateCharacterInput = z.infer<typeof updateCharacterSchema>;

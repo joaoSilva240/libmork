@@ -126,7 +126,10 @@ export function sanitizeMotionPreferences(input: unknown): MotionPreferences {
   };
 }
 
-export function getEnterOffsets(preset: MotionPreset, intensity: MotionIntensity): MotionEnterOffsets {
+export function getEnterOffsets(
+  preset: MotionPreset,
+  intensity: MotionIntensity,
+): MotionEnterOffsets {
   const v = INTENSITY_VALUES[intensity];
   const none: MotionEnterOffsets = { x: 0, y: 0, scale: 1, blur: 0, rotate: 0 };
   switch (preset) {
@@ -145,7 +148,10 @@ export function getEnterOffsets(preset: MotionPreset, intensity: MotionIntensity
   }
 }
 
-export function resolveMotion(prefs: MotionPreferences, systemReducedMotion: boolean): ResolvedMotion {
+export function resolveMotion(
+  prefs: MotionPreferences,
+  systemReducedMotion: boolean,
+): ResolvedMotion {
   const mode: MotionMode = !prefs.enabled
     ? "off"
     : prefs.respectSystem && systemReducedMotion
@@ -164,18 +170,26 @@ export function resolveMotion(prefs: MotionPreferences, systemReducedMotion: boo
     mode,
     factor: mode === "off" ? 0 : Math.round((1 / prefs.speed) * 1000) / 1000,
     easing: MOTION_EASING_CURVES[reduced && prefs.easing === "spring" ? "standard" : prefs.easing],
-    enter: reduced ? getEnterOffsets("fade", prefs.intensity) : getEnterOffsets(prefs.preset, prefs.intensity),
+    enter: reduced
+      ? getEnterOffsets("fade", prefs.intensity)
+      : getEnterOffsets(prefs.preset, prefs.intensity),
     press: reduced ? 1 : intensity.press,
     lift: reduced ? 0 : intensity.lift,
     disabled,
   };
 }
 
-export function isMotionCategoryActive(resolved: ResolvedMotion, category: MotionCategory): boolean {
+export function isMotionCategoryActive(
+  resolved: ResolvedMotion,
+  category: MotionCategory,
+): boolean {
   return resolved.mode !== "off" && !resolved.disabled.includes(category);
 }
 
-export function motionDuration(resolved: ResolvedMotion, kind: keyof typeof MOTION_BASE_DURATIONS): number {
+export function motionDuration(
+  resolved: ResolvedMotion,
+  kind: keyof typeof MOTION_BASE_DURATIONS,
+): number {
   return Math.round(MOTION_BASE_DURATIONS[kind] * resolved.factor);
 }
 

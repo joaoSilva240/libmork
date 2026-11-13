@@ -27,14 +27,15 @@ const client = postgres(process.env.DATABASE_URL, {
 const db = drizzle(client, { schema });
 import { fetchPf2eSpellIconFiles, resolvePf2eSpellIcon } from "../src/lib/content/pf2e-spell-icons";
 
-const DND_ABILITY_MAP: Record<string, "forca" | "destreza" | "vigor" | "inteligencia" | "empatia"> = {
-  STR: "forca",
-  DEX: "destreza",
-  CON: "vigor",
-  INT: "inteligencia",
-  WIS: "empatia",
-  CHA: "empatia",
-};
+const DND_ABILITY_MAP: Record<string, "forca" | "destreza" | "vigor" | "inteligencia" | "empatia"> =
+  {
+    STR: "forca",
+    DEX: "destreza",
+    CON: "vigor",
+    INT: "inteligencia",
+    WIS: "empatia",
+    CHA: "empatia",
+  };
 
 const PF2ETOOLS_SPELL_INDEX_URL =
   "https://raw.githubusercontent.com/Pf2eToolsOrg/Pf2eTools/dev/data/spells/index.json";
@@ -82,7 +83,11 @@ function formatPf2eText(value: unknown): string {
   if (value && typeof value === "object") {
     const object = value as Record<string, unknown>;
     if (Array.isArray(object.items)) {
-      return object.items.map(formatPf2eText).filter(Boolean).map((item) => `• ${item}`).join("\n");
+      return object.items
+        .map(formatPf2eText)
+        .filter(Boolean)
+        .map((item) => `• ${item}`)
+        .join("\n");
     }
     if (object.entries !== undefined) return formatPf2eText(object.entries);
     if (object.rows && Array.isArray(object.rows)) {
@@ -127,7 +132,7 @@ function getPf2eUseType(spell: Pf2eSpell): string {
   const comps = spell.components;
 
   if (Array.isArray(comps)) {
-    const arr = comps.map(c => String(c).toUpperCase());
+    const arr = comps.map((c) => String(c).toUpperCase());
     if (arr.includes("V")) types.push("verbal");
     if (arr.includes("S")) types.push("somatic");
     if (arr.includes("M") || arr.includes("F")) types.push("manual");
@@ -199,11 +204,30 @@ function getPf2eDamageType(spell: Pf2eSpell): string | null {
       if (d.damageType) return String(d.damageType);
     }
   }
-  const traits = Array.isArray(spell.traits) ? spell.traits.map((t) => String(t).toLowerCase()) : [];
+  const traits = Array.isArray(spell.traits)
+    ? spell.traits.map((t) => String(t).toLowerCase())
+    : [];
   const commonTypes = [
-    "fire", "acid", "electricity", "cold", "sonic", "force", "mental", 
-    "poison", "piercing", "slashing", "bludgeoning", "positive", "negative",
-    "vitality", "void", "good", "evil", "lawful", "chaotic", "spirit"
+    "fire",
+    "acid",
+    "electricity",
+    "cold",
+    "sonic",
+    "force",
+    "mental",
+    "poison",
+    "piercing",
+    "slashing",
+    "bludgeoning",
+    "positive",
+    "negative",
+    "vitality",
+    "void",
+    "good",
+    "evil",
+    "lawful",
+    "chaotic",
+    "spirit",
   ];
   for (const t of commonTypes) {
     if (traits.includes(t)) return t;
@@ -238,40 +262,57 @@ function getPf2eCastingTime(spell: Pf2eSpell): string | null {
 function extractPf2eDamage(spell: Pf2eSpell): any {
   if (!spell.entries) return null;
   const rawText = typeof spell.entries === "string" ? spell.entries : JSON.stringify(spell.entries);
-  
+
   const regex = /\{@(damage|dice)\s+([^}]+)\}/gi;
   const damageTypes = [
-    "fire", "acid", "electricity", "cold", "sonic", "force", "mental", 
-    "poison", "piercing", "slashing", "bludgeoning", "positive", "negative",
-    "vitality", "void", "good", "evil", "lawful", "chaotic", "spirit",
-    "bleed"
+    "fire",
+    "acid",
+    "electricity",
+    "cold",
+    "sonic",
+    "force",
+    "mental",
+    "poison",
+    "piercing",
+    "slashing",
+    "bludgeoning",
+    "positive",
+    "negative",
+    "vitality",
+    "void",
+    "good",
+    "evil",
+    "lawful",
+    "chaotic",
+    "spirit",
+    "bleed",
   ];
-  
+
   const results: Array<{ formula: string; type: string | null }> = [];
   let match: RegExpExecArray | null;
-  
+
   while ((match = regex.exec(rawText)) !== null) {
     const fullMatch = match[0];
     const content = match[2];
-    
+
     // Extract formula (first part before pipe |)
-    const formula = content.split('|')[0].trim();
-    
+    const formula = content.split("|")[0].trim();
+
     // Search the text right after the match (up to 60 characters)
     const afterIndex = match.index + fullMatch.length;
     const searchArea = rawText.substring(afterIndex, afterIndex + 60).toLowerCase();
-    
+
     let detectedType: string | null = null;
-    
+
     // First try with word boundaries
     for (const type of damageTypes) {
-      const typeRegex = new RegExp(`\\b${type}\\b`, 'i');
+      const typeRegex = new RegExp(`\\b${type}\\b`, "i");
       if (typeRegex.test(searchArea)) {
         detectedType = type;
         break;
       }
     }
-    
+
     // Fallback if not matched by word boundary (e.g. adjacent characters)
     if (!detectedType) {
       for (const type of damageTypes) {
@@ -281,10 +322,10 @@ function extractPf2eDamage(spell: Pf2eSpell): any {
         }
       }
     }
-    
+
     results.push({ formula, type: detectedType });
   }
-  
+
   if (results.length === 0) return null;
   if (results.length === 1) return results[0];
   return results;
@@ -292,7 +333,7 @@ function extractPf2eDamage(spell: Pf2eSpell): any {
 
 async function runImport() {
   console.log("=== INICIANDO IMPORTAÇÃO DE CONTEÚDO GLOBAL ===");
-  
+
   let spellCreated = 0;
   let spellUpdated = 0;
   let spellFailed = 0;
@@ -312,32 +353,39 @@ async function runImport() {
     if (!indexRes.ok) throw new Error(`índice HTTP ${indexRes.status}`);
     const indexData: any = await indexRes.json();
     const sourceIndex = indexData && typeof indexData === "object" ? indexData : {};
-    
-    const selectedFiles = [...new Set(Object.values(sourceIndex)
-      .filter((file): file is string => typeof file === "string" && file.length > 0))];
-    
+
+    const selectedFiles = [
+      ...new Set(
+        Object.values(sourceIndex).filter(
+          (file): file is string => typeof file === "string" && file.length > 0,
+        ),
+      ),
+    ];
+
     console.log(`Carregando magias a partir de ${selectedFiles.length} fontes...`);
     const loadedSpells: Pf2eSpell[] = [];
-    
+
     for (let offset = 0; offset < selectedFiles.length; offset += PF2ETOOLS_SOURCE_CONCURRENCY) {
       const batch = selectedFiles.slice(offset, offset + PF2ETOOLS_SOURCE_CONCURRENCY);
-      const batchSpells = await Promise.all(batch.map(async (file) => {
-        try {
-          const response = await fetch(`${PF2ETOOLS_SPELLS_BASE_URL}${file}`, {
-            headers: { Accept: "application/json" },
-          });
-          if (!response.ok) throw new Error(`fonte HTTP ${response.status}`);
-          const data: any = await response.json();
-          const entries = data && typeof data === "object" ? data.spell : undefined;
-          return Array.isArray(entries) ? (entries as Pf2eSpell[]) : [];
-        } catch (err: any) {
-          console.error(`Erro ao carregar fonte de magias Pathfinder 2e (${file}):`, err.message);
-          return [];
-        }
-      }));
+      const batchSpells = await Promise.all(
+        batch.map(async (file) => {
+          try {
+            const response = await fetch(`${PF2ETOOLS_SPELLS_BASE_URL}${file}`, {
+              headers: { Accept: "application/json" },
+            });
+            if (!response.ok) throw new Error(`fonte HTTP ${response.status}`);
+            const data: any = await response.json();
+            const entries = data && typeof data === "object" ? data.spell : undefined;
+            return Array.isArray(entries) ? (entries as Pf2eSpell[]) : [];
+          } catch (err: any) {
+            console.error(`Erro ao carregar fonte de magias Pathfinder 2e (${file}):`, err.message);
+            return [];
+          }
+        }),
+      );
       loadedSpells.push(...batchSpells.flat());
     }
-    
+
     const seenNames = new Set<string>();
     const uniqueSpells = loadedSpells.filter((spell) => {
       const name = typeof spell.name === "string" ? spell.name.trim() : "";
@@ -348,7 +396,7 @@ async function runImport() {
     });
 
     console.log(`Total de magias únicas encontradas: ${uniqueSpells.length}. Buscando ícones...`);
-    
+
     let iconFiles: string[] = [];
     try {
       iconFiles = await fetchPf2eSpellIconFiles();
@@ -366,8 +414,10 @@ async function runImport() {
     for (const spell of uniqueSpells) {
       const name = spell.name as string;
       const imageUrl = resolvePf2eSpellIcon(name, iconFiles);
-      const existing = existingSpells.find((item) => normalizeSpellName(item.name) === normalizeSpellName(name));
-      
+      const existing = existingSpells.find(
+        (item) => normalizeSpellName(item.name) === normalizeSpellName(name),
+      );
+
       const rawLevel = typeof spell.level === "number" ? spell.level : 1;
       const circle = Math.max(1, Math.min(9, Math.trunc(rawLevel)));
       const description = formatPf2eText(spell.entries).slice(0, 5000);
@@ -394,26 +444,29 @@ async function runImport() {
 
       if (existing) {
         try {
-          await db.update(spells).set({
-            circle,
-            manaCost: circle * 2,
-            description,
-            duration,
-            useType,
-            actionCostOverride,
-            imageUrl: existing.imageUrl || imageUrl || null,
-            range,
-            target,
-            area,
-            damage,
-            damageType,
-            structuredEffects: structuredEffectsData,
-            castingTime,
-          }).where(eq(spells.id, existing.id));
+          await db
+            .update(spells)
+            .set({
+              circle,
+              manaCost: circle * 2,
+              description,
+              duration,
+              useType,
+              actionCostOverride,
+              imageUrl: existing.imageUrl || imageUrl || null,
+              range,
+              target,
+              area,
+              damage,
+              damageType,
+              structuredEffects: structuredEffectsData,
+              castingTime,
+            })
+            .where(eq(spells.id, existing.id));
           spellUpdated++;
         } catch (err: any) {
           spellFailed++;
-          console.error('Falha ao importar magia', name, err.message || err);
+          console.error("Falha ao importar magia", name, err.message || err);
           continue;
         }
       } else {
@@ -440,7 +493,7 @@ async function runImport() {
           spellCreated++;
         } catch (err: any) {
           spellFailed++;
-          console.error('Falha ao importar magia', name, err.message || err);
+          console.error("Falha ao importar magia", name, err.message || err);
           continue;
         }
       }
@@ -448,7 +501,9 @@ async function runImport() {
     if (spellFailed > 0) {
       console.error(`Magias com falha: ${spellFailed} de ${uniqueSpells.length}`);
     }
-    console.log(`-> Magias Pathfinder 2e processadas! Criadas: ${spellCreated}, Atualizadas: ${spellUpdated}, Falhas: ${spellFailed}`);
+    console.log(
+      `-> Magias Pathfinder 2e processadas! Criadas: ${spellCreated}, Atualizadas: ${spellUpdated}, Falhas: ${spellFailed}`,
+    );
 
     // 2. IMPORTAR ITENS & EQUIPAMENTOS D&D 5E
     console.log("\n[2/4] Buscando Itens & Equipamentos D&D 5e...");
@@ -475,18 +530,25 @@ async function runImport() {
           const description = Array.isArray(detail.desc)
             ? detail.desc.join("\n")
             : detail.equipment_category?.name
-            ? `Categoria: ${detail.equipment_category.name}`
-            : detail.name;
+              ? `Categoria: ${detail.equipment_category.name}`
+              : detail.name;
 
           const name = detail.name;
-          const qualityDescription = detail.cost ? `Custo: ${detail.cost.quantity} ${detail.cost.unit}` : null;
+          const qualityDescription = detail.cost
+            ? `Custo: ${detail.cost.quantity} ${detail.cost.unit}`
+            : null;
 
-          const existing = existingItems.find((item) => normalizeSpellName(item.name) === normalizeSpellName(name));
+          const existing = existingItems.find(
+            (item) => normalizeSpellName(item.name) === normalizeSpellName(name),
+          );
           if (existing) {
-            await db.update(items).set({
-              description,
-              qualityDescription,
-            }).where(eq(items.id, existing.id));
+            await db
+              .update(items)
+              .set({
+                description,
+                qualityDescription,
+              })
+              .where(eq(items.id, existing.id));
             itemUpdated++;
           } else {
             await db.insert(items).values({
@@ -501,7 +563,9 @@ async function runImport() {
           console.error(`Erro ao importar item ${itemObj.index}:`, err.message);
         }
       }
-      console.log(`-> Itens D&D 5e processados! Criados: ${itemCreated}, Atualizados: ${itemUpdated}`);
+      console.log(
+        `-> Itens D&D 5e processados! Criados: ${itemCreated}, Atualizados: ${itemUpdated}`,
+      );
     } else {
       console.error(`Falha ao buscar equipamentos D&D 5e: ${itemsRes.status}`);
     }
@@ -532,13 +596,18 @@ async function runImport() {
           const name = detail.name;
           const rollExpression = `1d20 + ${keyAttr}`;
 
-          const existing = existingSkills.find((item) => normalizeSpellName(item.name) === normalizeSpellName(name));
+          const existing = existingSkills.find(
+            (item) => normalizeSpellName(item.name) === normalizeSpellName(name),
+          );
           if (existing) {
-            await db.update(skills).set({
-              description,
-              keyAttribute: keyAttr,
-              rollExpression,
-            }).where(eq(skills.id, existing.id));
+            await db
+              .update(skills)
+              .set({
+                description,
+                keyAttribute: keyAttr,
+                rollExpression,
+              })
+              .where(eq(skills.id, existing.id));
             skillUpdated++;
           } else {
             await db.insert(skills).values({
@@ -554,7 +623,9 @@ async function runImport() {
           console.error(`Erro ao importar perícia ${sk.index}:`, err.message);
         }
       }
-      console.log(`-> Perícias D&D 5e processadas! Criadas: ${skillCreated}, Atualizadas: ${skillUpdated}`);
+      console.log(
+        `-> Perícias D&D 5e processadas! Criadas: ${skillCreated}, Atualizadas: ${skillUpdated}`,
+      );
     } else {
       console.error(`Falha ao buscar perícias D&D 5e: ${skillsRes.status}`);
     }
@@ -583,11 +654,16 @@ async function runImport() {
           const description = Array.isArray(detail.desc) ? detail.desc.join("\n") : "";
           const name = detail.name;
 
-          const existing = existingConditions.find((item) => normalizeSpellName(item.name) === normalizeSpellName(name));
+          const existing = existingConditions.find(
+            (item) => normalizeSpellName(item.name) === normalizeSpellName(name),
+          );
           if (existing) {
-            await db.update(conditions).set({
-              description,
-            }).where(eq(conditions.id, existing.id));
+            await db
+              .update(conditions)
+              .set({
+                description,
+              })
+              .where(eq(conditions.id, existing.id));
             conditionUpdated++;
           } else {
             await db.insert(conditions).values({
@@ -601,20 +677,23 @@ async function runImport() {
           console.error(`Erro ao importar condição ${cond.index}:`, err.message);
         }
       }
-      console.log(`-> Condições D&D 5e processadas! Criadas: ${conditionCreated}, Atualizadas: ${conditionUpdated}`);
+      console.log(
+        `-> Condições D&D 5e processadas! Criadas: ${conditionCreated}, Atualizadas: ${conditionUpdated}`,
+      );
     } else {
       console.error(`Falha ao buscar condições D&D 5e: ${condRes.status}`);
     }
-
   } catch (error: any) {
     console.error("\nErro fatal durante a importação:", error.message);
   } finally {
     console.log("\nFechando conexões do banco de dados...");
     await client.end();
     console.log("Conexão fechada com sucesso.");
-    
+
     console.log("\n=== RESUMO DA IMPORTAÇÃO ===");
-    console.log(`- Magias:   Criadas: ${spellCreated} | Atualizadas: ${spellUpdated} | Falhas: ${spellFailed}`);
+    console.log(
+      `- Magias:   Criadas: ${spellCreated} | Atualizadas: ${spellUpdated} | Falhas: ${spellFailed}`,
+    );
     console.log(`- Itens:    Criados: ${itemCreated} | Atualizados: ${itemUpdated}`);
     console.log(`- Perícias: Criadas: ${skillCreated} | Atualizadas: ${skillUpdated}`);
     console.log(`- Condições:Criadas: ${conditionCreated} | Atualizadas: ${conditionUpdated}`);

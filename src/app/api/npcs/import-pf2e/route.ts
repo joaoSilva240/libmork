@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { npcs, npcPins } from "@/lib/db/schema";
+import { npcs, npcPins, attacks } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { fetchAndParsePf2eMonster, fetchPf2eMonsterCatalog } from "@/lib/content/pf2e-monsters";
 import { translateContentWithLLM } from "@/lib/server/content-translation";
@@ -26,8 +26,10 @@ async function importSinglePf2eMonster(path: string, userId: string, translateWi
           pins: monsterData.pins.map((p) => p.label),
         };
 
-        const translated = await translateContentWithLLM("item", payloadToTranslate, 
-          `Translate this tabletop RPG Pathfinder 2e Monster name and skill/attack labels from English to Brazilian Portuguese. Return JSON only with "name" and "pins" array of translated labels.`
+        const translated = await translateContentWithLLM(
+          "item",
+          payloadToTranslate,
+          `Translate this tabletop RPG Pathfinder 2e Monster name and skill/attack labels from English to Brazilian Portuguese. Return JSON only with "name" and "pins" array of translated labels.`,
         );
 
         if (typeof translated.name === "string" && translated.name) {
@@ -41,7 +43,10 @@ async function importSinglePf2eMonster(path: string, userId: string, translateWi
           }));
         }
       } catch (err) {
-        logger.warn({ err, monsterName: monsterData.name }, "[importSinglePf2eMonster] Falha na tradução via LLM, mantendo original");
+        logger.warn(
+          { err, monsterName: monsterData.name },
+          "[importSinglePf2eMonster] Falha na tradução via LLM, mantendo original",
+        );
       }
     }
 
@@ -65,11 +70,36 @@ async function importSinglePf2eMonster(path: string, userId: string, translateWi
         .returning();
 
       if (finalPins.length > 0) {
+        // Ataques com dano configurado vão para a Biblioteca Global (issue #90
+        // follow-up): o pin fica vinculado por contentId e o ataque fica junto
+        // dos dados da biblioteca, reutilizável por outros NPCs.
+        const contentIdByLabel = new Map<string, string>();
+        const attackPins = finalPins.filter(
+          (pin) =>
+            pin.pinType === "attack" && (pin as { attackExpression?: string }).attackExpression,
+        );
+        if (attackPins.length > 0) {
+          const libraryAttacks = await tx
+            .insert(attacks)
+            .values(
+              attackPins.map((pin) => ({
+                name: pin.label,
+                attackExpression: (pin as { attackExpression?: string }).attackExpression ?? null,
+                damageExpression: (pin as { damageExpression?: string }).damageExpression ?? null,
+              })),
+            )
+            .returning();
+          libraryAttacks.forEach((attack) => contentIdByLabel.set(attack.name, attack.id));
+        }
+
         const pinRows = finalPins.map((pin) => ({
           npcId: npc.id,
           pinType: pin.pinType,
           label: pin.label,
           rollExpression: pin.rollExpression || null,
+          contentId: contentIdByLabel.get(pin.label) ?? null,
+          attackExpression: (pin as { attackExpression?: string }).attackExpression || null,
+          damageExpression: (pin as { damageExpression?: string }).damageExpression || null,
           manaCost: pin.manaCost || null,
           circle: pin.circle || null,
         }));
@@ -118,7 +148,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: `Limite por requisição excedido. Selecione até ${MAX_BATCH_IMPORT} monstros por vez para evitar timeouts.`,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -128,7 +158,7 @@ export async function POST(request: NextRequest) {
     for (let i = 0; i < targetPaths.length; i += BATCH_SIZE) {
       const batch = targetPaths.slice(i, i + BATCH_SIZE);
       const results = await Promise.all(
-        batch.map((path) => importSinglePf2eMonster(path, session.user.id, translateWithLLM))
+        batch.map((path) => importSinglePf2eMonster(path, session.user.id, translateWithLLM)),
       );
       for (const item of results) {
         if (item) importedNpcs.push(item);
@@ -145,10 +175,10 @@ export async function POST(request: NextRequest) {
       data: importedNpcs,
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro na rota de importação Pathfinder 2e');
+    logger.error({ err: error }, "Erro na rota de importação Pathfinder 2e");
     return NextResponse.json(
       { success: false, error: "Erro ao importar monstros do Pathfinder 2e" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

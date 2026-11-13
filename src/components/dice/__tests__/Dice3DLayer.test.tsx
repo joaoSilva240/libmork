@@ -39,13 +39,21 @@ describe("Dice3DLayer", () => {
   });
 
   it("não carrega a biblioteca antes da primeira rolagem", () => {
-    render(<ThemeProvider><Dice3DLayer /></ThemeProvider>);
+    render(
+      <ThemeProvider>
+        <Dice3DLayer />
+      </ThemeProvider>,
+    );
     expect(ctor).not.toHaveBeenCalled();
     expect(screen.getByTestId("dice3d-layer")).toHaveAttribute("data-visible", "false");
   });
 
   it("rola com o valor sorteado e some 3s após o resultado", async () => {
-    render(<ThemeProvider><Dice3DLayer /></ThemeProvider>);
+    render(
+      <ThemeProvider>
+        <Dice3DLayer />
+      </ThemeProvider>,
+    );
     await act(async () => {
       showDice3D([{ sides: 20, value: 17 }]);
       await vi.dynamicImportSettled();
@@ -53,7 +61,10 @@ describe("Dice3DLayer", () => {
     });
     expect(ctor).toHaveBeenCalledWith(
       "#libmork-dice3d",
-      expect.objectContaining({ sounds: false, theme_customColorset: expect.objectContaining({ texture: "none" }) }),
+      expect.objectContaining({
+        sounds: false,
+        theme_customColorset: expect.objectContaining({ texture: "none" }),
+      }),
     );
     expect(roll).toHaveBeenCalledWith("1d20@17");
     expect(screen.getByTestId("dice3d-layer")).toHaveAttribute("data-visible", "true");

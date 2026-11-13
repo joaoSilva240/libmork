@@ -23,7 +23,9 @@ export function MarketplaceOverlay({ campaignId, characterId }: MarketplaceOverl
   const { socket } = useSocket();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(true);
-  const [openEstablishments, setOpenEstablishments] = useState<Array<{ id: string; name: string; worldId: string }>>([]);
+  const [openEstablishments, setOpenEstablishments] = useState<
+    Array<{ id: string; name: string; worldId: string }>
+  >([]);
   const [catalog, setCatalog] = useState<InventoryItem[]>([]);
   const [isLoadingCatalog, setIsLoadingCatalog] = useState(false);
   const [isBuying, setIsBuying] = useState<string | null>(null);
@@ -39,7 +41,9 @@ export function MarketplaceOverlay({ campaignId, characterId }: MarketplaceOverl
         const worlds = data.data || [];
         const openEsts: Array<{ id: string; name: string; worldId: string }> = [];
         for (const world of worlds) {
-          const estRes = await fetch(`/api/worlds/${world.id}/establishments`, { credentials: "include" });
+          const estRes = await fetch(`/api/worlds/${world.id}/establishments`, {
+            credentials: "include",
+          });
           if (estRes.ok) {
             const estData = await estRes.json();
             const estList = (estData.data || []).filter((e: any) => e.isOpen);
@@ -69,7 +73,11 @@ export function MarketplaceOverlay({ campaignId, characterId }: MarketplaceOverl
   useEffect(() => {
     if (!socket || !campaignId) return;
 
-    const handleStatus = (payload: { campaignId: string; establishment: { id: string; name: string; worldId?: string }; isOpen: boolean }) => {
+    const handleStatus = (payload: {
+      campaignId: string;
+      establishment: { id: string; name: string; worldId?: string };
+      isOpen: boolean;
+    }) => {
       if (payload.campaignId === campaignId) {
         setOpenEstablishments((prev) => {
           let updated: Array<{ id: string; name: string; worldId: string }>;
@@ -122,7 +130,7 @@ export function MarketplaceOverlay({ campaignId, characterId }: MarketplaceOverl
           openEstablishments.map(async (est) => {
             const res = await fetch(
               `/api/worlds/${est.worldId || "dummy"}/establishments/${est.id}/inventory`,
-              { credentials: "include" }
+              { credentials: "include" },
             );
             if (res.ok) {
               const data = await res.json();
@@ -133,7 +141,7 @@ export function MarketplaceOverlay({ campaignId, characterId }: MarketplaceOverl
               return items;
             }
             return [];
-          })
+          }),
         );
         const unifiedCatalog = results.flat();
         setCatalog(unifiedCatalog);
@@ -205,7 +213,8 @@ export function MarketplaceOverlay({ campaignId, characterId }: MarketplaceOverl
     <div className="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 max-h-[85vh] z-50 flex flex-col rounded-2xl border border-gray-800 bg-gray-950/95 p-4 shadow-2xl backdrop-blur-md text-white animate-in fade-in slide-in-from-top-2">
       <div className="flex items-center justify-between border-b border-gray-800 pb-2 mb-3 shrink-0">
         <h3 className="font-bold text-sm text-purple-400 flex items-center gap-2 truncate pr-2">
-          <span>🏬</span> <span className="truncate">{getMarketTitle()}</span> <span className="text-[10px] text-emerald-400 shrink-0">(Aberto)</span>
+          <span>🏬</span> <span className="truncate">{getMarketTitle()}</span>{" "}
+          <span className="text-[10px] text-emerald-400 shrink-0">(Aberto)</span>
         </h3>
         <div className="flex items-center gap-2 shrink-0">
           <button
@@ -244,7 +253,9 @@ export function MarketplaceOverlay({ campaignId, characterId }: MarketplaceOverl
           <Spinner size="sm" />
         </div>
       ) : catalog.length === 0 ? (
-        <p className="text-xs text-gray-400 py-2 italic text-center">Nenhum produto à venda no momento.</p>
+        <p className="text-xs text-gray-400 py-2 italic text-center">
+          Nenhum produto à venda no momento.
+        </p>
       ) : (
         <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
           {catalog.map((item) => (
@@ -271,7 +282,13 @@ export function MarketplaceOverlay({ campaignId, characterId }: MarketplaceOverl
                 disabled={isBuying === item.id || item.stock === 0}
                 className="rounded-lg bg-purple-600 px-3 py-1 text-[11px] font-bold text-white hover:bg-purple-500 disabled:opacity-50 shrink-0"
               >
-                {isBuying === item.id ? <Spinner size="sm" /> : item.stock === 0 ? "Esgotado" : "Comprar"}
+                {isBuying === item.id ? (
+                  <Spinner size="sm" />
+                ) : item.stock === 0 ? (
+                  "Esgotado"
+                ) : (
+                  "Comprar"
+                )}
               </button>
             </div>
           ))}

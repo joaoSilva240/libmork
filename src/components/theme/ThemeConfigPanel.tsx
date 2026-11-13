@@ -36,16 +36,16 @@ export function ThemeConfigPanel({
     mode,
     setThemeName,
     setThemeMode,
-    updateColor,
     setFontPreset,
     setFonts,
     updateUiDetails,
-    optimizeContrast,
     resetTheme,
   } = useTheme();
 
   const [filterMode, setFilterMode] = useState<"all" | "dark" | "light">("all");
-  const [internalSubTab, setInternalSubTab] = useState<"themes_colors" | "fonts" | "ui_details">("themes_colors");
+  const [internalSubTab, setInternalSubTab] = useState<"themes_colors" | "fonts" | "ui_details">(
+    "themes_colors",
+  );
 
   const activeSubTab = externalSubTab ?? internalSubTab;
   const setActiveSubTab = onSubTabChange ?? setInternalSubTab;
@@ -119,7 +119,8 @@ export function ThemeConfigPanel({
                   Temas Calibrados AAA ({filteredPresets.length})
                 </h4>
                 <p className="text-xs text-secondary-muted">
-                  Cada card reflete fielmente as cores dominantes, superfícies e tipografia do tema correspondente.
+                  Cada card reflete fielmente as cores dominantes, superfícies e tipografia do tema
+                  correspondente.
                 </p>
               </div>
 
@@ -352,249 +353,6 @@ export function ThemeConfigPanel({
               })}
             </div>
           </div>
-
-          {/* Seção 2: Personalização Fina de Cores (60-30-10) */}
-          <div className="rounded-xl border border-secondary-border bg-secondary-card p-5 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-secondary-border pb-3">
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-accent-hover">
-                  Personalização das Cores do Sistema (60-30-10)
-                </h4>
-                <p className="text-xs text-secondary-muted">
-                  Ajuste fino dos valores hexadecimais com calibração automática de superfície e contraste WCAG AAA.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={optimizeContrast}
-                className="rounded-lg border border-accent bg-accent/20 px-3 py-1.5 text-xs font-bold text-accent-hover hover:bg-accent/30 transition self-start sm:self-auto"
-              >
-                ⚡ Calibrar Automaticamente para AAA
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Bloco Dominante (60%) */}
-              <div className="rounded-xl border border-secondary-border bg-dominant-deep/60 p-4 space-y-3">
-                <div className="flex items-center justify-between border-b border-secondary-border pb-2">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-accent-hover">
-                    Dominante (60%)
-                  </h4>
-                  <span className="text-[10px] text-secondary-muted">Fundo e Base</span>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-[11px] font-semibold text-secondary-offwhite">
-                    Fundo Profundo (deep)
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={theme.colors.dominant.deep}
-                      onChange={(e) => updateColor("dominant", "deep", e.target.value)}
-                      className="h-8 w-12 rounded cursor-pointer border border-secondary-border bg-transparent"
-                      title="Seletor de cor profunda"
-                    />
-                    <input
-                      type="text"
-                      value={theme.colors.dominant.deep}
-                      onChange={(e) => updateColor("dominant", "deep", e.target.value)}
-                      className="w-full rounded-lg border border-secondary-border bg-dominant-deep px-2.5 py-1 text-xs text-secondary-pure font-mono"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-[11px] font-semibold text-secondary-offwhite">
-                    Superfície Escura (dark)
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={theme.colors.dominant.dark}
-                      onChange={(e) => updateColor("dominant", "dark", e.target.value)}
-                      className="h-8 w-12 rounded cursor-pointer border border-secondary-border bg-transparent"
-                      title="Seletor de cor escura"
-                    />
-                    <input
-                      type="text"
-                      value={theme.colors.dominant.dark}
-                      onChange={(e) => updateColor("dominant", "dark", e.target.value)}
-                      className="w-full rounded-lg border border-secondary-border bg-dominant-deep px-2.5 py-1 text-xs text-secondary-pure font-mono"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-[11px] font-semibold text-secondary-offwhite">
-                    Borda Dominante
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={theme.colors.dominant.border}
-                      onChange={(e) => updateColor("dominant", "border", e.target.value)}
-                      className="h-8 w-12 rounded cursor-pointer border border-secondary-border bg-transparent"
-                      title="Seletor de cor de borda"
-                    />
-                    <input
-                      type="text"
-                      value={theme.colors.dominant.border}
-                      onChange={(e) => updateColor("dominant", "border", e.target.value)}
-                      className="w-full rounded-lg border border-secondary-border bg-dominant-deep px-2.5 py-1 text-xs text-secondary-pure font-mono"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Bloco Secundário (30%) */}
-              <div className="rounded-xl border border-secondary-border bg-dominant-deep/60 p-4 space-y-3">
-                <div className="flex items-center justify-between border-b border-secondary-border pb-2">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-accent-hover">
-                    Secundário (30%)
-                  </h4>
-                  <span className="text-[10px] text-secondary-muted">Cards e Texto</span>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-[11px] font-semibold text-secondary-offwhite">
-                    Fundo de Cartão (card)
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={theme.colors.secondary.card}
-                      onChange={(e) => updateColor("secondary", "card", e.target.value)}
-                      className="h-8 w-12 rounded cursor-pointer border border-secondary-border bg-transparent"
-                      title="Seletor de cor do cartão"
-                    />
-                    <input
-                      type="text"
-                      value={theme.colors.secondary.card}
-                      onChange={(e) => updateColor("secondary", "card", e.target.value)}
-                      className="w-full rounded-lg border border-secondary-border bg-dominant-deep px-2.5 py-1 text-xs text-secondary-pure font-mono"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-[11px] font-semibold text-secondary-offwhite">
-                    Texto Principal (pure)
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={theme.colors.secondary.pure}
-                      onChange={(e) => updateColor("secondary", "pure", e.target.value)}
-                      className="h-8 w-12 rounded cursor-pointer border border-secondary-border bg-transparent"
-                      title="Seletor de cor de texto"
-                    />
-                    <input
-                      type="text"
-                      value={theme.colors.secondary.pure}
-                      onChange={(e) => updateColor("secondary", "pure", e.target.value)}
-                      className="w-full rounded-lg border border-secondary-border bg-dominant-deep px-2.5 py-1 text-xs text-secondary-pure font-mono"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-[11px] font-semibold text-secondary-offwhite">
-                    Texto Atenuado (muted)
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={theme.colors.secondary.muted}
-                      onChange={(e) => updateColor("secondary", "muted", e.target.value)}
-                      className="h-8 w-12 rounded cursor-pointer border border-secondary-border bg-transparent"
-                      title="Seletor de cor de texto atenuado"
-                    />
-                    <input
-                      type="text"
-                      value={theme.colors.secondary.muted}
-                      onChange={(e) => updateColor("secondary", "muted", e.target.value)}
-                      className="w-full rounded-lg border border-secondary-border bg-dominant-deep px-2.5 py-1 text-xs text-secondary-pure font-mono"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Bloco Accent (10%) */}
-              <div className="rounded-xl border border-secondary-border bg-dominant-deep/60 p-4 space-y-3">
-                <div className="flex items-center justify-between border-b border-secondary-border pb-2">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-accent-hover">
-                    Destaque (10%)
-                  </h4>
-                  <span className="text-[10px] text-secondary-muted">Ações e Foco</span>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-[11px] font-semibold text-secondary-offwhite">
-                    Destaque Primário (primary)
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={theme.colors.accent.primary}
-                      onChange={(e) => updateColor("accent", "primary", e.target.value)}
-                      className="h-8 w-12 rounded cursor-pointer border border-secondary-border bg-transparent"
-                      title="Seletor de cor de destaque primário"
-                    />
-                    <input
-                      type="text"
-                      value={theme.colors.accent.primary}
-                      onChange={(e) => updateColor("accent", "primary", e.target.value)}
-                      className="w-full rounded-lg border border-secondary-border bg-dominant-deep px-2.5 py-1 text-xs text-secondary-pure font-mono"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-[11px] font-semibold text-secondary-offwhite">
-                    Destaque Vibrante / Foco
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={theme.colors.accent.vibrant}
-                      onChange={(e) => updateColor("accent", "vibrant", e.target.value)}
-                      className="h-8 w-12 rounded cursor-pointer border border-secondary-border bg-transparent"
-                      title="Seletor de cor de destaque vibrante"
-                    />
-                    <input
-                      type="text"
-                      value={theme.colors.accent.vibrant}
-                      onChange={(e) => updateColor("accent", "vibrant", e.target.value)}
-                      className="w-full rounded-lg border border-secondary-border bg-dominant-deep px-2.5 py-1 text-xs text-secondary-pure font-mono"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-[11px] font-semibold text-secondary-offwhite">
-                    Hover Interativo
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={theme.colors.accent.hover}
-                      onChange={(e) => updateColor("accent", "hover", e.target.value)}
-                      className="h-8 w-12 rounded cursor-pointer border border-secondary-border bg-transparent"
-                      title="Seletor de cor de hover"
-                    />
-                    <input
-                      type="text"
-                      value={theme.colors.accent.hover}
-                      onChange={(e) => updateColor("accent", "hover", e.target.value)}
-                      className="w-full rounded-lg border border-secondary-border bg-dominant-deep px-2.5 py-1 text-xs text-secondary-pure font-mono"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
@@ -659,7 +417,8 @@ export function ThemeConfigPanel({
 
                       {isSelected ? (
                         <span className="flex items-center gap-1 text-[10px] font-bold text-accent-hover bg-accent/20 px-2 py-0.5 rounded-full border border-accent/40">
-                          <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" /> Ativo
+                          <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />{" "}
+                          Ativo
                         </span>
                       ) : (
                         <span className="text-[10px] text-secondary-muted hover:text-secondary-pure">
@@ -732,9 +491,7 @@ export function ThemeConfigPanel({
                 </label>
                 <select
                   value={theme.fonts.headingId}
-                  onChange={(e) =>
-                    setFonts(e.target.value as FontFamilyId, theme.fonts.bodyId)
-                  }
+                  onChange={(e) => setFonts(e.target.value as FontFamilyId, theme.fonts.bodyId)}
                   className="w-full rounded-lg border border-secondary-border bg-dominant-deep px-3 py-2 text-xs text-secondary-pure outline-none focus:ring-2 focus:ring-accent"
                 >
                   <optgroup label="⚔️ Clássicas de RPG & D&D (Locais)">
@@ -775,9 +532,7 @@ export function ThemeConfigPanel({
                 </label>
                 <select
                   value={theme.fonts.bodyId}
-                  onChange={(e) =>
-                    setFonts(theme.fonts.headingId, e.target.value as FontFamilyId)
-                  }
+                  onChange={(e) => setFonts(theme.fonts.headingId, e.target.value as FontFamilyId)}
                   className="w-full rounded-lg border border-secondary-border bg-dominant-deep px-3 py-2 text-xs text-secondary-pure outline-none focus:ring-2 focus:ring-accent"
                 >
                   <optgroup label="⚔️ Clássicas de RPG & D&D (Locais)">
@@ -828,7 +583,9 @@ export function ThemeConfigPanel({
                 className="text-xs text-secondary-muted leading-relaxed transition-all"
                 style={{ fontFamily: theme.fonts.body }}
               >
-                Corpo & Leitura: “Nas profundezas da cripta esquecida, os glifos sussurram segredos esquecidos pelos deuses. Role 1d20 + modificador de Sabedoria para decifrar a inscrição rúnica.”
+                Corpo & Leitura: “Nas profundezas da cripta esquecida, os glifos sussurram segredos
+                esquecidos pelos deuses. Role 1d20 + modificador de Sabedoria para decifrar a
+                inscrição rúnica.”
               </div>
             </div>
           </div>
@@ -972,7 +729,9 @@ export function ThemeConfigPanel({
                         <span className={`text-base transition-transform ${opt.iconSize}`}>🛡️</span>
                       </div>
                       <span className="text-xs font-bold text-secondary-pure">{opt.label}</span>
-                      <span className="text-[10px] font-mono text-secondary-muted">{opt.scale}</span>
+                      <span className="text-[10px] font-mono text-secondary-muted">
+                        {opt.scale}
+                      </span>
                     </button>
                   );
                 })}

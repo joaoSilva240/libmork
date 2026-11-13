@@ -29,7 +29,14 @@ export function applyLuckToRoll({
   const luckChance = Math.abs(modifier) * 0.2;
   const isPenalty = modifier < 0;
   if (modifier === 0 || luckChance === 0) {
-    return { original: roll, final: roll, rolls: [roll], wasLuckActivated: false, luckChance, isPenalty };
+    return {
+      original: roll,
+      final: roll,
+      rolls: [roll],
+      wasLuckActivated: false,
+      luckChance,
+      isPenalty,
+    };
   }
 
   const rolls = [roll];

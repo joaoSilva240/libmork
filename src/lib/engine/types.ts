@@ -85,7 +85,7 @@ export interface GameSystem {
     currentSuccesses: number,
     currentFailures: number,
     dieRoll: number,
-    vigorMod: number
+    vigorMod: number,
   ): {
     success: boolean;
     dieRoll: number;

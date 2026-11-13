@@ -61,7 +61,9 @@ describe("MasterRoster Visibility Props & Config Toggles", () => {
           json: () =>
             Promise.resolve({
               success: true,
-              data: [{ id: "world-1", name: "Mundo Central", mapUrl: "http://example.com/map.jpg" }],
+              data: [
+                { id: "world-1", name: "Mundo Central", mapUrl: "http://example.com/map.jpg" },
+              ],
             }),
         });
       }
@@ -91,7 +93,7 @@ describe("MasterRoster Visibility Props & Config Toggles", () => {
         showCanvas={true}
         showMap={true}
         onTogglePopOut={vi.fn()}
-      />
+      />,
     );
 
     await waitFor(() => {
@@ -110,7 +112,7 @@ describe("MasterRoster Visibility Props & Config Toggles", () => {
         showCanvas={true}
         showMap={true}
         onTogglePopOut={vi.fn()}
-      />
+      />,
     );
 
     await waitFor(() => {
@@ -137,7 +139,7 @@ describe("MasterRoster Visibility Props & Config Toggles", () => {
         showMap={true}
         isPoppedOut={true}
         onTogglePopOut={handleTogglePopOut}
-      />
+      />,
     );
 
     await waitFor(() => {
@@ -156,7 +158,7 @@ describe("MasterRoster Visibility Props & Config Toggles", () => {
         showRoster={true}
         showCanvas={false}
         showMap={true}
-      />
+      />,
     );
 
     await waitFor(() => {
@@ -179,7 +181,7 @@ describe("MasterRoster Visibility Props & Config Toggles", () => {
         showRoster={true}
         showCanvas={true}
         showMap={false}
-      />
+      />,
     );
 
     await waitFor(() => {
@@ -201,11 +203,13 @@ describe("MasterRoster Visibility Props & Config Toggles", () => {
         showCanvas={false}
         showMap={false}
         onResetConfig={handleReset}
-      />
+      />,
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Canvas e mapa estão ocultos nas configurações.")).toBeInTheDocument();
+      expect(
+        screen.getByText("Canvas e mapa estão ocultos nas configurações."),
+      ).toBeInTheDocument();
     });
 
     expect(screen.queryByTestId("mock-infinite-canvas")).not.toBeInTheDocument();

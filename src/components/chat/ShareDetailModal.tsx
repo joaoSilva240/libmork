@@ -127,7 +127,7 @@ function GenericShareModal({
     <Modal
       isOpen
       onClose={onClose}
-      className="max-w-md w-full bg-secondary-card border border-secondary-border rounded-xl p-5"
+      className="mx-auto max-w-md w-full bg-secondary-card border border-secondary-border rounded-2xl p-5 shadow-2xl"
       aria-label="Detalhes do conteúdo compartilhado"
     >
       {payload.kind === "profile" && (
@@ -227,9 +227,7 @@ function GenericShareModal({
               {joinError}
             </p>
           )}
-          {joinSuccess && (
-            <p className="text-xs font-medium text-accent">{joinSuccess}</p>
-          )}
+          {joinSuccess && <p className="text-xs font-medium text-accent">{joinSuccess}</p>}
 
           <button
             type="button"

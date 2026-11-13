@@ -33,7 +33,7 @@ async function importSinglePf2eRace(def: Pf2eRaceDefinition, translateWithLLM: b
         const translated = await translateContentWithLLM(
           "race",
           payloadToTranslate,
-          `Você é um especialista em Pathfinder 2e (PF2e) e tradução para RPG de mesa. Traduza os nomes, termos, descrições, traços raciais e linhagens para Português do Brasil (pt-BR). Mantenha estritamente a mesma estrutura JSON.`
+          `Você é um especialista em Pathfinder 2e (PF2e) e tradução para RPG de mesa. Traduza os nomes, termos, descrições, traços raciais e linhagens para Português do Brasil (pt-BR). Mantenha estritamente a mesma estrutura JSON.`,
         );
 
         if (typeof translated.name === "string" && translated.name) {
@@ -46,23 +46,31 @@ async function importSinglePf2eRace(def: Pf2eRaceDefinition, translateWithLLM: b
           finalSize = translated.size;
         }
         if (Array.isArray(translated.languages)) {
-          finalLanguages = (translated.languages as unknown[])
-            .filter((l): l is string => typeof l === "string" && Boolean(l));
+          finalLanguages = (translated.languages as unknown[]).filter(
+            (l): l is string => typeof l === "string" && Boolean(l),
+          );
         }
         if (Array.isArray(translated.traits)) {
-          finalTraits = (translated.traits as Array<{ name?: string; description?: string }>).map((t, idx) => ({
-            name: t.name || def.traits[idx]?.name || "Traço Racial",
-            description: t.description ?? def.traits[idx]?.description ?? "",
-          }));
+          finalTraits = (translated.traits as Array<{ name?: string; description?: string }>).map(
+            (t, idx) => ({
+              name: t.name || def.traits[idx]?.name || "Traço Racial",
+              description: t.description ?? def.traits[idx]?.description ?? "",
+            }),
+          );
         }
         if (Array.isArray(translated.heritages)) {
-          finalHeritages = (translated.heritages as Array<{ name?: string; description?: string }>).map((h, idx) => ({
+          finalHeritages = (
+            translated.heritages as Array<{ name?: string; description?: string }>
+          ).map((h, idx) => ({
             name: h.name || def.heritages[idx]?.name || "Herança",
             description: h.description ?? def.heritages[idx]?.description ?? "",
           }));
         }
       } catch (err) {
-        logger.warn({ err, raceName: def.name }, "[importSinglePf2eRace] Falha na tradução via LLM, mantendo dados originais");
+        logger.warn(
+          { err, raceName: def.name },
+          "[importSinglePf2eRace] Falha na tradução via LLM, mantendo dados originais",
+        );
       }
     }
 
@@ -94,16 +102,13 @@ export async function POST(request: NextRequest) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     if (session.user.role !== "master") {
       return NextResponse.json(
         { success: false, error: "Apenas mestres podem importar conteúdo" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -119,7 +124,7 @@ export async function POST(request: NextRequest) {
     } else {
       return NextResponse.json(
         { success: false, error: "Nenhuma ancestralidade selecionada para importação" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -140,7 +145,7 @@ export async function POST(request: NextRequest) {
     logger.error({ err: error }, "Erro na rota de importação Pathfinder 2e");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

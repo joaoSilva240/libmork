@@ -22,7 +22,7 @@ describe("Discord OAuth State Management", () => {
     const state = createDiscordState("/");
     const [encoded] = state.split(".");
     const tampered = `${encoded}.invalid_signature`;
-    
+
     const validated = validateDiscordState(tampered);
     expect(validated).toBeNull();
   });
@@ -31,11 +31,11 @@ describe("Discord OAuth State Management", () => {
     const oldTimestamp = Date.now() - 11 * 60 * 1000;
     const payload = { nonce: "test", redirect: "/", issuedAt: oldTimestamp };
     const encoded = Buffer.from(JSON.stringify(payload)).toString("base64url");
-    
+
     const signature = createHmac("sha256", process.env.AUTH_SECRET!)
       .update(encoded)
       .digest("base64url");
-    
+
     const expiredState = `${encoded}.${signature}`;
     const validated = validateDiscordState(expiredState);
     expect(validated).toBeNull();
@@ -44,7 +44,7 @@ describe("Discord OAuth State Management", () => {
   it("rejects state when AUTH_SECRET is missing", () => {
     const state = createDiscordState("/");
     delete process.env.AUTH_SECRET;
-    
+
     const validated = validateDiscordState(state);
     expect(validated).toBeNull();
   });
@@ -108,7 +108,9 @@ describe("Discord Profile Validation", () => {
       verified: true,
     };
 
-    expect(() => validateDiscordProfile(profile as unknown as Parameters<typeof validateDiscordProfile>[0])).toThrow("discord_profile_invalid");
+    expect(() =>
+      validateDiscordProfile(profile as unknown as Parameters<typeof validateDiscordProfile>[0]),
+    ).toThrow("discord_profile_invalid");
   });
 
   it("normalizes email to lowercase and trims whitespace", () => {

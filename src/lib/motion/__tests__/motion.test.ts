@@ -48,7 +48,11 @@ describe("resolveMotion", () => {
   });
 
   it("reduz movimento quando o sistema pede e a opção está ativa", () => {
-    const prefs = { ...DEFAULT_MOTION_PREFERENCES, preset: "flip" as const, easing: "spring" as const };
+    const prefs = {
+      ...DEFAULT_MOTION_PREFERENCES,
+      preset: "flip" as const,
+      easing: "spring" as const,
+    };
     const reduced = resolveMotion(prefs, true);
     expect(reduced.mode).toBe("reduced");
     expect(reduced.enter).toEqual(getEnterOffsets("fade", "normal"));
@@ -61,7 +65,10 @@ describe("resolveMotion", () => {
 
   it("lista categorias desligadas", () => {
     const resolved = resolveMotion(
-      { ...DEFAULT_MOTION_PREFERENCES, categories: { ...DEFAULT_MOTION_PREFERENCES.categories, lists: false } },
+      {
+        ...DEFAULT_MOTION_PREFERENCES,
+        categories: { ...DEFAULT_MOTION_PREFERENCES.categories, lists: false },
+      },
       false,
     );
     expect(resolved.disabled).toEqual(["lists"]);
@@ -71,7 +78,10 @@ describe("resolveMotion", () => {
 describe("applyMotion", () => {
   it("define atributos e variáveis no elemento", () => {
     const root = document.createElement("html");
-    applyMotion(root, resolveMotion({ ...DEFAULT_MOTION_PREFERENCES, preset: "zoom", speed: 0.5 }, false));
+    applyMotion(
+      root,
+      resolveMotion({ ...DEFAULT_MOTION_PREFERENCES, preset: "zoom", speed: 0.5 }, false),
+    );
     expect(root.dataset.motion).toBe("full");
     expect(root.dataset.motionOff).toBe("");
     expect(root.style.getPropertyValue("--motion-factor")).toBe("2");
@@ -81,11 +91,20 @@ describe("applyMotion", () => {
   it("é refletido no documento", () => {
     applyMotion(
       document.documentElement,
-      resolveMotion({ ...DEFAULT_MOTION_PREFERENCES, categories: { ...DEFAULT_MOTION_PREFERENCES.categories, overlays: false } }, false),
+      resolveMotion(
+        {
+          ...DEFAULT_MOTION_PREFERENCES,
+          categories: { ...DEFAULT_MOTION_PREFERENCES.categories, overlays: false },
+        },
+        false,
+      ),
     );
     expect(isMotionCategoryEnabledInDocument("overlays")).toBe(false);
     expect(isMotionCategoryEnabledInDocument("pages")).toBe(true);
-    applyMotion(document.documentElement, resolveMotion({ ...DEFAULT_MOTION_PREFERENCES, enabled: false }, false));
+    applyMotion(
+      document.documentElement,
+      resolveMotion({ ...DEFAULT_MOTION_PREFERENCES, enabled: false }, false),
+    );
     expect(isMotionCategoryEnabledInDocument("pages")).toBe(false);
   });
 });

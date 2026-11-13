@@ -4,11 +4,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/session";
-import {
-  createHabitant,
-  getHabitants,
-  handleApiError,
-} from "@/lib/server/missing-service";
+import { createHabitant, getHabitants, handleApiError } from "@/lib/server/missing-service";
 
 type RouteContext = { params: Promise<{ id: string }> };
 

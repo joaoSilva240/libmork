@@ -4,15 +4,12 @@
 // Executado no CLIENTE para velocidade (D-43).
 // =============================================================================
 
-import {
-  ATTRIBUTE_BASE_VALUE,
-  ATTRIBUTE_FREE_POINTS,
-  ATTRIBUTES,
-} from "@/lib/utils/constants";
+import { ATTRIBUTE_BASE_VALUE, ATTRIBUTE_FREE_POINTS, ATTRIBUTES } from "@/lib/utils/constants";
 import type { Attribute } from "@/lib/utils/constants";
 
 /** Mapa de atributos do personagem; Sorte é opcional para personagens legados. */
-export type AttributeMap = Record<Exclude<Attribute, "sorte">, number> & Partial<Record<"sorte", number>>;
+export type AttributeMap = Record<Exclude<Attribute, "sorte">, number> &
+  Partial<Record<"sorte", number>>;
 
 type RaceAttributeBonusKey = Exclude<Attribute, "sorte">;
 export type RaceAttributeBonuses = Partial<Record<RaceAttributeBonusKey, number>>;
@@ -36,7 +33,9 @@ export type HeritageBonuses = {
   attributeBonuses: RaceAttributeBonuses;
 };
 
-export function normalizeAttributeMap(attributes: Partial<Record<Attribute, number>>): Record<Attribute, number> {
+export function normalizeAttributeMap(
+  attributes: Partial<Record<Attribute, number>>,
+): Record<Attribute, number> {
   return {
     forca: attributes.forca ?? ATTRIBUTE_BASE_VALUE,
     destreza: attributes.destreza ?? ATTRIBUTE_BASE_VALUE,
@@ -74,7 +73,7 @@ export function getActiveHeritageMovementSize(
     throw new Error("Heranças ativas não podem conter duplicatas");
   }
 
-  const available = Array.isArray(race.heritages) ? race.heritages as RaceHeritage[] : [];
+  const available = Array.isArray(race.heritages) ? (race.heritages as RaceHeritage[]) : [];
   const byName = new Map(available.map((heritage) => [heritage.name, heritage]));
   let speed = getValidSpeed(race.speed) ?? 0;
   let size = typeof race.size === "string" ? race.size : "";
@@ -108,7 +107,7 @@ export function getActiveHeritageBonuses(
     throw new Error("Heranças ativas não podem conter duplicatas");
   }
 
-  const available = Array.isArray(heritages) ? heritages as RaceHeritage[] : [];
+  const available = Array.isArray(heritages) ? (heritages as RaceHeritage[]) : [];
   const byName = new Map(available.map((heritage) => [heritage.name, heritage]));
   const attributeBonuses: RaceAttributeBonuses = {};
   let hitPointsBonus = 0;
@@ -140,7 +139,8 @@ export function transitionRaceHeritageAttributes(
   const updatedAttributes: AttributeMap = { ...attributes };
 
   for (const attribute of HERITAGE_ATTRIBUTES) {
-    updatedAttributes[attribute] += (nextBonuses[attribute] ?? 0) - (previousBonuses[attribute] ?? 0);
+    updatedAttributes[attribute] +=
+      (nextBonuses[attribute] ?? 0) - (previousBonuses[attribute] ?? 0);
   }
 
   return updatedAttributes;

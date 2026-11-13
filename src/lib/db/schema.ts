@@ -123,6 +123,7 @@ export const characters = pgTable(
     activeHeritages: jsonb("active_heritages").$type<string[]>().notNull().default([]),
     name: varchar("name", { length: 100 }).notNull(),
     imageUrl: varchar("image_url", { length: 500 }),
+    description: text("description"),
     hitPointsMax: integer("hit_points_max").notNull().default(15),
     hitPointsCurrent: integer("hit_points_current").notNull().default(15),
     manaPointsMax: integer("mana_points_max").notNull().default(5),
@@ -172,6 +173,10 @@ export const campaigns = pgTable("campaigns", {
   }),
   /** Cena ativa do escudo do mestre (issue #86). null = modo Livre. */
   activeScene: varchar("active_scene", { length: 20 }),
+  oneShot: boolean("one_shot"),
+  maxPlayers: integer("max_players"),
+  dice3dPlayersEnabled: boolean("dice3d_players_enabled").notNull().default(true),
+  dice3dMasterEnabled: boolean("dice3d_master_enabled").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -357,6 +362,12 @@ export const npcPins = pgTable(
     contentId: uuid("content_id"),
     label: varchar("label", { length: 100 }).notNull(),
     rollExpression: varchar("roll_expression", { length: 200 }),
+    // Dano configurado (issue #90): ataque e dano separados; roll_expression
+    // permanece como campo legado para compatibilidade.
+    attackExpression: varchar("attack_expression", { length: 200 }),
+    damageExpression: varchar("damage_expression", { length: 200 }),
+    damageType: varchar("damage_type", { length: 30 }),
+    criticalRange: integer("critical_range"),
     manaCost: integer("mana_cost"),
     circle: integer("circle"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -516,6 +527,27 @@ export const libraryDocuments = pgTable(
     index("idx_library_doc_campaign").on(table.campaignId),
     index("idx_library_doc_category").on(table.category),
   ],
+);
+
+/**
+ * ATTACK — Ataque da Biblioteca Global (issue #90 follow-up).
+ * Ataques configurados ficam junto dos dados da biblioteca e podem ser
+ * vinculados a NPCs via npc_pins.content_id.
+ */
+export const attacks = pgTable(
+  "attacks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    campaignId: uuid("campaign_id").references(() => campaigns.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 100 }).notNull(),
+    description: text("description"),
+    attackExpression: varchar("attack_expression", { length: 200 }),
+    damageExpression: varchar("damage_expression", { length: 200 }),
+    damageType: varchar("damage_type", { length: 30 }),
+    criticalRange: integer("critical_range"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [index("idx_attack_campaign").on(table.campaignId)],
 );
 
 /**
@@ -693,6 +725,7 @@ export const publicShareLinks = pgTable(
       .notNull()
       .references(() => characters.id, { onDelete: "cascade" }),
     token: varchar("token", { length: 255 }).notNull().unique(),
+    kind: varchar("kind", { length: 10 }).notNull().default("view"), // view | acquire
     revoked: boolean("revoked").notNull().default(false),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
@@ -1550,6 +1583,98 @@ export const campaignChatPollVotesRelations = relations(campaignChatPollVotes, (
   user: one(users, {
     fields: [campaignChatPollVotes.userId],
     references: [users.id],
+  }),
+}));
+
+// =============================================================================
+// SESSÕES AGENDADAS E CANDIDATURAS (Issue #63)
+// =============================================================================
+
+/**
+ * CAMPAIGN_SESSIONS — Sessão agendada pelo mestre (Issue #63).
+ * proposedStart/proposedEnd delimitam o período proposto (inclusivo);
+ * scheduledAt é a data/hora final batida pelo mestre.
+ */
+export const campaignSessions = pgTable(
+  "campaign_sessions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    campaignId: uuid("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" }),
+    masterId: uuid("master_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    description: text("description").notNull(),
+    proposedStart: timestamp("proposed_start", { withTimezone: true }).notNull(),
+    proposedEnd: timestamp("proposed_end", { withTimezone: true }).notNull(),
+    scheduledAt: timestamp("scheduled_at", { withTimezone: true }),
+    durationMinutes: integer("duration_minutes").notNull().default(240),
+    xpReward: integer("xp_reward"),
+    sessionType: varchar("session_type", { length: 20 }).notNull(), // "one_shot" | "continuing"
+    maxSlots: integer("max_slots").notNull(),
+    status: varchar("status", { length: 20 }).notNull().default("proposed"), // proposed | confirmed | cancelled
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_sessions_campaign_status").on(table.campaignId, table.status),
+    index("idx_sessions_feed").on(table.status, table.proposedStart),
+    index("idx_sessions_master").on(table.masterId),
+  ],
+);
+
+/**
+ * SESSION_CANDIDATES — Candidatura de jogador a uma sessão com disponibilidade.
+ */
+export const sessionCandidates = pgTable(
+  "session_candidates",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => campaignSessions.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    characterId: uuid("character_id").references(() => characters.id, { onDelete: "set null" }),
+    availableDays: jsonb("available_days").notNull().default([]), // string[] 'yyyy-MM-dd'
+    preferredStart: varchar("preferred_start", { length: 5 }), // 'HH:mm'
+    preferredEnd: varchar("preferred_end", { length: 5 }), // 'HH:mm'
+    allDay: boolean("all_day").notNull().default(true),
+    status: varchar("status", { length: 20 }).notNull().default("interested"), // interested | accepted | rejected
+    appliedAt: timestamp("applied_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_candidates_session_user").on(table.sessionId, table.userId),
+    index("idx_candidates_user_status").on(table.userId, table.status),
+  ],
+);
+
+export const campaignSessionsRelations = relations(campaignSessions, ({ one, many }) => ({
+  campaign: one(campaigns, {
+    fields: [campaignSessions.campaignId],
+    references: [campaigns.id],
+  }),
+  master: one(users, {
+    fields: [campaignSessions.masterId],
+    references: [users.id],
+  }),
+  candidates: many(sessionCandidates),
+}));
+
+export const sessionCandidatesRelations = relations(sessionCandidates, ({ one }) => ({
+  session: one(campaignSessions, {
+    fields: [sessionCandidates.sessionId],
+    references: [campaignSessions.id],
+  }),
+  user: one(users, {
+    fields: [sessionCandidates.userId],
+    references: [users.id],
+  }),
+  character: one(characters, {
+    fields: [sessionCandidates.characterId],
+    references: [characters.id],
   }),
 }));
 

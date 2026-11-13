@@ -80,7 +80,11 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Erro interno do servidor";
-    if (message.includes("não é membro") || message.includes("não tem permissão") || message.includes("Apenas o Mestre")) {
+    if (
+      message.includes("não é membro") ||
+      message.includes("não tem permissão") ||
+      message.includes("Apenas o Mestre")
+    ) {
       return NextResponse.json({ success: false, error: message }, { status: 403 });
     }
     if (

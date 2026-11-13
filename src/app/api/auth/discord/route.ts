@@ -13,9 +13,7 @@ export async function GET(request: NextRequest) {
   const safeRedirect = getSafeRedirect(redirectParam, request.url) || "/";
   const state = createDiscordState(safeRedirect);
 
-  const callbackUrl =
-    process.env.DISCORD_CALLBACK_URL ||
-    `${origin}/api/auth/discord/callback`;
+  const callbackUrl = process.env.DISCORD_CALLBACK_URL || `${origin}/api/auth/discord/callback`;
 
   const discordUrl = new URL("https://discord.com/api/oauth2/authorize");
   discordUrl.searchParams.set("client_id", clientId);

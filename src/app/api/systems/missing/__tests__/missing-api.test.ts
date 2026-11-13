@@ -151,7 +151,8 @@ vi.mock("@/lib/db", () => {
             const remaining = list.filter((item) => !matchCondition(item, cond));
             if (tableName === "campaigns") store.campaigns = remaining;
             else if (tableName === "campaign_invites") store.campaignInvites = remaining;
-            else if (tableName === "missing_campaign_states") store.missingCampaignStates = remaining;
+            else if (tableName === "missing_campaign_states")
+              store.missingCampaignStates = remaining;
             else if (tableName === "missing_habitants") store.missingHabitants = remaining;
             else if (tableName === "missing_action_ledger") store.missingActionLedger = remaining;
             return Promise.resolve(remaining);
@@ -165,10 +166,7 @@ vi.mock("@/lib/db", () => {
 // Import route handlers
 import { GET as getState } from "../campaigns/[id]/state/route";
 import { GET as getHabitants, POST as postHabitants } from "../campaigns/[id]/habitants/route";
-import {
-  GET as getUserHabitantsRoute,
-  POST as postUserHabitantsRoute,
-} from "../habitants/route";
+import { GET as getUserHabitantsRoute, POST as postUserHabitantsRoute } from "../habitants/route";
 import {
   GET as getPersonalHabitantById,
   PATCH as patchPersonalHabitant,
@@ -230,7 +228,9 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
     it("deve retornar 401 para requisições não autenticadas", async () => {
       mockRequireAuth.mockResolvedValue(null);
 
-      const req = new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/state`);
+      const req = new NextRequest(
+        `http://localhost/api/systems/missing/campaigns/${campaignId}/state`,
+      );
       const res = await getState(req, { params: Promise.resolve({ id: campaignId }) });
       const json = await res.json();
 
@@ -244,7 +244,9 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
         user: { id: "stranger-user", email: "intruder@carlton.com" },
       });
 
-      const req = new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/state`);
+      const req = new NextRequest(
+        `http://localhost/api/systems/missing/campaigns/${campaignId}/state`,
+      );
       const res = await getState(req, { params: Promise.resolve({ id: campaignId }) });
       const json = await res.json();
 
@@ -303,11 +305,7 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
               "Nunca sai sem seu caderno de campo",
               "Perdeu a mãe jovem demais",
             ],
-            equipments: [
-              { name: "Caderno" },
-              { name: "Chaves" },
-              { name: "Rolo de Filme" },
-            ],
+            equipments: [{ name: "Caderno" }, { name: "Chaves" }, { name: "Rolo de Filme" }],
           }),
         },
       );
@@ -322,55 +320,69 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
       // P4: Entregue ao habitante 2
       mockRequireAuth.mockResolvedValue({ user: masterUser });
 
-      const reqP1 = new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/clues`, {
-        method: "POST",
-        body: JSON.stringify({
-          title: "Foto Estranha",
-          description: "Um vulto perto do reator",
-          isFalseClue: false,
-          deliveredToHabitantId: habitant1Id,
-        }),
-      });
+      const reqP1 = new NextRequest(
+        `http://localhost/api/systems/missing/campaigns/${campaignId}/clues`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            title: "Foto Estranha",
+            description: "Um vulto perto do reator",
+            isFalseClue: false,
+            deliveredToHabitantId: habitant1Id,
+          }),
+        },
+      );
       await createClue(reqP1, { params: Promise.resolve({ id: campaignId }) });
 
-      const reqP2 = new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/clues`, {
-        method: "POST",
-        body: JSON.stringify({
-          title: "Bilhete Forjado",
-          description: "Dizendo que a irmã viajou voluntariamente",
-          isFalseClue: true, // PISTA FALSA!
-          deliveredToHabitantId: habitant1Id,
-        }),
-      });
+      const reqP2 = new NextRequest(
+        `http://localhost/api/systems/missing/campaigns/${campaignId}/clues`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            title: "Bilhete Forjado",
+            description: "Dizendo que a irmã viajou voluntariamente",
+            isFalseClue: true, // PISTA FALSA!
+            deliveredToHabitantId: habitant1Id,
+          }),
+        },
+      );
       await createClue(reqP2, { params: Promise.resolve({ id: campaignId }) });
 
-      const reqP3 = new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/clues`, {
-        method: "POST",
-        body: JSON.stringify({
-          title: "Dossiê Secreto do Mestre",
-          description: "Segredo de estado da usina",
-          isFalseClue: false,
-          deliveredToHabitantId: null, // Pista privada da Voz
-        }),
-      });
+      const reqP3 = new NextRequest(
+        `http://localhost/api/systems/missing/campaigns/${campaignId}/clues`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            title: "Dossiê Secreto do Mestre",
+            description: "Segredo de estado da usina",
+            isFalseClue: false,
+            deliveredToHabitantId: null, // Pista privada da Voz
+          }),
+        },
+      );
       await createClue(reqP3, { params: Promise.resolve({ id: campaignId }) });
 
-      const reqP4 = new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/clues`, {
-        method: "POST",
-        body: JSON.stringify({
-          title: "Amostra da Água",
-          description: "Resíduos fosforescentes",
-          isFalseClue: false,
-          deliveredToHabitantId: habitant2Id,
-        }),
-      });
+      const reqP4 = new NextRequest(
+        `http://localhost/api/systems/missing/campaigns/${campaignId}/clues`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            title: "Amostra da Água",
+            description: "Resíduos fosforescentes",
+            isFalseClue: false,
+            deliveredToHabitantId: habitant2Id,
+          }),
+        },
+      );
       await createClue(reqP4, { params: Promise.resolve({ id: campaignId }) });
     });
 
     it("A Voz deve enxergar todas as pistas com o status real de isFalseClue", async () => {
       mockRequireAuth.mockResolvedValue({ user: masterUser });
 
-      const req = new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/state`);
+      const req = new NextRequest(
+        `http://localhost/api/systems/missing/campaigns/${campaignId}/state`,
+      );
       const res = await getState(req, { params: Promise.resolve({ id: campaignId }) });
       const json = await res.json();
 
@@ -382,7 +394,9 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
       expect(falseClue).toBeDefined();
       expect(falseClue.isFalseClue).toBe(true);
 
-      const privateClue = json.data.cluesBank.find((c: any) => c.title === "Dossiê Secreto do Mestre");
+      const privateClue = json.data.cluesBank.find(
+        (c: any) => c.title === "Dossiê Secreto do Mestre",
+      );
       expect(privateClue).toBeDefined();
       expect(privateClue.deliveredToHabitantId).toBeNull();
     });
@@ -390,7 +404,9 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
     it("O Redator deve receber APENAS suas pistas entregues, com isFalseClue mascarado como false", async () => {
       mockRequireAuth.mockResolvedValue({ user: writerUser1 });
 
-      const req = new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/state`);
+      const req = new NextRequest(
+        `http://localhost/api/systems/missing/campaigns/${campaignId}/state`,
+      );
       const res = await getState(req, { params: Promise.resolve({ id: campaignId }) });
       const json = await res.json();
 
@@ -401,7 +417,9 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
       expect(json.data.cluesBank.length).toBe(2);
 
       // Pista não distribuída NUNCA pode ser enviada
-      const hasPrivate = json.data.cluesBank.some((c: any) => c.title === "Dossiê Secreto do Mestre");
+      const hasPrivate = json.data.cluesBank.some(
+        (c: any) => c.title === "Dossiê Secreto do Mestre",
+      );
       expect(hasPrivate).toBe(false);
 
       // Pista de outro habitante NUNCA pode ser enviada
@@ -417,14 +435,19 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
     it("Redatores não podem criar nem entregar pistas (Apenas a Voz pode)", async () => {
       mockRequireAuth.mockResolvedValue({ user: writerUser1 });
 
-      const reqCreate = new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/clues`, {
-        method: "POST",
-        body: JSON.stringify({
-          title: "Tentativa do Redator",
-          description: "Criando pista ilegalmente",
-        }),
+      const reqCreate = new NextRequest(
+        `http://localhost/api/systems/missing/campaigns/${campaignId}/clues`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            title: "Tentativa do Redator",
+            description: "Criando pista ilegalmente",
+          }),
+        },
+      );
+      const resCreate = await createClue(reqCreate, {
+        params: Promise.resolve({ id: campaignId }),
       });
-      const resCreate = await createClue(reqCreate, { params: Promise.resolve({ id: campaignId }) });
       expect(resCreate.status).toBe(403);
       const jsonCreate = await resCreate.json();
       expect(jsonCreate.error).toContain("Apenas a Voz pode criar pistas");
@@ -445,10 +468,14 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
     it("A Voz pode entregar pista privada ao Habitante, tornando-a visível ao Redator de forma mascarada", async () => {
       // Pega a pista privada criada no beforeEach
       mockRequireAuth.mockResolvedValue({ user: masterUser });
-      const stateReq = new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/state`);
+      const stateReq = new NextRequest(
+        `http://localhost/api/systems/missing/campaigns/${campaignId}/state`,
+      );
       const stateRes = await getState(stateReq, { params: Promise.resolve({ id: campaignId }) });
       const stateData = (await stateRes.json()).data;
-      const privateClue = stateData.cluesBank.find((c: any) => c.title === "Dossiê Secreto do Mestre");
+      const privateClue = stateData.cluesBank.find(
+        (c: any) => c.title === "Dossiê Secreto do Mestre",
+      );
       expect(privateClue).toBeDefined();
 
       // Voz entrega a pista ao habitante 1
@@ -466,8 +493,12 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
 
       // Agora Redator 1 consulta o estado e deve enxergar a nova pista entregue!
       mockRequireAuth.mockResolvedValue({ user: writerUser1 });
-      const writerStateReq = new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/state`);
-      const writerStateRes = await getState(writerStateReq, { params: Promise.resolve({ id: campaignId }) });
+      const writerStateReq = new NextRequest(
+        `http://localhost/api/systems/missing/campaigns/${campaignId}/state`,
+      );
+      const writerStateRes = await getState(writerStateReq, {
+        params: Promise.resolve({ id: campaignId }),
+      });
       const writerStateData = (await writerStateRes.json()).data;
 
       const receivedClue = writerStateData.cluesBank.find((c: any) => c.id === privateClue.id);
@@ -494,7 +525,9 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
 
       // Voz consulta ledger -> enxerga o evento
       mockRequireAuth.mockResolvedValue({ user: masterUser });
-      const voiceReq = new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/ledger`);
+      const voiceReq = new NextRequest(
+        `http://localhost/api/systems/missing/campaigns/${campaignId}/ledger`,
+      );
       const voiceRes = await getLedger(voiceReq, { params: Promise.resolve({ id: campaignId }) });
       const voiceJson = await voiceRes.json();
       const voiceEvent = voiceJson.data.find((e: any) => e.id === "event-secret");
@@ -503,7 +536,9 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
 
       // Redator consulta ledger -> isFalseClue DEVE ser omitido / removido
       mockRequireAuth.mockResolvedValue({ user: writerUser1 });
-      const writerReq = new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/ledger`);
+      const writerReq = new NextRequest(
+        `http://localhost/api/systems/missing/campaigns/${campaignId}/ledger`,
+      );
       const writerRes = await getLedger(writerReq, { params: Promise.resolve({ id: campaignId }) });
       const writerJson = await writerRes.json();
       const writerEvent = writerJson.data.find((e: any) => e.id === "event-secret");
@@ -513,7 +548,9 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
 
     it("deve listar todos os habitantes da campanha via GET /habitants", async () => {
       mockRequireAuth.mockResolvedValue({ user: writerUser1 });
-      const req = new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/habitants`);
+      const req = new NextRequest(
+        `http://localhost/api/systems/missing/campaigns/${campaignId}/habitants`,
+      );
       const res = await getHabitants(req, { params: Promise.resolve({ id: campaignId }) });
       const json = await res.json();
 
@@ -544,11 +581,7 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
           body: JSON.stringify({
             name: "Arthur Pendelton",
             lines: ["Memória 1", "Memória 2", "Memória 3", "Memória 4", "Memória 5"],
-            equipments: [
-              { name: "Lanterna" },
-              { name: "Revólver" },
-              { name: "Caderno" },
-            ],
+            equipments: [{ name: "Lanterna" }, { name: "Revólver" }, { name: "Caderno" }],
           }),
         },
       );
@@ -620,7 +653,9 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
           body: JSON.stringify({ lineId: line1Id }),
         },
       );
-      const res2 = await eraseLine(req2, { params: Promise.resolve({ id: campaignId, habitantId }) });
+      const res2 = await eraseLine(req2, {
+        params: Promise.resolve({ id: campaignId, habitantId }),
+      });
       const json2 = await res2.json();
 
       expect(res2.status).toBe(400);
@@ -730,14 +765,17 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
     it("teste comum padrão sem forçar retorna resultado com cálculo de rasuras", async () => {
       mockRequireAuth.mockResolvedValue({ user: writerUser1 });
 
-      const req = new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/rolls`, {
-        method: "POST",
-        body: JSON.stringify({
-          habitantId,
-          type: "common",
-          dice: [5], // Ganho
-        }),
-      });
+      const req = new NextRequest(
+        `http://localhost/api/systems/missing/campaigns/${campaignId}/rolls`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            habitantId,
+            type: "common",
+            dice: [5], // Ganho
+          }),
+        },
+      );
 
       const res = await executeRoll(req, { params: Promise.resolve({ id: campaignId }) });
       const json = await res.json();
@@ -751,17 +789,20 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
     it("teste forçado com resultado Ganho preserva o equipamento", async () => {
       mockRequireAuth.mockResolvedValue({ user: writerUser1 });
 
-      const req = new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/rolls`, {
-        method: "POST",
-        body: JSON.stringify({
-          habitantId,
-          type: "common",
-          dice: [2], // original foi perda
-          forced: true,
-          equipmentId: eq1Id,
-          forcedDie: 6, // forçado resultou em ganho (6)
-        }),
-      });
+      const req = new NextRequest(
+        `http://localhost/api/systems/missing/campaigns/${campaignId}/rolls`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            habitantId,
+            type: "common",
+            dice: [2], // original foi perda
+            forced: true,
+            equipmentId: eq1Id,
+            forcedDie: 6, // forçado resultou em ganho (6)
+          }),
+        },
+      );
 
       const res = await executeRoll(req, { params: Promise.resolve({ id: campaignId }) });
       const json = await res.json();
@@ -777,17 +818,20 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
       mockRequireAuth.mockResolvedValue({ user: writerUser1 });
 
       // Força teste com dado forçado baixo (1 = Perda)
-      const req = new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/rolls`, {
-        method: "POST",
-        body: JSON.stringify({
-          habitantId,
-          type: "common",
-          dice: [2],
-          forced: true,
-          equipmentId: eq1Id,
-          forcedDie: 1, // forçado resultou em perda
-        }),
-      });
+      const req = new NextRequest(
+        `http://localhost/api/systems/missing/campaigns/${campaignId}/rolls`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            habitantId,
+            type: "common",
+            dice: [2],
+            forced: true,
+            equipmentId: eq1Id,
+            forcedDie: 1, // forçado resultou em perda
+          }),
+        },
+      );
 
       const res = await executeRoll(req, { params: Promise.resolve({ id: campaignId }) });
       const json = await res.json();
@@ -798,23 +842,28 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
       expect(json.data.habitant.equipments[0].status).toBe("lost");
 
       // Tenta forçar OUTRO teste com o mesmo equipamento agora perdido
-      const req2 = new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/rolls`, {
-        method: "POST",
-        body: JSON.stringify({
-          habitantId,
-          type: "common",
-          dice: [2],
-          forced: true,
-          equipmentId: eq1Id,
-          forcedDie: 5,
-        }),
-      });
+      const req2 = new NextRequest(
+        `http://localhost/api/systems/missing/campaigns/${campaignId}/rolls`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            habitantId,
+            type: "common",
+            dice: [2],
+            forced: true,
+            equipmentId: eq1Id,
+            forcedDie: 5,
+          }),
+        },
+      );
 
       const res2 = await executeRoll(req2, { params: Promise.resolve({ id: campaignId }) });
       const json2 = await res2.json();
 
       expect(res2.status).toBe(400);
-      expect(json2.error).toContain("Não é possível forçar o teste com um equipamento inativo ou perdido");
+      expect(json2.error).toContain(
+        "Não é possível forçar o teste com um equipamento inativo ou perdido",
+      );
     });
   });
 
@@ -825,16 +874,19 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
     it("deve rejeitar com status 400 tentativa de configurar soma de perigo > 3", async () => {
       mockRequireAuth.mockResolvedValue({ user: masterUser });
 
-      const req = new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/scenes`, {
-        method: "POST",
-        body: JSON.stringify({
-          sceneTitle: "Nevoeiro Sobrenatural",
-          threats: [
-            { name: "Monstro das Sombras", dangerLevel: 2 },
-            { name: "Incêndio na Sala de Controle", dangerLevel: 2 }, // Total = 4 (> 3)
-          ],
-        }),
-      });
+      const req = new NextRequest(
+        `http://localhost/api/systems/missing/campaigns/${campaignId}/scenes`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            sceneTitle: "Nevoeiro Sobrenatural",
+            threats: [
+              { name: "Monstro das Sombras", dangerLevel: 2 },
+              { name: "Incêndio na Sala de Controle", dangerLevel: 2 }, // Total = 4 (> 3)
+            ],
+          }),
+        },
+      );
 
       const res = await updateScenes(req, { params: Promise.resolve({ id: campaignId }) });
       const json = await res.json();
@@ -846,16 +898,19 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
     it("deve permitir configurar ameaças com soma de perigo <= 3", async () => {
       mockRequireAuth.mockResolvedValue({ user: masterUser });
 
-      const req = new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/scenes`, {
-        method: "POST",
-        body: JSON.stringify({
-          sceneTitle: "Área de Contenção",
-          threats: [
-            { name: "Vazamento Radioativo", dangerLevel: 2 },
-            { name: "Porta Emperrada", dangerLevel: 1 }, // Total = 3 (Válido)
-          ],
-        }),
-      });
+      const req = new NextRequest(
+        `http://localhost/api/systems/missing/campaigns/${campaignId}/scenes`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            sceneTitle: "Área de Contenção",
+            threats: [
+              { name: "Vazamento Radioativo", dangerLevel: 2 },
+              { name: "Porta Emperrada", dangerLevel: 1 }, // Total = 3 (Válido)
+            ],
+          }),
+        },
+      );
 
       const res = await updateScenes(req, { params: Promise.resolve({ id: campaignId }) });
       const json = await res.json();
@@ -868,13 +923,16 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
     it("deve impedir Redatores de alterar as ameaças da cena (status 403)", async () => {
       mockRequireAuth.mockResolvedValue({ user: writerUser1 });
 
-      const req = new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/scenes`, {
-        method: "POST",
-        body: JSON.stringify({
-          sceneTitle: "Tentativa de Cena",
-          threats: [{ name: "Ameaça", dangerLevel: 1 }],
-        }),
-      });
+      const req = new NextRequest(
+        `http://localhost/api/systems/missing/campaigns/${campaignId}/scenes`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            sceneTitle: "Tentativa de Cena",
+            threats: [{ name: "Ameaça", dangerLevel: 1 }],
+          }),
+        },
+      );
 
       const res = await updateScenes(req, { params: Promise.resolve({ id: campaignId }) });
       expect(res.status).toBe(403);
@@ -901,14 +959,17 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
       const createdIds: string[] = [];
 
       for (const title of clues) {
-        const req = new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/clues`, {
-          method: "POST",
-          body: JSON.stringify({
-            title,
-            description: `Descrição da pista ${title}`,
-            isFalseClue: false,
-          }),
-        });
+        const req = new NextRequest(
+          `http://localhost/api/systems/missing/campaigns/${campaignId}/clues`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              title,
+              description: `Descrição da pista ${title}`,
+              isFalseClue: false,
+            }),
+          },
+        );
         const res = await createClue(req, { params: Promise.resolve({ id: campaignId }) });
         const json = await res.json();
         createdIds.push(json.data.id);
@@ -968,26 +1029,39 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
 
       // 1. Completa estágio 1 adicionando 'perspective'
       await addConnection(
-        new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/investigation/connections`, {
-          method: "POST",
-          body: JSON.stringify({ sourceClueId: clue1Id, targetClueId: clue2Id, type: "cause" }),
-        }),
+        new NextRequest(
+          `http://localhost/api/systems/missing/campaigns/${campaignId}/investigation/connections`,
+          {
+            method: "POST",
+            body: JSON.stringify({ sourceClueId: clue1Id, targetClueId: clue2Id, type: "cause" }),
+          },
+        ),
         { params: Promise.resolve({ id: campaignId }) },
       );
 
       await addConnection(
-        new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/investigation/connections`, {
-          method: "POST",
-          body: JSON.stringify({ sourceClueId: clue2Id, targetClueId: clue3Id, type: "origin" }),
-        }),
+        new NextRequest(
+          `http://localhost/api/systems/missing/campaigns/${campaignId}/investigation/connections`,
+          {
+            method: "POST",
+            body: JSON.stringify({ sourceClueId: clue2Id, targetClueId: clue3Id, type: "origin" }),
+          },
+        ),
         { params: Promise.resolve({ id: campaignId }) },
       );
 
       await addConnection(
-        new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/investigation/connections`, {
-          method: "POST",
-          body: JSON.stringify({ sourceClueId: clue3Id, targetClueId: clue4Id, type: "perspective" }),
-        }),
+        new NextRequest(
+          `http://localhost/api/systems/missing/campaigns/${campaignId}/investigation/connections`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              sourceClueId: clue3Id,
+              targetClueId: clue4Id,
+              type: "perspective",
+            }),
+          },
+        ),
         { params: Promise.resolve({ id: campaignId }) },
       );
 
@@ -999,7 +1073,9 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
           body: JSON.stringify({ chosenEffect: "answer_question" }),
         },
       );
-      const resEpi1 = await declareEpiphany(reqEpi1, { params: Promise.resolve({ id: campaignId }) });
+      const resEpi1 = await declareEpiphany(reqEpi1, {
+        params: Promise.resolve({ id: campaignId }),
+      });
       const jsonEpi1 = await resEpi1.json();
 
       expect(resEpi1.status).toBe(201);
@@ -1013,31 +1089,46 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
           body: JSON.stringify({ chosenEffect: "deliver_new_clue" }),
         },
       );
-      const resEpi2Fail = await declareEpiphany(reqEpi2Fail, { params: Promise.resolve({ id: campaignId }) });
+      const resEpi2Fail = await declareEpiphany(reqEpi2Fail, {
+        params: Promise.resolve({ id: campaignId }),
+      });
       expect(resEpi2Fail.status).toBe(400);
 
       // 3. Adiciona mais 1 de cada tipo para alcançar 2 de cada
       await addConnection(
-        new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/investigation/connections`, {
-          method: "POST",
-          body: JSON.stringify({ sourceClueId: clue4Id, targetClueId: clue5Id, type: "cause" }),
-        }),
+        new NextRequest(
+          `http://localhost/api/systems/missing/campaigns/${campaignId}/investigation/connections`,
+          {
+            method: "POST",
+            body: JSON.stringify({ sourceClueId: clue4Id, targetClueId: clue5Id, type: "cause" }),
+          },
+        ),
         { params: Promise.resolve({ id: campaignId }) },
       );
 
       await addConnection(
-        new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/investigation/connections`, {
-          method: "POST",
-          body: JSON.stringify({ sourceClueId: clue5Id, targetClueId: clue6Id, type: "origin" }),
-        }),
+        new NextRequest(
+          `http://localhost/api/systems/missing/campaigns/${campaignId}/investigation/connections`,
+          {
+            method: "POST",
+            body: JSON.stringify({ sourceClueId: clue5Id, targetClueId: clue6Id, type: "origin" }),
+          },
+        ),
         { params: Promise.resolve({ id: campaignId }) },
       );
 
       await addConnection(
-        new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/investigation/connections`, {
-          method: "POST",
-          body: JSON.stringify({ sourceClueId: clue6Id, targetClueId: clue7Id, type: "perspective" }),
-        }),
+        new NextRequest(
+          `http://localhost/api/systems/missing/campaigns/${campaignId}/investigation/connections`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              sourceClueId: clue6Id,
+              targetClueId: clue7Id,
+              type: "perspective",
+            }),
+          },
+        ),
         { params: Promise.resolve({ id: campaignId }) },
       );
 
@@ -1062,14 +1153,17 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
       // A Voz cria uma pista falsa e a conecta
       mockRequireAuth.mockResolvedValue({ user: masterUser });
 
-      const reqFalse = new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/clues`, {
-        method: "POST",
-        body: JSON.stringify({
-          title: "Pista Fraudulenta",
-          description: "Desinformação deliberada",
-          isFalseClue: true,
-        }),
-      });
+      const reqFalse = new NextRequest(
+        `http://localhost/api/systems/missing/campaigns/${campaignId}/clues`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            title: "Pista Fraudulenta",
+            description: "Desinformação deliberada",
+            isFalseClue: true,
+          }),
+        },
+      );
       const resFalse = await createClue(reqFalse, { params: Promise.resolve({ id: campaignId }) });
       const falseClueId = (await resFalse.json()).data.id;
 
@@ -1077,26 +1171,47 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
       mockRequireAuth.mockResolvedValue({ user: writerUser1 });
 
       await addConnection(
-        new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/investigation/connections`, {
-          method: "POST",
-          body: JSON.stringify({ sourceClueId: clue1Id, targetClueId: falseClueId, type: "cause" }),
-        }),
+        new NextRequest(
+          `http://localhost/api/systems/missing/campaigns/${campaignId}/investigation/connections`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              sourceClueId: clue1Id,
+              targetClueId: falseClueId,
+              type: "cause",
+            }),
+          },
+        ),
         { params: Promise.resolve({ id: campaignId }) },
       );
 
       await addConnection(
-        new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/investigation/connections`, {
-          method: "POST",
-          body: JSON.stringify({ sourceClueId: falseClueId, targetClueId: clue2Id, type: "origin" }),
-        }),
+        new NextRequest(
+          `http://localhost/api/systems/missing/campaigns/${campaignId}/investigation/connections`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              sourceClueId: falseClueId,
+              targetClueId: clue2Id,
+              type: "origin",
+            }),
+          },
+        ),
         { params: Promise.resolve({ id: campaignId }) },
       );
 
       await addConnection(
-        new NextRequest(`http://localhost/api/systems/missing/campaigns/${campaignId}/investigation/connections`, {
-          method: "POST",
-          body: JSON.stringify({ sourceClueId: clue2Id, targetClueId: clue3Id, type: "perspective" }),
-        }),
+        new NextRequest(
+          `http://localhost/api/systems/missing/campaigns/${campaignId}/investigation/connections`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              sourceClueId: clue2Id,
+              targetClueId: clue3Id,
+              type: "perspective",
+            }),
+          },
+        ),
         { params: Promise.resolve({ id: campaignId }) },
       );
 
@@ -1112,7 +1227,9 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
       const jsonEpi = await resEpi.json();
 
       expect(resEpi.status).toBe(400);
-      expect(jsonEpi.error).toContain("Uma das pistas presentes na teia é falsa! A epifania foi frustrada.");
+      expect(jsonEpi.error).toContain(
+        "Uma das pistas presentes na teia é falsa! A epifania foi frustrada.",
+      );
     });
   });
 
@@ -1250,7 +1367,9 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
     it("GET: retorna habitante pelo id para o proprietário com sucesso (status 200)", async () => {
       mockRequireAuth.mockResolvedValue({ user: writerUser1 });
 
-      const req = new NextRequest(`http://localhost/api/systems/missing/habitants/${personalHabitantId}`);
+      const req = new NextRequest(
+        `http://localhost/api/systems/missing/habitants/${personalHabitantId}`,
+      );
       const res = await getPersonalHabitantById(req, {
         params: Promise.resolve({ id: personalHabitantId }),
       });
@@ -1266,7 +1385,9 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
     it("GET: retorna 404 se outro usuário tentar acessar habitante que não é seu", async () => {
       mockRequireAuth.mockResolvedValue({ user: writerUser2 });
 
-      const req = new NextRequest(`http://localhost/api/systems/missing/habitants/${personalHabitantId}`);
+      const req = new NextRequest(
+        `http://localhost/api/systems/missing/habitants/${personalHabitantId}`,
+      );
       const res = await getPersonalHabitantById(req, {
         params: Promise.resolve({ id: personalHabitantId }),
       });
@@ -1281,18 +1402,21 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
       mockRequireAuth.mockResolvedValue({ user: writerUser1 });
 
       // Adiciona linha
-      const patchReq = new NextRequest(`http://localhost/api/systems/missing/habitants/${personalHabitantId}`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          addLine: "Memória 6: Encontrou um mapa rasgado",
-          equipment: {
-            slot: 1,
-            name: "Super Lanterna LED",
-            notes: "Foco brilhante",
-            status: "active",
-          },
-        }),
-      });
+      const patchReq = new NextRequest(
+        `http://localhost/api/systems/missing/habitants/${personalHabitantId}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            addLine: "Memória 6: Encontrou um mapa rasgado",
+            equipment: {
+              slot: 1,
+              name: "Super Lanterna LED",
+              notes: "Foco brilhante",
+              status: "active",
+            },
+          }),
+        },
+      );
 
       const patchRes = await patchPersonalHabitant(patchReq, {
         params: Promise.resolve({ id: personalHabitantId }),
@@ -1335,9 +1459,12 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
     it("DELETE: exclui habitante com sucesso pelo proprietário", async () => {
       mockRequireAuth.mockResolvedValue({ user: writerUser1 });
 
-      const req = new NextRequest(`http://localhost/api/systems/missing/habitants/${personalHabitantId}`, {
-        method: "DELETE",
-      });
+      const req = new NextRequest(
+        `http://localhost/api/systems/missing/habitants/${personalHabitantId}`,
+        {
+          method: "DELETE",
+        },
+      );
 
       const res = await deletePersonalHabitant(req, {
         params: Promise.resolve({ id: personalHabitantId }),
@@ -1348,7 +1475,9 @@ describe("MISSING — Edição ZERO: Suíte de Integração de APIs", () => {
       expect(json.success).toBe(true);
 
       // Tenta buscar novamente -> 404
-      const getReq = new NextRequest(`http://localhost/api/systems/missing/habitants/${personalHabitantId}`);
+      const getReq = new NextRequest(
+        `http://localhost/api/systems/missing/habitants/${personalHabitantId}`,
+      );
       const getRes = await getPersonalHabitantById(getReq, {
         params: Promise.resolve({ id: personalHabitantId }),
       });

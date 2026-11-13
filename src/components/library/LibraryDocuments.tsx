@@ -36,14 +36,18 @@ export function LibraryDocuments({
 
   // Estado inline do Tome
   const [internalIsTomeActive, setInternalIsTomeActive] = useState(false);
-  const isTomeOpen = externalIsTomeActive !== undefined ? externalIsTomeActive : internalIsTomeActive;
-  const toggleTome = useCallback((nextState?: boolean) => {
-    if (externalOnToggleTome) {
-      externalOnToggleTome(nextState);
-    } else {
-      setInternalIsTomeActive((prev) => (nextState !== undefined ? nextState : !prev));
-    }
-  }, [externalOnToggleTome]);
+  const isTomeOpen =
+    externalIsTomeActive !== undefined ? externalIsTomeActive : internalIsTomeActive;
+  const toggleTome = useCallback(
+    (nextState?: boolean) => {
+      if (externalOnToggleTome) {
+        externalOnToggleTome(nextState);
+      } else {
+        setInternalIsTomeActive((prev) => (nextState !== undefined ? nextState : !prev));
+      }
+    },
+    [externalOnToggleTome],
+  );
 
   // Modais
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -59,9 +63,10 @@ export function LibraryDocuments({
   });
 
   const virtualDocItems = docVirtualizer.getVirtualItems();
-  const docItemsToRender = virtualDocItems.length > 0
-    ? virtualDocItems.map((v) => ({ index: v.index, key: v.key }))
-    : documents.map((_, index) => ({ index, key: index }));
+  const docItemsToRender =
+    virtualDocItems.length > 0
+      ? virtualDocItems.map((v) => ({ index: v.index, key: v.key }))
+      : documents.map((_, index) => ({ index, key: index }));
 
   // Carregar dados de autenticação da sessão atual
   useEffect(() => {
@@ -179,7 +184,9 @@ export function LibraryDocuments({
         <div className="relative flex flex-col flex-1 w-full min-h-[600px] h-[calc(100vh-16rem)] rounded-2xl border border-purple-900/60 bg-gray-950 overflow-hidden shadow-xl">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-gray-900/90 shrink-0">
             <div className="flex items-center gap-3 overflow-hidden">
-              <span className="text-xl" aria-hidden="true">📖</span>
+              <span className="text-xl" aria-hidden="true">
+                📖
+              </span>
               <h2 className="text-sm sm:text-base font-bold text-white truncate">Tome</h2>
             </div>
             <Button
@@ -290,7 +297,10 @@ export function LibraryDocuments({
               </p>
             </div>
           ) : (
-            <div ref={parentRef} className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,160px),240px))] auto-rows-max justify-center content-start gap-4 overflow-y-auto max-h-[calc(100vh-18rem)] pr-1">
+            <div
+              ref={parentRef}
+              className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,160px),240px))] auto-rows-max justify-center content-start gap-4 overflow-y-auto max-h-[calc(100vh-18rem)] pr-1"
+            >
               {docItemsToRender.map(({ index, key }) => {
                 const doc = documents[index];
                 if (!doc) return null;
@@ -305,8 +315,7 @@ export function LibraryDocuments({
                   external: "bg-purple-950/80 text-purple-300 border-purple-800",
                 };
                 const badgeClass =
-                  providerColors[doc.provider] ||
-                  "bg-gray-800 text-gray-300 border-gray-700";
+                  providerColors[doc.provider] || "bg-gray-800 text-gray-300 border-gray-700";
 
                 return (
                   <div
@@ -333,7 +342,9 @@ export function LibraryDocuments({
                     <div className="absolute inset-0 z-20 flex flex-col justify-between p-3.5 bg-gradient-to-t from-black/95 via-gray-950/90 to-black/80 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-active:opacity-100 transition-all duration-200">
                       {/* Topo do Overlay: Badges */}
                       <div className="flex items-center justify-between gap-1">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border uppercase tracking-wide ${badgeClass}`}>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md border uppercase tracking-wide ${badgeClass}`}
+                        >
                           {doc.provider}
                         </span>
                         {doc.isOfficial ? (
@@ -360,7 +371,10 @@ export function LibraryDocuments({
                         {doc.tags && doc.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-2">
                             {doc.tags.slice(0, 3).map((tag, idx) => (
-                              <span key={idx} className="text-[9px] px-1.5 py-0.5 rounded bg-purple-950/60 border border-purple-800/50 text-purple-300">
+                              <span
+                                key={idx}
+                                className="text-[9px] px-1.5 py-0.5 rounded bg-purple-950/60 border border-purple-800/50 text-purple-300"
+                              >
                                 #{tag}
                               </span>
                             ))}
@@ -384,11 +398,14 @@ export function LibraryDocuments({
                               href={
                                 doc.provider === "smb"
                                   ? `/api/library/documents/stream?file=${encodeURIComponent(doc.externalUrl)}`
-                                  : doc.provider === "kavita" && doc.externalUrl.startsWith("/api/library/kavita/proxy")
-                                  ? doc.externalUrl
-                                  : doc.provider === "kavita" && !doc.externalUrl && doc.webReaderUrl
-                                  ? doc.webReaderUrl
-                                  : doc.externalUrl
+                                  : doc.provider === "kavita" &&
+                                      doc.externalUrl.startsWith("/api/library/kavita/proxy")
+                                    ? doc.externalUrl
+                                    : doc.provider === "kavita" &&
+                                        !doc.externalUrl &&
+                                        doc.webReaderUrl
+                                      ? doc.webReaderUrl
+                                      : doc.externalUrl
                               }
                               target="_blank"
                               rel="noopener noreferrer"

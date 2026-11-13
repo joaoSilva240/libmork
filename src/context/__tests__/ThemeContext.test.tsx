@@ -23,7 +23,11 @@ describe("ThemeContext — override de tema da campanha", () => {
     });
     act(() => {
       hook.result.current.setFonts("cinzel-decorative", "special-elite");
-      hook.result.current.updateUiDetails({ borderRadius: "none", iconScale: "lg", textScale: "lg" });
+      hook.result.current.updateUiDetails({
+        borderRadius: "none",
+        iconScale: "lg",
+        textScale: "lg",
+      });
     });
     return hook;
   }

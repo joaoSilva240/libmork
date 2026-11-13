@@ -31,10 +31,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { type } = await params;
@@ -43,7 +40,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     if (!parsed.success) {
       return NextResponse.json(
         { success: false, error: "Tipo de conteúdo inválido" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -60,10 +57,10 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       data: result,
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao listar conteúdo global');
+    logger.error({ err: error }, "Erro ao listar conteúdo global");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -77,16 +74,13 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     if (session.user.role !== "master") {
       return NextResponse.json(
         { success: false, error: "Apenas mestres podem gerenciar a biblioteca global" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -96,7 +90,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!parsed.success) {
       return NextResponse.json(
         { success: false, error: "Tipo de conteúdo inválido" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -111,7 +105,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
           error: "Dados inválidos",
           errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -127,13 +121,16 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         success: true,
         data: created,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
-    logger.error({ err: error, contentLabel: CONTENT_LABELS.skills }, "Erro ao criar conteúdo global");
+    logger.error(
+      { err: error, contentLabel: CONTENT_LABELS.skills },
+      "Erro ao criar conteúdo global",
+    );
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -21,10 +21,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -38,7 +35,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     if (!campaign) {
       return NextResponse.json(
         { success: false, error: "Campanha não encontrada" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -57,12 +54,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const activeInvites = await db
       .select()
       .from(campaignInvites)
-      .where(
-        and(
-          eq(campaignInvites.campaignId, id),
-          eq(campaignInvites.revoked, false)
-        )
-      );
+      .where(and(eq(campaignInvites.campaignId, id), eq(campaignInvites.revoked, false)));
 
     const invitesByUserId = new Map<string, (typeof activeInvites)[0]>();
     for (const inv of activeInvites) {
@@ -82,8 +74,8 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       .where(
         and(
           eq(characterCampaigns.campaignId, id),
-          eq(characterCampaigns.approvalStatus, "approved")
-        )
+          eq(characterCampaigns.approvalStatus, "approved"),
+        ),
       );
 
     const charCountByUserId = new Map<string, number>();
@@ -112,7 +104,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     logger.error({ err: error }, "Erro ao listar convites");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -126,10 +118,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -143,7 +132,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (!campaign) {
       return NextResponse.json(
         { success: false, error: "Campanha não encontrada" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -159,23 +148,19 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
     if (userId) {
       // Verificar se o usuário existe e não é o mestre
-      const [targetUser] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, userId))
-        .limit(1);
+      const [targetUser] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
 
       if (!targetUser) {
         return NextResponse.json(
           { success: false, error: "Jogador não encontrado" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
       if (targetUser.id === campaign.masterId) {
         return NextResponse.json(
           { success: false, error: "O mestre não pode ser convidado para a própria campanha" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -183,12 +168,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       const [existingInvite] = await db
         .select()
         .from(campaignInvites)
-        .where(
-          and(
-            eq(campaignInvites.campaignId, id),
-            eq(campaignInvites.userId, userId)
-          )
-        )
+        .where(and(eq(campaignInvites.campaignId, id), eq(campaignInvites.userId, userId)))
         .limit(1);
 
       if (existingInvite) {
@@ -227,7 +207,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
           success: true,
           data: newInvite,
         },
-        { status: 201 }
+        { status: 201 },
       );
     }
 
@@ -247,13 +227,13 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         success: true,
         data: newInvite,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     logger.error({ err: error }, "Erro ao gerar convite");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

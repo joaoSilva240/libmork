@@ -18,19 +18,15 @@ export function MissingHabitantCreateForm({
   const router = useRouter();
 
   const [name, setName] = useState("");
-  const [lines, setLines] = useState<string[]>([
-    "",
-    "",
-    "",
-    "",
-    "",
-  ]);
+  const [lines, setLines] = useState<string[]>(["", "", "", "", ""]);
   const [equipments, setEquipments] = useState<Array<{ name: string; notes: string }>>([
     { name: "", notes: "" },
     { name: "", notes: "" },
     { name: "", notes: "" },
   ]);
-  const [lastRolls, setLastRolls] = useState<Record<number, { total: number; d1: number; d2: number }>>({});
+  const [lastRolls, setLastRolls] = useState<
+    Record<number, { total: number; d1: number; d2: number }>
+  >({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -112,7 +108,9 @@ export function MissingHabitantCreateForm({
 
     for (let i = 0; i < 3; i++) {
       if (!equipments[i].name.trim()) {
-        setError(`O equipamento do Slot ${i + 1} precisa ter um nome (ou use o botão de rolar 2d6).`);
+        setError(
+          `O equipamento do Slot ${i + 1} precisa ter um nome (ou use o botão de rolar 2d6).`,
+        );
         return;
       }
     }
@@ -196,7 +194,8 @@ export function MissingHabitantCreateForm({
             Ficha de Habitante
           </h1>
           <p className="mt-1 text-xs text-zinc-400 max-w-2xl leading-relaxed">
-            Em MISSING, cada Habitante possui um Registro Pautado de memórias e fatos. À medida que o horror avança, essas linhas são rasuradas até o esquecimento total.
+            Em MISSING, cada Habitante possui um Registro Pautado de memórias e fatos. À medida que
+            o horror avança, essas linhas são rasuradas até o esquecimento total.
           </p>
         </div>
 
@@ -228,15 +227,15 @@ export function MissingHabitantCreateForm({
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <label className="block text-xs uppercase tracking-wider text-zinc-400 font-bold">
-                2. Registro Pautado de Memórias (5 a 10 Linhas) <span className="text-rose-500">*</span>
+                2. Registro Pautado de Memórias (5 a 10 Linhas){" "}
+                <span className="text-rose-500">*</span>
               </label>
               <p className="text-[11px] text-zinc-500">
-                Escreva 5 a 10 linhas sobre quem este habitante é, memórias da infância, vínculos ou tragédias.
+                Escreva 5 a 10 linhas sobre quem este habitante é, memórias da infância, vínculos ou
+                tragédias.
               </p>
             </div>
-            <span className="text-xs font-semibold text-zinc-400">
-              Linhas: {lines.length}/10
-            </span>
+            <span className="text-xs font-semibold text-zinc-400">Linhas: {lines.length}/10</span>
           </div>
 
           <div className="space-y-2.5 rounded-md border border-zinc-900 bg-zinc-950/80 p-3.5">
@@ -275,8 +274,7 @@ export function MissingHabitantCreateForm({
                   disabled={isLoading}
                   className="flex items-center gap-1.5 text-xs font-bold text-rose-400 hover:text-rose-300 transition-colors"
                 >
-                  <Plus className="h-3.5 w-3.5" />
-                  + Adicionar Linha ({lines.length + 1}/10)
+                  <Plus className="h-3.5 w-3.5" />+ Adicionar Linha ({lines.length + 1}/10)
                 </button>
               </div>
             )}
@@ -291,7 +289,8 @@ export function MissingHabitantCreateForm({
                 3. Equipamentos Iniciais (3 Slots) <span className="text-rose-500">*</span>
               </label>
               <p className="text-[11px] text-zinc-500">
-                Defina manualmente ou clique para rolar 2d6 na Tabela Oficial de Equipamentos de MISSING.
+                Defina manualmente ou clique para rolar 2d6 na Tabela Oficial de Equipamentos de
+                MISSING.
               </p>
             </div>
             <button

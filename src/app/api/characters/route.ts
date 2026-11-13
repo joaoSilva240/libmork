@@ -35,10 +35,7 @@ export async function GET() {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const userCharacters = await db
@@ -81,10 +78,10 @@ export async function GET() {
       data: userCharacters,
     });
   } catch (error) {
-    logger.error({ err: error }, 'Erro ao listar personagens');
+    logger.error({ err: error }, "Erro ao listar personagens");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -98,10 +95,7 @@ export async function POST(request: NextRequest) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -114,7 +108,7 @@ export async function POST(request: NextRequest) {
           error: "Dados inválidos",
           errors: validation.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -188,6 +182,7 @@ export async function POST(request: NextRequest) {
         .values({
           ownerId: session.user.id,
           name,
+          description: validation.data.description ?? null,
           classId: classId || null,
           raceId: raceId || null,
           activeHeritages,
@@ -223,7 +218,7 @@ export async function POST(request: NextRequest) {
             characterId: created.id,
             skillId,
             trained: true,
-          }))
+          })),
         );
       }
 
@@ -233,7 +228,7 @@ export async function POST(request: NextRequest) {
           spellsInput.map((spellId) => ({
             characterId: created.id,
             spellId,
-          }))
+          })),
         );
       }
 
@@ -244,7 +239,7 @@ export async function POST(request: NextRequest) {
             characterId: created.id,
             itemId: item.itemId,
             quantity: item.quantity,
-          }))
+          })),
         );
       }
 
@@ -255,11 +250,7 @@ export async function POST(request: NextRequest) {
           .from(rpgClasses)
           .where(eq(rpgClasses.id, classId));
 
-        if (
-          rpgClass &&
-          Array.isArray(rpgClass.initialItems) &&
-          rpgClass.initialItems.length > 0
-        ) {
+        if (rpgClass && Array.isArray(rpgClass.initialItems) && rpgClass.initialItems.length > 0) {
           const initialItemsList = rpgClass.initialItems as Array<{
             item_id?: string | null;
             name: string;
@@ -323,13 +314,13 @@ export async function POST(request: NextRequest) {
         success: true,
         data: newCharacter,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     logger.error({ err: error }, "Erro ao criar personagem");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

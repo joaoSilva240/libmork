@@ -19,21 +19,14 @@ import {
 import { requireAuth } from "@/lib/auth/session";
 import { eq, and, inArray } from "drizzle-orm";
 import { logger } from "@/lib/logger";
-import type {
-  HabitantLine,
-  MissingEquipment,
-  MissingHabitant,
-} from "@/lib/systems/missing/types";
+import type { HabitantLine, MissingEquipment, MissingHabitant } from "@/lib/systems/missing/types";
 
 export async function GET() {
   try {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     const invites = await db
@@ -41,12 +34,7 @@ export async function GET() {
         campaignId: campaignInvites.campaignId,
       })
       .from(campaignInvites)
-      .where(
-        and(
-          eq(campaignInvites.userId, session.user.id),
-          eq(campaignInvites.revoked, false)
-        )
-      );
+      .where(and(eq(campaignInvites.userId, session.user.id), eq(campaignInvites.revoked, false)));
 
     if (invites.length === 0) {
       return NextResponse.json({
@@ -67,6 +55,8 @@ export async function GET() {
         coverImageUrl: campaigns.coverImageUrl,
         worldMapUrl: campaigns.worldMapUrl,
         theme: campaigns.theme,
+        dice3dPlayersEnabled: campaigns.dice3dPlayersEnabled,
+        dice3dMasterEnabled: campaigns.dice3dMasterEnabled,
         masterId: users.id,
         masterDisplayName: users.displayName,
         masterEmail: users.email,
@@ -94,8 +84,8 @@ export async function GET() {
       .where(
         and(
           inArray(characterCampaigns.campaignId, campaignIds),
-          eq(characterCampaigns.approvalStatus, "approved")
-        )
+          eq(characterCampaigns.approvalStatus, "approved"),
+        ),
       );
 
     const charactersByCampaign = new Map<string, typeof allCampaignCharacters>();
@@ -127,12 +117,13 @@ export async function GET() {
       .filter((camp) => camp.rulesEngine === "missing_zero")
       .map((camp) => camp.id);
 
-    const allCampaignHabitants = missingCampaignIds.length > 0
-      ? await db
-          .select()
-          .from(missingHabitants)
-          .where(inArray(missingHabitants.campaignId, missingCampaignIds))
-      : [];
+    const allCampaignHabitants =
+      missingCampaignIds.length > 0
+        ? await db
+            .select()
+            .from(missingHabitants)
+            .where(inArray(missingHabitants.campaignId, missingCampaignIds))
+        : [];
 
     const habitantsByCampaign = new Map<string, MissingHabitant[]>();
 
@@ -177,7 +168,11 @@ export async function GET() {
           name: h.name,
           status: h.status as "active" | "missing",
           lines: (h.lines || []) as HabitantLine[],
-          equipments: (h.equipments || []) as [MissingEquipment, MissingEquipment, MissingEquipment],
+          equipments: (h.equipments || []) as [
+            MissingEquipment,
+            MissingEquipment,
+            MissingEquipment,
+          ],
           createdAt: h.createdAt.toISOString(),
           updatedAt: h.updatedAt.toISOString(),
         });
@@ -196,6 +191,8 @@ export async function GET() {
         coverImageUrl: camp.coverImageUrl,
         worldMapUrl: camp.worldMapUrl,
         theme: camp.theme,
+        dice3dPlayersEnabled: camp.dice3dPlayersEnabled,
+        dice3dMasterEnabled: camp.dice3dMasterEnabled,
         master: {
           id: camp.masterId,
           displayName: camp.masterDisplayName,
@@ -224,7 +221,7 @@ export async function GET() {
     logger.error({ err: error }, "Erro ao listar campanhas do jogador");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

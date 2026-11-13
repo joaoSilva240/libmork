@@ -13,11 +13,7 @@ import {
   Settings,
   Package,
 } from "lucide-react";
-import type {
-  ChatGroupSummary,
-  ChatMessageDetail,
-  SharePayload,
-} from "@/lib/server/chat-service";
+import type { ChatGroupSummary, ChatMessageDetail, SharePayload } from "@/lib/server/chat-service";
 import { ChatPollBubble } from "./ChatPollBubble";
 import { CreatePollModal } from "./CreatePollModal";
 import { SharedContentCard } from "./SharedContentCard";
@@ -43,8 +39,7 @@ type LibraryMentionItem = {
 };
 
 type MentionEntry =
-  | { kind: "user"; user: ChatUserResult }
-  | { kind: "item"; item: LibraryMentionItem };
+  { kind: "user"; user: ChatUserResult } | { kind: "item"; item: LibraryMentionItem };
 
 const MENTION_MIN_CHARS = 3;
 
@@ -137,7 +132,10 @@ export function ActiveChatRoom({
     setInputText("");
     closeMention();
     if (entry.kind === "user") {
-      void onSendShare({ kind: "profile", id: entry.user.userId }, textBefore || "Perfil compartilhado");
+      void onSendShare(
+        { kind: "profile", id: entry.user.userId },
+        textBefore || "Perfil compartilhado",
+      );
     } else {
       void onSendShare(
         {
@@ -334,9 +332,7 @@ export function ActiveChatRoom({
                       payload={msg.payload}
                       onClick={() => setSelectedShare(msg.payload!)}
                     />
-                    <div
-                      className={`text-[9px] mt-1 text-right select-none text-secondary-muted`}
-                    >
+                    <div className={`text-[9px] mt-1 text-right select-none text-secondary-muted`}>
                       {formatMessageTime(msg.createdAt)}
                     </div>
                   </div>
@@ -376,7 +372,7 @@ export function ActiveChatRoom({
       {/* Barra Inferior de Envio */}
       <form
         onSubmit={handleSend}
-        className="flex items-end gap-2 border-t border-secondary-border p-3 bg-secondary-card shrink-0"
+        className="flex items-center gap-2 border-t border-secondary-border px-3.5 py-3 bg-secondary-card shrink-0"
       >
         {group.permissions.canShare && canWrite && (
           <button
@@ -385,7 +381,7 @@ export function ActiveChatRoom({
             data-testid="open-share-modal-button"
             title="Compartilhar conteúdo"
             aria-label="Compartilhar conteúdo"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-secondary-border bg-secondary-input text-secondary-muted hover:text-accent hover:border-accent transition-colors cursor-pointer"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-secondary-border bg-secondary-input text-secondary-muted hover:text-accent hover:border-accent hover:bg-accent/10 transition-colors cursor-pointer"
           >
             <Plus className="h-4 w-4" />
           </button>
@@ -398,13 +394,13 @@ export function ActiveChatRoom({
             data-testid="open-poll-modal-button"
             title="Criar nova enquete"
             aria-label="Criar nova enquete"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-secondary-border bg-secondary-input text-secondary-muted hover:text-accent hover:border-accent transition-colors cursor-pointer"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-secondary-border bg-secondary-input text-secondary-muted hover:text-accent hover:border-accent hover:bg-accent/10 transition-colors cursor-pointer"
           >
             <BarChart2 className="h-4 w-4" />
           </button>
         )}
 
-        <div className="flex-1 min-w-0 relative">
+        <div className="flex-1 min-w-0 relative flex items-center">
           {mentionQuery !== null && mentionResults.length > 0 && (
             <div
               data-testid="mention-dropdown"
@@ -412,8 +408,7 @@ export function ActiveChatRoom({
             >
               {mentionResults.map((entry, index) => {
                 const prev = mentionResults[index - 1];
-                const showLibraryHeader =
-                  entry.kind === "item" && (!prev || prev.kind !== "item");
+                const showLibraryHeader = entry.kind === "item" && (!prev || prev.kind !== "item");
                 const isSelected = index === mentionIndex;
                 const rowClass = `flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors cursor-pointer ${
                   isSelected
@@ -501,7 +496,7 @@ export function ActiveChatRoom({
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             data-testid="chat-input-textarea"
-            className="w-full resize-none rounded-xl border border-secondary-border bg-secondary-input px-3 py-2.5 text-xs text-secondary-pure placeholder-secondary-muted focus:outline-none focus:ring-1 focus:ring-accent max-h-32 disabled:cursor-not-allowed disabled:opacity-60"
+            className="block h-10 min-h-[2.5rem] w-full resize-none rounded-xl border border-secondary-border bg-secondary-input px-3.5 py-2.5 text-xs leading-5 text-secondary-pure placeholder-secondary-muted focus:outline-none focus:ring-1 focus:ring-accent max-h-32 disabled:cursor-not-allowed disabled:opacity-60"
           />
         </div>
 

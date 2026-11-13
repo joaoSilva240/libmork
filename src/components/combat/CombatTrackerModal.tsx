@@ -106,7 +106,9 @@ export function CombatTrackerModal({
           <div className="flex items-center gap-3">
             <span className="text-2xl">⚔️</span>
             <div>
-              <h2 className="text-lg font-bold text-white">Gerenciador de Combate (Iniciativa & Turnos)</h2>
+              <h2 className="text-lg font-bold text-white">
+                Gerenciador de Combate (Iniciativa & Turnos)
+              </h2>
               <p className="text-xs text-purple-300">
                 {combatState?.active
                   ? `Rodada ${combatState.round} · Turno de ${currentTurnCombatant?.name || "Desconhecido"}`
@@ -128,7 +130,9 @@ export function CombatTrackerModal({
             /* Setup de Iniciativa */
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-200">Definir Iniciativas dos Participantes</h3>
+                <h3 className="text-sm font-semibold text-gray-200">
+                  Definir Iniciativas dos Participantes
+                </h3>
                 <button
                   onClick={handleRequestInitiative}
                   className="rounded-lg border border-purple-600/60 bg-purple-900/40 px-3 py-1.5 text-xs font-semibold text-purple-300 hover:bg-purple-800/60"
@@ -259,10 +263,14 @@ export function CombatTrackerModal({
                           <div>
                             <span className="font-semibold text-white">{c.name}</span>
                             <div className="flex items-center gap-2 text-xs text-gray-400">
-                              <span>HP: {c.hpCurrent}/{c.hpMax}</span>
+                              <span>
+                                HP: {c.hpCurrent}/{c.hpMax}
+                              </span>
                               <span>·</span>
                               <span>Ini: {c.initiative}</span>
-                              {c.isFallen && <span className="text-amber-400 font-bold">☠️ Caído</span>}
+                              {c.isFallen && (
+                                <span className="text-amber-400 font-bold">☠️ Caído</span>
+                              )}
                             </div>
                           </div>
                         </div>

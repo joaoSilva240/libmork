@@ -82,7 +82,9 @@ async function fetchAndImportDndRace(index: string, translateWithLLM: boolean) {
         });
         if (trRes.ok) {
           const trData = await trRes.json();
-          const desc = Array.isArray(trData.desc) ? trData.desc.join("\n\n") : String(trData.desc || "");
+          const desc = Array.isArray(trData.desc)
+            ? trData.desc.join("\n\n")
+            : String(trData.desc || "");
           return { name: t.name, description: desc };
         }
       } catch {}
@@ -139,7 +141,7 @@ async function fetchAndImportDndRace(index: string, translateWithLLM: boolean) {
         const translated = await translateContentWithLLM(
           "race",
           payloadToTranslate,
-          `Você é um especialista em D&D 5e e tradução de RPG. Traduza o nome da raça, descrição, tamanho (Medium->Médio, Small->Pequeno), idiomas, traços raciais (nome e descrição) e sub-raças (nome e descrição) para Português do Brasil (pt-BR). Retorne estritamente um JSON com a mesma estrutura de chaves.`
+          `Você é um especialista em D&D 5e e tradução de RPG. Traduza o nome da raça, descrição, tamanho (Medium->Médio, Small->Pequeno), idiomas, traços raciais (nome e descrição) e sub-raças (nome e descrição) para Português do Brasil (pt-BR). Retorne estritamente um JSON com a mesma estrutura de chaves.`,
         );
 
         if (typeof translated.name === "string" && translated.name) {
@@ -152,23 +154,31 @@ async function fetchAndImportDndRace(index: string, translateWithLLM: boolean) {
           finalSize = translated.size;
         }
         if (Array.isArray(translated.languages)) {
-          finalLanguages = (translated.languages as unknown[])
-            .filter((l): l is string => typeof l === "string" && Boolean(l));
+          finalLanguages = (translated.languages as unknown[]).filter(
+            (l): l is string => typeof l === "string" && Boolean(l),
+          );
         }
         if (Array.isArray(translated.traits)) {
-          finalTraits = (translated.traits as Array<{ name?: string; description?: string }>).map((t, idx) => ({
-            name: t.name || traits[idx]?.name || "Traço Racial",
-            description: t.description ?? traits[idx]?.description ?? "",
-          }));
+          finalTraits = (translated.traits as Array<{ name?: string; description?: string }>).map(
+            (t, idx) => ({
+              name: t.name || traits[idx]?.name || "Traço Racial",
+              description: t.description ?? traits[idx]?.description ?? "",
+            }),
+          );
         }
         if (Array.isArray(translated.heritages)) {
-          finalHeritages = (translated.heritages as Array<{ name?: string; description?: string }>).map((h, idx) => ({
+          finalHeritages = (
+            translated.heritages as Array<{ name?: string; description?: string }>
+          ).map((h, idx) => ({
             name: h.name || heritages[idx]?.name || "Sub-raça",
             description: h.description ?? heritages[idx]?.description ?? "",
           }));
         }
       } catch (err) {
-        logger.warn({ err, raceName: raceData.name }, "[fetchAndImportDndRace] Falha na tradução via LLM, mantendo termos originais");
+        logger.warn(
+          { err, raceName: raceData.name },
+          "[fetchAndImportDndRace] Falha na tradução via LLM, mantendo termos originais",
+        );
       }
     }
 
@@ -200,16 +210,13 @@ export async function POST(request: NextRequest) {
     const session = await requireAuth();
 
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: "Não autenticado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: "Não autenticado" }, { status: 401 });
     }
 
     if (session.user.role !== "master") {
       return NextResponse.json(
         { success: false, error: "Apenas mestres podem importar conteúdo" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -231,7 +238,7 @@ export async function POST(request: NextRequest) {
     } else {
       return NextResponse.json(
         { success: false, error: "Nenhuma raça selecionada para importação" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -252,7 +259,7 @@ export async function POST(request: NextRequest) {
     logger.error({ err: error }, "Erro na rota de importação de raças D&D 5e");
     return NextResponse.json(
       { success: false, error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
