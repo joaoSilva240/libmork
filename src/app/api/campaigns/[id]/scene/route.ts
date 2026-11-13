@@ -58,7 +58,9 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       .set({ activeScene: scene, updatedAt: new Date() })
       .where(eq(campaigns.id, campaignId));
 
-    let description = scene ? `Cena: ${SCENES[scene].label} iniciada` : "Cena desativada — modo Livre";
+    let description = scene
+      ? `Cena: ${SCENES[scene].label} iniciada`
+      : "Cena desativada — modo Livre";
     if (encounterAction === "ended") description += " — encontro encerrado";
     else if (encounterAction === "kept") description += " — encontro mantido em 2º plano";
 

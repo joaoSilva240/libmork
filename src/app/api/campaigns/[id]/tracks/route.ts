@@ -119,10 +119,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const { url, videoId: rawVideoId, title: rawTitle, scene: rawScene } = body;
 
     if (rawScene !== undefined && rawScene !== null && rawScene !== "" && !isSceneValue(rawScene)) {
-      return NextResponse.json(
-        { success: false, error: "Cena inválida" },
-        { status: 400 },
-      );
+      return NextResponse.json({ success: false, error: "Cena inválida" }, { status: 400 });
     }
     const scene = isSceneValue(rawScene) ? rawScene : null;
 

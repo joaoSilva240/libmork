@@ -334,9 +334,7 @@ export function useJukebox(campaignId: string | null, isMaster: boolean): UseJuk
   const setTrackScene = useCallback(
     (trackId: string, scene: ActiveScene) => {
       if (!isMaster || !campaignId) return;
-      setTracks((prev) =>
-        prev.map((t) => (t.id === trackId ? { ...t, scene: scene ?? null } : t)),
-      );
+      setTracks((prev) => prev.map((t) => (t.id === trackId ? { ...t, scene: scene ?? null } : t)));
       fetch(getApiUrl(`/api/campaigns/${campaignId}/tracks/${trackId}`), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },

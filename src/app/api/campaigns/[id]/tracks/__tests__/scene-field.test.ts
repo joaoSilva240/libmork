@@ -222,9 +222,9 @@ describe("API tracks: campo scene (GET / POST / PATCH [trackId])", () => {
 
       const mockSet = vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue({
-          returning: vi.fn().mockResolvedValue([
-            { id: "uuid-1", videoId: "vid-1", scene: "stealth" },
-          ]),
+          returning: vi
+            .fn()
+            .mockResolvedValue([{ id: "uuid-1", videoId: "vid-1", scene: "stealth" }]),
         }),
       });
       mockUpdate.mockReturnValueOnce({ set: mockSet });

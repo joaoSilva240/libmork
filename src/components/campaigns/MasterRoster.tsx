@@ -70,9 +70,7 @@ export function MasterRoster({
 }: MasterRosterProps) {
   const isMissing = rulesEngine === "missing_zero";
   // Missing ignora a matriz; cena undefined/null = neutro (comportamento atual).
-  const sceneMods = isMissing
-    ? NEUTRAL_MODULES
-    : modulesForScene(activeScene ?? null);
+  const sceneMods = isMissing ? NEUTRAL_MODULES : modulesForScene(activeScene ?? null);
   const { isConnected, presenceList, joinCampaign, subscribeActorStatus, subscribeCombatState } =
     useSocket();
   const [roster, setRoster] = useState<RosterData>({ players: [], npcs: [] });
@@ -381,7 +379,14 @@ export function MasterRoster({
     if (current !== "combat" && prev === "combat") {
       setShowEncounterModal(false);
     }
-  }, [activeScene, isMissing, combatState?.active, activeEncounter, selectedWorldId, setShowEncounterModal]);
+  }, [
+    activeScene,
+    isMissing,
+    combatState?.active,
+    activeEncounter,
+    selectedWorldId,
+    setShowEncounterModal,
+  ]);
 
   const { updateCombatState } = useSocket();
 
@@ -928,15 +933,35 @@ export function MasterRoster({
                     >
                       {isCarouselCollapsed ? (
                         <>
-                          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                          <svg
+                            className="h-3.5 w-3.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 15l7-7 7 7"
+                            />
                           </svg>
                           <span>Expandir</span>
                         </>
                       ) : (
                         <>
-                          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          <svg
+                            className="h-3.5 w-3.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
+                            />
                           </svg>
                           <span>Recolher</span>
                         </>
@@ -953,40 +978,40 @@ export function MasterRoster({
       {showRoster &&
         sceneMods.carousel !== "hidden" &&
         (sceneMods.carousel === "visible" || !isCarouselCollapsed) && (
-        <div
-          onDragOver={(e) => {
-            e.preventDefault();
-            setIsDragOver(true);
-          }}
-          onDragLeave={() => setIsDragOver(false)}
-          onDrop={(e) => {
-            setIsDragOver(false);
-            handleDropActor(e);
-          }}
-          style={{ height: `${carouselPanel.height}px` }}
-          className={`relative transition-[height] duration-150 rounded-b-lg border p-2 overflow-visible ${
-            isMissing
-              ? "border-zinc-800 bg-[#0d0e11]/80"
-              : isDragOver
-                ? "border-purple-500 bg-purple-950/40"
-                : "border-gray-800 bg-gray-900/50"
-          }`}
-        >
-          <CharacterCarousel
-            actors={carouselActors}
-            combatState={combatState}
-            onSelect={handleSelectActor}
-            onRemove={handleRemoveDeskActor}
-            isMissing={isMissing}
-          />
-          <ResizeHandle
-            direction="vertical"
-            onResize={(_, dy) => carouselPanel.handleResize(0, dy)}
-            title="Redimensionar carrossel de personagens"
-            data-testid="resize-carousel-panel"
-          />
-        </div>
-      )}
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDragOver(true);
+            }}
+            onDragLeave={() => setIsDragOver(false)}
+            onDrop={(e) => {
+              setIsDragOver(false);
+              handleDropActor(e);
+            }}
+            style={{ height: `${carouselPanel.height}px` }}
+            className={`relative transition-[height] duration-150 rounded-b-lg border p-2 overflow-visible ${
+              isMissing
+                ? "border-zinc-800 bg-[#0d0e11]/80"
+                : isDragOver
+                  ? "border-purple-500 bg-purple-950/40"
+                  : "border-gray-800 bg-gray-900/50"
+            }`}
+          >
+            <CharacterCarousel
+              actors={carouselActors}
+              combatState={combatState}
+              onSelect={handleSelectActor}
+              onRemove={handleRemoveDeskActor}
+              isMissing={isMissing}
+            />
+            <ResizeHandle
+              direction="vertical"
+              onResize={(_, dy) => carouselPanel.handleResize(0, dy)}
+              title="Redimensionar carrossel de personagens"
+              data-testid="resize-carousel-panel"
+            />
+          </div>
+        )}
 
       {selectedMissingHabitant ? (
         <div

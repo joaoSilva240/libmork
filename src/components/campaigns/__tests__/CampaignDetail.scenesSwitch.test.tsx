@@ -99,9 +99,11 @@ function jsonResponse(body: unknown) {
 }
 
 function patchCalls(urlPattern: RegExp): Array<[string, RequestInit | undefined]> {
-  return ((global.fetch as ReturnType<typeof vi.fn>).mock.calls as Array<
-    [string, RequestInit | undefined]
-  >).filter(([url, init]) => urlPattern.test(url) && init?.method === "PATCH");
+  return (
+    (global.fetch as ReturnType<typeof vi.fn>).mock.calls as Array<
+      [string, RequestInit | undefined]
+    >
+  ).filter(([url, init]) => urlPattern.test(url) && init?.method === "PATCH");
 }
 
 const scenePatches = () => patchCalls(/\/scene$/);
@@ -151,9 +153,7 @@ describe("CampaignDetail — troca de cena com combate ativo (issue #86, Fase 2)
 
     fireEvent.click(screen.getByTestId("scene-btn-interlude"));
 
-    await waitFor(() =>
-      expect(screen.getByText("Há um combate em andamento")).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByText("Há um combate em andamento")).toBeInTheDocument());
     expect(scenePatches()).toHaveLength(0);
     expect(encounterEndPatches()).toHaveLength(0);
   });
@@ -164,9 +164,7 @@ describe("CampaignDetail — troca de cena com combate ativo (issue #86, Fase 2)
 
     fireEvent.click(screen.getByTestId("scene-btn-stealth"));
 
-    await waitFor(() =>
-      expect(screen.getByText("Há um combate em andamento")).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByText("Há um combate em andamento")).toBeInTheDocument());
     expect(scenePatches()).toHaveLength(0);
   });
 
@@ -226,7 +224,9 @@ describe("CampaignDetail — troca de cena com combate ativo (issue #86, Fase 2)
         }),
       ]),
     );
-    expect(socketHarness.updateCombatState).toHaveBeenCalledWith(expect.objectContaining({ active: false }));
+    expect(socketHarness.updateCombatState).toHaveBeenCalledWith(
+      expect.objectContaining({ active: false }),
+    );
     expect(screen.queryByText("Há um combate em andamento")).toBeNull();
   });
 
@@ -321,9 +321,7 @@ describe("CampaignDetail — troca de cena com combate ativo (issue #86, Fase 2)
 
     fireEvent.click(screen.getByTestId("scene-btn-combat"));
 
-    await waitFor(() =>
-      expect(screen.getByText("Há um combate em andamento")).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByText("Há um combate em andamento")).toBeInTheDocument());
     expect(scenePatches()).toHaveLength(0);
 
     fireEvent.click(screen.getByTestId("scene-confirm-keep"));
@@ -340,17 +338,11 @@ describe("CampaignDetail — troca de cena com combate ativo (issue #86, Fase 2)
 
   it("propaga activeScene para as duas instâncias de MasterRoster (principal e pop-out)", async () => {
     await renderShield();
-    expect(screen.getByTestId("mock-master-roster")).toHaveAttribute(
-      "data-active-scene",
-      "combat",
-    );
+    expect(screen.getByTestId("mock-master-roster")).toHaveAttribute("data-active-scene", "combat");
 
     fireEvent.click(screen.getByTestId("mock-roster-toggle-popout"));
 
     await waitFor(() => expect(screen.getByTestId("window-portal-mock")).toBeInTheDocument());
-    expect(screen.getByTestId("mock-master-roster")).toHaveAttribute(
-      "data-active-scene",
-      "combat",
-    );
+    expect(screen.getByTestId("mock-master-roster")).toHaveAttribute("data-active-scene", "combat");
   });
 });

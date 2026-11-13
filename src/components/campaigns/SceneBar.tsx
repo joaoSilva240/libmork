@@ -57,7 +57,11 @@ export function SceneBar({
             data-testid={`scene-btn-${value}`}
             aria-pressed={isActive}
             disabled={disabled}
-            title={isActive ? `${scene.label} — clique para voltar ao modo Livre` : `Ativar cena: ${scene.label}`}
+            title={
+              isActive
+                ? `${scene.label} — clique para voltar ao modo Livre`
+                : `Ativar cena: ${scene.label}`
+            }
             onClick={() => onSceneChange(isActive ? null : value)}
             className={`flex cursor-pointer items-center gap-1 rounded border px-2 py-1 text-xs font-semibold transition-colors ${
               isActive

@@ -116,11 +116,7 @@ describe("MasterRoster — matriz de visibilidade por cena (Fase 2)", () => {
 
   it("caso 1: activeScene=interlude esconde a barra de combate e o carrossel", async () => {
     render(
-      <MasterRoster
-        campaignId="test-camp"
-        selectedWorldId="world-1"
-        activeScene="interlude"
-      />
+      <MasterRoster campaignId="test-camp" selectedWorldId="world-1" activeScene="interlude" />,
     );
 
     await waitFor(() => {
@@ -139,13 +135,7 @@ describe("MasterRoster — matriz de visibilidade por cena (Fase 2)", () => {
   it("caso 2: activeScene=combat força o carrossel visível mesmo colapsado, sem sobrescrever localStorage", async () => {
     localStorage.setItem("carousel-collapsed-test-camp", "true");
 
-    render(
-      <MasterRoster
-        campaignId="test-camp"
-        selectedWorldId="world-1"
-        activeScene="combat"
-      />
-    );
+    render(<MasterRoster campaignId="test-camp" selectedWorldId="world-1" activeScene="combat" />);
 
     await waitFor(() => {
       expect(screen.getByTestId("resize-carousel-panel")).toBeInTheDocument();
@@ -158,13 +148,7 @@ describe("MasterRoster — matriz de visibilidade por cena (Fase 2)", () => {
   it("caso 3: activeScene=null (Livre) preserva o comportamento atual (colapso esconde)", async () => {
     localStorage.setItem("carousel-collapsed-test-camp", "true");
 
-    render(
-      <MasterRoster
-        campaignId="test-camp"
-        selectedWorldId="world-1"
-        activeScene={null}
-      />
-    );
+    render(<MasterRoster campaignId="test-camp" selectedWorldId="world-1" activeScene={null} />);
 
     await waitFor(() => {
       expect(screen.getByTestId("mock-infinite-canvas")).toBeInTheDocument();
@@ -176,13 +160,7 @@ describe("MasterRoster — matriz de visibilidade por cena (Fase 2)", () => {
   });
 
   it("caso 4: activeScene=combat sem mundo selecionado mostra o hint de mundo na barra", async () => {
-    render(
-      <MasterRoster
-        campaignId="test-camp"
-        selectedWorldId=""
-        activeScene="combat"
-      />
-    );
+    render(<MasterRoster campaignId="test-camp" selectedWorldId="" activeScene="combat" />);
 
     await waitFor(() => {
       expect(screen.getByTestId("scene-combat-world-hint")).toBeInTheDocument();
@@ -201,7 +179,7 @@ describe("MasterRoster — matriz de visibilidade por cena (Fase 2)", () => {
         selectedWorldId="world-1"
         rulesEngine="missing_zero"
         activeScene="combat"
-      />
+      />,
     );
 
     await waitFor(() => {
@@ -222,7 +200,7 @@ describe("MasterRoster — matriz de visibilidade por cena (Fase 2)", () => {
         selectedWorldId="world-1"
         rulesEngine="missing_zero"
         activeScene="stealth"
-      />
+      />,
     );
 
     await waitFor(() => {
@@ -240,13 +218,7 @@ describe("MasterRoster — matriz de visibilidade por cena (Fase 2)", () => {
   it("caso 6: combat com colapso salvo força o carrossel e omite o toggle de colapso", async () => {
     localStorage.setItem("carousel-collapsed-test-camp", "true");
 
-    render(
-      <MasterRoster
-        campaignId="test-camp"
-        selectedWorldId="world-1"
-        activeScene="combat"
-      />
-    );
+    render(<MasterRoster campaignId="test-camp" selectedWorldId="world-1" activeScene="combat" />);
 
     await waitFor(() => {
       expect(screen.getByTestId("resize-carousel-panel")).toBeInTheDocument();
@@ -264,13 +236,7 @@ describe("MasterRoster — matriz de visibilidade por cena (Fase 2)", () => {
   it("caso 7: estado Livre (null) mantém o toggle de colapso presente como hoje", async () => {
     localStorage.setItem("carousel-collapsed-test-camp", "true");
 
-    render(
-      <MasterRoster
-        campaignId="test-camp"
-        selectedWorldId="world-1"
-        activeScene={null}
-      />
-    );
+    render(<MasterRoster campaignId="test-camp" selectedWorldId="world-1" activeScene={null} />);
 
     await waitFor(() => {
       expect(screen.getByText(/Nenhum combate ativo/)).toBeInTheDocument();
@@ -292,11 +258,7 @@ describe("MasterRoster — automação do encontro na cena Combate (Fase 2)", ()
 
   it("caso 1: ENTRAR em combat sem encontro ativo abre o EncounterModal", async () => {
     const { rerender } = render(
-      <MasterRoster
-        campaignId="test-camp"
-        selectedWorldId="world-1"
-        activeScene="investigation"
-      />
+      <MasterRoster campaignId="test-camp" selectedWorldId="world-1" activeScene="investigation" />,
     );
 
     await waitFor(() => {
@@ -305,11 +267,7 @@ describe("MasterRoster — automação do encontro na cena Combate (Fase 2)", ()
     expect(screen.queryByTestId("encounter-modal-mock")).toBeNull();
 
     rerender(
-      <MasterRoster
-        campaignId="test-camp"
-        selectedWorldId="world-1"
-        activeScene="combat"
-      />
+      <MasterRoster campaignId="test-camp" selectedWorldId="world-1" activeScene="combat" />,
     );
 
     await waitFor(() => {
@@ -338,11 +296,7 @@ describe("MasterRoster — automação do encontro na cena Combate (Fase 2)", ()
     });
 
     const { rerender } = render(
-      <MasterRoster
-        campaignId="test-camp"
-        selectedWorldId="world-1"
-        activeScene={null}
-      />
+      <MasterRoster campaignId="test-camp" selectedWorldId="world-1" activeScene={null} />,
     );
 
     // Sinal positivo de que o encontro ativo chegou ao estado do componente
@@ -352,11 +306,7 @@ describe("MasterRoster — automação do encontro na cena Combate (Fase 2)", ()
     });
 
     rerender(
-      <MasterRoster
-        campaignId="test-camp"
-        selectedWorldId="world-1"
-        activeScene="combat"
-      />
+      <MasterRoster campaignId="test-camp" selectedWorldId="world-1" activeScene="combat" />,
     );
 
     // Flush de microtarefas pendentes (fetches do harness) dentro de act para
@@ -367,11 +317,7 @@ describe("MasterRoster — automação do encontro na cena Combate (Fase 2)", ()
 
   it("caso 2b: ENTRAR em combat com combatState ativo (socket) também retoma em silêncio", async () => {
     const { rerender } = render(
-      <MasterRoster
-        campaignId="test-camp"
-        selectedWorldId="world-1"
-        activeScene={null}
-      />
+      <MasterRoster campaignId="test-camp" selectedWorldId="world-1" activeScene={null} />,
     );
 
     await waitFor(() => {
@@ -380,18 +326,19 @@ describe("MasterRoster — automação do encontro na cena Combate (Fase 2)", ()
     expect(socketHarness.combatCallback).not.toBeNull();
 
     act(() => {
-      socketHarness.combatCallback?.({ active: true, round: 1, combatants: [], currentTurnIndex: 0 });
+      socketHarness.combatCallback?.({
+        active: true,
+        round: 1,
+        combatants: [],
+        currentTurnIndex: 0,
+      });
     });
     await waitFor(() => {
       expect(screen.getByText(/COMBATE ATIVO/)).toBeInTheDocument();
     });
 
     rerender(
-      <MasterRoster
-        campaignId="test-camp"
-        selectedWorldId="world-1"
-        activeScene="combat"
-      />
+      <MasterRoster campaignId="test-camp" selectedWorldId="world-1" activeScene="combat" />,
     );
 
     await act(async () => {});
@@ -402,11 +349,7 @@ describe("MasterRoster — automação do encontro na cena Combate (Fase 2)", ()
     // Ruling da Task 2: a entrada precisa ser uma TRANSIÇÃO real (montar em
     // Livre e rerenderizar em combat), não um mount direto na cena.
     const { rerender } = render(
-      <MasterRoster
-        campaignId="test-camp"
-        selectedWorldId="world-1"
-        activeScene={null}
-      />
+      <MasterRoster campaignId="test-camp" selectedWorldId="world-1" activeScene={null} />,
     );
 
     await waitFor(() => {
@@ -414,11 +357,7 @@ describe("MasterRoster — automação do encontro na cena Combate (Fase 2)", ()
     });
 
     rerender(
-      <MasterRoster
-        campaignId="test-camp"
-        selectedWorldId="world-1"
-        activeScene="combat"
-      />
+      <MasterRoster campaignId="test-camp" selectedWorldId="world-1" activeScene="combat" />,
     );
 
     await waitFor(() => {
@@ -426,11 +365,7 @@ describe("MasterRoster — automação do encontro na cena Combate (Fase 2)", ()
     });
 
     rerender(
-      <MasterRoster
-        campaignId="test-camp"
-        selectedWorldId="world-1"
-        activeScene="interlude"
-      />
+      <MasterRoster campaignId="test-camp" selectedWorldId="world-1" activeScene="interlude" />,
     );
 
     await waitFor(() => {
@@ -440,11 +375,7 @@ describe("MasterRoster — automação do encontro na cena Combate (Fase 2)", ()
 
   it("caso 4: reprocessar o mesmo activeScene não reabre o modal (guarda por ref)", async () => {
     const { rerender } = render(
-      <MasterRoster
-        campaignId="test-camp"
-        selectedWorldId="world-1"
-        activeScene={null}
-      />
+      <MasterRoster campaignId="test-camp" selectedWorldId="world-1" activeScene={null} />,
     );
 
     await waitFor(() => {
@@ -452,11 +383,7 @@ describe("MasterRoster — automação do encontro na cena Combate (Fase 2)", ()
     });
 
     rerender(
-      <MasterRoster
-        campaignId="test-camp"
-        selectedWorldId="world-1"
-        activeScene="combat"
-      />
+      <MasterRoster campaignId="test-camp" selectedWorldId="world-1" activeScene="combat" />,
     );
 
     await waitFor(() => {
@@ -471,14 +398,15 @@ describe("MasterRoster — automação do encontro na cena Combate (Fase 2)", ()
     // ref isso reexecitaria a lógica de entrada em combat e reabriria o modal
     // (combatState chega inativo e não há encontro ativo).
     act(() => {
-      socketHarness.combatCallback?.({ active: false, round: 2, combatants: [], currentTurnIndex: 0 });
+      socketHarness.combatCallback?.({
+        active: false,
+        round: 2,
+        combatants: [],
+        currentTurnIndex: 0,
+      });
     });
     rerender(
-      <MasterRoster
-        campaignId="test-camp"
-        selectedWorldId="world-1"
-        activeScene="combat"
-      />
+      <MasterRoster campaignId="test-camp" selectedWorldId="world-1" activeScene="combat" />,
     );
 
     await act(async () => {});
@@ -490,13 +418,7 @@ describe("MasterRoster — automação do encontro na cena Combate (Fase 2)", ()
     // referência anterior semeia a cena atual em vez de contar como "entrar na
     // cena". Cobre reload da página em combate e o remount por
     // key={`roster-${rosterVersion}`} ao fechar o ContentOverlay.
-    render(
-      <MasterRoster
-        campaignId="test-camp"
-        selectedWorldId="world-1"
-        activeScene="combat"
-      />
-    );
+    render(<MasterRoster campaignId="test-camp" selectedWorldId="world-1" activeScene="combat" />);
 
     await waitFor(() => {
       expect(screen.getByTestId("mock-infinite-canvas")).toBeInTheDocument();
@@ -513,7 +435,7 @@ describe("MasterRoster — automação do encontro na cena Combate (Fase 2)", ()
         selectedWorldId="world-1"
         rulesEngine="missing_zero"
         activeScene={null}
-      />
+      />,
     );
 
     await waitFor(() => {
@@ -526,7 +448,7 @@ describe("MasterRoster — automação do encontro na cena Combate (Fase 2)", ()
         selectedWorldId="world-1"
         rulesEngine="missing_zero"
         activeScene="combat"
-      />
+      />,
     );
 
     await act(async () => {});

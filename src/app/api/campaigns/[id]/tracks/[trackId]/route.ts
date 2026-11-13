@@ -101,10 +101,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     const { scene: rawScene } = body;
 
     if (rawScene !== undefined && rawScene !== null && rawScene !== "" && !isSceneValue(rawScene)) {
-      return NextResponse.json(
-        { success: false, error: "Cena inválida" },
-        { status: 400 },
-      );
+      return NextResponse.json({ success: false, error: "Cena inválida" }, { status: 400 });
     }
     const scene = isSceneValue(rawScene) ? rawScene : null;
 
@@ -120,15 +117,11 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
           eq(campaignAudioTracks.videoId, trackId),
         );
 
-    const updated = await db
-      .update(campaignAudioTracks)
-      .set({ scene })
-      .where(condition)
-      .returning({
-        id: campaignAudioTracks.id,
-        videoId: campaignAudioTracks.videoId,
-        scene: campaignAudioTracks.scene,
-      });
+    const updated = await db.update(campaignAudioTracks).set({ scene }).where(condition).returning({
+      id: campaignAudioTracks.id,
+      videoId: campaignAudioTracks.videoId,
+      scene: campaignAudioTracks.scene,
+    });
 
     if (updated.length === 0) {
       return NextResponse.json(
@@ -152,4 +145,3 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     );
   }
 }
-

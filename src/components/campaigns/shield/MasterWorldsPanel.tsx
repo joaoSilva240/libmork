@@ -132,70 +132,74 @@ export function MasterWorldsPanel({
       )}
 
       {/* ===== Estabelecimentos do Mundo Selecionado (apenas regras padrão d20) ===== */}
-      {!isMissing && selectedWorldId && modulesForScene(activeScene).establishments !== "hidden" && (
-        <div className="rounded-lg border border-secondary-border bg-secondary-card p-3 mt-3">
-          <button
-            type="button"
-            onClick={onToggleEstablishmentsExpanded}
-            className="mb-2 flex w-full items-center justify-between font-semibold text-xs text-secondary-pure"
-          >
-            <span className="flex items-center gap-1">
-              <span>{isEstablishmentsExpanded ? "▼" : "►"}</span>
-              <span>🏬 Estabelecimentos</span>
-            </span>
-            <span className="text-[10px] font-normal text-accent-hover">
-              ({selectedWorldEstablishments.length})
-            </span>
-          </button>
+      {!isMissing &&
+        selectedWorldId &&
+        modulesForScene(activeScene).establishments !== "hidden" && (
+          <div className="rounded-lg border border-secondary-border bg-secondary-card p-3 mt-3">
+            <button
+              type="button"
+              onClick={onToggleEstablishmentsExpanded}
+              className="mb-2 flex w-full items-center justify-between font-semibold text-xs text-secondary-pure"
+            >
+              <span className="flex items-center gap-1">
+                <span>{isEstablishmentsExpanded ? "▼" : "►"}</span>
+                <span>🏬 Estabelecimentos</span>
+              </span>
+              <span className="text-[10px] font-normal text-accent-hover">
+                ({selectedWorldEstablishments.length})
+              </span>
+            </button>
 
-          <div
-            className={`grid transition-all duration-200 ${
-              isEstablishmentsExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-            }`}
-          >
-            <div className="overflow-hidden">
-              {isEstablishmentsExpanded && (
-                <>
-                  {selectedWorldEstablishments.length === 0 ? (
-                    <p className="text-xs text-gray-500 italic">
-                      Nenhum estabelecimento neste mundo.
-                    </p>
-                  ) : (
-                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                      {selectedWorldEstablishments.map((est) => (
-                        <div
-                          key={est.id}
-                          className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-950 p-2 text-xs"
-                        >
-                          <div className="min-w-0 flex-1 pr-2">
-                            <span className="font-semibold text-white block truncate">
-                              {est.name}
-                            </span>
-                            <span className="text-[10px] text-gray-400 block truncate">
-                              {est.type || "Geral"}
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => onToggleEstablishment(est)}
-                            className={`rounded-full px-2 py-0.5 text-[10px] font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
-                              est.isOpen
-                                ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 hover:bg-emerald-900"
-                                : "bg-gray-800 text-gray-400 border border-gray-700 hover:text-white"
-                            }`}
+            <div
+              className={`grid transition-all duration-200 ${
+                isEstablishmentsExpanded
+                  ? "grid-rows-[1fr] opacity-100"
+                  : "grid-rows-[0fr] opacity-0"
+              }`}
+            >
+              <div className="overflow-hidden">
+                {isEstablishmentsExpanded && (
+                  <>
+                    {selectedWorldEstablishments.length === 0 ? (
+                      <p className="text-xs text-gray-500 italic">
+                        Nenhum estabelecimento neste mundo.
+                      </p>
+                    ) : (
+                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                        {selectedWorldEstablishments.map((est) => (
+                          <div
+                            key={est.id}
+                            className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-950 p-2 text-xs"
                           >
-                            {est.isOpen ? "🟢 Aberto" : "⚪ Fechado"}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
+                            <div className="min-w-0 flex-1 pr-2">
+                              <span className="font-semibold text-white block truncate">
+                                {est.name}
+                              </span>
+                              <span className="text-[10px] text-gray-400 block truncate">
+                                {est.type || "Geral"}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => onToggleEstablishment(est)}
+                              className={`rounded-full px-2 py-0.5 text-[10px] font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+                                est.isOpen
+                                  ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 hover:bg-emerald-900"
+                                  : "bg-gray-800 text-gray-400 border border-gray-700 hover:text-white"
+                              }`}
+                            >
+                              {est.isOpen ? "🟢 Aberto" : "⚪ Fechado"}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 }

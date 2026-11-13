@@ -50,7 +50,9 @@ describe("useCampaignScene (issue #86, Fase 1)", () => {
   });
 
   it("setScene faz PATCH, emite scene-changed e aplica otimista", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
     vi.stubGlobal("fetch", fetchMock);
     const socket = makeFakeSocket();
 

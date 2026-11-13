@@ -424,9 +424,7 @@ export function MasterJukebox({
           Nenhuma faixa de áudio adicionada. Cole uma URL do YouTube para começar.
         </p>
       ) : items.length === 0 ? (
-        <p className="text-sm text-gray-500">
-          Nenhuma faixa encontrada para este filtro de cena.
-        </p>
+        <p className="text-sm text-gray-500">Nenhuma faixa encontrada para este filtro de cena.</p>
       ) : (
         <div className="space-y-2 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
           {items.map((item) => {

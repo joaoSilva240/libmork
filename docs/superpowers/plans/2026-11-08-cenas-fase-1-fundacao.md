@@ -23,34 +23,36 @@
 
 ## File Structure
 
-| Ação | Arquivo | Responsabilidade |
-|---|---|---|
-| Modify | `src/lib/db/schema.ts` | colunas `campaigns.active_scene` e `campaign_audio_tracks.scene` |
-| Create | `drizzle/0023_add_scene_columns.sql` | migração SQL idempotente das duas colunas |
-| Modify | `src/types/index.ts` | `Campaign.activeScene?: string \| null` |
-| Create | `src/lib/scenes/sceneConfig.ts` | tipos, metadados por cena (label/ícone/cores), matriz declarativa cena→módulos, validadores |
-| Create | `src/lib/scenes/__tests__/sceneConfig.test.ts` | unit tests do módulo puro |
-| Create | `src/app/api/campaigns/[id]/scene/route.ts` | `PATCH` persiste cena + insere log `scene_change` |
-| Create | `src/app/api/campaigns/[id]/scene/__tests__/route.test.ts` | unit tests da rota (401/403/400/200/log) |
-| Modify | `server.js` | relay `scene-changed` para a sala `campaign:{id}` |
-| Create | `src/hooks/useCampaignScene.ts` | estado + PATCH + emit + subscribe socket, rollback em falha |
-| Create | `src/hooks/__tests__/useCampaignScene.test.ts` | unit tests do hook com socket fake |
-| Create | `src/components/campaigns/SceneBar.tsx` | 5 botões + label "Cena:", toggle para Livre |
-| Create | `src/components/campaigns/__tests__/SceneBar.test.tsx` | unit tests do componente |
-| Modify | `src/components/campaigns/CampaignDetail.tsx` | integra hook, renderiza SceneBar no header, accent da cena no header, `data-testid="shield-header"` |
-| Create | `src/components/campaigns/__tests__/CampaignDetail.scenes.test.tsx` | teste de integração (barra presente/ausente, clique → PATCH) |
+| Ação   | Arquivo                                                             | Responsabilidade                                                                                    |
+| ------ | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Modify | `src/lib/db/schema.ts`                                              | colunas `campaigns.active_scene` e `campaign_audio_tracks.scene`                                    |
+| Create | `drizzle/0023_add_scene_columns.sql`                                | migração SQL idempotente das duas colunas                                                           |
+| Modify | `src/types/index.ts`                                                | `Campaign.activeScene?: string \| null`                                                             |
+| Create | `src/lib/scenes/sceneConfig.ts`                                     | tipos, metadados por cena (label/ícone/cores), matriz declarativa cena→módulos, validadores         |
+| Create | `src/lib/scenes/__tests__/sceneConfig.test.ts`                      | unit tests do módulo puro                                                                           |
+| Create | `src/app/api/campaigns/[id]/scene/route.ts`                         | `PATCH` persiste cena + insere log `scene_change`                                                   |
+| Create | `src/app/api/campaigns/[id]/scene/__tests__/route.test.ts`          | unit tests da rota (401/403/400/200/log)                                                            |
+| Modify | `server.js`                                                         | relay `scene-changed` para a sala `campaign:{id}`                                                   |
+| Create | `src/hooks/useCampaignScene.ts`                                     | estado + PATCH + emit + subscribe socket, rollback em falha                                         |
+| Create | `src/hooks/__tests__/useCampaignScene.test.ts`                      | unit tests do hook com socket fake                                                                  |
+| Create | `src/components/campaigns/SceneBar.tsx`                             | 5 botões + label "Cena:", toggle para Livre                                                         |
+| Create | `src/components/campaigns/__tests__/SceneBar.test.tsx`              | unit tests do componente                                                                            |
+| Modify | `src/components/campaigns/CampaignDetail.tsx`                       | integra hook, renderiza SceneBar no header, accent da cena no header, `data-testid="shield-header"` |
+| Create | `src/components/campaigns/__tests__/CampaignDetail.scenes.test.tsx` | teste de integração (barra presente/ausente, clique → PATCH)                                        |
 
 ---
 
 ### Task 1: Colunas de dados (schema + migração SQL + tipo Campaign)
 
 **Files:**
+
 - Modify: `src/lib/db/schema.ts` (tabela `campaigns`, após `activeAssetId` ~linha 172; tabela `campaignAudioTracks`, após `playlistName` ~linha 218)
 - Create: `drizzle/0023_add_scene_columns.sql`
 - Modify: `src/types/index.ts` (type `Campaign`, ~linha 146, após `activeAsset`)
 - Test: `src/lib/db/__tests__/schema.sceneColumns.test.ts`
 
 **Interfaces:**
+
 - Consumes: nada (primeira tarefa).
 - Produces: `campaigns.activeScene` / `campaignAudioTracks.scene` (drizzle columns, `varchar(20)` nullable); `Campaign.activeScene?: string | null`.
 
@@ -150,10 +152,12 @@ git commit -m "feat(scenes): colunas active_scene e scene no schema com migracao
 ### Task 2: Módulo declarativo de cenas (`sceneConfig.ts`)
 
 **Files:**
+
 - Create: `src/lib/scenes/sceneConfig.ts`
 - Test: `src/lib/scenes/__tests__/sceneConfig.test.ts`
 
 **Interfaces:**
+
 - Consumes: nada (módulo puro; Task 1 não é necessário para rodar, mas os valores de cena são os mesmos).
 - Produces: `SCENE_VALUES`, `SceneType`, `ActiveScene`, `SceneMeta`, `SceneModuleState`, `SCENES: Record<SceneType, SceneMeta>`, `SCENE_ORDER: SceneType[]`, `SCENE_MATRIX: Record<SceneType, SceneModuleState>`, `NEUTRAL_MODULES: SceneModuleState`, `modulesForScene(scene: ActiveScene): SceneModuleState`, `isSceneValue(v: unknown): v is SceneType`, `sanitizeActiveScene(v: unknown): ActiveScene`. (A matriz é consumida de verdade na Fase 2; aqui só é declarada e testada.)
 
@@ -367,10 +371,12 @@ git commit -m "feat(scenes): modulo declarativo sceneConfig com matriz cena-modu
 ### Task 3: Rota `PATCH /api/campaigns/[id]/scene` com log de sessão
 
 **Files:**
+
 - Create: `src/app/api/campaigns/[id]/scene/route.ts`
 - Test: `src/app/api/campaigns/[id]/scene/__tests__/route.test.ts`
 
 **Interfaces:**
+
 - Consumes: `isSceneValue`, `SCENES`, `SceneType` (Task 2); `campaigns.activeScene` (Task 1); `requireAuth`, `getCampaignAsMaster`, `campaignLogs` (existentes).
 - Produces: `PATCH /api/campaigns/:id/scene` — body `{ scene: SceneType | null, encounterAction?: "ended" | "kept" }`; resposta `{ success: true, data: { campaignId, scene } }`; log `action: "scene_change"`.
 
@@ -596,7 +602,9 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       .set({ activeScene: scene, updatedAt: new Date() })
       .where(eq(campaigns.id, campaignId));
 
-    let description = scene ? `Cena: ${SCENES[scene].label} iniciada` : "Cena desativada — modo Livre";
+    let description = scene
+      ? `Cena: ${SCENES[scene].label} iniciada`
+      : "Cena desativada — modo Livre";
     if (encounterAction === "ended") description += " — encontro encerrado";
     else if (encounterAction === "kept") description += " — encontro mantido em 2º plano";
 
@@ -643,9 +651,11 @@ git commit -m "feat(scenes): rota PATCH de cena com log de transicao no servidor
 ### Task 4: Relay `scene-changed` no `server.js`
 
 **Files:**
+
 - Modify: `server.js` (bloco de relays da sala `campaign:{id}`, logo após o handler `toggle-establishment` ~linha 241-244)
 
 **Interfaces:**
+
 - Consumes: convenção existente `socket.on(event, payload => io.to(\`campaign:${payload.campaignId}\`).emit(event, payload))`.
 - Produces: evento `scene-changed` com payload `{ campaignId, scene, encounterAction }` entregue a todos os sockets na sala (inclui outras abas do mestre e o pop-out).
 
@@ -654,11 +664,11 @@ git commit -m "feat(scenes): rota PATCH de cena com log de transicao no servidor
 Em `server.js`, inserir imediatamente após o handler `socket.on("toggle-establishment", ...)` (termina em ~linha 244, antes de `socket.on("create-campaign-log", ...)`):
 
 ```js
-        // Mudança de cena do escudo do mestre (Issue #86 — Fase 1)
-        socket.on("scene-changed", (payload) => {
-          if (!payload || !payload.campaignId) return;
-          io.to(`campaign:${payload.campaignId}`).emit("scene-changed", payload);
-        });
+// Mudança de cena do escudo do mestre (Issue #86 — Fase 1)
+socket.on("scene-changed", (payload) => {
+  if (!payload || !payload.campaignId) return;
+  io.to(`campaign:${payload.campaignId}`).emit("scene-changed", payload);
+});
 ```
 
 - [ ] **Step 2: Verificar sintaxe**
@@ -678,10 +688,12 @@ git commit -m "feat(scenes): relay do evento scene-changed na sala da campanha"
 ### Task 5: Hook `useCampaignScene`
 
 **Files:**
+
 - Create: `src/hooks/useCampaignScene.ts`
 - Test: `src/hooks/__tests__/useCampaignScene.test.ts`
 
 **Interfaces:**
+
 - Consumes: `ActiveScene`, `sanitizeActiveScene` (Task 2); rota `PATCH /api/campaigns/:id/scene` (Task 3); evento `scene-changed` (Task 4, via socket do cliente).
 - Produces: `useCampaignScene({ campaignId: string | null, initialScene?: unknown, socket }): { activeScene: ActiveScene; isSaving: boolean; error: string | null; setScene(next: ActiveScene, encounterAction?: "ended" | "kept"): Promise<void> }`.
 
@@ -735,7 +747,9 @@ describe("useCampaignScene (issue #86, Fase 1)", () => {
   });
 
   it("setScene faz PATCH, emite scene-changed e aplica otimista", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
     vi.stubGlobal("fetch", fetchMock);
     const socket = makeFakeSocket();
 
@@ -859,7 +873,9 @@ export function useCampaignScene({
   initialScene,
   socket,
 }: UseCampaignSceneOptions): UseCampaignSceneResult {
-  const [activeScene, setActiveScene] = useState<ActiveScene>(() => sanitizeActiveScene(initialScene));
+  const [activeScene, setActiveScene] = useState<ActiveScene>(() =>
+    sanitizeActiveScene(initialScene),
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -928,10 +944,12 @@ git commit -m "feat(scenes): hook useCampaignScene com otimista, rollback e sync
 ### Task 6: Componente `SceneBar`
 
 **Files:**
+
 - Create: `src/components/campaigns/SceneBar.tsx`
 - Test: `src/components/campaigns/__tests__/SceneBar.test.tsx`
 
 **Interfaces:**
+
 - Consumes: `SCENES`, `SCENE_ORDER`, `ActiveScene` (Task 2).
 - Produces: `<SceneBar activeScene onSceneChange disabled? className? />` — `onSceneChange(next: ActiveScene)`; emite `null` ao clicar a cena ativa; testids `scene-bar`, `scene-btn-<value>`, `scene-mode-label`.
 
@@ -1012,7 +1030,12 @@ type SceneBarProps = {
   className?: string;
 };
 
-export function SceneBar({ activeScene, onSceneChange, disabled = false, className = "" }: SceneBarProps) {
+export function SceneBar({
+  activeScene,
+  onSceneChange,
+  disabled = false,
+  className = "",
+}: SceneBarProps) {
   return (
     <div
       data-testid="scene-bar"
@@ -1029,7 +1052,11 @@ export function SceneBar({ activeScene, onSceneChange, disabled = false, classNa
             data-testid={`scene-btn-${value}`}
             aria-pressed={isActive}
             disabled={disabled}
-            title={isActive ? `${scene.label} — clique para voltar ao modo Livre` : `Ativar cena: ${scene.label}`}
+            title={
+              isActive
+                ? `${scene.label} — clique para voltar ao modo Livre`
+                : `Ativar cena: ${scene.label}`
+            }
             onClick={() => onSceneChange(isActive ? null : value)}
             className={`flex cursor-pointer items-center gap-1 rounded border px-2 py-1 text-xs font-semibold transition-colors ${
               isActive
@@ -1070,10 +1097,12 @@ git commit -m "feat(scenes): SceneBar com identidade visual por cena e toggle pa
 ### Task 7: Integração no `CampaignDetail` (header + accent + gate Missing)
 
 **Files:**
+
 - Modify: `src/components/campaigns/CampaignDetail.tsx` (imports ~linhas 1-31; hooks ~linha 84; header ~linhas 296-300 e 349-360)
 - Test: `src/components/campaigns/__tests__/CampaignDetail.scenes.test.tsx`
 
 **Interfaces:**
+
 - Consumes: `useCampaignScene` (Task 5), `SceneBar` (Task 6), `SCENES` (Task 2), `Campaign.activeScene` (Task 1), `socket` de `useSocket()` (existente).
 - Produces: cena ativa no header do escudo para campanhas d20; `data-testid="shield-header"`; nenhum consumo por MasterRoster/jukebox nesta fase.
 
@@ -1187,11 +1216,11 @@ import { SCENES } from "@/lib/scenes/sceneConfig";
 b) Hooks — logo após `const { config: screenConfig, updateConfig, resetConfig } = useMasterScreenConfig();` (~linha 84):
 
 ```ts
-  const { activeScene, isSaving, setScene } = useCampaignScene({
-    campaignId: campaign?.id ?? null,
-    initialScene: campaign?.activeScene,
-    socket,
-  });
+const { activeScene, isSaving, setScene } = useCampaignScene({
+  campaignId: campaign?.id ?? null,
+  initialScene: campaign?.activeScene,
+  socket,
+});
 ```
 
 c) Header — no container do "Header Hero" (~linha 296), adicionar o testid e o accent da cena. Substituir o `className` do primeiro `<div>` do `return` de:
@@ -1218,13 +1247,15 @@ por:
 d) Barra de cenas — no grupo direito do header (`<div className="flex items-center gap-2">` ~linha 349), inserir ANTES do botão "Gerenciar Conteúdo" (`{!isMissing && (<button ... Boxes ... </button>)}`):
 
 ```tsx
-            {!isMissing && (
-              <SceneBar
-                activeScene={activeScene}
-                onSceneChange={(next) => void setScene(next)}
-                disabled={isSaving}
-              />
-            )}
+{
+  !isMissing && (
+    <SceneBar
+      activeScene={activeScene}
+      onSceneChange={(next) => void setScene(next)}
+      disabled={isSaving}
+    />
+  );
+}
 ```
 
 - [ ] **Step 4: Rodar e confirmar passagem**
@@ -1250,9 +1281,11 @@ git commit -m "feat(shield): SceneBar integrada ao header do escudo com accent p
 ### Task 8: Verificação completa + smoke manual
 
 **Files:**
+
 - Sem alterações novas (a menos que o smoke encontre bug — corrigir na mesma tarefa).
 
 **Interfaces:**
+
 - Consumes: tudo das tarefas 1-7.
 - Produces: Fase 1 verificada; branch pronta para PR.
 
@@ -1276,6 +1309,7 @@ Expected: lint e tsc sem erros; suíte verde (os testes novos: `schema.sceneColu
 Run: `npm run dev` e abrir uma campanha d20 como mestre.
 
 Checklist (verificar um a um):
+
 1. Barra de cenas aparece no header, à esquerda de "Gerenciar Conteúdo", com os 5 ícones; rótulo "Cena: Livre".
 2. Clicar "Combate" → botão destacado em vermelho, header ganha ring vermelho, rótulo "Cena: Combate".
 3. Recarregar a página → cena continua em Combate (persistiu via `PATCH`).

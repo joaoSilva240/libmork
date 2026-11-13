@@ -656,11 +656,7 @@ describe("useJukebox", () => {
       const { result } = renderHook(() => useJukebox("campaign-1", true));
 
       act(() => {
-        result.current.addTrack(
-          "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-          "user-1",
-          "Master",
-        );
+        result.current.addTrack("https://www.youtube.com/watch?v=dQw4w9WgXcQ", "user-1", "Master");
       });
 
       expect(result.current.tracks).toHaveLength(1);
@@ -685,11 +681,7 @@ describe("useJukebox", () => {
       const { result } = renderHook(() => useJukebox("campaign-1", true));
 
       act(() => {
-        result.current.addTrack(
-          "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-          "user-1",
-          "Master",
-        );
+        result.current.addTrack("https://www.youtube.com/watch?v=dQw4w9WgXcQ", "user-1", "Master");
       });
 
       act(() => {

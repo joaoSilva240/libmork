@@ -37,12 +37,8 @@ import {
 export function CampaignDetail() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const {
-    socket,
-    updateCombatState,
-    subscribeCombatState,
-    setCampaignDice3DSettings,
-  } = useSocket();
+  const { socket, updateCombatState, subscribeCombatState, setCampaignDice3DSettings } =
+    useSocket();
   const { applyCampaignThemeOverride, clearCampaignThemeOverride } = useTheme();
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [worlds, setWorlds] = useState<World[]>([]);
@@ -299,10 +295,9 @@ export function CampaignDetail() {
   const fetchActiveEncounter = useCallback(async (): Promise<Encounter | null> => {
     if (!campaignId || !selectedWorldId) return null;
     try {
-      const res = await fetch(
-        `/api/campaigns/${campaignId}/worlds/${selectedWorldId}/encounters`,
-        { credentials: "include" },
-      );
+      const res = await fetch(`/api/campaigns/${campaignId}/worlds/${selectedWorldId}/encounters`, {
+        credentials: "include",
+      });
       const data = await res.json();
       if (res.ok && Array.isArray(data.data)) {
         return (data.data as Encounter[]).find((encounter) => encounter.isActive) ?? null;

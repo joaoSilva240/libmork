@@ -34,7 +34,9 @@ export function useCampaignScene({
   initialScene,
   socket,
 }: UseCampaignSceneOptions): UseCampaignSceneResult {
-  const [activeScene, setActiveScene] = useState<ActiveScene>(() => sanitizeActiveScene(initialScene));
+  const [activeScene, setActiveScene] = useState<ActiveScene>(() =>
+    sanitizeActiveScene(initialScene),
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
