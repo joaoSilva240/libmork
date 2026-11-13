@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSocket } from "@/context/SocketContext";
 import { extractYouTubeId } from "@/lib/audio/youtube";
 import type { AudioTrack } from "@/lib/audio/jukebox-protocol";
+import type { ActiveScene } from "@/lib/scenes/sceneConfig";
 
 export interface UseJukeboxReturn {
   tracks: AudioTrack[];
@@ -13,7 +14,12 @@ export interface UseJukeboxReturn {
   playingAt: number | null;
   trackPlayingAts: Record<string, number>;
   isLoading: boolean;
-  addTrack: (url: string, addedBy: string, actorName: string) => { ok: boolean; error?: string };
+  addTrack: (
+    url: string,
+    addedBy: string,
+    actorName: string,
+    scene?: ActiveScene,
+  ) => { ok: boolean; error?: string };
   removeTrack: (trackId: string) => void;
   togglePlay: (trackId: string) => void;
   seekTrack: (trackId: string, seconds: number) => void;
@@ -21,6 +27,7 @@ export interface UseJukeboxReturn {
   toggleLoop: (trackId: string) => void;
   createPlaylist: (trackIds: string[], name: string) => void;
   ungroupPlaylist: (playlistId: string) => void;
+  setTrackScene: (trackId: string, scene: ActiveScene) => void;
 }
 
 function getApiUrl(path: string): string {
@@ -99,7 +106,12 @@ export function useJukebox(campaignId: string | null, isMaster: boolean): UseJuk
   // ============================= Mutators (master-only) =============================
 
   const addTrack = useCallback(
-    (url: string, addedBy: string, actorName: string): { ok: boolean; error?: string } => {
+    (
+      url: string,
+      addedBy: string,
+      actorName: string,
+      scene: ActiveScene = null,
+    ): { ok: boolean; error?: string } => {
       if (!isMaster) {
         return { ok: false, error: "Apenas o mestre pode adicionar faixas" };
       }
@@ -118,6 +130,7 @@ export function useJukebox(campaignId: string | null, isMaster: boolean): UseJuk
         title: videoId,
         addedBy,
         addedAt: new Date().toISOString(),
+        scene: scene ?? null,
       };
 
       // Optimistic local update (dedupe)
@@ -136,7 +149,7 @@ export function useJukebox(campaignId: string | null, isMaster: boolean): UseJuk
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ videoId, title: videoId }),
+        body: JSON.stringify({ videoId, title: videoId, scene: scene ?? null }),
       }).catch((err) => {
         console.error("Erro ao persistir faixa:", err);
       });
@@ -318,6 +331,22 @@ export function useJukebox(campaignId: string | null, isMaster: boolean): UseJuk
     [isMaster, campaignId, tracks, emitAudioTrackPlaylist],
   );
 
+  const setTrackScene = useCallback(
+    (trackId: string, scene: ActiveScene) => {
+      if (!isMaster || !campaignId) return;
+      setTracks((prev) => prev.map((t) => (t.id === trackId ? { ...t, scene: scene ?? null } : t)));
+      fetch(getApiUrl(`/api/campaigns/${campaignId}/tracks/${trackId}`), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ scene: scene ?? null }),
+      }).catch((err) => {
+        console.error("Erro ao salvar cena da faixa:", err);
+      });
+    },
+    [isMaster, campaignId],
+  );
+
   // ============================= Subscribers =============================
 
   useEffect(() => {
@@ -456,5 +485,6 @@ export function useJukebox(campaignId: string | null, isMaster: boolean): UseJuk
     toggleLoop,
     createPlaylist,
     ungroupPlaylist,
+    setTrackScene,
   };
 }

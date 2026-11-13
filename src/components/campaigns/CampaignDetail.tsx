@@ -4,7 +4,7 @@ import { Fragment, useCallback, useEffect, useRef, useState, type CSSProperties 
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Boxes, Settings } from "lucide-react";
-import type { Campaign, Establishment, World } from "@/types";
+import type { Campaign, Establishment, Encounter, World } from "@/types";
 import { ResizeHandle, Spinner, WindowPortal } from "@/components/ui";
 import { useResizableLayout } from "@/hooks/useResizableLayout";
 import { useSocket } from "@/context/SocketContext";
@@ -18,6 +18,11 @@ import { MasterMediaPanel } from "./shield/MasterMediaPanel";
 import { MasterActorsPanel } from "./shield/MasterActorsPanel";
 import { useMasterScreenConfig, type ShieldModuleId } from "@/hooks/useMasterScreenConfig";
 import { useTheme } from "@/context/ThemeContext";
+import { SceneBar } from "./SceneBar";
+import { SceneConfirmDialog } from "./SceneConfirmDialog";
+import { useCampaignScene } from "@/hooks/useCampaignScene";
+import { SCENES, modulesForScene, type ActiveScene } from "@/lib/scenes/sceneConfig";
+import type { CombatSessionState } from "@/lib/engine";
 import {
   SHIELD_LEFT_MAX,
   SHIELD_LEFT_MIN,
@@ -32,7 +37,8 @@ import {
 export function CampaignDetail() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { socket, setCampaignDice3DSettings } = useSocket();
+  const { socket, updateCombatState, subscribeCombatState, setCampaignDice3DSettings } =
+    useSocket();
   const { applyCampaignThemeOverride, clearCampaignThemeOverride } = useTheme();
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [worlds, setWorlds] = useState<World[]>([]);
@@ -74,6 +80,22 @@ export function CampaignDetail() {
     updateConfig: updateScreenConfig,
     resetConfig: resetScreenConfig,
   } = useMasterScreenConfig();
+
+  const { activeScene, isSaving, setScene } = useCampaignScene({
+    campaignId: campaign?.id ?? null,
+    initialScene: campaign?.activeScene,
+    socket,
+  });
+
+  // Confirmacao de troca de cena com combate ativo (Issue #86, Fase 2).
+  const [combatState, setCombatState] = useState<CombatSessionState | null>(null);
+  const [pendingScene, setPendingScene] = useState<ActiveScene>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = subscribeCombatState((state) => setCombatState(state));
+    return unsubscribe;
+  }, [subscribeCombatState]);
 
   const [shieldGridEl, setShieldGridEl] = useState<HTMLDivElement | null>(null);
   const [shieldGridWidth, setShieldGridWidth] = useState(0);
@@ -264,6 +286,73 @@ export function CampaignDetail() {
     }
   };
 
+  // Encontro ativo do mundo selecionado (fonte REST, autoritativa quando o
+  // socket não trouxe combat-state — ex.: após recarregar a página).
+  // deps sobre o id derivado (primitivo): `campaign?.id` como dep impede o
+  // React Compiler de preservar a memoização (react-hooks/preserve-manual-memoization).
+  const campaignId = campaign?.id;
+
+  const fetchActiveEncounter = useCallback(async (): Promise<Encounter | null> => {
+    if (!campaignId || !selectedWorldId) return null;
+    try {
+      const res = await fetch(`/api/campaigns/${campaignId}/worlds/${selectedWorldId}/encounters`, {
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (res.ok && Array.isArray(data.data)) {
+        return (data.data as Encounter[]).find((encounter) => encounter.isActive) ?? null;
+      }
+    } catch {
+      // erro de rede: seguir sem confirmação; a UI de encontros do MasterRoster
+      // continua autoritativa (decisão do plano).
+    }
+    return null;
+  }, [campaignId, selectedWorldId]);
+
+  const handleSceneChange = useCallback(
+    async (next: ActiveScene) => {
+      if (!campaignId) return;
+      if (next === activeScene) return;
+      if (next === "combat") {
+        void setScene(next); // entrar no Combate nunca confirma (retoma ou abre o modal)
+        return;
+      }
+      const encounter = await fetchActiveEncounter();
+      if (combatState?.active || encounter) {
+        setPendingScene(next);
+        setConfirmOpen(true);
+        return;
+      }
+      void setScene(next);
+    },
+    [campaignId, activeScene, combatState, fetchActiveEncounter, setScene],
+  );
+
+  const confirmEndAndSwitch = useCallback(async () => {
+    if (!campaignId) return;
+    const encounter = await fetchActiveEncounter();
+    if (encounter) {
+      await fetch(`/api/campaigns/${campaignId}/encounters/${encounter.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: false }),
+        credentials: "include",
+      }).catch(() => {});
+    }
+    if (combatState?.active) updateCombatState({ ...combatState, active: false });
+    setConfirmOpen(false);
+    const target = pendingScene;
+    setPendingScene(null);
+    void setScene(target, "ended");
+  }, [campaignId, combatState, fetchActiveEncounter, pendingScene, setScene, updateCombatState]);
+
+  const confirmKeepAndSwitch = useCallback(() => {
+    setConfirmOpen(false);
+    const target = pendingScene;
+    setPendingScene(null);
+    void setScene(target, "kept");
+  }, [pendingScene, setScene]);
+
   const handleDelete = async () => {
     if (
       !window.confirm(
@@ -313,6 +402,8 @@ export function CampaignDetail() {
   }
 
   const isMissing = campaign.rulesEngine === "missing_zero";
+  // Missing neutraliza as cenas (fallback "neutral" = comportamento atual).
+  const estVis = isMissing ? "neutral" : modulesForScene(activeScene).establishments;
 
   // Renderiza dinamicamente cada módulo do escudo conforme a ordenação/visibilidade
   // configurada. Módulos consolidados com abas: mediaPanel e actorsPanel (issue #89).
@@ -338,6 +429,7 @@ export function CampaignDetail() {
             isEstablishmentsExpanded={isEstablishmentsExpanded}
             onToggleEstablishmentsExpanded={() => setIsEstablishmentsExpanded((prev) => !prev)}
             onToggleEstablishment={handleToggleEstablishment}
+            activeScene={activeScene}
             className="lg:min-h-[200px]"
           />
         );
@@ -375,11 +467,12 @@ export function CampaignDetail() {
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header Hero com Imagem de Capa e Gradiente */}
       <div
+        data-testid="shield-header"
         className={`relative overflow-hidden mb-2 rounded-xl border px-4 py-2.5 shrink-0 shadow-lg ${
           isMissing
             ? "border-zinc-800 bg-[#0d0e12] font-mono shadow-rose-950/20"
             : "border-gray-800/80 bg-gray-900"
-        }`}
+        } ${activeScene && !isMissing ? `ring-1 ${SCENES[activeScene].accentClasses}` : ""}`}
         style={
           campaign.coverImageUrl
             ? {
@@ -429,6 +522,14 @@ export function CampaignDetail() {
           </div>
 
           <div className="flex items-center gap-2">
+            {!isMissing && (
+              <SceneBar
+                activeScene={activeScene}
+                onSceneChange={(next) => void handleSceneChange(next)}
+                combatBackgroundActive={!!combatState?.active && activeScene !== "combat"}
+                disabled={isSaving}
+              />
+            )}
             {!isMissing && (
               <button
                 type="button"
@@ -510,6 +611,7 @@ export function CampaignDetail() {
               key={`roster-${rosterVersion}`}
               campaignId={campaign.id}
               selectedWorldId={selectedWorldId}
+              activeScene={activeScene}
               onTogglePopOut={() => setIsMesaPopped(true)}
               rulesEngine={campaign.rulesEngine}
               showRoster={screenConfig.showRoster}
@@ -590,6 +692,17 @@ export function CampaignDetail() {
         />
       )}
 
+      <SceneConfirmDialog
+        open={confirmOpen}
+        targetLabel={pendingScene ? SCENES[pendingScene].label : ""}
+        onCancel={() => {
+          setConfirmOpen(false);
+          setPendingScene(null);
+        }}
+        onEndAndSwitch={() => void confirmEndAndSwitch()}
+        onKeepAndSwitch={confirmKeepAndSwitch}
+      />
+
       <WindowPortal
         isOpen={isMesaPopped}
         onClose={handleCloseMesaPopOut}
@@ -603,6 +716,7 @@ export function CampaignDetail() {
             key={`roster-popped-${rosterVersion}`}
             campaignId={campaign.id}
             selectedWorldId={selectedWorldId}
+            activeScene={activeScene}
             isPoppedOut={true}
             onTogglePopOut={() => setIsMesaPopped(false)}
             rulesEngine={campaign.rulesEngine}

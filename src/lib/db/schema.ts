@@ -171,6 +171,8 @@ export const campaigns = pgTable("campaigns", {
   activeAssetId: uuid("active_asset_id").references((): AnyPgColumn => campaignAssets.id, {
     onDelete: "set null",
   }),
+  /** Cena ativa do escudo do mestre (issue #86). null = modo Livre. */
+  activeScene: varchar("active_scene", { length: 20 }),
   oneShot: boolean("one_shot"),
   maxPlayers: integer("max_players"),
   dice3dPlayersEnabled: boolean("dice3d_players_enabled").notNull().default(true),
@@ -221,6 +223,7 @@ export const campaignAudioTracks = pgTable(
     position: integer("position").notNull().default(0), // ordem de exibição (0, 1, 2...)
     playlistId: varchar("playlist_id", { length: 100 }), // agrupamento em playlist
     playlistName: varchar("playlist_name", { length: 100 }),
+    scene: varchar("scene", { length: 20 }), // cena de destino; null = faixa geral (issue #86)
   },
   (table) => [
     uniqueIndex("campaign_audio_tracks_campaign_video_idx").on(table.campaignId, table.videoId),

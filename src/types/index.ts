@@ -144,6 +144,7 @@ export type Campaign = {
   theme?: string | null;
   activeAssetId?: string | null;
   activeAsset?: CampaignAsset | null;
+  activeScene?: string | null;
   dice3dPlayersEnabled?: boolean;
   dice3dMasterEnabled?: boolean;
   createdAt: Date;

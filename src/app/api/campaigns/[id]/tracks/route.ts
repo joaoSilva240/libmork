@@ -11,6 +11,7 @@ import { campaigns, campaignInvites, campaignAudioTracks } from "@/lib/db/schema
 import { requireAuth } from "@/lib/auth/session";
 import { getCampaignAsMaster } from "@/lib/auth/campaign-access";
 import { extractYouTubeId } from "@/lib/audio/youtube";
+import { isSceneValue } from "@/lib/scenes/sceneConfig";
 import { eq, and, asc, inArray } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       .where(eq(campaignAudioTracks.campaignId, campaignId))
       .orderBy(asc(campaignAudioTracks.position), asc(campaignAudioTracks.addedAt));
 
-    // Formatar para o contrato AudioTrack ({ id: videoId, title, addedBy, addedAt, playlistId, playlistName })
+    // Formatar para o contrato AudioTrack ({ id: videoId, title, addedBy, addedAt, playlistId, playlistName, scene })
     const formatted = tracks.map((t) => ({
       id: t.videoId,
       dbId: t.id,
@@ -77,6 +78,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       addedAt: t.addedAt.toISOString(),
       playlistId: t.playlistId ?? null,
       playlistName: t.playlistName ?? null,
+      scene: t.scene ?? null,
     }));
 
     return NextResponse.json({
@@ -114,7 +116,12 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const { url, videoId: rawVideoId, title: rawTitle } = body;
+    const { url, videoId: rawVideoId, title: rawTitle, scene: rawScene } = body;
+
+    if (rawScene !== undefined && rawScene !== null && rawScene !== "" && !isSceneValue(rawScene)) {
+      return NextResponse.json({ success: false, error: "Cena inválida" }, { status: 400 });
+    }
+    const scene = isSceneValue(rawScene) ? rawScene : null;
 
     const videoId = rawVideoId || (url ? extractYouTubeId(url) : null);
     if (!videoId) {
@@ -155,6 +162,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         videoId,
         title,
         addedBy: session.user.id,
+        scene,
       })
       .returning();
 
@@ -167,6 +175,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
           title: newTrack.title,
           addedBy: newTrack.addedBy,
           addedAt: newTrack.addedAt.toISOString(),
+          scene: newTrack.scene ?? null,
         },
       },
       { status: 201 },
