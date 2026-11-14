@@ -254,6 +254,21 @@ describe("PipBoySheet — aba DATA (perks)", () => {
     expect(screen.queryByTestId("perk-details-Gun Nut")).toBeNull();
   });
 
+  it("associa aria-controls a um id de painel válido (sem espaços) para perk multi-palavra", () => {
+    openDataTab();
+    const item = screen.getByTestId("perk-item-Gun Nut");
+    const toggle = within(item).getByRole("button", { name: /Gun Nut/ });
+
+    fireEvent.click(toggle);
+
+    const controls = toggle.getAttribute("aria-controls");
+    expect(controls).toBeTruthy();
+    expect(controls).not.toMatch(/\s/);
+    const panel = document.getElementById(controls as string);
+    expect(panel).not.toBeNull();
+    expect(panel).toHaveAttribute("data-testid", "perk-details-Gun Nut");
+  });
+
   it("ajusta o rank em jogo respeitando maxRank", () => {
     const onUpdate = openDataTab();
     const item = screen.getByTestId("perk-item-Gun Nut");

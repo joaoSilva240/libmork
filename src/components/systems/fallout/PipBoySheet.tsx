@@ -620,7 +620,7 @@ export function PipBoySheet({
                         type="button"
                         onClick={() => setExpandedPerk(expanded ? null : perk.name)}
                         aria-expanded={expanded}
-                        aria-controls={`perk-details-${perk.name}`}
+                        aria-controls={`perk-details-${idx}`}
                         className="flex w-full items-center justify-between gap-2 p-2 text-xs cursor-pointer"
                       >
                         <span className="flex min-w-0 items-center gap-2">
@@ -642,7 +642,7 @@ export function PipBoySheet({
                       {expanded && (
                         <div
                           data-testid={`perk-details-${perk.name}`}
-                          id={`perk-details-${perk.name}`}
+                          id={`perk-details-${idx}`}
                           className="space-y-2 border-t border-emerald-900/50 px-2 py-2"
                         >
                           {perk.description && (
