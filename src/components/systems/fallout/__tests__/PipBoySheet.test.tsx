@@ -760,3 +760,117 @@ describe("PipBoySheet INV — encumbrance display", () => {
   });
 });
 
+describe("PipBoySheet INV — acoes de arma", () => {
+  function buildCharWithWeapon(overrides: any = {}): any {
+    const char = createInitialFalloutCharacter(
+      {
+        name: "Test", origin: "vault_dweller", level: 1, xp: 0,
+        attributes: { str: 6, per: 8, end: 7, cha: 5, int: 6, agi: 9, luc: 6 },
+        tagSkills: [], perks: [], caps: 0,
+      },
+      "user-1", "char-test",
+    );
+    char.items = [{
+      id: "w-1", name: "10mm Pistol", type: "weapon",
+      damageDiceRating: 4, damageType: "physical", damageEffects: [], qualities: [],
+      ammoType: "10mm", ammoPerShot: 1, fireRate: 2, range: "close",
+      weight: 4, costCaps: 50, equipped: false, skill: "small_guns",
+      stashed: false, installedMods: [], installedModsData: {},
+      ...overrides,
+    }];
+    return char;
+  }
+
+  beforeEach(() => { vi.restoreAllMocks(); });
+
+  it("equipar arma chama onUpdateCharacter com equipped:true", () => {
+    const onUpdate = vi.fn();
+    render(<PipBoySheet character={buildCharWithWeapon()} onUpdateCharacter={onUpdate} />);
+    fireEvent.click(screen.getByRole("tab", { name: "INV" }));
+    fireEvent.click(screen.getByTestId("item-row-w-1").querySelector("button")!);
+    fireEvent.click(screen.getByRole("button", { name: /Equipar/ }));
+    expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      items: [expect.objectContaining({ id: "w-1", equipped: true })],
+    }));
+  });
+
+  it("equipar segunda arma desequipa a primeira", () => {
+    const onUpdate = vi.fn();
+    const char = buildCharWithWeapon({ equipped: true });
+    char.items.push({ ...char.items[0], id: "w-2", name: "Laser Pistol", equipped: false });
+    render(<PipBoySheet character={char} onUpdateCharacter={onUpdate} />);
+    fireEvent.click(screen.getByRole("tab", { name: "INV" }));
+    fireEvent.click(screen.getByTestId("item-row-w-2").querySelector("button")!);
+    fireEvent.click(screen.getByRole("button", { name: /Equipar/ }));
+    const patch = onUpdate.mock.calls[0][0];
+    expect(patch.items.find((i: any) => i.id === "w-1").equipped).toBe(false);
+    expect(patch.items.find((i: any) => i.id === "w-2").equipped).toBe(true);
+  });
+
+  it("botao Atirar visivel somente quando equipada", () => {
+    render(<PipBoySheet character={buildCharWithWeapon({ equipped: true })} onUpdateCharacter={vi.fn()} />);
+    fireEvent.click(screen.getByRole("tab", { name: "INV" }));
+    fireEvent.click(screen.getByTestId("item-row-w-1").querySelector("button")!);
+    expect(screen.getByRole("button", { name: /Atirar/ })).toBeTruthy();
+  });
+
+  it("botao Atirar ausente quando nao equipada", () => {
+    render(<PipBoySheet character={buildCharWithWeapon()} onUpdateCharacter={vi.fn()} />);
+    fireEvent.click(screen.getByRole("tab", { name: "INV" }));
+    fireEvent.click(screen.getByTestId("item-row-w-1").querySelector("button")!);
+    expect(screen.queryByRole("button", { name: /Atirar/ })).toBeNull();
+  });
+});
+
+describe("PipBoySheet INV — mods", () => {
+  function buildCharWithMod(): any {
+    const char = createInitialFalloutCharacter(
+      {
+        name: "Test", origin: "vault_dweller", level: 1, xp: 0,
+        attributes: { str: 6, per: 8, end: 7, cha: 5, int: 6, agi: 9, luc: 6 },
+        tagSkills: [], perks: [], caps: 0,
+      },
+      "user-1", "char-test",
+    );
+    char.items = [
+      { id: "w-1", name: "10mm", type: "weapon", damageDiceRating: 4, damageType: "physical", damageEffects: [], qualities: [], ammoType: "10mm", ammoPerShot: 1, fireRate: 2, range: "close", weight: 4, costCaps: 50, equipped: true, skill: "small_guns", stashed: false, installedMods: [], installedModsData: {} },
+      { id: "m-1", name: "Long Barrel", type: "mod", quantity: 1, weight: 1, costCaps: 20, stashed: false, modTarget: "weapon", modEffects: { damageBonus: 1 } },
+    ];
+    return char;
+  }
+
+  beforeEach(() => { vi.restoreAllMocks(); });
+
+  it("instalar mod aplica efeito e remove do inventario", () => {
+    const onUpdate = vi.fn();
+    render(<PipBoySheet character={buildCharWithMod()} onUpdateCharacter={onUpdate} />);
+    fireEvent.click(screen.getByRole("tab", { name: "INV" }));
+    fireEvent.click(screen.getByTestId("item-row-w-1").querySelector("button")!);
+    fireEvent.click(screen.getByRole("button", { name: "Instalar Mod" }));
+    fireEvent.click(screen.getByRole("button", { name: "Instalar Long Barrel" }));
+    const patch = onUpdate.mock.calls[0][0];
+    const weapon = patch.items.find((i: any) => i.id === "w-1");
+    expect(weapon.damageDiceRating).toBe(5);
+    expect(weapon.installedMods).toContain("m-1");
+    expect(patch.items.find((i: any) => i.id === "m-1")).toBeUndefined();
+  });
+
+  it("remover mod reverte efeito e devolve ao inventario", () => {
+    const onUpdate = vi.fn();
+    const char = buildCharWithMod();
+    char.items[0].installedMods = ["m-1"];
+    char.items[0].installedModsData = { "m-1": { damageBonus: 1 } };
+    char.items[0].damageDiceRating = 5;
+    char.items = [char.items[0]];
+    render(<PipBoySheet character={char} onUpdateCharacter={onUpdate} />);
+    fireEvent.click(screen.getByRole("tab", { name: "INV" }));
+    fireEvent.click(screen.getByTestId("item-row-w-1").querySelector("button")!);
+    fireEvent.click(screen.getByRole("button", { name: /Remover m-1/ }));
+    const patch = onUpdate.mock.calls[0][0];
+    const weapon = patch.items.find((i: any) => i.id === "w-1");
+    expect(weapon.damageDiceRating).toBe(4);
+    expect(weapon.installedMods).toEqual([]);
+    expect(patch.items.find((i: any) => i.id === "m-1")).toBeTruthy();
+  });
+});
+

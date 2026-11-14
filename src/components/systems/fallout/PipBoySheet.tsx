@@ -17,11 +17,15 @@ import {
   type FalloutCharacter,
   type FalloutCharacterPerk,
   type FalloutItem,
+  type FalloutModItem,
   type FalloutSkillName,
+  type FalloutWeaponItem,
 } from "@/lib/systems/fallout/types";
 import {
   adjustFalloutPerkRank,
   applyFalloutConsumable,
+  applyModToWeapon,
+  removeModFromWeapon,
   calculateEffectiveMaxHp,
   calculateDefense,
   calculateInitiative,
@@ -64,6 +68,8 @@ import {
   BatteryLow,
   UtensilsCrossed,
   Pill,
+  Crosshair,
+  Wrench,
 } from "lucide-react";
 
 const PIPBOY_TABS = [
@@ -182,6 +188,7 @@ export function PipBoySheet({
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
   const [isItemPickerOpen, setIsItemPickerOpen] = useState(false);
   const [confirmConsumeId, setConfirmConsumeId] = useState<string | null>(null);
+  const [modPickerWeaponId, setModPickerWeaponId] = useState<string | null>(null);
 
   const canEdit = !readOnly && Boolean(onUpdateCharacter);
 
@@ -290,6 +297,50 @@ export function PipBoySheet({
     setRollerInitialAttr(defaultAttr);
     setRollerInitialSkill(skill);
     setIsRollerOpen(true);
+  };
+
+  const handleEquipWeapon = (itemId: string) => {
+    if (readOnly || !onUpdateCharacter) return;
+    const items = character.items.map((item) => {
+      if (item.type !== "weapon") return item;
+      if (item.id === itemId) return { ...item, equipped: !item.equipped };
+      return { ...item, equipped: false };
+    });
+    onUpdateCharacter({ items });
+  };
+
+  const handleShootWeapon = (weapon: FalloutWeaponItem) => {
+    const cfg = FALLOUT_SKILL_CONFIGS[weapon.skill];
+    setRollerInitialAttr(cfg.defaultAttribute);
+    setRollerInitialSkill(weapon.skill);
+    setIsRollerOpen(true);
+  };
+
+  const handleInstallMod = (weaponId: string, modId: string) => {
+    if (readOnly || !onUpdateCharacter) return;
+    const weapon = character.items.find((i) => i.id === weaponId && i.type === "weapon") as FalloutWeaponItem | undefined;
+    const mod = character.items.find((i) => i.id === modId && i.type === "mod") as FalloutModItem | undefined;
+    if (!weapon || !mod) return;
+    const updatedWeapon = applyModToWeapon(weapon, mod);
+    const remainingMod = mod.quantity > 1 ? { ...mod, quantity: mod.quantity - 1 } : null;
+    const items = character.items
+      .map((i) => (i.id === weaponId ? updatedWeapon : i))
+      .map((i) => (i.id === modId ? remainingMod : i))
+      .filter(Boolean) as FalloutItem[];
+    onUpdateCharacter({ items });
+    setModPickerWeaponId(null);
+  };
+
+  const handleRemoveMod = (weaponId: string, modId: string) => {
+    if (readOnly || !onUpdateCharacter) return;
+    const weapon = character.items.find((i) => i.id === weaponId && i.type === "weapon") as FalloutWeaponItem | undefined;
+    if (!weapon) return;
+    const modEntry = character.items.find((i) => i.id === modId && i.type === "mod") as FalloutModItem | undefined;
+    const mod: FalloutModItem = modEntry ?? { id: modId, name: modId, type: "mod", quantity: 1, weight: 0, costCaps: 0, stashed: false, modTarget: "weapon", modEffects: weapon.installedModsData[modId] ?? {} };
+    const updatedWeapon = removeModFromWeapon(weapon, mod);
+    const items: FalloutItem[] = character.items.map((i) => (i.id === weaponId ? updatedWeapon : i));
+    if (!modEntry) items.push({ ...mod, quantity: 1, stashed: false });
+    onUpdateCharacter({ items });
   };
 
   return (
@@ -661,6 +712,101 @@ export function PipBoySheet({
                                 >
                                   {item.category === "med" || item.category === "chem" ? <Pill className="h-3 w-3" /> : <UtensilsCrossed className="h-3 w-3" />}
                                   Consumir
+                                </button>
+                              )}
+                            </div>
+                          )}
+                          {canEdit && item.type === "weapon" && (
+                            <div className="flex flex-wrap gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleEquipWeapon(item.id)}
+                                aria-label={item.equipped ? "Desequipar" : "Equipar"}
+                                className={`flex items-center gap-1 rounded border px-2 py-1 text-[10px] font-bold cursor-pointer ${
+                                  item.equipped
+                                    ? "border-emerald-500 bg-emerald-950 text-emerald-300"
+                                    : "border-emerald-800 bg-black/50 text-emerald-500 hover:border-emerald-500"
+                                }`}
+                              >
+                                {item.equipped ? <ShieldOff className="h-3 w-3" /> : <Shield className="h-3 w-3" />}
+                                {item.equipped ? "Desequipar" : "Equipar"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleItemField(item.id, "stashed", !item.stashed)}
+                                aria-label={item.stashed ? "Recuperar" : "Guardar"}
+                                className="flex items-center gap-1 rounded border border-emerald-800 bg-black/50 px-2 py-1 text-[10px] font-bold text-emerald-500 hover:border-emerald-500 cursor-pointer"
+                              >
+                                {item.stashed ? <ArchiveRestore className="h-3 w-3" /> : <Archive className="h-3 w-3" />}
+                                {item.stashed ? "Recuperar" : "Guardar"}
+                              </button>
+                              {item.equipped && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleShootWeapon(item)}
+                                  aria-label="Atirar"
+                                  className="flex items-center gap-1 rounded border border-amber-500 bg-amber-950 px-2 py-1 text-[10px] font-bold text-amber-300 cursor-pointer"
+                                >
+                                  <Crosshair className="h-3 w-3" /> Atirar
+                                </button>
+                              )}
+                            </div>
+                          )}
+                          {canEdit && item.type === "weapon" && item.equipped && (
+                            <div className="space-y-1.5">
+                              {item.installedMods.length > 0 && (
+                                <div className="space-y-1">
+                                  <span className="text-[10px] font-bold uppercase text-emerald-300">Mods Instalados</span>
+                                  {item.installedMods.map((modId) => {
+                                    const modItem = character.items.find((i) => i.id === modId);
+                                    const modName = modItem?.name ?? modId;
+                                    return (
+                                      <div key={modId} className="flex items-center justify-between text-[10px] text-emerald-400">
+                                        <span>{modName}</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRemoveMod(item.id, modId)}
+                                          aria-label={`Remover ${modName}`}
+                                          className="text-emerald-600 hover:text-red-400 cursor-pointer"
+                                        >
+                                          <X className="h-3 w-3" />
+                                        </button>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                              {modPickerWeaponId === item.id ? (
+                                <div className="space-y-1">
+                                  {character.items
+                                    .filter((i) => i.type === "mod" && i.modTarget === "weapon" && !i.stashed && !item.installedMods.includes(i.id))
+                                    .map((mod) => (
+                                      <button
+                                        key={mod.id}
+                                        type="button"
+                                        onClick={() => handleInstallMod(item.id, mod.id)}
+                                        aria-label={`Instalar ${mod.name}`}
+                                        className="flex w-full items-center gap-1 rounded border border-emerald-800 bg-black/50 px-2 py-1 text-[10px] text-emerald-400 hover:border-emerald-500 cursor-pointer"
+                                      >
+                                        <Wrench className="h-3 w-3" /> {mod.name}
+                                      </button>
+                                    ))}
+                                  <button
+                                    type="button"
+                                    onClick={() => setModPickerWeaponId(null)}
+                                    className="text-[10px] text-emerald-600 cursor-pointer"
+                                  >
+                                    Cancelar
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setModPickerWeaponId(item.id)}
+                                  aria-label="Instalar Mod"
+                                  className="flex items-center gap-1 rounded border border-emerald-800 bg-black/50 px-2 py-1 text-[10px] font-bold text-emerald-500 hover:border-emerald-500 cursor-pointer"
+                                >
+                                  <Wrench className="h-3 w-3" /> Instalar Mod
                                 </button>
                               )}
                             </div>
