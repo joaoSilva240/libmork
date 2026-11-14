@@ -6,6 +6,7 @@
 import {
   FALLOUT_BODY_LOCATIONS,
   FALLOUT_DAMAGE_EFFECTS,
+  FALLOUT_SKILLS,
   FALLOUT_WEAPON_QUALITIES,
   type FalloutApparelItem,
   type FalloutBodyLocation,
@@ -13,6 +14,7 @@ import {
   type FalloutDamageType,
   type FalloutItem,
   type FalloutItemType,
+  type FalloutSkillName,
   type FalloutWeaponItem,
   type FalloutWeaponQuality,
 } from "./types";
@@ -140,6 +142,23 @@ function pickConsumableCategory(value: unknown): "chem" | "food" | "beverage" | 
     : "food";
 }
 
+const VALID_SKILLS = new Set<string>(FALLOUT_SKILLS);
+
+function pickWeaponSkill(
+  sd: Record<string, unknown>,
+  damageType: FalloutDamageType,
+  qualities: string[],
+  range: string,
+  ammoType: string | undefined,
+): FalloutSkillName {
+  if (typeof sd.skill === "string" && VALID_SKILLS.has(sd.skill)) return sd.skill as FalloutSkillName;
+  if (damageType === "energy") return "energy_weapons";
+  if (qualities.includes("thrown")) return "throwing";
+  if (qualities.includes("two_handed") && asNumber(asRecord(sd.damage).rating) >= 5) return "big_guns";
+  if (range === "close" && !ammoType) return "melee_weapons";
+  return "small_guns";
+}
+
 /** Converte uma linha do catálogo no item estruturado da ficha (peso e caps inclusos). */
 export function catalogItemToFalloutItem(item: CatalogItem): FalloutItem {
   const sd = asRecord(item.sourceData);
@@ -153,19 +172,23 @@ export function catalogItemToFalloutItem(item: CatalogItem): FalloutItem {
 
   if (type === "weapon") {
     const damage = asRecord(sd.damage);
+    const damageType = pickDamageType(damage.damageType);
+    const qualities = activeKeys(damage.weaponQuality, QUALITY_SET) as FalloutWeaponQuality[];
+    const ammoType = typeof sd.ammo === "string" && sd.ammo ? sd.ammo : undefined;
+    const range = pickRange(sd.range);
     return {
       ...base,
       type: "weapon",
       damageDiceRating: asNumber(damage.rating),
-      damageType: pickDamageType(damage.damageType),
+      damageType,
       damageEffects: activeKeys(damage.damageEffect, EFFECT_SET, DAMAGE_EFFECT_ALIASES) as FalloutDamageEffect[],
-      qualities: activeKeys(damage.weaponQuality, QUALITY_SET) as FalloutWeaponQuality[],
-      ammoType: typeof sd.ammo === "string" && sd.ammo ? sd.ammo : undefined,
+      qualities,
+      ammoType,
       ammoPerShot: asNumber(sd.ammoPerShot, 1),
       fireRate: asNumber(sd.fireRate),
-      range: pickRange(sd.range),
+      range,
       equipped: false,
-      skill: "small_guns",
+      skill: pickWeaponSkill(sd, damageType, qualities, range, ammoType),
       stashed: false,
       installedMods: [],
       installedModsData: {},
@@ -221,6 +244,8 @@ export function catalogItemToFalloutItem(item: CatalogItem): FalloutItem {
 
   if (type === "mod") {
     const pack = typeof sd.pack === "string" ? sd.pack : "";
+    const damage = asRecord(sd.damage);
+    const qualitiesAdd = activeKeys(sd.weaponQuality, QUALITY_SET) as FalloutWeaponQuality[];
     return {
       ...base,
       type: "mod",
@@ -228,7 +253,12 @@ export function catalogItemToFalloutItem(item: CatalogItem): FalloutItem {
       quantity: asNumber(sd.quantity, 1),
       stashed: false,
       modTarget: pack === "weapon_mods" ? "weapon" : "apparel",
-      modEffects: {},
+      modEffects: {
+        damageBonus: asNumber(damage.rating) || undefined,
+        qualitiesAdd: qualitiesAdd.length > 0 ? qualitiesAdd : undefined,
+        fireRateBonus: asNumber(sd.fireRate) || undefined,
+        weightDelta: asNumber(sd.weight) || undefined,
+      },
     };
   }
 

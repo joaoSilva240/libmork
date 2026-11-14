@@ -283,3 +283,72 @@ describe("catalogItemToFalloutItem — apparel stashed/powered/clothing", () => 
     expect((item as any).apparelType).toBe("clothing");
   });
 });
+
+describe("catalogItemToFalloutItem — weapon skill mapping", () => {
+  it("arma de energia recebe energy_weapons", () => {
+    const item = catalogItemToFalloutItem(catalogItem({
+      sourceData: { pack: "weapons", damage: { rating: 3, damageType: { energy: true } } },
+    }));
+    if (item.type !== "weapon") throw new Error("esperava arma");
+    expect(item.skill).toBe("energy_weapons");
+  });
+
+  it("arma corpo a corpo sem ammo recebe melee_weapons", () => {
+    const item = catalogItemToFalloutItem(catalogItem({
+      sourceData: { pack: "weapons", range: "close", damage: { rating: 3 } },
+    }));
+    if (item.type !== "weapon") throw new Error("esperava arma");
+    expect(item.skill).toBe("melee_weapons");
+  });
+
+  it("sourceData.skill explicito tem prioridade", () => {
+    const item = catalogItemToFalloutItem(catalogItem({
+      sourceData: { pack: "weapons", skill: "big_guns", damage: { rating: 6 } },
+    }));
+    if (item.type !== "weapon") throw new Error("esperava arma");
+    expect(item.skill).toBe("big_guns");
+  });
+
+  it("arma com thrown recebe throwing", () => {
+    const item = catalogItemToFalloutItem(catalogItem({
+      sourceData: { pack: "weapons", damage: { rating: 2, weaponQuality: { thrown: { rank: 1, value: 0 } } } },
+    }));
+    if (item.type !== "weapon") throw new Error("esperava arma");
+    expect(item.skill).toBe("throwing");
+  });
+
+  it("arma padrao recebe small_guns", () => {
+    const item = catalogItemToFalloutItem(catalogItem({
+      sourceData: { pack: "weapons", ammo: "10mm", range: "medium", damage: { rating: 4 } },
+    }));
+    if (item.type !== "weapon") throw new Error("esperava arma");
+    expect(item.skill).toBe("small_guns");
+  });
+});
+
+describe("catalogItemToFalloutItem — mod effects", () => {
+  it("weapon_mods extrai damageBonus e qualitiesAdd", () => {
+    const item = catalogItemToFalloutItem(catalogItem({
+      sourceData: {
+        pack: "weapon_mods",
+        damage: { rating: 1 },
+        weaponQuality: { accurate: { rank: 1, value: 0 } },
+        weight: 1,
+      },
+    }));
+    expect(item.type).toBe("mod");
+    if (item.type !== "mod") throw new Error("esperava mod");
+    expect(item.modTarget).toBe("weapon");
+    expect(item.modEffects.damageBonus).toBe(1);
+    expect(item.modEffects.qualitiesAdd).toContain("accurate");
+    expect(item.modEffects.weightDelta).toBe(1);
+  });
+
+  it("apparel_mods recebe modTarget apparel", () => {
+    const item = catalogItemToFalloutItem(catalogItem({
+      sourceData: { pack: "apparel_mods" },
+    }));
+    if (item.type !== "mod") throw new Error("esperava mod");
+    expect(item.modTarget).toBe("apparel");
+  });
+});
