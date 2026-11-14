@@ -165,6 +165,10 @@ export function catalogItemToFalloutItem(item: CatalogItem): FalloutItem {
       fireRate: asNumber(sd.fireRate),
       range: pickRange(sd.range),
       equipped: false,
+      skill: "small_guns",
+      stashed: false,
+      installedMods: [],
+      installedModsData: {},
     };
   }
 
@@ -215,9 +219,22 @@ export function catalogItemToFalloutItem(item: CatalogItem): FalloutItem {
     };
   }
 
+  if (type === "mod") {
+    const pack = typeof sd.pack === "string" ? sd.pack : "";
+    return {
+      ...base,
+      type: "mod",
+      description: item.description ?? undefined,
+      quantity: asNumber(sd.quantity, 1),
+      stashed: false,
+      modTarget: pack === "weapon_mods" ? "weapon" : "apparel",
+      modEffects: {},
+    };
+  }
+
   return {
     ...base,
-    type: type as "mod" | "miscellany",
+    type: type as "miscellany",
     description: item.description ?? undefined,
     quantity: asNumber(sd.quantity, 1),
     equipped: false,

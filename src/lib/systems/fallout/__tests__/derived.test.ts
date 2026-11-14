@@ -217,7 +217,7 @@ describe("recalculateFalloutDerived — resistencias de apparel", () => {
 describe("recalculateFalloutDerived — encumbrance", () => {
   it("calcula peso total de itens nao-stashed", () => {
     const items: FalloutItem[] = [
-      { id: "w1", name: "Pistol", type: "weapon", damageDiceRating: 2, damageType: "physical", damageEffects: [], qualities: [], ammoPerShot: 1, fireRate: 1, range: "close", weight: 3, costCaps: 50, equipped: false },
+      { id: "w1", name: "Pistol", type: "weapon", damageDiceRating: 2, damageType: "physical", damageEffects: [], qualities: [], ammoPerShot: 1, fireRate: 1, range: "close", weight: 3, costCaps: 50, equipped: false, skill: "small_guns", stashed: false, installedMods: [], installedModsData: {} },
       { id: "c1", name: "Stimpak", type: "consumable", category: "med", hpRestored: 5, quantity: 3, weight: 0.5, costCaps: 25 },
     ];
     const char = buildCharacter({ items });

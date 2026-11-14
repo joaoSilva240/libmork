@@ -103,6 +103,7 @@ export const createFalloutCharacterSchema = z.object({
   tagSkills: z.array(falloutSkillNameSchema).max(3).default([]),
   perks: z.array(falloutPerkEntrySchema).default([]),
   caps: z.number().int().min(0).default(0),
+  items: z.array(z.any()).optional(),
 });
 
 export type CreateFalloutCharacterInput = z.infer<typeof createFalloutCharacterSchema>;

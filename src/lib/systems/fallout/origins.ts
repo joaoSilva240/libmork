@@ -27,6 +27,12 @@ export interface FalloutOriginConfig {
   robot: boolean;
   /** Carga fixa em lb (robôs não usam FOR para carga) */
   fixedCarryWeight?: number;
+  /** Kit de equipamento inicial concedido na criação */
+  startingItems: Array<{
+    sourceKey: string;
+    name: string;
+    quantity?: number;
+  }>;
 }
 
 export const FALLOUT_ORIGIN_CONFIGS: Record<FalloutOrigin, FalloutOriginConfig> = {
@@ -44,6 +50,7 @@ export const FALLOUT_ORIGIN_CONFIGS: Record<FalloutOrigin, FalloutOriginConfig> 
     attributeLimits: {},
     attributeBonuses: {},
     robot: false,
+    startingItems: [],
   },
   wastelander: {
     id: "wastelander",
@@ -59,6 +66,7 @@ export const FALLOUT_ORIGIN_CONFIGS: Record<FalloutOrigin, FalloutOriginConfig> 
     attributeLimits: {},
     attributeBonuses: {},
     robot: false,
+    startingItems: [],
   },
   brotherhood_initiate: {
     id: "brotherhood_initiate",
@@ -74,6 +82,7 @@ export const FALLOUT_ORIGIN_CONFIGS: Record<FalloutOrigin, FalloutOriginConfig> 
     attributeLimits: {},
     attributeBonuses: {},
     robot: false,
+    startingItems: [],
   },
   ghoul: {
     id: "ghoul",
@@ -89,6 +98,7 @@ export const FALLOUT_ORIGIN_CONFIGS: Record<FalloutOrigin, FalloutOriginConfig> 
     attributeLimits: {},
     attributeBonuses: {},
     robot: false,
+    startingItems: [],
   },
   super_mutant: {
     id: "super_mutant",
@@ -105,6 +115,7 @@ export const FALLOUT_ORIGIN_CONFIGS: Record<FalloutOrigin, FalloutOriginConfig> 
     attributeBonuses: { str: 2, end: 2 },
     maxSkillRank: 4,
     robot: false,
+    startingItems: [],
   },
   mister_handy: {
     id: "mister_handy",
@@ -121,6 +132,7 @@ export const FALLOUT_ORIGIN_CONFIGS: Record<FalloutOrigin, FalloutOriginConfig> 
     attributeBonuses: {},
     robot: true,
     fixedCarryWeight: 150,
+    startingItems: [],
   },
   survivor: {
     id: "survivor",
@@ -136,6 +148,7 @@ export const FALLOUT_ORIGIN_CONFIGS: Record<FalloutOrigin, FalloutOriginConfig> 
     attributeLimits: {},
     attributeBonuses: {},
     robot: false,
+    startingItems: [],
   },
 };
 

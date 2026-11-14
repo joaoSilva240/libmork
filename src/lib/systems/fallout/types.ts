@@ -195,6 +195,10 @@ export interface FalloutWeaponItem {
   weight: number;
   costCaps: number;
   equipped: boolean;
+  skill: FalloutSkillName;
+  stashed: boolean;
+  installedMods: string[];
+  installedModsData: Record<string, FalloutModItem["modEffects"]>;
 }
 
 export interface FalloutApparelItem {
@@ -238,15 +242,35 @@ export interface FalloutAmmoItem {
   stashed: boolean;
 }
 
+export interface FalloutModItem {
+  id: string;
+  name: string;
+  type: "mod";
+  description?: string;
+  quantity: number;
+  weight: number;
+  costCaps: number;
+  stashed: boolean;
+  modTarget: "weapon" | "apparel";
+  modEffects: {
+    damageBonus?: number;
+    qualitiesAdd?: FalloutWeaponQuality[];
+    qualitiesRemove?: FalloutWeaponQuality[];
+    fireRateBonus?: number;
+    weightDelta?: number;
+  };
+}
+
 export type FalloutItem =
   | FalloutWeaponItem
   | FalloutApparelItem
   | FalloutConsumableItem
   | FalloutAmmoItem
+  | FalloutModItem
   | {
       id: string;
       name: string;
-      type: "perk" | "miscellany" | "mod";
+      type: "perk" | "miscellany";
       description?: string;
       quantity?: number;
       weight: number;

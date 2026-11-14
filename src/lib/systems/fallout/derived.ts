@@ -44,6 +44,15 @@ function migrateLegacyFields(char: FalloutCharacter): FalloutCharacter {
       if (migrated.shotsMax === undefined) migrated.shotsMax = 1;
       if (migrated.shotsCurrent === undefined) migrated.shotsCurrent = migrated.shotsMax;
     }
+    if (migrated.type === "weapon") {
+      if (migrated.skill === undefined) migrated.skill = "small_guns";
+      if (migrated.installedMods === undefined) migrated.installedMods = [];
+      if (migrated.installedModsData === undefined) migrated.installedModsData = {};
+    }
+    if (migrated.type === "mod") {
+      if (migrated.modTarget === undefined) migrated.modTarget = "weapon";
+      if (migrated.modEffects === undefined) migrated.modEffects = {};
+    }
     return migrated as FalloutItem;
   });
 
