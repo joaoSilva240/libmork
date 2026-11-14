@@ -21,6 +21,7 @@ import {
 } from "@/lib/systems/fallout/types";
 import {
   adjustFalloutPerkRank,
+  applyFalloutConsumable,
   calculateEffectiveMaxHp,
   calculateDefense,
   calculateInitiative,
@@ -46,6 +47,7 @@ import {
   Heart,
   Biohazard,
   Shield,
+  ShieldOff,
   Zap,
   Coins,
   Package,
@@ -56,6 +58,12 @@ import {
   Minus,
   X,
   ChevronDown,
+  Archive,
+  ArchiveRestore,
+  BatteryCharging,
+  BatteryLow,
+  UtensilsCrossed,
+  Pill,
 } from "lucide-react";
 
 const PIPBOY_TABS = [
@@ -131,11 +139,22 @@ function PipBoyItemStats({ item }: { item: FalloutItem }) {
     );
   }
 
+  if (item.type === "ammo") {
+    return (
+      <div className="space-y-1 text-[11px] text-emerald-400">
+        <p className="text-emerald-500">
+          {item.shotsCurrent}/{item.shotsMax} cargas • Quantidade: {item.quantity}
+        </p>
+        {item.description && <p className="leading-relaxed">{item.description}</p>}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-1 text-[11px] text-emerald-400">
       {item.description && <p className="leading-relaxed">{item.description}</p>}
-      {item.quantity !== undefined && (
-        <p className="text-emerald-500">Quantidade: {item.quantity}</p>
+      {(item as any).quantity !== undefined && (
+        <p className="text-emerald-500">Quantidade: {(item as any).quantity}</p>
       )}
     </div>
   );
@@ -162,6 +181,7 @@ export function PipBoySheet({
   const [isPerkPickerOpen, setIsPerkPickerOpen] = useState(false);
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
   const [isItemPickerOpen, setIsItemPickerOpen] = useState(false);
+  const [confirmConsumeId, setConfirmConsumeId] = useState<string | null>(null);
 
   const canEdit = !readOnly && Boolean(onUpdateCharacter);
 
@@ -240,6 +260,29 @@ export function PipBoySheet({
   const handleRemoveItem = (id: string) => {
     if (readOnly || !onUpdateCharacter) return;
     onUpdateCharacter({ items: character.items.filter((item) => item.id !== id) });
+  };
+
+  const handleToggleItemField = (itemId: string, field: string, value: boolean) => {
+    if (readOnly || !onUpdateCharacter) return;
+    const items = character.items.map((item) =>
+      item.id === itemId ? { ...item, [field]: value } : item,
+    );
+    onUpdateCharacter({ items });
+  };
+
+  const handleConsumeItem = (itemId: string) => {
+    if (readOnly || !onUpdateCharacter) return;
+    const item = character.items.find((i) => i.id === itemId);
+    if (!item || item.type !== "consumable") return;
+    if (item.quantity === 1 && confirmConsumeId !== itemId) {
+      setConfirmConsumeId(itemId);
+      return;
+    }
+    const result = applyFalloutConsumable(character, itemId);
+    if (result) {
+      onUpdateCharacter(result);
+      setConfirmConsumeId(null);
+    }
   };
 
   const openSkillRoll = (skill: FalloutSkillName) => {
@@ -448,9 +491,14 @@ export function PipBoySheet({
             <div className="flex items-center gap-2">
               <Package size={15} />
               <span>
-                Capacidade de Carga Máxima:{" "}
-                <strong>{calculateCarryWeightMax(character.attributes.str)} lbs</strong>
+                Carga:{" "}
+                <strong>{character.carryWeightCurrent}/{character.carryWeightMax} lbs</strong>
               </span>
+              {character.encumbranceLevel > 0 && (
+                <span className="rounded bg-amber-950 border border-amber-700 px-1.5 py-0.5 text-[10px] font-bold text-amber-300">
+                  Sobrecarga {character.encumbranceLevel}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <Coins size={15} className="text-amber-400" />
@@ -540,6 +588,83 @@ export function PipBoySheet({
                           className="space-y-2 border-t border-emerald-900/50 px-2 py-2"
                         >
                           <PipBoyItemStats item={item} />
+                          {canEdit && item.type === "apparel" && (
+                            <div className="flex flex-wrap gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleItemField(item.id, "equipped", !item.equipped)}
+                                aria-label={item.equipped ? "Desequipar" : "Equipar"}
+                                className={`flex items-center gap-1 rounded border px-2 py-1 text-[10px] font-bold cursor-pointer ${
+                                  item.equipped
+                                    ? "border-emerald-500 bg-emerald-950 text-emerald-300"
+                                    : "border-emerald-800 bg-black/50 text-emerald-500 hover:border-emerald-500"
+                                }`}
+                              >
+                                {item.equipped ? <ShieldOff className="h-3 w-3" /> : <Shield className="h-3 w-3" />}
+                                {item.equipped ? "Desequipar" : "Equipar"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleItemField(item.id, "stashed", !(item as any).stashed)}
+                                aria-label={(item as any).stashed ? "Recuperar" : "Guardar"}
+                                className="flex items-center gap-1 rounded border border-emerald-800 bg-black/50 px-2 py-1 text-[10px] font-bold text-emerald-500 hover:border-emerald-500 cursor-pointer"
+                              >
+                                {(item as any).stashed ? <ArchiveRestore className="h-3 w-3" /> : <Archive className="h-3 w-3" />}
+                                {(item as any).stashed ? "Recuperar" : "Guardar"}
+                              </button>
+                              {item.apparelType === "powerArmor" && item.equipped && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleItemField(item.id, "powered", !item.powered)}
+                                  aria-label={item.powered ? "Desenergizar" : "Energizar"}
+                                  className={`flex items-center gap-1 rounded border px-2 py-1 text-[10px] font-bold cursor-pointer ${
+                                    item.powered
+                                      ? "border-amber-500 bg-amber-950 text-amber-300"
+                                      : "border-emerald-800 bg-black/50 text-emerald-500 hover:border-amber-500"
+                                  }`}
+                                >
+                                  {item.powered ? <BatteryLow className="h-3 w-3" /> : <BatteryCharging className="h-3 w-3" />}
+                                  {item.powered ? "Desenergizar" : "Energizar"}
+                                </button>
+                              )}
+                            </div>
+                          )}
+                          {canEdit && item.type === "consumable" && (
+                            <div className="flex items-center gap-2">
+                              {confirmConsumeId === item.id ? (
+                                <>
+                                  <span className="text-[10px] text-amber-400">Última unidade — consumir?</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleConsumeItem(item.id)}
+                                    aria-label="Confirmar"
+                                    className="rounded border border-emerald-500 bg-emerald-950 px-2 py-1 text-[10px] font-bold text-emerald-300 cursor-pointer"
+                                  >
+                                    Confirmar
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setConfirmConsumeId(null)}
+                                    aria-label="Cancelar"
+                                    className="rounded border border-emerald-800 px-2 py-1 text-[10px] text-emerald-500 cursor-pointer"
+                                  >
+                                    Cancelar
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleConsumeItem(item.id)}
+                                  disabled={item.quantity <= 0}
+                                  aria-label="Consumir"
+                                  className="flex items-center gap-1 rounded border border-emerald-500 bg-emerald-950 px-2 py-1 text-[10px] font-bold text-emerald-300 hover:bg-emerald-900 disabled:opacity-40 cursor-pointer"
+                                >
+                                  {item.category === "med" || item.category === "chem" ? <Pill className="h-3 w-3" /> : <UtensilsCrossed className="h-3 w-3" />}
+                                  Consumir
+                                </button>
+                              )}
+                            </div>
+                          )}
                           {canEdit && (
                             <div className="flex justify-end">
                               <button
@@ -732,3 +857,4 @@ export function PipBoySheet({
     </div>
   );
 }
+

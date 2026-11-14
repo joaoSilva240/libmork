@@ -89,7 +89,7 @@ describe("PipBoySheet & Componentes Fallout 2d20", () => {
     expect(screen.queryByText("Força")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("tab", { name: "INV" }));
-    expect(screen.getByText(/Capacidade de Carga Máxima/i)).toBeInTheDocument();
+    expect(screen.getByText(/Carga:/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("tab", { name: "DATA" }));
     expect(screen.getByText(/350 XP/i)).toBeInTheDocument();
@@ -608,3 +608,155 @@ describe("PipBoySheet — aba INV (equipamentos)", () => {
     expect(within(row).queryByRole("button", { name: "Remover 10mm Pistol" })).toBeNull();
   });
 });
+
+describe("PipBoySheet INV — acoes de apparel", () => {
+  function buildCharWithApparel(apparelOverrides: any = {}): any {
+    const char = createInitialFalloutCharacter(
+      {
+        name: "Test", origin: "vault_dweller", level: 1, xp: 0,
+        attributes: { str: 6, per: 8, end: 7, cha: 5, int: 6, agi: 9, luc: 6 },
+        tagSkills: [], perks: [], caps: 0,
+      },
+      "user-1", "char-test",
+    );
+    char.items = [{
+      id: "app-1", name: "Combat Armor", type: "apparel",
+      apparelType: "armor", locationsCovered: ["torso"],
+      resistances: { physical: 3, energy: 2, radiation: 1, poison: 0 },
+      weight: 10, costCaps: 50, equipped: false, stashed: false, powered: false,
+      ...apparelOverrides,
+    }];
+    return char;
+  }
+
+  beforeEach(() => { vi.restoreAllMocks(); });
+
+  it("toggle equipar chama onUpdateCharacter com equipped:true", () => {
+    const onUpdate = vi.fn();
+    render(<PipBoySheet character={buildCharWithApparel()} onUpdateCharacter={onUpdate} />);
+    fireEvent.click(screen.getByRole("tab", { name: "INV" }));
+    fireEvent.click(screen.getByTestId("item-row-app-1").querySelector("button")!);
+    fireEvent.click(screen.getByRole("button", { name: /Equipar/ }));
+    expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      items: [expect.objectContaining({ id: "app-1", equipped: true })],
+    }));
+  });
+
+  it("toggle guardar chama onUpdateCharacter com stashed:true", () => {
+    const onUpdate = vi.fn();
+    render(<PipBoySheet character={buildCharWithApparel()} onUpdateCharacter={onUpdate} />);
+    fireEvent.click(screen.getByRole("tab", { name: "INV" }));
+    fireEvent.click(screen.getByTestId("item-row-app-1").querySelector("button")!);
+    fireEvent.click(screen.getByRole("button", { name: /Guardar/ }));
+    expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      items: [expect.objectContaining({ id: "app-1", stashed: true })],
+    }));
+  });
+
+  it("powerArmor mostra botao Energizar somente quando equipado", () => {
+    const onUpdate = vi.fn();
+    const char = buildCharWithApparel({ apparelType: "powerArmor", equipped: true });
+    render(<PipBoySheet character={char} onUpdateCharacter={onUpdate} />);
+    fireEvent.click(screen.getByRole("tab", { name: "INV" }));
+    fireEvent.click(screen.getByTestId("item-row-app-1").querySelector("button")!);
+    fireEvent.click(screen.getByRole("button", { name: /Energizar/ }));
+    expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      items: [expect.objectContaining({ id: "app-1", powered: true })],
+    }));
+  });
+});
+
+describe("PipBoySheet INV — consumir e ammo", () => {
+  function buildChar(items: any[] = []): any {
+    const char = createInitialFalloutCharacter(
+      {
+        name: "Test", origin: "vault_dweller", level: 1, xp: 0,
+        attributes: { str: 6, per: 8, end: 7, cha: 5, int: 6, agi: 9, luc: 6 },
+        tagSkills: [], perks: [], caps: 0,
+      },
+      "user-1", "char-test",
+    );
+    char.items = items;
+    return char;
+  }
+
+  beforeEach(() => { vi.restoreAllMocks(); });
+
+  it("consumir aplica HP e decrementa quantity", () => {
+    const onUpdate = vi.fn();
+    const char = buildChar([{ id: "c-1", name: "Stimpak", type: "consumable", category: "med", hpRestored: 4, quantity: 2, weight: 0.5, costCaps: 25 }]);
+    char.hpCurrent = 5;
+    char.hpMax = 10;
+    render(<PipBoySheet character={char} onUpdateCharacter={onUpdate} />);
+    fireEvent.click(screen.getByRole("tab", { name: "INV" }));
+    fireEvent.click(screen.getByTestId("item-row-c-1").querySelector("button")!);
+    fireEvent.click(screen.getByRole("button", { name: /Consumir/ }));
+    expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({ hpCurrent: 9 }));
+  });
+
+  it("consumir ultima unidade pede confirmacao", () => {
+    const onUpdate = vi.fn();
+    const char = buildChar([{ id: "c-1", name: "Stimpak", type: "consumable", category: "med", hpRestored: 4, quantity: 1, weight: 0.5, costCaps: 25 }]);
+    render(<PipBoySheet character={char} onUpdateCharacter={onUpdate} />);
+    fireEvent.click(screen.getByRole("tab", { name: "INV" }));
+    fireEvent.click(screen.getByTestId("item-row-c-1").querySelector("button")!);
+    fireEvent.click(screen.getByRole("button", { name: /Consumir/ }));
+    expect(onUpdate).not.toHaveBeenCalled();
+    expect(screen.getByText(/Última unidade/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Confirmar/ }));
+    expect(onUpdate).toHaveBeenCalled();
+  });
+
+  it("ammo mostra shots no accordion", () => {
+    const char = buildChar([{ id: "am-1", name: "10mm", type: "ammo", quantity: 20, weight: 0.1, costCaps: 1, shotsCurrent: 15, shotsMax: 30, stashed: false }]);
+    render(<PipBoySheet character={char} />);
+    fireEvent.click(screen.getByRole("tab", { name: "INV" }));
+    fireEvent.click(screen.getByTestId("item-row-am-1").querySelector("button")!);
+    expect(screen.getByText(/15\/30 cargas/)).toBeTruthy();
+  });
+
+  it("readOnly esconde botoes de acao", () => {
+    const char = buildChar([{ id: "app-1", name: "Armor", type: "apparel", apparelType: "armor", locationsCovered: ["torso"], resistances: { physical: 3, energy: 0, radiation: 0, poison: 0 }, weight: 10, costCaps: 50, equipped: false, stashed: false, powered: false }]);
+    render(<PipBoySheet character={char} readOnly />);
+    fireEvent.click(screen.getByRole("tab", { name: "INV" }));
+    fireEvent.click(screen.getByTestId("item-row-app-1").querySelector("button")!);
+    expect(screen.queryByRole("button", { name: /Equipar/ })).toBeNull();
+  });
+});
+
+describe("PipBoySheet INV — encumbrance display", () => {
+  function buildChar(): any {
+    const char = createInitialFalloutCharacter(
+      {
+        name: "Test", origin: "vault_dweller", level: 1, xp: 0,
+        attributes: { str: 6, per: 8, end: 7, cha: 5, int: 6, agi: 9, luc: 6 },
+        tagSkills: [], perks: [], caps: 0,
+      },
+      "user-1", "char-test",
+    );
+    return char;
+  }
+
+  beforeEach(() => { vi.restoreAllMocks(); });
+
+  it("mostra peso atual e maximo", () => {
+    const char = buildChar();
+    char.carryWeightCurrent = 45.5;
+    char.carryWeightMax = 200;
+    char.encumbranceLevel = 0;
+    render(<PipBoySheet character={char} />);
+    fireEvent.click(screen.getByRole("tab", { name: "INV" }));
+    expect(screen.getByText(/45\.5\/200 lbs/)).toBeTruthy();
+  });
+
+  it("mostra badge de sobrecarga quando encumbranceLevel > 0", () => {
+    const char = buildChar();
+    char.carryWeightCurrent = 300;
+    char.carryWeightMax = 200;
+    char.encumbranceLevel = 2;
+    render(<PipBoySheet character={char} />);
+    fireEvent.click(screen.getByRole("tab", { name: "INV" }));
+    expect(screen.getByText(/Sobrecarga 2/)).toBeTruthy();
+  });
+});
+
