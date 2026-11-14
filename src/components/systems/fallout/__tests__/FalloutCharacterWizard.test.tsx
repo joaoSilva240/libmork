@@ -273,8 +273,13 @@ describe("FalloutCharacterWizard — catálogo de perks", () => {
     await goToPerksStep();
 
     expect(await screen.findByTestId("perk-card-perk-action-boy")).toBeDefined();
-    expect(screen.getByTestId("perk-card-perk-gun-nut")).toBeDefined();
     expect(screen.getByTestId("perk-card-perk-strong-back")).toBeDefined();
+    // Bloqueadas ocultas por default
+    expect(screen.queryByTestId("perk-card-perk-gun-nut")).toBeNull();
+    expect(screen.queryByTestId("perk-card-perk-fortune-finder")).toBeNull();
+    // Toggle revela bloqueadas
+    fireEvent.click(screen.getByLabelText(/Mostrar perks bloqueadas/));
+    expect(screen.getByTestId("perk-card-perk-gun-nut")).toBeDefined();
     expect(screen.getByTestId("perk-card-perk-fortune-finder")).toBeDefined();
     expect(screen.queryByTestId("perk-card-spell-fireball")).toBeNull();
     expect(fetchMock).toHaveBeenCalledWith(
@@ -288,6 +293,7 @@ describe("FalloutCharacterWizard — catálogo de perks", () => {
     render(<FalloutCharacterWizard />);
     await goToPerksStep();
     await screen.findByTestId("perk-card-perk-action-boy");
+    fireEvent.click(screen.getByLabelText(/Mostrar perks bloqueadas/));
 
     fireEvent.change(screen.getByLabelText(/Buscar perks/i), {
       target: { value: "gun" },
@@ -303,6 +309,7 @@ describe("FalloutCharacterWizard — catálogo de perks", () => {
     render(<FalloutCharacterWizard />);
     await goToPerksStep();
     await screen.findByTestId("perk-card-perk-action-boy");
+    fireEvent.click(screen.getByLabelText(/Mostrar perks bloqueadas/));
 
     fireEvent.click(screen.getByRole("button", { name: "INT" }));
 
@@ -318,10 +325,10 @@ describe("FalloutCharacterWizard — catálogo de perks", () => {
     render(<FalloutCharacterWizard />);
     await goToPerksStep();
 
-    const card = await screen.findByTestId("perk-card-perk-fortune-finder");
-    fireEvent.click(within(card).getByRole("button", { name: /Adicionar Fortune Finder/i }));
+    const card = await screen.findByTestId("perk-card-perk-strong-back");
+    fireEvent.click(within(card).getByRole("button", { name: /Adicionar Strong Back/i }));
 
-    const selected = screen.getByTestId("selected-perk-Fortune Finder");
+    const selected = screen.getByTestId("selected-perk-Strong Back");
     expect(within(selected).getByText("Rank 1 / 3")).toBeDefined();
 
     fireEvent.click(within(selected).getByRole("button", { name: /Aumentar rank/i }));
@@ -339,18 +346,19 @@ describe("FalloutCharacterWizard — catálogo de perks", () => {
     expect(within(selected).getByText("Rank 2 / 3")).toBeDefined();
   });
 
-  it("marca requisito não atendido em âmbar sem bloquear a adição", async () => {
+  it("marca requisito não atendido em âmbar e bloqueia a adição", async () => {
     mockFetchRouter();
     render(<FalloutCharacterWizard />);
     await goToPerksStep();
 
-    // INT 6 e Nível 2 não são atendidos por um personagem nível 1 com INT 5.
+    // Gun Nut oculta por default (INT 6, Nível 2 não atendidos)
+    expect(screen.queryByTestId("perk-card-perk-gun-nut")).toBeNull();
+    fireEvent.click(screen.getByLabelText(/Mostrar perks bloqueadas/));
+
     const card = await screen.findByTestId("perk-card-perk-gun-nut");
     expect(within(card).getByText("INT 6, Nível 2")).toBeDefined();
     expect(within(card).getByTestId("perk-requirements-warning")).toBeDefined();
-    fireEvent.click(within(card).getByRole("button", { name: /Adicionar Gun Nut/i }));
-
-    expect(screen.getByTestId("selected-perk-Gun Nut")).toBeDefined();
+    expect(within(card).getByRole("button", { name: /Adicionar Gun Nut/i })).toBeDisabled();
 
     // Strong Back exige FOR 5, atendido pelo orçamento padrão (+5 em Força).
     const okCard = screen.getByTestId("perk-card-perk-strong-back");
@@ -378,6 +386,7 @@ describe("FalloutCharacterWizard — catálogo de perks", () => {
     });
     render(<FalloutCharacterWizard />);
     await goToPerksStep();
+    fireEvent.click(screen.getByLabelText(/Mostrar perks bloqueadas/));
 
     const card = await screen.findByTestId("perk-card-perk-fortune-finder");
     expect(within(card).getByText("LCK 5, Level 2+")).toBeDefined();
@@ -413,16 +422,16 @@ describe("FalloutCharacterWizard — catálogo de perks", () => {
     render(<FalloutCharacterWizard />);
     await goToPerksStep();
 
-    const card = await screen.findByTestId("perk-card-perk-fortune-finder");
-    fireEvent.click(within(card).getByRole("button", { name: /Adicionar Fortune Finder/i }));
-    expect(screen.getByTestId("selected-perk-Fortune Finder")).toBeDefined();
+    const card = await screen.findByTestId("perk-card-perk-action-boy");
+    fireEvent.click(within(card).getByRole("button", { name: /Adicionar Action Boy/i }));
+    expect(screen.getByTestId("selected-perk-Action Boy")).toBeDefined();
 
     fireEvent.click(
-      within(screen.getByTestId("selected-perk-Fortune Finder")).getByRole("button", {
+      within(screen.getByTestId("selected-perk-Action Boy")).getByRole("button", {
         name: /Remover/i,
       }),
     );
-    expect(screen.queryByTestId("selected-perk-Fortune Finder")).toBeNull();
+    expect(screen.queryByTestId("selected-perk-Action Boy")).toBeNull();
 
     fireEvent.click(
       within(screen.getByTestId("perk-card-perk-strong-back")).getByRole("button", {

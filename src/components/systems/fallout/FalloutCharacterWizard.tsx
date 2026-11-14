@@ -22,7 +22,9 @@ import {
   adjustFalloutPerkRank,
   getFalloutAttributeShortLabel,
   getFalloutPerkRequirementText,
+  getMaxFalloutPerks,
   normalizeFalloutPerk,
+  resolveStartingItems,
 } from "@/lib/systems/fallout/rules";
 import {
   getPerkRequirementAttributes,
@@ -244,6 +246,7 @@ export function FalloutCharacterWizard({
           tagSkills: wizardData.tagSkills,
           perks: wizardData.perks,
           caps: STARTING_CAPS,
+          items: resolveStartingItems(wizardData.origin, () => null),
         }),
       });
 
@@ -509,6 +512,17 @@ function StepIdentity({
         <div className="mt-1 text-xs font-bold text-emerald-200">{selected.traitName}</div>
         <p className="mt-1 text-[11px] leading-relaxed text-emerald-400">{selected.traitDescription}</p>
       </div>
+
+      {selected.startingItems.length > 0 && (
+        <div className="rounded border border-emerald-500/30 bg-black/60 p-2 space-y-1">
+          <span className="text-[10px] font-bold uppercase text-emerald-300">Kit Inicial</span>
+          <ul className="text-[10px] text-emerald-400 space-y-0.5">
+            {selected.startingItems.map((entry) => (
+              <li key={entry.sourceKey}>{entry.name}{entry.quantity ? ` ×${entry.quantity}` : ""}</li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
@@ -709,9 +723,12 @@ function StepPerks({
   const [search, setSearch] = useState("");
   const [attributeFilter, setAttributeFilter] = useState<FalloutAttribute | null>(null);
   const [customDraft, setCustomDraft] = useState("");
+  const [showBlocked, setShowBlocked] = useState(false);
 
   const selectedPerks = data.perks.map(normalizeFalloutPerk);
   const selectedNames = new Set(selectedPerks.map((perk) => perk.name));
+  const maxPerks = getMaxFalloutPerks(1);
+  const atLimit = selectedPerks.length >= maxPerks;
 
   const term = search.trim().toLowerCase();
   const visiblePerks = catalog.filter((perk) => {
@@ -724,11 +741,16 @@ function StepPerks({
     ) {
       return false;
     }
+    if (!showBlocked) {
+      const reqs = getFalloutPerkRequirementText(perk.structuredEffects);
+      const unmet = getUnmetPerkRequirements(reqs, data.attributes, 1);
+      if (unmet.length > 0) return false;
+    }
     return true;
   });
 
   const addCatalogPerk = (perk: CatalogPerk) => {
-    if (selectedNames.has(perk.name)) return;
+    if (selectedNames.has(perk.name) || atLimit) return;
     updateData({
       perks: [
         ...data.perks,
@@ -747,7 +769,7 @@ function StepPerks({
 
   const addCustomPerk = () => {
     const name = customDraft.trim();
-    if (!name || selectedNames.has(name)) return;
+    if (!name || selectedNames.has(name) || atLimit) return;
     updateData({ perks: [...data.perks, { name, rank: 1 }] });
     setCustomDraft("");
   };
@@ -771,7 +793,7 @@ function StepPerks({
     <div className="space-y-3">
       <div className="flex items-center justify-between text-xs">
         <span className="font-bold uppercase text-emerald-300">Perks Iniciais</span>
-        <span className="text-emerald-400">{selectedPerks.length} selecionada(s)</span>
+        <span className="text-emerald-400">{selectedPerks.length}/{maxPerks} selecionada(s)</span>
       </div>
 
       <input
@@ -803,6 +825,16 @@ function StepPerks({
           );
         })}
       </div>
+
+      <label className="flex items-center gap-1.5 text-[10px] text-emerald-500 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={showBlocked}
+          onChange={(e) => setShowBlocked(e.target.checked)}
+          className="accent-emerald-500"
+        />
+        Mostrar perks bloqueadas
+      </label>
 
       {isLoadingCatalog ? (
         <p className="text-[11px] text-emerald-500 animate-pulse">
@@ -877,7 +909,7 @@ function StepPerks({
                   <button
                     type="button"
                     onClick={() => addCatalogPerk(perk)}
-                    disabled={selected}
+                    disabled={selected || atLimit || unmet.length > 0}
                     aria-label={`Adicionar ${perk.name}`}
                     className="shrink-0 rounded border border-emerald-500 bg-emerald-950 p-1.5 text-emerald-300 hover:bg-emerald-900 cursor-pointer disabled:opacity-40 disabled:cursor-default"
                   >
