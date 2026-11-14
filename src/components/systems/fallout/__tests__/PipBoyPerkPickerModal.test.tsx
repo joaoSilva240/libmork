@@ -84,13 +84,13 @@ function mockFetchRouter(options?: { catalogFails?: boolean }) {
   return fetchMock;
 }
 
-/** Personagem nível 1 com INT 5 e o perk legado "Action Boy" já registrado. */
+/** Personagem nível 3 com INT 5 e o perk legado "Action Boy" já registrado. */
 function buildCharacter() {
   return createInitialFalloutCharacter(
     {
       name: "Cooper Howard",
       origin: "ghoul",
-      level: 1,
+      level: 3,
       xp: 0,
       attributes: { str: 6, per: 8, end: 7, cha: 5, int: 5, agi: 9, luc: 6 },
       tagSkills: ["small_guns"],
@@ -142,8 +142,11 @@ describe("PipBoyPerkPickerModal", () => {
       screen.getByRole("dialog", { name: "Seletor de Perks Pip-Boy" }),
     ).toBeInTheDocument();
     expect(await screen.findByTestId("perk-card-perk-action-boy")).toBeInTheDocument();
-    expect(screen.getByTestId("perk-card-perk-gun-nut")).toBeInTheDocument();
     expect(screen.getByTestId("perk-card-perk-fortune-finder")).toBeInTheDocument();
+    // Gun Nut bloqueada (INT 6 > 5) oculta por default
+    expect(screen.queryByTestId("perk-card-perk-gun-nut")).toBeNull();
+    fireEvent.click(screen.getByLabelText(/Mostrar perks bloqueadas/));
+    expect(screen.getByTestId("perk-card-perk-gun-nut")).toBeInTheDocument();
     expect(screen.queryByTestId("perk-card-spell-fireball")).toBeNull();
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/content/spells?ruleSystem=fallout_2d20",
@@ -155,6 +158,7 @@ describe("PipBoyPerkPickerModal", () => {
     mockFetchRouter();
     renderModal();
     await screen.findByTestId("perk-card-perk-action-boy");
+    fireEvent.click(screen.getByLabelText(/Mostrar perks bloqueadas/));
 
     fireEvent.change(screen.getByLabelText(/Buscar perks/i), { target: { value: "gun" } });
 
@@ -167,6 +171,7 @@ describe("PipBoyPerkPickerModal", () => {
     mockFetchRouter();
     renderModal();
     await screen.findByTestId("perk-card-perk-action-boy");
+    fireEvent.click(screen.getByLabelText(/Mostrar perks bloqueadas/));
 
     fireEvent.click(screen.getByRole("button", { name: "INT" }));
     expect(screen.getByTestId("perk-card-perk-gun-nut")).toBeInTheDocument();
@@ -176,24 +181,21 @@ describe("PipBoyPerkPickerModal", () => {
     expect(screen.getByTestId("perk-card-perk-fortune-finder")).toBeInTheDocument();
   });
 
-  it("avalia requisitos contra o personagem em jogo sem bloquear a adição", async () => {
+  it("avalia requisitos contra o personagem e bloqueia a adição", async () => {
     mockFetchRouter();
-    const { onSelect } = renderModal();
+    renderModal();
+    fireEvent.click(screen.getByLabelText(/Mostrar perks bloqueadas/));
 
-    // Gun Nut exige INT 6 e Nível 2: o personagem tem INT 5 e nível 1.
+    // Gun Nut exige INT 6 e Nível 2: o personagem tem INT 5 (bloqueado).
     const card = await screen.findByTestId("perk-card-perk-gun-nut");
     expect(within(card).getByText("INT 6, Nível 2")).toBeInTheDocument();
     expect(within(card).getByTestId("perk-requirements-warning")).toBeInTheDocument();
+    expect(within(card).getByRole("button", { name: /Adicionar Gun Nut/i })).toBeDisabled();
 
-    // Fortune Finder exige SOR 5 e Nível 2: SOR 6 atende, nível 1 não.
+    // Fortune Finder exige SOR 5 e Nível 2: SOR 6 e nível 3 atendem.
     const luckCard = screen.getByTestId("perk-card-perk-fortune-finder");
     expect(within(luckCard).getByText("SOR 5, Nível 2")).toBeInTheDocument();
-    expect(within(luckCard).getByTestId("perk-requirements-warning")).toHaveTextContent(
-      "Nível 2",
-    );
-
-    fireEvent.click(within(card).getByRole("button", { name: /Adicionar Gun Nut/i }));
-    expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(within(luckCard).queryByTestId("perk-requirements-warning")).toBeNull();
   });
 
   it("desabilita perks que o personagem já possui (inclusive string legada)", async () => {
@@ -204,8 +206,8 @@ describe("PipBoyPerkPickerModal", () => {
     expect(within(card).getByRole("button", { name: /Adicionar Action Boy/i })).toBeDisabled();
     expect(within(card).getByText("Já possui")).toBeInTheDocument();
 
-    const free = screen.getByTestId("perk-card-perk-gun-nut");
-    expect(within(free).getByRole("button", { name: /Adicionar Gun Nut/i })).toBeEnabled();
+    const free = screen.getByTestId("perk-card-perk-fortune-finder");
+    expect(within(free).getByRole("button", { name: /Adicionar Fortune Finder/i })).toBeEnabled();
   });
 
   it("entrega o perk estruturado do catálogo ao selecionar", async () => {

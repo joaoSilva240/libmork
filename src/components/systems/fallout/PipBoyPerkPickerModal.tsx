@@ -14,6 +14,7 @@ import {
 import {
   getFalloutAttributeShortLabel,
   getFalloutPerkRequirementText,
+  getMaxFalloutPerks,
   normalizeFalloutPerk,
 } from "@/lib/systems/fallout/rules";
 import {
@@ -42,8 +43,11 @@ export function PipBoyPerkPickerModal({
   const [attributeFilter, setAttributeFilter] = useState<
     (typeof FALLOUT_ATTRIBUTES)[number] | null
   >(null);
+  const [showBlocked, setShowBlocked] = useState(false);
 
   const ownedNames = new Set(character.perks.map((perk) => normalizeFalloutPerk(perk).name));
+  const maxPerks = getMaxFalloutPerks(character.level);
+  const atLimit = ownedNames.size >= maxPerks;
   const term = search.trim().toLowerCase();
   const visiblePerks = catalog.filter((perk) => {
     if (term && !perk.name.toLowerCase().includes(term)) return false;
@@ -54,6 +58,11 @@ export function PipBoyPerkPickerModal({
       ).includes(attributeFilter)
     ) {
       return false;
+    }
+    if (!showBlocked) {
+      const reqs = getFalloutPerkRequirementText(perk.structuredEffects);
+      const unmet = getUnmetPerkRequirements(reqs, character.attributes, character.level);
+      if (unmet.length > 0) return false;
     }
     return true;
   });
@@ -111,6 +120,22 @@ export function PipBoyPerkPickerModal({
               );
             })}
           </div>
+
+          <label className="flex items-center gap-1.5 text-[10px] text-emerald-500 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showBlocked}
+              onChange={(e) => setShowBlocked(e.target.checked)}
+              className="accent-emerald-500"
+            />
+            Mostrar perks bloqueadas
+          </label>
+
+          {atLimit && (
+            <div className="rounded border border-amber-500/40 bg-amber-950/20 px-3 py-2 text-[11px] text-amber-300">
+              Limite de perks atingido ({ownedNames.size}/{maxPerks})
+            </div>
+          )}
 
           {isLoading ? (
             <p className="text-[11px] text-emerald-500 animate-pulse">
@@ -196,7 +221,7 @@ export function PipBoyPerkPickerModal({
                       <button
                         type="button"
                         onClick={() => selectPerk(perk)}
-                        disabled={owned}
+                        disabled={owned || atLimit || unmet.length > 0}
                         aria-label={`Adicionar ${perk.name}`}
                         className="shrink-0 rounded border border-emerald-500 bg-emerald-950 p-1.5 text-emerald-300 hover:bg-emerald-900 cursor-pointer disabled:opacity-40 disabled:cursor-default"
                       >
@@ -210,8 +235,7 @@ export function PipBoyPerkPickerModal({
           )}
 
           <p className="text-[11px] text-emerald-600 leading-relaxed">
-            Requisitos em âmbar são informativos: o mestre pode liberar perks fora dos requisitos
-            do personagem.
+            Nível {character.level}: máximo {maxPerks} perk(s). Perks bloqueadas ficam ocultas por padrão.
           </p>
         </div>
       </div>
