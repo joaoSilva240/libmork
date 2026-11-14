@@ -124,7 +124,7 @@ function pickRange(value: unknown): FalloutWeaponItem["range"] {
     : "close";
 }
 
-const APPAREL_TYPES = new Set(["outfit", "armor", "headgear", "powerArmor"]);
+const APPAREL_TYPES = new Set(["outfit", "armor", "headgear", "powerArmor", "clothing"]);
 function pickApparelType(value: unknown): FalloutApparelItem["apparelType"] {
   return typeof value === "string" && APPAREL_TYPES.has(value)
     ? (value as FalloutApparelItem["apparelType"])

@@ -242,3 +242,44 @@ describe("catalogItemToFalloutItem — consumivel e demais", () => {
     }
   });
 });
+
+describe("catalogItemToFalloutItem — ammo com shots", () => {
+  it("popula shotsCurrent e shotsMax a partir de sourceData.shots", () => {
+    const entry = catalogItem({
+      sourceData: { pack: "ammunition", weight: 0.1, cost: 1, quantity: 20, shots: { max: 30, current: 15 } },
+    });
+    const item = catalogItemToFalloutItem(entry);
+    expect(item.type).toBe("ammo");
+    expect((item as any).shotsMax).toBe(30);
+    expect((item as any).shotsCurrent).toBe(15);
+    expect((item as any).stashed).toBe(false);
+  });
+
+  it("usa defaults quando shots ausente", () => {
+    const entry = catalogItem({
+      sourceData: { pack: "ammunition", weight: 2, cost: 100, quantity: 1 },
+    });
+    const item = catalogItemToFalloutItem(entry);
+    expect((item as any).shotsMax).toBe(1);
+    expect((item as any).shotsCurrent).toBe(1);
+  });
+});
+
+describe("catalogItemToFalloutItem — apparel stashed/powered/clothing", () => {
+  it("popula stashed:false e powered:false em apparel", () => {
+    const entry = catalogItem({
+      sourceData: { pack: "apparel", apparelType: "armor", weight: 10, cost: 50, resistance: { physical: 3 }, location: { torso: true } },
+    });
+    const item = catalogItemToFalloutItem(entry);
+    expect((item as any).stashed).toBe(false);
+    expect((item as any).powered).toBe(false);
+  });
+
+  it("reconhece clothing como apparelType valido", () => {
+    const entry = catalogItem({
+      sourceData: { pack: "apparel", apparelType: "clothing", weight: 2, cost: 10, resistance: { physical: 1 }, location: { torso: true, armL: true, armR: true, legL: true, legR: true } },
+    });
+    const item = catalogItemToFalloutItem(entry);
+    expect((item as any).apparelType).toBe("clothing");
+  });
+});
