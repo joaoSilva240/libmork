@@ -6,7 +6,7 @@
 // =============================================================================
 
 import React from "react";
-import type { FalloutBodyLocation, FalloutBodyPart } from "@/lib/systems/fallout/types";
+import type { FalloutBodyLocation, FalloutBodyPart, FalloutInjurySlot } from "@/lib/systems/fallout/types";
 import { FALLOUT_BODY_LOCATIONS } from "@/lib/systems/fallout/types";
 import {
   getPaperdollImage,
@@ -34,10 +34,12 @@ export function PipBoyPaperdoll({
   const toggleInjury = (location: FalloutBodyLocation) => {
     if (readOnly || !onUpdateBodyPart) return;
     const current = bodyParts[location];
-    const nextInjuries = current.injuries >= 3 ? 0 : current.injuries + 1;
+    const maxSlot = Math.max(...current.injuries);
+    const next: [FalloutInjurySlot, FalloutInjurySlot, FalloutInjurySlot] =
+      maxSlot >= 2 ? [0, 0, 0] : [2, 0, 0];
     onUpdateBodyPart(location, {
-      injuries: nextInjuries,
-      isCrippled: nextInjuries > 0,
+      injuries: next,
+      status: maxSlot >= 2 ? "healthy" : "crippled",
     });
   };
 
@@ -45,7 +47,7 @@ export function PipBoyPaperdoll({
     const part = bodyParts[location];
     if (!part) return null;
 
-    const isInjured = part.injuries > 0 || part.isCrippled;
+    const isInjured = part.status !== "healthy";
 
     return (
       <div
@@ -81,7 +83,7 @@ export function PipBoyPaperdoll({
               <span
                 key={step}
                 className={`w-2 h-2 rounded-full border ${
-                  step <= part.injuries
+                  part.injuries[step - 1] > 0
                     ? "bg-red-500 border-red-400 shadow-[0_0_4px_rgba(239,68,68,0.8)]"
                     : "bg-black/60 border-emerald-900/60"
                 }`}

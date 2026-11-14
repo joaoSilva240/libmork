@@ -23,9 +23,10 @@ const ROBOT_PART_FILES: Record<FalloutBodyLocation, string> = {
   legR: "arm3",
 };
 
-export function getPaperdollPartState(injuries: number): PaperdollPartState {
-  if (injuries >= 3) return "crippled";
-  if (injuries > 0) return "wounded";
+export function getPaperdollPartState(injuries: number | [number, number, number]): PaperdollPartState {
+  const count = Array.isArray(injuries) ? Math.max(...injuries) : injuries;
+  if (count >= 2) return "crippled";
+  if (count > 0) return "wounded";
   return "healthy";
 }
 

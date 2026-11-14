@@ -289,6 +289,8 @@ function mapDbToFalloutCharacter(row: typeof falloutCharacters.$inferSelect): Fa
     initiative: row.initiative,
     meleeDamageBonus: row.meleeDamageBonus,
     carryWeightMax: row.carryWeightMax,
+    carryWeightCurrent: (row as any).carryWeightCurrent ?? 0,
+    encumbranceLevel: (row as any).encumbranceLevel ?? 0,
     attributes: (row.attributes as any) || {},
     skills: (row.skills as any) || {},
     tagSkills: (row.tagSkills as any) || [],

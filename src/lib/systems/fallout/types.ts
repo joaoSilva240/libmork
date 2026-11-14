@@ -123,19 +123,22 @@ export type FalloutResistances = Record<FalloutDamageType, number>;
 export const FALLOUT_BODY_LOCATIONS = ["head", "torso", "armL", "armR", "legL", "legR"] as const;
 export type FalloutBodyLocation = (typeof FALLOUT_BODY_LOCATIONS)[number];
 
+export type FalloutInjurySlot = 0 | 1 | 2;
+export type FalloutBodyPartStatus = "healthy" | "wounded" | "crippled";
+
 export interface FalloutBodyPart {
   location: FalloutBodyLocation;
   label: string;
   minRoll: number;
   maxRoll: number;
-  injuries: number; // contagem de ferimentos críticos (0 a 3)
-  isCrippled: boolean;
+  injuries: [FalloutInjurySlot, FalloutInjurySlot, FalloutInjurySlot];
+  status: FalloutBodyPartStatus;
   resistances: FalloutResistances;
 }
 
 export const FALLOUT_DEFAULT_BODY_PARTS: Record<
   FalloutBodyLocation,
-  Omit<FalloutBodyPart, "injuries" | "isCrippled" | "resistances">
+  Omit<FalloutBodyPart, "injuries" | "status" | "resistances">
 > = {
   head: { location: "head", label: "Cabeça", minRoll: 1, maxRoll: 2 },
   torso: { location: "torso", label: "Tronco", minRoll: 3, maxRoll: 8 },
@@ -198,12 +201,14 @@ export interface FalloutApparelItem {
   id: string;
   name: string;
   type: "apparel";
-  apparelType: "outfit" | "armor" | "headgear" | "powerArmor";
+  apparelType: "outfit" | "armor" | "headgear" | "powerArmor" | "clothing";
   locationsCovered: FalloutBodyLocation[];
   resistances: FalloutResistances;
   weight: number;
   costCaps: number;
   equipped: boolean;
+  stashed: boolean;
+  powered: boolean;
 }
 
 export interface FalloutConsumableItem {
@@ -220,19 +225,34 @@ export interface FalloutConsumableItem {
   addictive?: boolean;
 }
 
+export interface FalloutAmmoItem {
+  id: string;
+  name: string;
+  type: "ammo";
+  description?: string;
+  quantity: number;
+  weight: number;
+  costCaps: number;
+  shotsCurrent: number;
+  shotsMax: number;
+  stashed: boolean;
+}
+
 export type FalloutItem =
   | FalloutWeaponItem
   | FalloutApparelItem
   | FalloutConsumableItem
+  | FalloutAmmoItem
   | {
       id: string;
       name: string;
-      type: "ammo" | "perk" | "miscellany" | "mod";
+      type: "perk" | "miscellany" | "mod";
       description?: string;
       quantity?: number;
       weight: number;
       costCaps: number;
       equipped?: boolean;
+      stashed?: boolean;
     };
 
 /** Origens / Arquétipos de Personagem */
@@ -276,6 +296,8 @@ export interface FalloutCharacter {
   initiative: number;
   meleeDamageBonus: number; // Dados CD extras de combate
   carryWeightMax: number;
+  carryWeightCurrent: number;
+  encumbranceLevel: number;
   caps: number; // Tampas de Nuka-Cola
   bodyParts: Record<FalloutBodyLocation, FalloutBodyPart>;
   items: FalloutItem[];

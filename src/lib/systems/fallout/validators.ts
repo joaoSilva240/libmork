@@ -45,8 +45,16 @@ export const falloutBodyPartSchema = z.object({
   label: z.string(),
   minRoll: z.number().int().min(1).max(20),
   maxRoll: z.number().int().min(1).max(20),
-  injuries: z.number().int().min(0).max(3).default(0),
-  isCrippled: z.boolean().default(false),
+  injuries: z.union([
+    z.tuple([
+      z.union([z.literal(0), z.literal(1), z.literal(2)]),
+      z.union([z.literal(0), z.literal(1), z.literal(2)]),
+      z.union([z.literal(0), z.literal(1), z.literal(2)]),
+    ]),
+    z.number().int().min(0).max(3),
+  ]).default([0, 0, 0]),
+  status: z.enum(["healthy", "wounded", "crippled"]).optional(),
+  isCrippled: z.boolean().optional(),
   resistances: falloutResistancesSchema,
 });
 

@@ -185,6 +185,8 @@ export function catalogItemToFalloutItem(item: CatalogItem): FalloutItem {
         poison: asNumber(resistance.poison),
       },
       equipped: false,
+      stashed: false,
+      powered: false,
     };
   }
 
@@ -199,11 +201,26 @@ export function catalogItemToFalloutItem(item: CatalogItem): FalloutItem {
     };
   }
 
+  if (type === "ammo") {
+    const shots = asRecord(sd.shots);
+    const shotsMax = asNumber(shots.max, 1);
+    return {
+      ...base,
+      type: "ammo",
+      description: item.description ?? undefined,
+      quantity: asNumber(sd.quantity, 1),
+      shotsMax,
+      shotsCurrent: asNumber(shots.current, shotsMax),
+      stashed: false,
+    };
+  }
+
   return {
     ...base,
-    type: type as "ammo" | "mod" | "miscellany",
+    type: type as "mod" | "miscellany",
     description: item.description ?? undefined,
     quantity: asNumber(sd.quantity, 1),
     equipped: false,
+    stashed: false,
   };
 }
