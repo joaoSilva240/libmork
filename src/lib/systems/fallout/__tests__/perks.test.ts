@@ -98,4 +98,12 @@ describe("Fallout Perks Validators", () => {
   it("mantém perks ausente como undefined na atualização", () => {
     expect(updateFalloutCharacterSchema.parse({}).perks).toBeUndefined();
   });
+
+  it("preserva strings legadas fora dos limites atuais sem reescrevê-las", () => {
+    const longName = "A".repeat(140);
+    const parsed = updateFalloutCharacterSchema.parse({
+      perks: ["", "  ", longName],
+    });
+    expect(parsed.perks).toEqual(["", "  ", longName]);
+  });
 });

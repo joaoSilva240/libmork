@@ -62,7 +62,8 @@ export const falloutCharacterPerkSchema = z.object({
 
 /** Perks aceitam o formato legado (string) e o estruturado vindo do catálogo. */
 export const falloutPerkEntrySchema = z.union([
-  z.string().trim().min(1).max(100),
+  // String legada sem restrições: fichas antigas podem conter nomes vazios ou longos.
+  z.string(),
   falloutCharacterPerkSchema,
 ]);
 
