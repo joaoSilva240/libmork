@@ -935,7 +935,7 @@ export const falloutCharacters = pgTable(
     initiative: integer("initiative").notNull().default(10),
     meleeDamageBonus: integer("melee_damage_bonus").notNull().default(0),
     carryWeightMax: integer("carry_weight_max").notNull().default(200),
-    carryWeightCurrent: integer("carry_weight_current").notNull().default(0),
+    carryWeightCurrent: real("carry_weight_current").notNull().default(0),
     encumbranceLevel: integer("encumbrance_level").notNull().default(0),
     attributes: jsonb("attributes").notNull().default({}),
     skills: jsonb("skills").notNull().default({}),
