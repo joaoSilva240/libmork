@@ -209,7 +209,7 @@ describe("PipBoySheet — aba DATA (perks)", () => {
       {
         name: "Cooper Howard",
         origin: "ghoul",
-        level: 3,
+        level: 5,
         xp: 350,
         attributes: { str: 6, per: 8, end: 7, cha: 5, int: 6, agi: 9, luc: 6 },
         tagSkills: ["small_guns"],
