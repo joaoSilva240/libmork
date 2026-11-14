@@ -245,6 +245,17 @@ export type FalloutOrigin =
   | "mister_handy"
   | "survivor";
 
+/** Perk do personagem: formato estruturado do catálogo ou string legada. */
+export interface FalloutCharacterPerk {
+  name: string;
+  rank: number;
+  maxRank?: number;
+  description?: string | null;
+  requirements?: string | null;
+  imageUrl?: string | null;
+  sourceKey?: string;
+}
+
 /** Entidade Completa do Personagem Fallout 2d20 */
 export interface FalloutCharacter {
   id: string;
@@ -268,7 +279,7 @@ export interface FalloutCharacter {
   caps: number; // Tampas de Nuka-Cola
   bodyParts: Record<FalloutBodyLocation, FalloutBodyPart>;
   items: FalloutItem[];
-  perks: string[];
+  perks: Array<string | FalloutCharacterPerk>;
   createdAt: string;
   updatedAt: string;
 }

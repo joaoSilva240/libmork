@@ -50,6 +50,22 @@ export const falloutBodyPartSchema = z.object({
   resistances: falloutResistancesSchema,
 });
 
+export const falloutCharacterPerkSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  rank: z.number().int().min(1).default(1),
+  maxRank: z.number().int().min(1).optional(),
+  description: z.string().max(4000).nullable().optional(),
+  requirements: z.string().max(500).nullable().optional(),
+  imageUrl: z.string().max(500).nullable().optional(),
+  sourceKey: z.string().max(100).optional(),
+});
+
+/** Perks aceitam o formato legado (string) e o estruturado vindo do catálogo. */
+export const falloutPerkEntrySchema = z.union([
+  z.string().trim().min(1).max(100),
+  falloutCharacterPerkSchema,
+]);
+
 export const createFalloutCharacterSchema = z.object({
   campaignId: z.string().uuid().optional().nullable(),
   name: z.string().min(2, "Nome deve ter no mínimo 2 caracteres").max(100),
@@ -76,7 +92,7 @@ export const createFalloutCharacterSchema = z.object({
     luc: 5,
   }),
   tagSkills: z.array(falloutSkillNameSchema).max(3).default([]),
-  perks: z.array(z.string()).default([]),
+  perks: z.array(falloutPerkEntrySchema).default([]),
   caps: z.number().int().min(0).default(0),
 });
 
@@ -95,7 +111,7 @@ export const updateFalloutCharacterSchema = z.object({
   tagSkills: z.array(falloutSkillNameSchema).max(3).optional(),
   bodyParts: z.record(falloutBodyLocationSchema, falloutBodyPartSchema).optional(),
   items: z.array(z.any()).optional(),
-  perks: z.array(z.string()).optional(),
+  perks: z.array(falloutPerkEntrySchema).optional(),
 });
 
 export type UpdateFalloutCharacterInput = z.infer<typeof updateFalloutCharacterSchema>;

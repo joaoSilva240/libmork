@@ -21,6 +21,7 @@ import {
   calculateDefense,
   calculateInitiative,
   calculateCarryWeightMax,
+  normalizeFalloutPerk,
 } from "@/lib/systems/fallout/rules";
 import {
   getFalloutItemIcon,
@@ -417,7 +418,7 @@ export function PipBoySheet({
             ) : (
               <ul className="list-disc list-inside space-y-1 text-emerald-300">
                 {character.perks.map((perk, idx) => (
-                  <li key={idx}>{perk}</li>
+                  <li key={idx}>{normalizeFalloutPerk(perk).name}</li>
                 ))}
               </ul>
             )}

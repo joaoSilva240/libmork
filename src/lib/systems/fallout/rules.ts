@@ -9,6 +9,7 @@ import type {
   FalloutBodyLocation,
   FalloutBodyPart,
   FalloutCharacter,
+  FalloutCharacterPerk,
   FalloutRollDie,
   FalloutRollParams,
   FalloutRollResult,
@@ -273,6 +274,14 @@ export function initializeFalloutSkills(
   }
 
   return skills as Record<FalloutSkillName, FalloutSkillState>;
+}
+
+/** Aceita o formato legado (string) e o estruturado do catálogo, sem bloquear ranks. */
+export function normalizeFalloutPerk(
+  entry: string | FalloutCharacterPerk,
+): FalloutCharacterPerk {
+  if (typeof entry === "string") return { name: entry, rank: 1 };
+  return { ...entry, rank: Math.max(1, entry.rank ?? 1) };
 }
 
 export function createInitialFalloutCharacter(

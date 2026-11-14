@@ -1,0 +1,101 @@
+import { describe, it, expect } from "vitest";
+import { normalizeFalloutPerk } from "../rules";
+import type { FalloutCharacterPerk } from "../types";
+import {
+  createFalloutCharacterSchema,
+  updateFalloutCharacterSchema,
+} from "../validators";
+
+describe("Fallout Perks Normalization", () => {
+  it("converte string legada em FalloutCharacterPerk com rank 1", () => {
+    const perk = normalizeFalloutPerk("Action Boy");
+    expect(perk).toEqual({
+      name: "Action Boy",
+      rank: 1,
+    });
+  });
+
+  it("mantém objeto FalloutCharacterPerk intacto garantindo rank mínimo de 1", () => {
+    const input: FalloutCharacterPerk = {
+      name: "Gun Nut",
+      rank: 2,
+      maxRank: 4,
+      description: "Permite criar mods de armas.",
+      requirements: "INT 6",
+    };
+    const perk = normalizeFalloutPerk(input);
+    expect(perk).toEqual(input);
+  });
+
+  it("não limita o rank ao maxRank (validação é informativa)", () => {
+    const perk = normalizeFalloutPerk({ name: "Gun Nut", rank: 5, maxRank: 4 });
+    expect(perk.rank).toBe(5);
+  });
+
+  it("assume rank 1 quando o objeto não informa rank", () => {
+    const perk = normalizeFalloutPerk({ name: "Lady Killer" } as FalloutCharacterPerk);
+    expect(perk).toEqual({ name: "Lady Killer", rank: 1 });
+  });
+});
+
+describe("Fallout Perks Validators", () => {
+  const baseInput = {
+    name: "Sobrevivente",
+    attributes: { str: 5, per: 5, end: 5, cha: 5, int: 5, agi: 5, luc: 5 },
+  };
+
+  it("aceita perks legados como string[] na criação", () => {
+    const parsed = createFalloutCharacterSchema.parse({
+      ...baseInput,
+      perks: ["Action Boy", "Fortune Finder"],
+    });
+    expect(parsed.perks).toEqual(["Action Boy", "Fortune Finder"]);
+  });
+
+  it("aceita perks estruturados na criação", () => {
+    const parsed = createFalloutCharacterSchema.parse({
+      ...baseInput,
+      perks: [{ name: "Gun Nut", rank: 2, maxRank: 4, requirements: "INT 6" }],
+    });
+    expect(parsed.perks).toEqual([
+      { name: "Gun Nut", rank: 2, maxRank: 4, requirements: "INT 6" },
+    ]);
+  });
+
+  it("aceita lista mista de strings e objetos na criação", () => {
+    const parsed = createFalloutCharacterSchema.parse({
+      ...baseInput,
+      perks: ["Action Boy", { name: "Gun Nut", rank: 1 }],
+    });
+    expect(parsed.perks).toHaveLength(2);
+  });
+
+  it("rejeita perk sem nome ou com tipo inválido", () => {
+    expect(
+      createFalloutCharacterSchema.safeParse({ ...baseInput, perks: [42] }).success,
+    ).toBe(false);
+    expect(
+      createFalloutCharacterSchema.safeParse({ ...baseInput, perks: [{ rank: 1 }] }).success,
+    ).toBe(false);
+    expect(
+      createFalloutCharacterSchema.safeParse({ ...baseInput, perks: [{ name: "  ", rank: 1 }] })
+        .success,
+    ).toBe(false);
+  });
+
+  it("aceita perks legados e estruturados na atualização", () => {
+    expect(
+      updateFalloutCharacterSchema.safeParse({ perks: ["Action Boy"] }).success,
+    ).toBe(true);
+    expect(
+      updateFalloutCharacterSchema.safeParse({
+        perks: [{ name: "Gun Nut", rank: 3, maxRank: 4 }],
+      }).success,
+    ).toBe(true);
+    expect(updateFalloutCharacterSchema.safeParse({ perks: [null] }).success).toBe(false);
+  });
+
+  it("mantém perks ausente como undefined na atualização", () => {
+    expect(updateFalloutCharacterSchema.parse({}).perks).toBeUndefined();
+  });
+});
