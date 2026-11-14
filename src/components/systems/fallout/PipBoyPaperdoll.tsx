@@ -1,10 +1,5 @@
 "use client";
 
-// =============================================================================
-// Libmork — Sistema Fallout 2d20: Paperdoll de Localização de Dano e Membros
-// Visualizador de cabeça, tronco, braços e pernas com ferimentos e resistências
-// =============================================================================
-
 import React from "react";
 import type { FalloutBodyLocation, FalloutBodyPart, FalloutInjurySlot } from "@/lib/systems/fallout/types";
 import { FALLOUT_BODY_LOCATIONS } from "@/lib/systems/fallout/types";
@@ -24,6 +19,16 @@ interface PipBoyPaperdollProps {
   actorKind?: PaperdollActorKind;
 }
 
+const SLOT_CYCLE: Record<FalloutInjurySlot, FalloutInjurySlot> = { 0: 2, 2: 1, 1: 0 };
+const SLOT_COLORS: Record<FalloutInjurySlot, string> = {
+  0: "bg-black/60 border-emerald-900/60",
+  1: "bg-amber-500 border-amber-400 shadow-[0_0_4px_rgba(245,158,11,0.8)]",
+  2: "bg-red-500 border-red-400 shadow-[0_0_4px_rgba(239,68,68,0.8)]",
+};
+const SLOT_LABELS: Record<FalloutInjurySlot, string> = { 0: "saudavel", 1: "tratada", 2: "aberta" };
+const STATUS_LABELS: Record<string, string> = { healthy: "Íntegro", wounded: "Ferido", crippled: "Aleijado" };
+const STATUS_COLORS: Record<string, string> = { healthy: "text-emerald-400", wounded: "text-amber-400", crippled: "text-red-400" };
+
 export function PipBoyPaperdoll({
   bodyParts,
   onUpdateBodyPart,
@@ -31,36 +36,29 @@ export function PipBoyPaperdoll({
   className = "",
   actorKind = "character",
 }: PipBoyPaperdollProps) {
-  const toggleInjury = (location: FalloutBodyLocation) => {
+  const cycleSlot = (location: FalloutBodyLocation, slotIndex: number) => {
     if (readOnly || !onUpdateBodyPart) return;
-    const current = bodyParts[location];
-    const maxSlot = Math.max(...current.injuries);
-    const next: [FalloutInjurySlot, FalloutInjurySlot, FalloutInjurySlot] =
-      maxSlot >= 2 ? [0, 0, 0] : [2, 0, 0];
-    onUpdateBodyPart(location, {
-      injuries: next,
-      status: maxSlot >= 2 ? "healthy" : "crippled",
-    });
+    const part = bodyParts[location];
+    const next = [...part.injuries] as [FalloutInjurySlot, FalloutInjurySlot, FalloutInjurySlot];
+    next[slotIndex] = SLOT_CYCLE[next[slotIndex]];
+    const max = Math.max(...next);
+    const status = max >= 2 ? "crippled" : max === 1 ? "wounded" : "healthy";
+    onUpdateBodyPart(location, { injuries: next, status });
   };
 
   const renderPartCard = (location: FalloutBodyLocation) => {
     const part = bodyParts[location];
     if (!part) return null;
-
     const isInjured = part.status !== "healthy";
 
     return (
       <div
         key={location}
-        onClick={() => !readOnly && toggleInjury(location)}
         className={`p-2.5 rounded border transition-all ${
-          readOnly ? "" : "cursor-pointer hover:border-emerald-400/80"
-        } ${
           isInjured
             ? "bg-red-950/40 border-red-500/60 shadow-[0_0_10px_rgba(239,68,68,0.25)]"
-            : "bg-emerald-950/20 border-emerald-500/40 hover:bg-emerald-950/30"
+            : "bg-emerald-950/20 border-emerald-500/40"
         }`}
-        title={readOnly ? part.label : `${part.label} (Clique para alternar ferimento)`}
       >
         <div className="flex items-center justify-between mb-1">
           <span className="font-bold text-xs tracking-wider text-emerald-300">{part.label}</span>
@@ -69,30 +67,28 @@ export function PipBoyPaperdoll({
           </span>
         </div>
 
-        {/* Status de Integridade / Ferimentos */}
         <div className="flex items-center justify-between my-1.5">
-          <span
-            className={`text-[10px] font-bold uppercase tracking-wider ${
-              isInjured ? "text-red-400" : "text-emerald-400"
-            }`}
-          >
-            {isInjured ? `Ferido (${part.injuries})` : "Íntegro"}
+          <span className={`text-[10px] font-bold uppercase tracking-wider ${STATUS_COLORS[part.status] ?? "text-emerald-400"}`}>
+            {STATUS_LABELS[part.status] ?? "Íntegro"}
           </span>
-          <div className="flex items-center gap-0.5">
-            {[1, 2, 3].map((step) => (
-              <span
-                key={step}
-                className={`w-2 h-2 rounded-full border ${
-                  part.injuries[step - 1] > 0
-                    ? "bg-red-500 border-red-400 shadow-[0_0_4px_rgba(239,68,68,0.8)]"
-                    : "bg-black/60 border-emerald-900/60"
-                }`}
-              />
+          <div className="flex items-center gap-1">
+            {part.injuries.map((slot, idx) => (
+              readOnly ? (
+                <span key={idx} className={`w-2.5 h-2.5 rounded-full border ${SLOT_COLORS[slot]}`} />
+              ) : (
+                <button
+                  key={idx}
+                  type="button"
+                  tabIndex={0}
+                  aria-label={`Injúria ${part.label} slot ${idx + 1}: ${SLOT_LABELS[slot]}`}
+                  onClick={() => cycleSlot(location, idx)}
+                  className={`w-2.5 h-2.5 rounded-full border cursor-pointer ${SLOT_COLORS[slot]}`}
+                />
+              )
             ))}
           </div>
         </div>
 
-        {/* Resistências de Dano (Armadura no membro) */}
         <div className="grid grid-cols-4 gap-1 text-[10px] font-mono pt-1.5 border-t border-emerald-800/30 text-emerald-400/90">
           <div className="flex items-center gap-0.5" title="Resistência Física">
             <Shield size={10} className="text-emerald-300 shrink-0" />
@@ -127,7 +123,6 @@ export function PipBoyPaperdoll({
         <span className="text-[10px] text-emerald-400/70">Tabela de Localização d20</span>
       </div>
 
-      {/* Silhueta oficial em camadas (Vault Boy / Mister Handy) */}
       <div
         data-testid="pipboy-paperdoll-figure"
         className="relative mx-auto mb-3 aspect-square w-full max-w-[220px] select-none"
