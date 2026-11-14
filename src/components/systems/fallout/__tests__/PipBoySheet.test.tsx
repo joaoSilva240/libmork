@@ -269,6 +269,18 @@ describe("PipBoySheet — aba DATA (perks)", () => {
     });
   });
 
+  it("ajusta o rank de um perk legado em string sem perder o nome", () => {
+    const onUpdate = openDataTab();
+    const item = screen.getByTestId("perk-item-Action Boy");
+    fireEvent.click(within(item).getByRole("button", { name: /Action Boy/ }));
+
+    fireEvent.click(within(item).getByRole("button", { name: "Aumentar rank de Action Boy" }));
+
+    expect(onUpdate).toHaveBeenCalledWith({
+      perks: [gunNut, { name: "Action Boy", rank: 2 }],
+    });
+  });
+
   it("desabilita o aumento no maxRank e a redução no rank 1", () => {
     const character = buildCharacter([{ ...gunNut, rank: 4 }]);
     openDataTab(character);
@@ -307,7 +319,15 @@ describe("PipBoySheet — aba DATA (perks)", () => {
               structuredEffects: {
                 requirements: null,
                 requirementsEx: {
-                  attributes: { luc: { value: 5 } },
+                  attributes: {
+                    str: { value: 0 },
+                    per: { value: 0 },
+                    end: { value: 0 },
+                    cha: { value: 0 },
+                    int: { value: 0 },
+                    agi: { value: 0 },
+                    luc: { value: 5 },
+                  },
                   level: 2,
                 },
               },
