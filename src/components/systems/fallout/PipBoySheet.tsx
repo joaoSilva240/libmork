@@ -8,6 +8,7 @@ import React, { useState } from "react";
 import {
   FALLOUT_ATTRIBUTES,
   FALLOUT_ATTRIBUTE_CONFIGS,
+  FALLOUT_DEFAULT_BODY_PARTS,
   FALLOUT_SKILLS,
   FALLOUT_SKILL_CONFIGS,
   type FalloutAttribute,
@@ -15,6 +16,7 @@ import {
   type FalloutBodyPart,
   type FalloutCharacter,
   type FalloutCharacterPerk,
+  type FalloutItem,
   type FalloutSkillName,
 } from "@/lib/systems/fallout/types";
 import {
@@ -36,6 +38,7 @@ import { PipBoyRollFab } from "./PipBoyRollFab";
 import { APTrackerWidget } from "./APTrackerWidget";
 import { FalloutDiceRollerModal } from "./FalloutDiceRollerModal";
 import { PipBoyPerkPickerModal } from "./PipBoyPerkPickerModal";
+import { PipBoyItemPickerModal } from "./PipBoyItemPickerModal";
 import { PipBoyTabNav } from "./PipBoyTabNav";
 import {
   Heart,
@@ -62,6 +65,87 @@ const PIPBOY_TABS = [
 
 type PipBoyTabId = (typeof PIPBOY_TABS)[number]["id"];
 
+const ITEM_DAMAGE_TYPE_LABELS: Record<string, string> = {
+  physical: "Físico",
+  energy: "Energia",
+  radiation: "Radiação",
+  poison: "Veneno",
+};
+
+const ITEM_RANGE_LABELS: Record<string, string> = {
+  close: "Curto",
+  medium: "Médio",
+  long: "Longo",
+  extreme: "Extremo",
+};
+
+/** Estatísticas completas do item exibidas no accordion da aba INV. */
+function PipBoyItemStats({ item }: { item: FalloutItem }) {
+  if (item.type === "weapon") {
+    return (
+      <div className="space-y-1 text-[11px] text-emerald-400">
+        <p>
+          Dano: <span className="text-emerald-200">{item.damageDiceRating} DC</span> (
+          {ITEM_DAMAGE_TYPE_LABELS[item.damageType] ?? item.damageType})
+        </p>
+        {item.qualities.length > 0 && (
+          <p>
+            Qualidades: <span className="text-emerald-300">{item.qualities.join(", ")}</span>
+          </p>
+        )}
+        {item.damageEffects.length > 0 && (
+          <p>
+            Efeitos: <span className="text-emerald-300">{item.damageEffects.join(", ")}</span>
+          </p>
+        )}
+        <p className="text-emerald-500">
+          Munição: {item.ammoType ?? "—"} • Cadência: {item.fireRate} • Alcance:{" "}
+          {ITEM_RANGE_LABELS[item.range] ?? item.range}
+        </p>
+      </div>
+    );
+  }
+
+  if (item.type === "apparel") {
+    const rd = item.resistances;
+    return (
+      <div className="space-y-1 text-[11px] text-emerald-400">
+        <p>
+          RD: Físico {rd.physical} • Energia {rd.energy} • Radiação {rd.radiation} • Veneno{" "}
+          {rd.poison}
+        </p>
+        <p className="text-emerald-500">
+          Cobre:{" "}
+          {item.locationsCovered.length > 0
+            ? item.locationsCovered.map((loc) => FALLOUT_DEFAULT_BODY_PARTS[loc].label).join(", ")
+            : "—"}
+        </p>
+      </div>
+    );
+  }
+
+  if (item.type === "consumable") {
+    return (
+      <div className="space-y-1 text-[11px] text-emerald-400">
+        <p className="text-emerald-500">
+          Categoria: {item.category} • Quantidade: {item.quantity}
+        </p>
+        {item.hpRestored ? <p>Restaura {item.hpRestored} HP</p> : null}
+        {item.addictive && <p className="text-amber-400">Potencialmente viciante</p>}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-1 text-[11px] text-emerald-400">
+      {item.description && <p className="leading-relaxed">{item.description}</p>}
+      {item.quantity !== undefined && (
+        <p className="text-emerald-500">Quantidade: {item.quantity}</p>
+      )}
+    </div>
+  );
+}
+
 interface PipBoySheetProps {
   character: FalloutCharacter;
   onUpdateCharacter?: (patch: Partial<FalloutCharacter>) => void;
@@ -81,6 +165,8 @@ export function PipBoySheet({
   const [rollerInitialSkill, setRollerInitialSkill] = useState<FalloutSkillName>("small_guns");
   const [expandedPerk, setExpandedPerk] = useState<string | null>(null);
   const [isPerkPickerOpen, setIsPerkPickerOpen] = useState(false);
+  const [expandedItem, setExpandedItem] = useState<string | null>(null);
+  const [isItemPickerOpen, setIsItemPickerOpen] = useState(false);
 
   const canEdit = !readOnly && Boolean(onUpdateCharacter);
 
@@ -148,6 +234,16 @@ export function PipBoySheet({
         return perk.name === name ? adjustFalloutPerkRank(perk, delta) : entry;
       }),
     });
+  };
+
+  const handleAddItem = (item: FalloutItem) => {
+    if (readOnly || !onUpdateCharacter) return;
+    onUpdateCharacter({ items: [...character.items, item] });
+  };
+
+  const handleRemoveItem = (id: string) => {
+    if (readOnly || !onUpdateCharacter) return;
+    onUpdateCharacter({ items: character.items.filter((item) => item.id !== id) });
   };
 
   const openSkillRoll = (skill: FalloutSkillName) => {
@@ -385,36 +481,87 @@ export function PipBoySheet({
           </div>
 
           <div className="bg-black/70 border border-emerald-500/40 rounded-lg p-3">
-            <h4 className="text-xs font-bold uppercase tracking-widest text-emerald-300 mb-2">
-              Equipamentos &amp; Suprimentos ({character.items.length})
-            </h4>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-emerald-300">
+                Equipamentos &amp; Suprimentos ({character.items.length})
+              </h4>
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => setIsItemPickerOpen(true)}
+                  aria-label="Adicionar item"
+                  className="flex shrink-0 items-center gap-1 rounded border border-emerald-500 bg-emerald-950 px-2 py-1 text-[10px] font-bold text-emerald-300 hover:bg-emerald-900 cursor-pointer"
+                >
+                  <Plus className="h-3 w-3" />
+                  Adicionar item
+                </button>
+              )}
+            </div>
             {character.items.length === 0 ? (
               <p className="text-xs text-emerald-600 italic">
                 Nenhum equipamento registrado no Pip-Boy.
               </p>
             ) : (
-              <div className="space-y-1.5">
-                {character.items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between p-2 rounded border border-emerald-900/50 bg-black/50 text-xs"
-                  >
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={getFalloutItemIcon(item.type)}
-                        alt=""
-                        aria-hidden="true"
-                        className="h-5 w-5 shrink-0"
-                      />
-                      <span className="font-bold text-emerald-200">{item.name}</span>
-                      <span className="text-[10px] uppercase text-emerald-500">[{item.type}]</span>
-                    </div>
-                    <div className="text-[11px] text-emerald-400">
-                      {item.weight} lbs • {item.costCaps} Tampas
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <ul className="space-y-1.5">
+                {character.items.map((item) => {
+                  const expanded = expandedItem === item.id;
+                  return (
+                    <li
+                      key={item.id}
+                      data-testid={`item-row-${item.id}`}
+                      className="rounded border border-emerald-900/50 bg-black/50"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setExpandedItem(expanded ? null : item.id)}
+                        aria-expanded={expanded}
+                        aria-controls={`item-details-${item.id}`}
+                        className="flex w-full items-center justify-between gap-2 p-2 text-xs cursor-pointer"
+                      >
+                        <span className="flex min-w-0 items-center gap-2">
+                          <img
+                            src={getFalloutItemIcon(item.type)}
+                            alt=""
+                            aria-hidden="true"
+                            className="h-5 w-5 shrink-0"
+                          />
+                          <span className="truncate font-bold text-emerald-200">{item.name}</span>
+                          <span className="shrink-0 text-[10px] uppercase text-emerald-500">
+                            [{item.type}]
+                          </span>
+                        </span>
+                        <span className="flex shrink-0 items-center gap-1.5 text-[11px] text-emerald-400">
+                          {item.weight} lbs • {item.costCaps} Tampas
+                          <ChevronDown
+                            className={`h-3.5 w-3.5 transition-transform ${expanded ? "rotate-180" : ""}`}
+                          />
+                        </span>
+                      </button>
+                      {expanded && (
+                        <div
+                          data-testid={`item-details-${item.id}`}
+                          id={`item-details-${item.id}`}
+                          className="space-y-2 border-t border-emerald-900/50 px-2 py-2"
+                        >
+                          <PipBoyItemStats item={item} />
+                          {canEdit && (
+                            <div className="flex justify-end">
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveItem(item.id)}
+                                aria-label={`Remover ${item.name}`}
+                                className="text-emerald-600 hover:text-red-400 cursor-pointer"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
             )}
           </div>
 
@@ -577,6 +724,12 @@ export function PipBoySheet({
         onClose={() => setIsPerkPickerOpen(false)}
         character={character}
         onSelect={handleAddPerk}
+      />
+
+      <PipBoyItemPickerModal
+        isOpen={isItemPickerOpen}
+        onClose={() => setIsItemPickerOpen(false)}
+        onSelect={handleAddItem}
       />
     </div>
   );

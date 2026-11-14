@@ -356,3 +356,161 @@ describe("PipBoySheet — aba DATA (perks)", () => {
     expect(within(item).queryByRole("button", { name: "Remover Gun Nut" })).toBeNull();
   });
 });
+
+describe("PipBoySheet — aba INV (equipamentos)", () => {
+  const pistol = {
+    id: "w1",
+    name: "10mm Pistol",
+    type: "weapon" as const,
+    damageDiceRating: 4,
+    damageType: "physical" as const,
+    damageEffects: ["piercing" as const],
+    qualities: ["reliable" as const],
+    ammoType: "10mm Round",
+    ammoPerShot: 1,
+    fireRate: 2,
+    range: "close" as const,
+    weight: 4,
+    costCaps: 50,
+    equipped: false,
+  };
+  const armor = {
+    id: "a1",
+    name: "Combat Armor",
+    type: "apparel" as const,
+    apparelType: "armor" as const,
+    locationsCovered: ["head", "torso", "armL", "armR", "legL", "legR"] as const,
+    resistances: { physical: 2, energy: 2, radiation: 0, poison: 0 },
+    weight: 20,
+    costCaps: 185,
+    equipped: false,
+  };
+
+  function buildCharacter(items: unknown[] = [pistol, armor]) {
+    return {
+      ...createInitialFalloutCharacter(
+        {
+          name: "Cooper Howard",
+          origin: "ghoul",
+          level: 3,
+          xp: 350,
+          attributes: { str: 6, per: 8, end: 7, cha: 5, int: 6, agi: 9, luc: 6 },
+          tagSkills: ["small_guns"],
+          perks: [],
+          caps: 250,
+        },
+        "user-1",
+        "char-cooper",
+      ),
+      items: items as never[],
+    };
+  }
+
+  function openInvTab(character = buildCharacter(), onUpdateCharacter = vi.fn()) {
+    render(<PipBoySheet character={character} onUpdateCharacter={onUpdateCharacter} />);
+    fireEvent.click(screen.getByRole("tab", { name: "INV" }));
+    return onUpdateCharacter;
+  }
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("lista equipamentos com peso/caps e expande as estatísticas em accordion", () => {
+    openInvTab();
+
+    const weaponRow = screen.getByTestId("item-row-w1");
+    expect(within(weaponRow).getByText(/4 lbs/)).toBeInTheDocument();
+    expect(within(weaponRow).getByText(/50 Tampas/)).toBeInTheDocument();
+
+    const toggle = within(weaponRow).getByRole("button", { name: /10mm Pistol/ });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByTestId("item-details-w1")).toBeNull();
+
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    const details = screen.getByTestId("item-details-w1");
+    expect(within(details).getByText(/4 DC/)).toBeInTheDocument();
+    expect(within(details).getByText(/reliable/)).toBeInTheDocument();
+
+    fireEvent.click(toggle);
+    expect(screen.queryByTestId("item-details-w1")).toBeNull();
+  });
+
+  it("expande a RD e os locais cobertos de uma armadura", () => {
+    openInvTab();
+    const armorRow = screen.getByTestId("item-row-a1");
+    fireEvent.click(within(armorRow).getByRole("button", { name: /Combat Armor/ }));
+
+    const details = screen.getByTestId("item-details-a1");
+    expect(within(details).getByText(/Físico 2/)).toBeInTheDocument();
+    expect(within(details).getByText(/Energia 2/)).toBeInTheDocument();
+  });
+
+  it("remove o item do inventário", () => {
+    const onUpdate = openInvTab();
+    const row = screen.getByTestId("item-row-w1");
+    fireEvent.click(within(row).getByRole("button", { name: /10mm Pistol/ }));
+
+    fireEvent.click(within(row).getByRole("button", { name: "Remover 10mm Pistol" }));
+
+    expect(onUpdate).toHaveBeenCalledWith({ items: [armor] });
+  });
+
+  it("abre o seletor da Biblioteca Global e adiciona o item escolhido", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({
+          success: true,
+          data: [
+            {
+              id: "item-nuka",
+              name: "Nuka-Cola",
+              description: "Refrigerante pré-guerra.",
+              qualityDescription: null,
+              imageUrl: null,
+              sourceKey: "fallout:consumables:nuka_cola",
+              sourceData: {
+                pack: "consumables",
+                consumableType: "beverage",
+                hp: 2,
+                quantity: 1,
+                weight: 1,
+                cost: 20,
+              },
+            },
+          ],
+        }),
+      })),
+    );
+    const onUpdate = openInvTab();
+
+    fireEvent.click(screen.getByRole("button", { name: /Adicionar item/i }));
+    expect(
+      await screen.findByRole("dialog", { name: "Seletor de Itens Pip-Boy" }),
+    ).toBeInTheDocument();
+
+    const card = await screen.findByTestId("item-card-item-nuka");
+    fireEvent.click(within(card).getByRole("button", { name: /Adicionar Nuka-Cola/i }));
+
+    expect(onUpdate).toHaveBeenCalledTimes(1);
+    const patch = onUpdate.mock.calls[0][0] as { items: Array<{ name: string; type: string }> };
+    expect(patch.items).toHaveLength(3);
+    expect(patch.items[2]).toMatchObject({ name: "Nuka-Cola", type: "consumable", weight: 1, costCaps: 20 });
+  });
+
+  it("em somente leitura mantém os detalhes e esconde os controles de edição", () => {
+    render(<PipBoySheet character={buildCharacter()} readOnly />);
+    fireEvent.click(screen.getByRole("tab", { name: "INV" }));
+
+    expect(screen.queryByRole("button", { name: /Adicionar item/i })).toBeNull();
+    const row = screen.getByTestId("item-row-w1");
+    fireEvent.click(within(row).getByRole("button", { name: /10mm Pistol/ }));
+
+    expect(screen.getByTestId("item-details-w1")).toBeInTheDocument();
+    expect(within(row).queryByRole("button", { name: "Remover 10mm Pistol" })).toBeNull();
+  });
+});
