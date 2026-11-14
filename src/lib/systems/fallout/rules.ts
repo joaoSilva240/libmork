@@ -18,6 +18,7 @@ import type {
   FalloutSkillState,
 } from "./types";
 import type { CreateFalloutCharacterInput } from "./validators";
+import { recalculateFalloutDerived } from "./derived";
 import {
   FALLOUT_ATTRIBUTES,
   FALLOUT_ATTRIBUTE_CONFIGS,
@@ -335,6 +336,27 @@ export function getFalloutPerkRequirementText(
   return legacy || null;
 }
 
+export function applyFalloutConsumable(
+  character: FalloutCharacter,
+  itemId: string,
+): FalloutCharacter | null {
+  const index = character.items.findIndex((i) => i.id === itemId);
+  if (index === -1) return null;
+  const item = character.items[index];
+  if (item.type !== "consumable") return null;
+  if (item.quantity <= 0) return null;
+
+  const hpCurrent = Math.min(character.hpMax, character.hpCurrent + (item.hpRestored ?? 0));
+  const radiation = Math.max(0, character.radiation - (item.radsCured ?? 0)) + (item.radsInflicted ?? 0);
+  const newQuantity = item.quantity - 1;
+
+  const items = newQuantity <= 0
+    ? character.items.filter((_, i) => i !== index)
+    : character.items.map((it, i) => i === index ? { ...it, quantity: newQuantity } : it);
+
+  return { ...character, hpCurrent, radiation, items };
+}
+
 export function createInitialFalloutCharacter(
   input: CreateFalloutCharacterInput,
   ownerId: string,
@@ -343,9 +365,7 @@ export function createInitialFalloutCharacter(
   const charId = id || `fallout-char-${Date.now()}`;
   const now = new Date().toISOString();
 
-  const maxHp = calculateMaxHp(input.attributes.end, input.attributes.luc, input.level);
-
-  return {
+  const base: FalloutCharacter = {
     id: charId,
     campaignId: input.campaignId || null,
     ownerId,
@@ -356,14 +376,14 @@ export function createInitialFalloutCharacter(
     attributes: { ...input.attributes },
     skills: initializeFalloutSkills(input.tagSkills),
     tagSkills: [...(input.tagSkills || [])],
-    hpCurrent: maxHp,
-    hpMax: maxHp,
+    hpCurrent: 0,
+    hpMax: 0,
     radiation: 0,
     luckPointsCurrent: input.attributes.luc,
-    defense: calculateDefense(input.attributes.agi),
-    initiative: calculateInitiative(input.attributes.per, input.attributes.agi),
-    meleeDamageBonus: calculateMeleeDamageBonus(input.attributes.str),
-    carryWeightMax: calculateCarryWeightMax(input.attributes.str),
+    defense: 0,
+    initiative: 0,
+    meleeDamageBonus: 0,
+    carryWeightMax: 0,
     carryWeightCurrent: 0,
     encumbranceLevel: 0,
     caps: input.caps || 0,
@@ -373,4 +393,7 @@ export function createInitialFalloutCharacter(
     createdAt: now,
     updatedAt: now,
   };
+
+  const derived = recalculateFalloutDerived(base);
+  return { ...derived, hpCurrent: derived.hpMax };
 }

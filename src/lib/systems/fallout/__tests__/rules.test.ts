@@ -13,6 +13,7 @@ import {
   calculateEncumbranceLevel,
   calculateNextLevelXp,
   createInitialFalloutCharacter,
+  applyFalloutConsumable,
 } from "../rules";
 
 describe("Fallout 2d20 — Motor de Regras (Rules Engine)", () => {
@@ -210,5 +211,74 @@ describe("Fallout 2d20 — Motor de Regras (Rules Engine)", () => {
       expect(char.bodyParts.head.label).toBe("Cabeça");
       expect(char.bodyParts.torso.label).toBe("Tronco");
     });
+  });
+});
+
+describe("applyFalloutConsumable", () => {
+  function charWithConsumable(overrides: any = {}): any {
+    return {
+      id: "c1", campaignId: null, ownerId: "o", name: "Test", origin: "vault_dweller",
+      level: 1, xp: 0,
+      attributes: { str: 5, per: 5, end: 5, cha: 5, int: 5, agi: 5, luc: 5 },
+      skills: {}, tagSkills: [],
+      hpCurrent: 5, hpMax: 10, radiation: 3, luckPointsCurrent: 5,
+      defense: 1, initiative: 10, meleeDamageBonus: 0,
+      carryWeightMax: 200, carryWeightCurrent: 0, encumbranceLevel: 0, caps: 0,
+      bodyParts: {}, items: [
+        { id: "item-1", name: "Stimpak", type: "consumable", category: "med", hpRestored: 4, radsCured: 0, quantity: 2, weight: 0.5, costCaps: 25 },
+      ],
+      perks: [], createdAt: "", updatedAt: "",
+      ...overrides,
+    };
+  }
+
+  it("cura HP capped em hpMax e decrementa quantity", () => {
+    const result = applyFalloutConsumable(charWithConsumable(), "item-1");
+    expect(result).not.toBeNull();
+    expect(result!.hpCurrent).toBe(9);
+    expect((result!.items[0] as any).quantity).toBe(1);
+  });
+
+  it("cap hpCurrent em hpMax", () => {
+    const char = charWithConsumable({ hpCurrent: 9 });
+    const result = applyFalloutConsumable(char, "item-1");
+    expect(result!.hpCurrent).toBe(10);
+  });
+
+  it("cura radiacao com floor 0", () => {
+    const char = charWithConsumable();
+    (char.items[0] as any).radsCured = 10;
+    const result = applyFalloutConsumable(char, "item-1");
+    expect(result!.radiation).toBe(0);
+  });
+
+  it("inflige radiacao", () => {
+    const char = charWithConsumable();
+    (char.items[0] as any).radsInflicted = 2;
+    const result = applyFalloutConsumable(char, "item-1");
+    expect(result!.radiation).toBe(5);
+  });
+
+  it("remove item quando quantity chega a 0", () => {
+    const char = charWithConsumable();
+    (char.items[0] as any).quantity = 1;
+    const result = applyFalloutConsumable(char, "item-1");
+    expect(result!.items).toHaveLength(0);
+  });
+
+  it("retorna null para quantity 0", () => {
+    const char = charWithConsumable();
+    (char.items[0] as any).quantity = 0;
+    expect(applyFalloutConsumable(char, "item-1")).toBeNull();
+  });
+
+  it("retorna null para item inexistente", () => {
+    expect(applyFalloutConsumable(charWithConsumable(), "nope")).toBeNull();
+  });
+
+  it("retorna null para item que nao e consumable", () => {
+    const char = charWithConsumable();
+    char.items = [{ id: "w1", name: "Gun", type: "weapon", weight: 3, costCaps: 50 }];
+    expect(applyFalloutConsumable(char, "w1")).toBeNull();
   });
 });
