@@ -11,14 +11,20 @@ import type {
   FalloutBodyPart,
   FalloutCharacter,
   FalloutCharacterPerk,
+  FalloutItem,
+  FalloutModItem,
+  FalloutOrigin,
   FalloutRollDie,
   FalloutRollParams,
   FalloutRollResult,
   FalloutSkillName,
   FalloutSkillState,
+  FalloutWeaponItem,
 } from "./types";
 import type { CreateFalloutCharacterInput } from "./validators";
 import { recalculateFalloutDerived } from "./derived";
+import { FALLOUT_ORIGIN_CONFIGS } from "./origins";
+import { catalogItemToFalloutItem, type CatalogItem } from "./itemCatalog";
 import {
   FALLOUT_ATTRIBUTES,
   FALLOUT_ATTRIBUTE_CONFIGS,
@@ -388,7 +394,7 @@ export function createInitialFalloutCharacter(
     encumbranceLevel: 0,
     caps: input.caps || 0,
     bodyParts: initializeFalloutBodyParts(),
-    items: [],
+    items: input.items ?? [],
     perks: [...(input.perks || [])],
     createdAt: now,
     updatedAt: now,
@@ -396,4 +402,68 @@ export function createInitialFalloutCharacter(
 
   const derived = recalculateFalloutDerived(base);
   return { ...derived, hpCurrent: derived.hpMax };
+}
+
+export function getMaxFalloutPerks(level: number): number {
+  return Math.ceil(Math.max(1, level) / 2);
+}
+
+export function applyModToWeapon(weapon: FalloutWeaponItem, mod: FalloutModItem): FalloutWeaponItem {
+  const fx = mod.modEffects;
+  const qualitiesAdd = fx.qualitiesAdd ?? [];
+  const qualitiesRemove = new Set(fx.qualitiesRemove ?? []);
+  return {
+    ...weapon,
+    damageDiceRating: weapon.damageDiceRating + (fx.damageBonus ?? 0),
+    fireRate: Math.max(0, weapon.fireRate + (fx.fireRateBonus ?? 0)),
+    weight: weapon.weight + (fx.weightDelta ?? 0),
+    qualities: [...new Set([...weapon.qualities.filter((q) => !qualitiesRemove.has(q)), ...qualitiesAdd])],
+    installedMods: [...weapon.installedMods, mod.id],
+    installedModsData: { ...weapon.installedModsData, [mod.id]: mod.modEffects },
+  };
+}
+
+export function removeModFromWeapon(weapon: FalloutWeaponItem, mod: FalloutModItem): FalloutWeaponItem {
+  const fx = weapon.installedModsData[mod.id] ?? mod.modEffects;
+  const qualitiesAdd = new Set(fx.qualitiesAdd ?? []);
+  const qualitiesRemove = fx.qualitiesRemove ?? [];
+  const { [mod.id]: _, ...remainingData } = weapon.installedModsData;
+  return {
+    ...weapon,
+    damageDiceRating: weapon.damageDiceRating - (fx.damageBonus ?? 0),
+    fireRate: Math.max(0, weapon.fireRate - (fx.fireRateBonus ?? 0)),
+    weight: weapon.weight - (fx.weightDelta ?? 0),
+    qualities: [...weapon.qualities.filter((q) => !qualitiesAdd.has(q)), ...qualitiesRemove],
+    installedMods: weapon.installedMods.filter((id) => id !== mod.id),
+    installedModsData: remainingData,
+  };
+}
+
+export function resolveStartingItems(
+  origin: FalloutOrigin,
+  catalogLookup: (sourceKey: string) => CatalogItem | null,
+): FalloutItem[] {
+  const config = FALLOUT_ORIGIN_CONFIGS[origin];
+  const items: FalloutItem[] = [];
+  for (const entry of config.startingItems) {
+    const catalogItem = catalogLookup(entry.sourceKey);
+    let item: FalloutItem;
+    if (catalogItem) {
+      item = catalogItemToFalloutItem(catalogItem);
+    } else {
+      item = {
+        id: `starting-${entry.sourceKey}-${items.length}`,
+        name: entry.name,
+        type: "miscellany",
+        weight: 0,
+        costCaps: 0,
+        quantity: entry.quantity ?? 1,
+      };
+    }
+    if (entry.quantity && (item.type === "ammo" || item.type === "consumable" || item.type === "mod")) {
+      (item as any).quantity = entry.quantity;
+    }
+    items.push(item);
+  }
+  return items;
 }

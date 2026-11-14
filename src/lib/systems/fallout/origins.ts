@@ -50,7 +50,12 @@ export const FALLOUT_ORIGIN_CONFIGS: Record<FalloutOrigin, FalloutOriginConfig> 
     attributeLimits: {},
     attributeBonuses: {},
     robot: false,
-    startingItems: [],
+    startingItems: [
+      { sourceKey: "fallout:apparel:vault_suit", name: "Vault Suit" },
+      { sourceKey: "fallout:weapons:10mm_pistol", name: "10mm Pistol" },
+      { sourceKey: "fallout:ammunition:10mm_round", name: "10mm Round", quantity: 20 },
+      { sourceKey: "fallout:consumables:stimpak", name: "Stimpak", quantity: 2 },
+    ],
   },
   wastelander: {
     id: "wastelander",
@@ -66,7 +71,12 @@ export const FALLOUT_ORIGIN_CONFIGS: Record<FalloutOrigin, FalloutOriginConfig> 
     attributeLimits: {},
     attributeBonuses: {},
     robot: false,
-    startingItems: [],
+    startingItems: [
+      { sourceKey: "fallout:weapons:pipe_gun", name: "Pipe Gun" },
+      { sourceKey: "fallout:ammunition:38_round", name: ".38 Round", quantity: 20 },
+      { sourceKey: "fallout:apparel:wastelander_outfit", name: "Wastelander Outfit" },
+      { sourceKey: "fallout:consumables:stimpak", name: "Stimpak", quantity: 2 },
+    ],
   },
   brotherhood_initiate: {
     id: "brotherhood_initiate",
@@ -82,7 +92,12 @@ export const FALLOUT_ORIGIN_CONFIGS: Record<FalloutOrigin, FalloutOriginConfig> 
     attributeLimits: {},
     attributeBonuses: {},
     robot: false,
-    startingItems: [],
+    startingItems: [
+      { sourceKey: "fallout:apparel:brotherhood_fatigues", name: "Brotherhood Fatigues" },
+      { sourceKey: "fallout:weapons:laser_pistol", name: "Laser Pistol" },
+      { sourceKey: "fallout:ammunition:energy_cell", name: "Energy Cell", quantity: 20 },
+      { sourceKey: "fallout:consumables:stimpak", name: "Stimpak", quantity: 2 },
+    ],
   },
   ghoul: {
     id: "ghoul",
@@ -98,7 +113,13 @@ export const FALLOUT_ORIGIN_CONFIGS: Record<FalloutOrigin, FalloutOriginConfig> 
     attributeLimits: {},
     attributeBonuses: {},
     robot: false,
-    startingItems: [],
+    startingItems: [
+      { sourceKey: "fallout:apparel:wastelander_outfit", name: "Wastelander Outfit" },
+      { sourceKey: "fallout:weapons:pipe_gun", name: "Pipe Gun" },
+      { sourceKey: "fallout:ammunition:38_round", name: ".38 Round", quantity: 20 },
+      { sourceKey: "fallout:consumables:stimpak", name: "Stimpak", quantity: 2 },
+      { sourceKey: "fallout:consumables:radaway", name: "RadAway", quantity: 2 },
+    ],
   },
   super_mutant: {
     id: "super_mutant",
@@ -115,7 +136,12 @@ export const FALLOUT_ORIGIN_CONFIGS: Record<FalloutOrigin, FalloutOriginConfig> 
     attributeBonuses: { str: 2, end: 2 },
     maxSkillRank: 4,
     robot: false,
-    startingItems: [],
+    startingItems: [
+      { sourceKey: "fallout:apparel:super_mutant_armor", name: "Super Mutant Armor" },
+      { sourceKey: "fallout:weapons:hunting_rifle", name: "Hunting Rifle" },
+      { sourceKey: "fallout:ammunition:308_round", name: ".308 Round", quantity: 20 },
+      { sourceKey: "fallout:consumables:stimpak", name: "Stimpak", quantity: 2 },
+    ],
   },
   mister_handy: {
     id: "mister_handy",
@@ -148,7 +174,12 @@ export const FALLOUT_ORIGIN_CONFIGS: Record<FalloutOrigin, FalloutOriginConfig> 
     attributeLimits: {},
     attributeBonuses: {},
     robot: false,
-    startingItems: [],
+    startingItems: [
+      { sourceKey: "fallout:weapons:pipe_gun", name: "Pipe Gun" },
+      { sourceKey: "fallout:ammunition:38_round", name: ".38 Round", quantity: 20 },
+      { sourceKey: "fallout:apparel:wastelander_outfit", name: "Wastelander Outfit" },
+      { sourceKey: "fallout:consumables:stimpak", name: "Stimpak", quantity: 2 },
+    ],
   },
 };
 

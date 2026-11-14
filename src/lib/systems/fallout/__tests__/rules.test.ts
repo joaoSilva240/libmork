@@ -14,6 +14,10 @@ import {
   calculateNextLevelXp,
   createInitialFalloutCharacter,
   applyFalloutConsumable,
+  getMaxFalloutPerks,
+  applyModToWeapon,
+  removeModFromWeapon,
+  resolveStartingItems,
 } from "../rules";
 
 describe("Fallout 2d20 — Motor de Regras (Rules Engine)", () => {
@@ -280,5 +284,113 @@ describe("applyFalloutConsumable", () => {
     const char = charWithConsumable();
     char.items = [{ id: "w1", name: "Gun", type: "weapon", weight: 3, costCaps: 50 }];
     expect(applyFalloutConsumable(char, "w1")).toBeNull();
+  });
+});
+
+describe("getMaxFalloutPerks", () => {
+  it("nivel 1 e 2 permitem 1 perk", () => {
+    expect(getMaxFalloutPerks(1)).toBe(1);
+    expect(getMaxFalloutPerks(2)).toBe(1);
+  });
+
+  it("nivel 3 e 4 permitem 2 perks", () => {
+    expect(getMaxFalloutPerks(3)).toBe(2);
+    expect(getMaxFalloutPerks(4)).toBe(2);
+  });
+
+  it("nivel 5 permite 3 perks", () => {
+    expect(getMaxFalloutPerks(5)).toBe(3);
+  });
+});
+
+describe("applyModToWeapon / removeModFromWeapon", () => {
+  const weapon: any = {
+    id: "w1", name: "10mm", type: "weapon", damageDiceRating: 4,
+    damageType: "physical", damageEffects: [], qualities: ["reliable"],
+    ammoType: "10mm", ammoPerShot: 1, fireRate: 2, range: "close",
+    weight: 4, costCaps: 50, equipped: true, skill: "small_guns",
+    stashed: false, installedMods: [], installedModsData: {},
+  };
+  const mod: any = {
+    id: "m1", name: "Long Barrel", type: "mod", quantity: 1,
+    weight: 1, costCaps: 20, stashed: false, modTarget: "weapon",
+    modEffects: { damageBonus: 1, fireRateBonus: -1, qualitiesAdd: ["accurate"], weightDelta: 1 },
+  };
+
+  it("aplica bonus de dano, fire rate, qualities e peso", () => {
+    const result = applyModToWeapon(weapon, mod);
+    expect(result.damageDiceRating).toBe(5);
+    expect(result.fireRate).toBe(1);
+    expect(result.qualities).toContain("accurate");
+    expect(result.qualities).toContain("reliable");
+    expect(result.weight).toBe(5);
+    expect(result.installedMods).toEqual(["m1"]);
+    expect(result.installedModsData["m1"]).toEqual(mod.modEffects);
+  });
+
+  it("remove mod reverte efeitos", () => {
+    const modded = applyModToWeapon(weapon, mod);
+    const result = removeModFromWeapon(modded, mod);
+    expect(result.damageDiceRating).toBe(4);
+    expect(result.fireRate).toBe(2);
+    expect(result.qualities).toEqual(["reliable"]);
+    expect(result.weight).toBe(4);
+    expect(result.installedMods).toEqual([]);
+  });
+
+  it("qualitiesRemove remove qualidade existente", () => {
+    const removeMod: any = { ...mod, id: "m2", modEffects: { qualitiesRemove: ["reliable"] } };
+    const result = applyModToWeapon(weapon, removeMod);
+    expect(result.qualities).not.toContain("reliable");
+  });
+
+  it("fireRate nao fica negativo", () => {
+    const bigMod: any = { ...mod, modEffects: { fireRateBonus: -10 } };
+    const result = applyModToWeapon(weapon, bigMod);
+    expect(result.fireRate).toBe(0);
+  });
+});
+
+describe("resolveStartingItems", () => {
+  it("retorna array vazio para mister_handy", () => {
+    const items = resolveStartingItems("mister_handy", () => null);
+    expect(items).toEqual([]);
+  });
+
+  it("usa fallback quando catalogLookup retorna null", () => {
+    const items = resolveStartingItems("vault_dweller", () => null);
+    expect(items.length).toBeGreaterThan(0);
+    expect(items[0].name).toBeTruthy();
+  });
+
+  it("usa catalogo quando disponivel", () => {
+    const fakeCatalog = {
+      id: "cat-1", name: "10mm Pistol", description: null,
+      qualityDescription: null, imageUrl: null,
+      sourceKey: "fallout:weapons:10mm_pistol",
+      sourceData: { pack: "weapons", weight: 4, cost: 50, damage: { rating: 4 } },
+    };
+    const items = resolveStartingItems("vault_dweller", (key) =>
+      key === "fallout:weapons:10mm_pistol" ? fakeCatalog : null,
+    );
+    const pistol = items.find((i) => i.name === "10mm Pistol");
+    expect(pistol).toBeTruthy();
+    expect(pistol!.type).toBe("weapon");
+  });
+});
+
+describe("createInitialFalloutCharacter com items", () => {
+  it("inclui items do input no personagem", () => {
+    const char = createInitialFalloutCharacter(
+      {
+        name: "Test", origin: "vault_dweller", level: 1, xp: 0,
+        attributes: { str: 5, per: 5, end: 5, cha: 5, int: 5, agi: 5, luc: 5 },
+        tagSkills: [], perks: [], caps: 50,
+        items: [{ id: "x1", name: "10mm Pistol", type: "weapon", weight: 4, costCaps: 50, damageDiceRating: 4, damageType: "physical", damageEffects: [], qualities: [], ammoPerShot: 1, fireRate: 2, range: "close", equipped: false, skill: "small_guns", stashed: false, installedMods: [], installedModsData: {} }],
+      } as any,
+      "user-1",
+    );
+    expect(char.items).toHaveLength(1);
+    expect(char.items[0].name).toBe("10mm Pistol");
   });
 });
