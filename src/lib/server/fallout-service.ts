@@ -12,6 +12,7 @@ import {
   rollCombatDice,
   calculateHitLocation,
 } from "../systems/fallout/rules";
+import { recalculateFalloutDerived } from "../systems/fallout/derived";
 import type {
   CombatDiceRollResult,
   FalloutCampaignState,
@@ -228,6 +229,18 @@ export async function updateFalloutCharacterRecord(
   }
   if (input.items !== undefined) patch.items = input.items;
   if (input.perks !== undefined) patch.perks = input.perks;
+
+  const merged = { ...existing, ...patch } as unknown as FalloutCharacter;
+  const derived = recalculateFalloutDerived(merged);
+  patch.hpMax = derived.hpMax;
+  patch.hpCurrent = derived.hpCurrent;
+  patch.defense = derived.defense;
+  patch.initiative = derived.initiative;
+  patch.meleeDamageBonus = derived.meleeDamageBonus;
+  patch.carryWeightMax = derived.carryWeightMax;
+  patch.carryWeightCurrent = derived.carryWeightCurrent;
+  patch.encumbranceLevel = derived.encumbranceLevel;
+  patch.bodyParts = derived.bodyParts;
 
   const [updated] = await db
     .update(falloutCharacters)
