@@ -9,15 +9,32 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
+/** Payload real do compendio: `requirements` vem null e a exigencia fica em `requirementsEx`. */
+function requirementsEx(attributes: Record<string, number>, level = 1) {
+  return {
+    attributes: Object.fromEntries(
+      ["str", "per", "end", "cha", "int", "agi", "luc"].map((key) => [
+        key,
+        { value: attributes[key] ?? 0 },
+      ]),
+    ),
+    level,
+  };
+}
+
 const CATALOG_PERKS = [
   {
     id: "perk-action-boy",
     name: "Action Boy",
-    circle: 2,
+    circle: 1,
     useType: "perk",
     description: "Você ganha +1 AP extra por turno.",
     imageUrl: null,
-    structuredEffects: { requirements: "AGI 5", source: "Core Rulebook" },
+    structuredEffects: {
+      requirements: null,
+      requirementsEx: requirementsEx({}, 1),
+      source: "Core Rulebook",
+    },
   },
   {
     id: "perk-gun-nut",
@@ -26,16 +43,37 @@ const CATALOG_PERKS = [
     useType: "perk",
     description: "Permite criar mods de armas.",
     imageUrl: null,
-    structuredEffects: { requirements: "INT 6, Level 2", source: "Core Rulebook" },
+    structuredEffects: {
+      requirements: null,
+      requirementsEx: requirementsEx({ int: 6 }, 2),
+      source: "Core Rulebook",
+    },
+  },
+  {
+    id: "perk-strong-back",
+    name: "Strong Back",
+    circle: 3,
+    useType: "perk",
+    description: "Aumenta a capacidade de carga.",
+    imageUrl: null,
+    structuredEffects: {
+      requirements: null,
+      requirementsEx: requirementsEx({ str: 5 }, 1),
+      source: "Core Rulebook",
+    },
   },
   {
     id: "perk-fortune-finder",
     name: "Fortune Finder",
-    circle: 1,
+    circle: 3,
     useType: "perk",
     description: "Encontra mais tampas de Nuka-Cola.",
     imageUrl: null,
-    structuredEffects: { requirements: "LUC 5", source: "Core Rulebook" },
+    structuredEffects: {
+      requirements: null,
+      requirementsEx: requirementsEx({ luc: 5 }, 2),
+      source: "Core Rulebook",
+    },
   },
   {
     id: "spell-fireball",
@@ -236,6 +274,7 @@ describe("FalloutCharacterWizard — catálogo de perks", () => {
 
     expect(await screen.findByTestId("perk-card-perk-action-boy")).toBeDefined();
     expect(screen.getByTestId("perk-card-perk-gun-nut")).toBeDefined();
+    expect(screen.getByTestId("perk-card-perk-strong-back")).toBeDefined();
     expect(screen.getByTestId("perk-card-perk-fortune-finder")).toBeDefined();
     expect(screen.queryByTestId("perk-card-spell-fireball")).toBeNull();
     expect(fetchMock).toHaveBeenCalledWith(
@@ -279,22 +318,25 @@ describe("FalloutCharacterWizard — catálogo de perks", () => {
     render(<FalloutCharacterWizard />);
     await goToPerksStep();
 
-    const card = await screen.findByTestId("perk-card-perk-action-boy");
-    fireEvent.click(within(card).getByRole("button", { name: /Adicionar Action Boy/i }));
+    const card = await screen.findByTestId("perk-card-perk-fortune-finder");
+    fireEvent.click(within(card).getByRole("button", { name: /Adicionar Fortune Finder/i }));
 
-    const selected = screen.getByTestId("selected-perk-Action Boy");
-    expect(within(selected).getByText("Rank 1 / 2")).toBeDefined();
+    const selected = screen.getByTestId("selected-perk-Fortune Finder");
+    expect(within(selected).getByText("Rank 1 / 3")).toBeDefined();
 
     fireEvent.click(within(selected).getByRole("button", { name: /Aumentar rank/i }));
-    expect(within(selected).getByText("Rank 2 / 2")).toBeDefined();
+    expect(within(selected).getByText("Rank 2 / 3")).toBeDefined();
+
+    fireEvent.click(within(selected).getByRole("button", { name: /Aumentar rank/i }));
+    expect(within(selected).getByText("Rank 3 / 3")).toBeDefined();
 
     const increase = within(selected).getByRole("button", { name: /Aumentar rank/i });
     expect(increase).toBeDisabled();
     fireEvent.click(increase);
-    expect(within(selected).getByText("Rank 2 / 2")).toBeDefined();
+    expect(within(selected).getByText("Rank 3 / 3")).toBeDefined();
 
     fireEvent.click(within(selected).getByRole("button", { name: /Diminuir rank/i }));
-    expect(within(selected).getByText("Rank 1 / 2")).toBeDefined();
+    expect(within(selected).getByText("Rank 2 / 3")).toBeDefined();
   });
 
   it("marca requisito não atendido em âmbar sem bloquear a adição", async () => {
@@ -302,16 +344,50 @@ describe("FalloutCharacterWizard — catálogo de perks", () => {
     render(<FalloutCharacterWizard />);
     await goToPerksStep();
 
-    // INT 6 e Level 2 não são atendidos por um personagem nível 1 com INT 5.
+    // INT 6 e Nível 2 não são atendidos por um personagem nível 1 com INT 5.
     const card = await screen.findByTestId("perk-card-perk-gun-nut");
+    expect(within(card).getByText("INT 6, Nível 2")).toBeDefined();
     expect(within(card).getByTestId("perk-requirements-warning")).toBeDefined();
     fireEvent.click(within(card).getByRole("button", { name: /Adicionar Gun Nut/i }));
 
     expect(screen.getByTestId("selected-perk-Gun Nut")).toBeDefined();
 
-    // Action Boy exige AGI 5, atendido pelo orçamento padrão.
-    const okCard = screen.getByTestId("perk-card-perk-action-boy");
+    // Strong Back exige FOR 5, atendido pelo orçamento padrão (+5 em Força).
+    const okCard = screen.getByTestId("perk-card-perk-strong-back");
+    expect(within(okCard).getByText("FOR 5")).toBeDefined();
     expect(within(okCard).queryByTestId("perk-requirements-warning")).toBeNull();
+
+    // Action Boy não tem requisitos: nenhum indicador é renderizado.
+    const freeCard = screen.getByTestId("perk-card-perk-action-boy");
+    expect(within(freeCard).queryByTestId("perk-requirements-warning")).toBeNull();
+  });
+
+  it("filtra e avisa pelo texto legado quando requirementsEx está ausente", async () => {
+    mockFetchRouter({
+      perks: [
+        {
+          id: "perk-fortune-finder",
+          name: "Fortune Finder",
+          circle: 3,
+          useType: "perk",
+          description: "Encontra mais tampas de Nuka-Cola.",
+          imageUrl: null,
+          structuredEffects: { requirements: "LCK 5, Level 2+", requirementsEx: null },
+        },
+      ],
+    });
+    render(<FalloutCharacterWizard />);
+    await goToPerksStep();
+
+    const card = await screen.findByTestId("perk-card-perk-fortune-finder");
+    expect(within(card).getByText("LCK 5, Level 2+")).toBeDefined();
+    expect(within(card).getByTestId("perk-requirements-warning")).toBeDefined();
+
+    fireEvent.click(screen.getByRole("button", { name: "SOR" }));
+    expect(screen.getByTestId("perk-card-perk-fortune-finder")).toBeDefined();
+
+    fireEvent.click(screen.getByRole("button", { name: "INT" }));
+    expect(screen.queryByTestId("perk-card-perk-fortune-finder")).toBeNull();
   });
 
   it("exibe erro de carga e permite tentar novamente", async () => {
@@ -349,8 +425,8 @@ describe("FalloutCharacterWizard — catálogo de perks", () => {
     expect(screen.queryByTestId("selected-perk-Fortune Finder")).toBeNull();
 
     fireEvent.click(
-      within(screen.getByTestId("perk-card-perk-action-boy")).getByRole("button", {
-        name: /Adicionar Action Boy/i,
+      within(screen.getByTestId("perk-card-perk-strong-back")).getByRole("button", {
+        name: /Adicionar Strong Back/i,
       }),
     );
     fireEvent.click(screen.getByRole("button", { name: /Registrar no Pip-Boy/i }));
@@ -362,14 +438,46 @@ describe("FalloutCharacterWizard — catálogo de perks", () => {
     const body = JSON.parse((postCall![1] as RequestInit).body as string);
     expect(body.perks).toEqual([
       {
-        name: "Action Boy",
+        name: "Strong Back",
         rank: 1,
-        maxRank: 2,
-        description: "Você ganha +1 AP extra por turno.",
-        requirements: "AGI 5",
+        maxRank: 3,
+        description: "Aumenta a capacidade de carga.",
+        requirements: "FOR 5",
         imageUrl: null,
-        sourceKey: "perk-action-boy",
+        sourceKey: "perk-strong-back",
       },
     ]);
+  });
+
+  it("preserva perks legados (string[]) do rascunho salvo ao registrar", async () => {
+    localStorage.setItem(
+      "fallout_character_wizard_draft_v1",
+      JSON.stringify({
+        name: "Walter",
+        origin: "vault_dweller",
+        attributes: { str: 10, per: 5, end: 5, cha: 5, int: 5, agi: 5, luc: 5 },
+        tagSkills: ["athletics"],
+        perks: ["Fortune Finder"],
+      }),
+    );
+    const fetchMock = mockFetchRouter();
+    render(<FalloutCharacterWizard />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Próximo/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Próximo/i }));
+    await screen.findByText("Tag Skills (especialidades ★)");
+    fireEvent.click(screen.getByRole("button", { name: /Próximo/i }));
+
+    const selected = await screen.findByTestId("selected-perk-Fortune Finder");
+    expect(within(selected).getByText("Rank 1")).toBeDefined();
+
+    fireEvent.click(screen.getByRole("button", { name: /Registrar no Pip-Boy/i }));
+
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/player"));
+    const postCall = fetchMock.mock.calls.find(
+      ([, init]) => (init as RequestInit | undefined)?.method === "POST",
+    );
+    const body = JSON.parse((postCall![1] as RequestInit).body as string);
+    expect(body.perks).toEqual(["Fortune Finder"]);
   });
 });

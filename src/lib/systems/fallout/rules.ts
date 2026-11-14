@@ -6,6 +6,7 @@
 import type {
   CombatDiceRollResult,
   CombatDie,
+  FalloutAttribute,
   FalloutBodyLocation,
   FalloutBodyPart,
   FalloutCharacter,
@@ -17,7 +18,13 @@ import type {
   FalloutSkillState,
 } from "./types";
 import type { CreateFalloutCharacterInput } from "./validators";
-import { FALLOUT_BODY_LOCATIONS, FALLOUT_DEFAULT_BODY_PARTS, FALLOUT_SKILLS } from "./types";
+import {
+  FALLOUT_ATTRIBUTES,
+  FALLOUT_ATTRIBUTE_CONFIGS,
+  FALLOUT_BODY_LOCATIONS,
+  FALLOUT_DEFAULT_BODY_PARTS,
+  FALLOUT_SKILLS,
+} from "./types";
 
 /**
  * Gera um número aleatório inteiro entre min e max (inclusivos).
@@ -282,6 +289,41 @@ export function normalizeFalloutPerk(
 ): FalloutCharacterPerk {
   if (typeof entry === "string") return { name: entry, rank: 1 };
   return { ...entry, rank: Math.max(1, entry.rank ?? 1) };
+}
+
+/** Rótulo curto PT-BR do atributo: FOR, PER, RES, CAR, INT, AGI, SOR. */
+export function getFalloutAttributeShortLabel(attribute: FalloutAttribute): string {
+  return FALLOUT_ATTRIBUTE_CONFIGS[attribute].shortLabel.split(" / ")[0];
+}
+
+type PerkRequirementSource = {
+  requirements?: string | null;
+  requirementsEx?: unknown;
+};
+
+// No compêndio Foundry `system.requirements` vem vazio: a fonte real é `requirementsEx`.
+export function getFalloutPerkRequirementText(
+  source: PerkRequirementSource | null | undefined,
+): string | null {
+  const structured = source?.requirementsEx;
+  if (structured && typeof structured === "object") {
+    const { attributes, level } = structured as { attributes?: unknown; level?: unknown };
+    const parts: string[] = [];
+    if (attributes && typeof attributes === "object") {
+      for (const attribute of FALLOUT_ATTRIBUTES) {
+        const entry = (attributes as Record<string, unknown>)[attribute];
+        const minimum =
+          entry && typeof entry === "object" ? (entry as { value?: unknown }).value : undefined;
+        if (typeof minimum === "number" && minimum > 0) {
+          parts.push(`${getFalloutAttributeShortLabel(attribute)} ${minimum}`);
+        }
+      }
+    }
+    if (typeof level === "number" && level > 1) parts.push(`Nível ${level}`);
+    if (parts.length > 0) return parts.join(", ");
+  }
+  const legacy = typeof source?.requirements === "string" ? source.requirements.trim() : "";
+  return legacy || null;
 }
 
 export function createInitialFalloutCharacter(

@@ -18,7 +18,11 @@ import {
   type FalloutOrigin,
   type FalloutSkillName,
 } from "@/lib/systems/fallout/types";
-import { normalizeFalloutPerk } from "@/lib/systems/fallout/rules";
+import {
+  getFalloutAttributeShortLabel,
+  getFalloutPerkRequirementText,
+  normalizeFalloutPerk,
+} from "@/lib/systems/fallout/rules";
 import { getFalloutPerkIcon } from "@/lib/systems/fallout/assets";
 import {
   FALLOUT_ORIGIN_CONFIGS,
@@ -690,7 +694,7 @@ type CatalogPerk = {
   useType: string;
   description: string | null;
   imageUrl: string | null;
-  structuredEffects?: { requirements?: string | null } | null;
+  structuredEffects?: { requirements?: string | null; requirementsEx?: unknown } | null;
 };
 
 const REQUIREMENT_TOKEN_ATTRIBUTES: Record<string, FalloutAttribute> = {
@@ -704,16 +708,13 @@ const REQUIREMENT_TOKEN_ATTRIBUTES: Record<string, FalloutAttribute> = {
   INT: "int",
   AGI: "agi",
   LUC: "luc",
+  LCK: "luc",
   SOR: "luc",
 };
 
-const REQUIREMENT_TOKENS = /\b(STR|FOR|PER|END|RES|CHA|CAR|INT|AGI|LUC|SOR)\b/gi;
+const REQUIREMENT_TOKENS = /\b(STR|FOR|PER|END|RES|CHA|CAR|INT|AGI|LUC|LCK|SOR)\b/gi;
 const REQUIREMENT_MINIMUMS =
-  /\b(STR|FOR|PER|END|RES|CHA|CAR|INT|AGI|LUC|SOR|Level|Nível|Nivel)\s*(\d+)/gi;
-
-function attributeChipLabel(attribute: FalloutAttribute): string {
-  return FALLOUT_ATTRIBUTE_CONFIGS[attribute].shortLabel.split(" / ")[0];
-}
+  /\b(STR|FOR|PER|END|RES|CHA|CAR|INT|AGI|LUC|LCK|SOR|Level|Nível|Nivel)\s*(\d+)/gi;
 
 function getPerkRequirementAttributes(
   requirements: string | null | undefined,
@@ -743,7 +744,7 @@ function getUnmetPerkRequirements(
     }
     const attribute = REQUIREMENT_TOKEN_ATTRIBUTES[token];
     if (attribute && attributes[attribute] < minimum) {
-      unmet.push(`${attributeChipLabel(attribute)} ${minimum}`);
+      unmet.push(`${getFalloutAttributeShortLabel(attribute)} ${minimum}`);
     }
   }
   return unmet;
@@ -800,7 +801,9 @@ function StepPerks({
     if (term && !perk.name.toLowerCase().includes(term)) return false;
     if (
       attributeFilter &&
-      !getPerkRequirementAttributes(perk.structuredEffects?.requirements).includes(attributeFilter)
+      !getPerkRequirementAttributes(
+        getFalloutPerkRequirementText(perk.structuredEffects),
+      ).includes(attributeFilter)
     ) {
       return false;
     }
@@ -817,7 +820,7 @@ function StepPerks({
           rank: 1,
           maxRank: Math.max(1, perk.circle),
           description: perk.description,
-          requirements: perk.structuredEffects?.requirements ?? null,
+          requirements: getFalloutPerkRequirementText(perk.structuredEffects),
           imageUrl: perk.imageUrl,
           sourceKey: perk.id,
         },
@@ -886,7 +889,7 @@ function StepPerks({
                   : "bg-black/50 border-emerald-900/50 text-emerald-500 hover:text-emerald-300"
               }`}
             >
-              {attributeChipLabel(attribute)}
+              {getFalloutAttributeShortLabel(attribute)}
             </button>
           );
         })}
@@ -918,7 +921,7 @@ function StepPerks({
       ) : (
         <ul className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
           {visiblePerks.map((perk) => {
-            const requirements = perk.structuredEffects?.requirements ?? null;
+            const requirements = getFalloutPerkRequirementText(perk.structuredEffects);
             const unmet = getUnmetPerkRequirements(requirements, data.attributes, 1);
             const maxRank = Math.max(1, perk.circle);
             const selected = selectedNames.has(perk.name);

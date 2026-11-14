@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizeFalloutPerk } from "../rules";
+import { getFalloutPerkRequirementText, normalizeFalloutPerk } from "../rules";
 import type { FalloutCharacterPerk } from "../types";
 import {
   createFalloutCharacterSchema,
@@ -105,5 +105,105 @@ describe("Fallout Perks Validators", () => {
       perks: ["", "  ", longName],
     });
     expect(parsed.perks).toEqual(["", "  ", longName]);
+  });
+});
+
+describe("getFalloutPerkRequirementText", () => {
+  /** Reproduz o payload real do compendio: os 7 atributos presentes, 0 = sem exigencia. */
+  function requirementsEx(attributes: Record<string, number>, level = 1) {
+    return {
+      attributes: Object.fromEntries(
+        ["str", "per", "end", "cha", "int", "agi", "luc"].map((key) => [
+          key,
+          { value: attributes[key] ?? 0 },
+        ]),
+      ),
+      level,
+    };
+  }
+
+  it("traduz requirementsEx do compendio para os rotulos PT-BR (Awareness: PER 7)", () => {
+    expect(
+      getFalloutPerkRequirementText({
+        requirements: null,
+        requirementsEx: requirementsEx({ per: 7 }),
+      }),
+    ).toBe("PER 7");
+  });
+
+  it("inclui o nivel minimo quando maior que 1 (Fortune Finder: SOR 5, Nivel 2)", () => {
+    expect(
+      getFalloutPerkRequirementText({
+        requirements: null,
+        requirementsEx: requirementsEx({ luc: 5 }, 2),
+      }),
+    ).toBe("SOR 5, Nível 2");
+  });
+
+  it("lista varios atributos na ordem S.P.E.C.I.A.L. (Gun Nut: INT 6, Nivel 2)", () => {
+    expect(
+      getFalloutPerkRequirementText({
+        requirements: null,
+        requirementsEx: requirementsEx({ str: 5, int: 6 }, 2),
+      }),
+    ).toBe("FOR 5, INT 6, Nível 2");
+  });
+
+  it("retorna null quando o perk nao tem exigencias (Action Boy)", () => {
+    expect(
+      getFalloutPerkRequirementText({
+        requirements: null,
+        requirementsEx: requirementsEx({}, 1),
+      }),
+    ).toBeNull();
+  });
+
+  it("cobre perks exigindo apenas nivel (Life Giver: Nivel 5)", () => {
+    expect(
+      getFalloutPerkRequirementText({
+        requirements: null,
+        requirementsEx: requirementsEx({}, 5),
+      }),
+    ).toBe("Nível 5");
+  });
+
+  it("usa o texto legado quando requirementsEx esta ausente", () => {
+    expect(getFalloutPerkRequirementText({ requirements: "LCK 5, Level 2+" })).toBe(
+      "LCK 5, Level 2+",
+    );
+  });
+
+  it("usa o texto legado quando requirementsEx nao traz exigencias", () => {
+    expect(
+      getFalloutPerkRequirementText({
+        requirements: "  INT 6  ",
+        requirementsEx: requirementsEx({}, 1),
+      }),
+    ).toBe("INT 6");
+  });
+
+  it("retorna null sem fonte de requisitos", () => {
+    expect(getFalloutPerkRequirementText(null)).toBeNull();
+    expect(getFalloutPerkRequirementText(undefined)).toBeNull();
+    expect(getFalloutPerkRequirementText({})).toBeNull();
+    expect(getFalloutPerkRequirementText({ requirements: "   " })).toBeNull();
+  });
+
+  it("ignora requirementsEx malformado sem lancar erro", () => {
+    expect(
+      getFalloutPerkRequirementText({ requirements: null, requirementsEx: "corrompido" }),
+    ).toBeNull();
+    expect(
+      getFalloutPerkRequirementText({
+        requirements: null,
+        requirementsEx: { attributes: null, level: "2" },
+      }),
+    ).toBeNull();
+    expect(
+      getFalloutPerkRequirementText({
+        requirements: null,
+        requirementsEx: { attributes: { int: { value: "6" }, per: 7 } },
+      }),
+    ).toBeNull();
   });
 });
