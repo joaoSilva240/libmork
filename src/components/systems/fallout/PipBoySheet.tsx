@@ -32,6 +32,8 @@ import {
   getFalloutOriginIcon,
   getFalloutPerkIcon,
 } from "@/lib/systems/fallout/assets";
+import { FALLOUT_DAMAGE_TYPE_LABELS } from "@/lib/systems/fallout/itemCatalog";
+import { generateUUID } from "@/lib/utils/uuid";
 import { PipBoyPaperdoll } from "./PipBoyPaperdoll";
 import { PipBoyPortrait } from "./PipBoyPortrait";
 import { PipBoyRollFab } from "./PipBoyRollFab";
@@ -65,13 +67,6 @@ const PIPBOY_TABS = [
 
 type PipBoyTabId = (typeof PIPBOY_TABS)[number]["id"];
 
-const ITEM_DAMAGE_TYPE_LABELS: Record<string, string> = {
-  physical: "Físico",
-  energy: "Energia",
-  radiation: "Radiação",
-  poison: "Veneno",
-};
-
 const ITEM_RANGE_LABELS: Record<string, string> = {
   close: "Curto",
   medium: "Médio",
@@ -86,7 +81,7 @@ function PipBoyItemStats({ item }: { item: FalloutItem }) {
       <div className="space-y-1 text-[11px] text-emerald-400">
         <p>
           Dano: <span className="text-emerald-200">{item.damageDiceRating} DC</span> (
-          {ITEM_DAMAGE_TYPE_LABELS[item.damageType] ?? item.damageType})
+          {FALLOUT_DAMAGE_TYPE_LABELS[item.damageType] ?? item.damageType})
         </p>
         {item.qualities.length > 0 && (
           <p>
@@ -238,7 +233,8 @@ export function PipBoySheet({
 
   const handleAddItem = (item: FalloutItem) => {
     if (readOnly || !onUpdateCharacter) return;
-    onUpdateCharacter({ items: [...character.items, item] });
+    // Id de instância único: o mesmo item do catálogo pode ser carregado várias vezes.
+    onUpdateCharacter({ items: [...character.items, { ...item, id: generateUUID() }] });
   };
 
   const handleRemoveItem = (id: string) => {

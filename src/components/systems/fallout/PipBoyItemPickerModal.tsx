@@ -4,10 +4,11 @@
 // Libmork — Sistema Fallout 2d20: Seletor de Itens da Biblioteca Global (Pip-Boy)
 // =============================================================================
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import type { FalloutItem } from "@/lib/systems/fallout/types";
 import {
+  FALLOUT_DAMAGE_TYPE_LABELS,
   FALLOUT_ITEM_FILTER_CATEGORIES,
   catalogItemToFalloutItem,
   getFalloutItemCategory,
@@ -24,17 +25,10 @@ interface PipBoyItemPickerModalProps {
   onSelect: (item: FalloutItem) => void;
 }
 
-const DAMAGE_TYPE_LABELS: Record<string, string> = {
-  physical: "Físico",
-  energy: "Energia",
-  radiation: "Radiação",
-  poison: "Veneno",
-};
-
 /** Resumo curto de estatísticas exibido no card do seletor. */
 function itemStatSummary(item: FalloutItem): string | null {
   if (item.type === "weapon") {
-    return `${item.damageDiceRating} DC • ${DAMAGE_TYPE_LABELS[item.damageType] ?? item.damageType}`;
+    return `${item.damageDiceRating} DC • ${FALLOUT_DAMAGE_TYPE_LABELS[item.damageType] ?? item.damageType}`;
   }
   if (item.type === "apparel") {
     return `RD ${item.resistances.physical} fís. / ${item.resistances.energy} energ.`;
@@ -55,11 +49,25 @@ export function PipBoyItemPickerModal({
   const [categoryFilter, setCategoryFilter] = useState<FalloutItemFilterCategory | null>(null);
 
   const term = search.trim().toLowerCase();
-  const visibleItems = catalog.filter((item) => {
-    if (term && !item.name.toLowerCase().includes(term)) return false;
-    if (categoryFilter && getFalloutItemCategory(item) !== categoryFilter) return false;
-    return true;
-  });
+  const visibleItems = useMemo(
+    () =>
+      catalog
+        .filter((entry) => {
+          if (term && !entry.name.toLowerCase().includes(term)) return false;
+          if (categoryFilter && getFalloutItemCategory(entry) !== categoryFilter) return false;
+          return true;
+        })
+        .map((entry) => {
+          const item = catalogItemToFalloutItem(entry);
+          return {
+            entry,
+            item,
+            category: getFalloutItemCategory(entry),
+            summary: itemStatSummary(item),
+          };
+        }),
+    [catalog, term, categoryFilter],
+  );
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} ariaLabel="Seletor de Itens Pip-Boy">
@@ -128,10 +136,7 @@ export function PipBoyItemPickerModal({
             </p>
           ) : (
             <ul className="space-y-1.5">
-              {visibleItems.map((entry) => {
-                const item = catalogItemToFalloutItem(entry);
-                const category = getFalloutItemCategory(entry);
-                const summary = itemStatSummary(item);
+              {visibleItems.map(({ entry, item, category, summary }) => {
                 return (
                   <li
                     key={entry.id}

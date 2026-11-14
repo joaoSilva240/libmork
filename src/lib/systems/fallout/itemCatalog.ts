@@ -50,6 +50,14 @@ export function getFalloutItemCategoryLabel(category: FalloutItemFilterCategory)
   return CATEGORY_LABELS[category];
 }
 
+/** Rótulos PT-BR dos 4 tipos de dano, compartilhados entre o seletor e a ficha. */
+export const FALLOUT_DAMAGE_TYPE_LABELS: Record<FalloutDamageType, string> = {
+  physical: "Físico",
+  energy: "Energia",
+  radiation: "Radiação",
+  poison: "Veneno",
+};
+
 const PACK_TO_TYPE: Record<string, FalloutItemType> = {
   weapons: "weapon",
   apparel: "apparel",
@@ -124,6 +132,8 @@ function pickApparelType(value: unknown): FalloutApparelItem["apparelType"] {
 }
 
 const CONSUMABLE_CATEGORIES = new Set(["chem", "food", "beverage", "med"]);
+// O Foundry usa food/beverage/chem/other; a union da ficha não tem "other",
+// então tipos desconhecidos caem em "food" como rótulo genérico seguro.
 function pickConsumableCategory(value: unknown): "chem" | "food" | "beverage" | "med" {
   return typeof value === "string" && CONSUMABLE_CATEGORIES.has(value)
     ? (value as "chem" | "food" | "beverage" | "med")

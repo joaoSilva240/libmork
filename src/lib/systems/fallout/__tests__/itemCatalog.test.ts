@@ -199,6 +199,26 @@ describe("catalogItemToFalloutItem — consumivel e demais", () => {
     expect(item.costCaps).toBe(20);
   });
 
+  it("mapeia chem e cai para food quando o Foundry usa 'other' (sem equivalente na union)", () => {
+    const chem = catalogItemToFalloutItem(
+      catalogItem({
+        name: "Stimpak",
+        sourceData: { pack: "consumables", consumableType: "chem", hp: 0, weight: 0.5, cost: 50 },
+      }),
+    );
+    if (chem.type !== "consumable") throw new Error("esperava consumivel");
+    expect(chem.category).toBe("chem");
+
+    const other = catalogItemToFalloutItem(
+      catalogItem({
+        name: "Stealth Boy",
+        sourceData: { pack: "consumables", consumableType: "other", weight: 0.5, cost: 100 },
+      }),
+    );
+    if (other.type !== "consumable") throw new Error("esperava consumivel");
+    expect(other.category).toBe("food");
+  });
+
   it("converte municao, mod e miscelanea preservando descricao e quantidade", () => {
     for (const [pack, type] of [
       ["ammunition", "ammo"],

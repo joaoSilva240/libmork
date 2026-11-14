@@ -3,6 +3,7 @@ import { render, screen, fireEvent, within } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { PipBoySheet } from "../PipBoySheet";
 import { createInitialFalloutCharacter } from "@/lib/systems/fallout/rules";
+import type { FalloutCharacter } from "@/lib/systems/fallout/types";
 
 vi.mock("@/context/SocketContext", () => ({
   useSocket: () => ({
@@ -520,6 +521,64 @@ describe("PipBoySheet — aba INV (equipamentos)", () => {
     const patch = onUpdate.mock.calls[0][0] as { items: Array<{ name: string; type: string }> };
     expect(patch.items).toHaveLength(3);
     expect(patch.items[2]).toMatchObject({ name: "Nuka-Cola", type: "consumable", weight: 1, costCaps: 20 });
+  });
+
+  it("gera id de instância único ao carregar o mesmo item duas vezes e remove só uma cópia", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({
+          success: true,
+          data: [
+            {
+              id: "item-nuka",
+              name: "Nuka-Cola",
+              description: "Refrigerante pré-guerra.",
+              qualityDescription: null,
+              imageUrl: null,
+              sourceKey: "fallout:consumables:nuka_cola",
+              sourceData: {
+                pack: "consumables",
+                consumableType: "beverage",
+                hp: 2,
+                quantity: 1,
+                weight: 1,
+                cost: 20,
+              },
+            },
+          ],
+        }),
+      })),
+    );
+
+    function StatefulSheet() {
+      const [character, setCharacter] = React.useState<FalloutCharacter>(buildCharacter([]));
+      return (
+        <PipBoySheet
+          character={character}
+          onUpdateCharacter={(patch) => setCharacter((c) => ({ ...c, ...patch }))}
+        />
+      );
+    }
+    render(<StatefulSheet />);
+    fireEvent.click(screen.getByRole("tab", { name: "INV" }));
+
+    fireEvent.click(screen.getByRole("button", { name: /Adicionar item/i }));
+    const card = await screen.findByTestId("item-card-item-nuka");
+    fireEvent.click(within(card).getByRole("button", { name: /Adicionar Nuka-Cola/i }));
+    fireEvent.click(within(card).getByRole("button", { name: /Adicionar Nuka-Cola/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Fechar" }));
+
+    const toggles = await screen.findAllByRole("button", { name: /Nuka-Cola/ });
+    expect(toggles).toHaveLength(2);
+
+    fireEvent.click(toggles[0]);
+    const removeButtons = screen.getAllByRole("button", { name: "Remover Nuka-Cola" });
+    expect(removeButtons).toHaveLength(1);
+    fireEvent.click(removeButtons[0]);
+
+    expect(screen.getAllByRole("button", { name: /Nuka-Cola/ })).toHaveLength(1);
   });
 
   it("em somente leitura mantém os detalhes e esconde os controles de edição", () => {
