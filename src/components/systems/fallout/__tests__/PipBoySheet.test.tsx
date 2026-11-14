@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { PipBoySheet } from "../PipBoySheet";
 import { createInitialFalloutCharacter } from "@/lib/systems/fallout/rules";
@@ -189,5 +189,170 @@ describe("PipBoySheet & Componentes Fallout 2d20", () => {
       target: { value: "per" },
     });
     expect(screen.getByRole("combobox", { name: "Atributo S.P.E.C.I.A.L." })).toHaveValue("per");
+  });
+});
+
+describe("PipBoySheet — aba DATA (perks)", () => {
+  const gunNut = {
+    name: "Gun Nut",
+    rank: 2,
+    maxRank: 4,
+    description: "Permite criar mods de armas.",
+    requirements: "INT 6, Nível 2",
+    imageUrl: null,
+    sourceKey: "perk-gun-nut",
+  };
+
+  function buildCharacter(perks: Array<string | typeof gunNut> = [gunNut, "Action Boy"]) {
+    return createInitialFalloutCharacter(
+      {
+        name: "Cooper Howard",
+        origin: "ghoul",
+        level: 3,
+        xp: 350,
+        attributes: { str: 6, per: 8, end: 7, cha: 5, int: 6, agi: 9, luc: 6 },
+        tagSkills: ["small_guns"],
+        perks,
+        caps: 250,
+      },
+      "user-1",
+      "char-cooper",
+    );
+  }
+
+  function openDataTab(character = buildCharacter(), onUpdateCharacter = vi.fn()) {
+    render(<PipBoySheet character={character} onUpdateCharacter={onUpdateCharacter} />);
+    fireEvent.click(screen.getByRole("tab", { name: "DATA" }));
+    return onUpdateCharacter;
+  }
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("lista perks estruturados e legados com rank e expande os detalhes em accordion", () => {
+    openDataTab();
+
+    const gunNutItem = screen.getByTestId("perk-item-Gun Nut");
+    expect(within(gunNutItem).getByText("Rank 2 / 4")).toBeInTheDocument();
+    // Perk legado em string continua aparecendo, com rank 1 e sem teto.
+    expect(within(screen.getByTestId("perk-item-Action Boy")).getByText("Rank 1")).toBeInTheDocument();
+
+    const toggle = within(gunNutItem).getByRole("button", { name: /Gun Nut/ });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByTestId("perk-details-Gun Nut")).toBeNull();
+
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    const details = screen.getByTestId("perk-details-Gun Nut");
+    expect(within(details).getByText("Permite criar mods de armas.")).toBeInTheDocument();
+    expect(within(details).getByText("INT 6, Nível 2")).toBeInTheDocument();
+
+    fireEvent.click(toggle);
+    expect(screen.queryByTestId("perk-details-Gun Nut")).toBeNull();
+  });
+
+  it("ajusta o rank em jogo respeitando maxRank", () => {
+    const onUpdate = openDataTab();
+    const item = screen.getByTestId("perk-item-Gun Nut");
+    fireEvent.click(within(item).getByRole("button", { name: /Gun Nut/ }));
+
+    fireEvent.click(within(item).getByRole("button", { name: "Aumentar rank de Gun Nut" }));
+    expect(onUpdate).toHaveBeenCalledWith({
+      perks: [{ ...gunNut, rank: 3 }, "Action Boy"],
+    });
+
+    fireEvent.click(within(item).getByRole("button", { name: "Diminuir rank de Gun Nut" }));
+    expect(onUpdate).toHaveBeenLastCalledWith({
+      perks: [{ ...gunNut, rank: 1 }, "Action Boy"],
+    });
+  });
+
+  it("desabilita o aumento no maxRank e a redução no rank 1", () => {
+    const character = buildCharacter([{ ...gunNut, rank: 4 }]);
+    openDataTab(character);
+    const item = screen.getByTestId("perk-item-Gun Nut");
+    fireEvent.click(within(item).getByRole("button", { name: /Gun Nut/ }));
+
+    expect(within(item).getByRole("button", { name: "Aumentar rank de Gun Nut" })).toBeDisabled();
+    expect(within(item).getByRole("button", { name: "Diminuir rank de Gun Nut" })).toBeEnabled();
+  });
+
+  it("remove o perk da ficha", () => {
+    const onUpdate = openDataTab();
+    const item = screen.getByTestId("perk-item-Gun Nut");
+    fireEvent.click(within(item).getByRole("button", { name: /Gun Nut/ }));
+
+    fireEvent.click(within(item).getByRole("button", { name: "Remover Gun Nut" }));
+
+    expect(onUpdate).toHaveBeenCalledWith({ perks: ["Action Boy"] });
+  });
+
+  it("abre o seletor da Biblioteca Global e adiciona o perk escolhido", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({
+          success: true,
+          data: [
+            {
+              id: "perk-fortune-finder",
+              name: "Fortune Finder",
+              circle: 3,
+              useType: "perk",
+              description: "Encontra mais tampas de Nuka-Cola.",
+              imageUrl: null,
+              structuredEffects: {
+                requirements: null,
+                requirementsEx: {
+                  attributes: { luc: { value: 5 } },
+                  level: 2,
+                },
+              },
+            },
+          ],
+        }),
+      })),
+    );
+    const onUpdate = openDataTab();
+
+    fireEvent.click(screen.getByRole("button", { name: /Adicionar perk/i }));
+    expect(
+      await screen.findByRole("dialog", { name: "Seletor de Perks Pip-Boy" }),
+    ).toBeInTheDocument();
+
+    const card = await screen.findByTestId("perk-card-perk-fortune-finder");
+    fireEvent.click(within(card).getByRole("button", { name: /Adicionar Fortune Finder/i }));
+
+    expect(onUpdate).toHaveBeenCalledWith({
+      perks: [
+        gunNut,
+        "Action Boy",
+        {
+          name: "Fortune Finder",
+          rank: 1,
+          maxRank: 3,
+          description: "Encontra mais tampas de Nuka-Cola.",
+          requirements: "SOR 5, Nível 2",
+          imageUrl: null,
+          sourceKey: "perk-fortune-finder",
+        },
+      ],
+    });
+  });
+
+  it("em somente leitura mantém os detalhes e esconde os controles de edição", () => {
+    render(<PipBoySheet character={buildCharacter()} readOnly />);
+    fireEvent.click(screen.getByRole("tab", { name: "DATA" }));
+
+    expect(screen.queryByRole("button", { name: /Adicionar perk/i })).toBeNull();
+    const item = screen.getByTestId("perk-item-Gun Nut");
+    fireEvent.click(within(item).getByRole("button", { name: /Gun Nut/ }));
+
+    expect(screen.getByTestId("perk-details-Gun Nut")).toBeInTheDocument();
+    expect(within(item).queryByRole("button", { name: "Aumentar rank de Gun Nut" })).toBeNull();
+    expect(within(item).queryByRole("button", { name: "Remover Gun Nut" })).toBeNull();
   });
 });

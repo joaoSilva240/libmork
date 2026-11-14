@@ -291,6 +291,15 @@ export function normalizeFalloutPerk(
   return { ...entry, rank: Math.max(1, entry.rank ?? 1) };
 }
 
+/** Ajuste de rank em jogo: piso 1 e teto no maxRank quando o catálogo informa. */
+export function adjustFalloutPerkRank(
+  perk: FalloutCharacterPerk,
+  delta: number,
+): FalloutCharacterPerk {
+  const raised = Math.max(1, perk.rank + delta);
+  return { ...perk, rank: perk.maxRank ? Math.min(raised, perk.maxRank) : raised };
+}
+
 /** Rótulo curto PT-BR do atributo: FOR, PER, RES, CAR, INT, AGI, SOR. */
 export function getFalloutAttributeShortLabel(attribute: FalloutAttribute): string {
   return FALLOUT_ATTRIBUTE_CONFIGS[attribute].shortLabel.split(" / ")[0];

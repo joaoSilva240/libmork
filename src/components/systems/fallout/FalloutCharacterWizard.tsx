@@ -19,10 +19,16 @@ import {
   type FalloutSkillName,
 } from "@/lib/systems/fallout/types";
 import {
+  adjustFalloutPerkRank,
   getFalloutAttributeShortLabel,
   getFalloutPerkRequirementText,
   normalizeFalloutPerk,
 } from "@/lib/systems/fallout/rules";
+import {
+  getPerkRequirementAttributes,
+  getUnmetPerkRequirements,
+} from "@/lib/systems/fallout/perkRequirements";
+import { useFalloutPerkCatalog, type CatalogPerk } from "@/hooks/useFalloutPerkCatalog";
 import { getFalloutPerkIcon } from "@/lib/systems/fallout/assets";
 import {
   FALLOUT_ORIGIN_CONFIGS,
@@ -687,69 +693,6 @@ function StepSkills({
 // Fase 4 — Perks
 // =============================================================================
 
-type CatalogPerk = {
-  id: string;
-  name: string;
-  circle: number;
-  useType: string;
-  description: string | null;
-  imageUrl: string | null;
-  structuredEffects?: { requirements?: string | null; requirementsEx?: unknown } | null;
-};
-
-const REQUIREMENT_TOKEN_ATTRIBUTES: Record<string, FalloutAttribute> = {
-  STR: "str",
-  FOR: "str",
-  PER: "per",
-  END: "end",
-  RES: "end",
-  CHA: "cha",
-  CAR: "cha",
-  INT: "int",
-  AGI: "agi",
-  LUC: "luc",
-  LCK: "luc",
-  SOR: "luc",
-};
-
-const REQUIREMENT_TOKENS = /\b(STR|FOR|PER|END|RES|CHA|CAR|INT|AGI|LUC|LCK|SOR)\b/gi;
-const REQUIREMENT_MINIMUMS =
-  /\b(STR|FOR|PER|END|RES|CHA|CAR|INT|AGI|LUC|LCK|SOR|Level|Nível|Nivel)\s*(\d+)/gi;
-
-function getPerkRequirementAttributes(
-  requirements: string | null | undefined,
-): FalloutAttribute[] {
-  if (!requirements) return [];
-  const found = new Set<FalloutAttribute>();
-  for (const match of requirements.matchAll(REQUIREMENT_TOKENS)) {
-    const attribute = REQUIREMENT_TOKEN_ATTRIBUTES[match[1].toUpperCase()];
-    if (attribute) found.add(attribute);
-  }
-  return [...found];
-}
-
-function getUnmetPerkRequirements(
-  requirements: string | null | undefined,
-  attributes: Record<FalloutAttribute, number>,
-  level: number,
-): string[] {
-  if (!requirements) return [];
-  const unmet: string[] = [];
-  for (const match of requirements.matchAll(REQUIREMENT_MINIMUMS)) {
-    const token = match[1].toUpperCase();
-    const minimum = Number(match[2]);
-    if (token === "LEVEL" || token === "NÍVEL" || token === "NIVEL") {
-      if (level < minimum) unmet.push(`Nível ${minimum}`);
-      continue;
-    }
-    const attribute = REQUIREMENT_TOKEN_ATTRIBUTES[token];
-    if (attribute && attributes[attribute] < minimum) {
-      unmet.push(`${getFalloutAttributeShortLabel(attribute)} ${minimum}`);
-    }
-  }
-  return unmet;
-}
-
 function StepPerks({
   data,
   updateData,
@@ -757,41 +700,15 @@ function StepPerks({
   data: WizardData;
   updateData: (partial: Partial<WizardData>) => void;
 }) {
-  const [catalog, setCatalog] = useState<CatalogPerk[]>([]);
-  const [isLoadingCatalog, setIsLoadingCatalog] = useState(true);
-  const [catalogError, setCatalogError] = useState<string | null>(null);
-  const [catalogReload, setCatalogReload] = useState(0);
+  const {
+    catalog,
+    isLoading: isLoadingCatalog,
+    error: catalogError,
+    retry: retryCatalog,
+  } = useFalloutPerkCatalog();
   const [search, setSearch] = useState("");
   const [attributeFilter, setAttributeFilter] = useState<FalloutAttribute | null>(null);
   const [customDraft, setCustomDraft] = useState("");
-
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        const response = await fetch("/api/content/spells?ruleSystem=fallout_2d20", {
-          credentials: "include",
-        });
-        const payload = await response.json();
-        if (!response.ok || !payload.success) {
-          throw new Error(payload.error || "Falha ao carregar o catálogo");
-        }
-        const perks = ((payload.data ?? []) as CatalogPerk[]).filter(
-          (entry) => entry.useType === "perk",
-        );
-        if (active) setCatalog(perks);
-      } catch {
-        if (active) {
-          setCatalogError("Não foi possível carregar o catálogo de perks da Biblioteca Global.");
-        }
-      } finally {
-        if (active) setIsLoadingCatalog(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [catalogReload]);
 
   const selectedPerks = data.perks.map(normalizeFalloutPerk);
   const selectedNames = new Set(selectedPerks.map((perk) => perk.name));
@@ -845,17 +762,9 @@ function StepPerks({
     updateData({
       perks: data.perks.map((entry) => {
         const perk = normalizeFalloutPerk(entry);
-        if (perk.name !== name) return entry;
-        const raised = Math.max(1, perk.rank + delta);
-        return { ...perk, rank: perk.maxRank ? Math.min(raised, perk.maxRank) : raised };
+        return perk.name === name ? adjustFalloutPerkRank(perk, delta) : entry;
       }),
     });
-  };
-
-  const retryCatalog = () => {
-    setCatalogError(null);
-    setIsLoadingCatalog(true);
-    setCatalogReload((count) => count + 1);
   };
 
   return (

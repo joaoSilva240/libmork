@@ -14,9 +14,11 @@ import {
   type FalloutBodyLocation,
   type FalloutBodyPart,
   type FalloutCharacter,
+  type FalloutCharacterPerk,
   type FalloutSkillName,
 } from "@/lib/systems/fallout/types";
 import {
+  adjustFalloutPerkRank,
   calculateEffectiveMaxHp,
   calculateDefense,
   calculateInitiative,
@@ -33,6 +35,7 @@ import { PipBoyPortrait } from "./PipBoyPortrait";
 import { PipBoyRollFab } from "./PipBoyRollFab";
 import { APTrackerWidget } from "./APTrackerWidget";
 import { FalloutDiceRollerModal } from "./FalloutDiceRollerModal";
+import { PipBoyPerkPickerModal } from "./PipBoyPerkPickerModal";
 import { PipBoyTabNav } from "./PipBoyTabNav";
 import {
   Heart,
@@ -44,6 +47,10 @@ import {
   Star,
   Activity,
   Database,
+  Plus,
+  Minus,
+  X,
+  ChevronDown,
 } from "lucide-react";
 
 const PIPBOY_TABS = [
@@ -72,6 +79,10 @@ export function PipBoySheet({
   const [isRollerOpen, setIsRollerOpen] = useState(false);
   const [rollerInitialAttr, setRollerInitialAttr] = useState<FalloutAttribute>("agi");
   const [rollerInitialSkill, setRollerInitialSkill] = useState<FalloutSkillName>("small_guns");
+  const [expandedPerk, setExpandedPerk] = useState<string | null>(null);
+  const [isPerkPickerOpen, setIsPerkPickerOpen] = useState(false);
+
+  const canEdit = !readOnly && Boolean(onUpdateCharacter);
 
   const effectiveMaxHp = calculateEffectiveMaxHp(character.hpMax, character.radiation);
   const radPercent = Math.min(
@@ -114,6 +125,28 @@ export function PipBoySheet({
         ...character.skills,
         [skill]: { ...currentSkill, isTag: nextTag },
       },
+    });
+  };
+
+  const handleAddPerk = (perk: FalloutCharacterPerk) => {
+    if (readOnly || !onUpdateCharacter) return;
+    onUpdateCharacter({ perks: [...character.perks, perk] });
+  };
+
+  const handleRemovePerk = (name: string) => {
+    if (readOnly || !onUpdateCharacter) return;
+    onUpdateCharacter({
+      perks: character.perks.filter((entry) => normalizeFalloutPerk(entry).name !== name),
+    });
+  };
+
+  const handlePerkRank = (name: string, delta: number) => {
+    if (readOnly || !onUpdateCharacter) return;
+    onUpdateCharacter({
+      perks: character.perks.map((entry) => {
+        const perk = normalizeFalloutPerk(entry);
+        return perk.name === name ? adjustFalloutPerkRank(perk, delta) : entry;
+      }),
     });
   };
 
@@ -409,17 +442,118 @@ export function PipBoySheet({
           </div>
 
           <div>
-            <h4 className="font-bold uppercase tracking-wider text-emerald-300 mb-1.5 flex items-center gap-1.5">
-              <img src={getFalloutPerkIcon()} alt="" aria-hidden="true" className="h-4 w-4" />
-              Vantagens (Perks) &amp; Características
-            </h4>
+            <div className="mb-1.5 flex items-center justify-between gap-2">
+              <h4 className="font-bold uppercase tracking-wider text-emerald-300 flex items-center gap-1.5">
+                <img src={getFalloutPerkIcon()} alt="" aria-hidden="true" className="h-4 w-4" />
+                Vantagens (Perks) &amp; Características
+              </h4>
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => setIsPerkPickerOpen(true)}
+                  aria-label="Adicionar perk"
+                  className="flex shrink-0 items-center gap-1 rounded border border-emerald-500 bg-emerald-950 px-2 py-1 text-[10px] font-bold text-emerald-300 hover:bg-emerald-900 cursor-pointer"
+                >
+                  <Plus className="h-3 w-3" />
+                  Adicionar perk
+                </button>
+              )}
+            </div>
             {character.perks.length === 0 ? (
               <p className="text-emerald-600 italic">Nenhuma vantagem registrada.</p>
             ) : (
-              <ul className="list-disc list-inside space-y-1 text-emerald-300">
-                {character.perks.map((perk, idx) => (
-                  <li key={idx}>{normalizeFalloutPerk(perk).name}</li>
-                ))}
+              <ul className="space-y-1.5">
+                {character.perks.map((entry, idx) => {
+                  const perk = normalizeFalloutPerk(entry);
+                  const expanded = expandedPerk === perk.name;
+                  const rankLabel = `Rank ${perk.rank}${perk.maxRank ? ` / ${perk.maxRank}` : ""}`;
+                  return (
+                    <li
+                      key={`${perk.name}-${idx}`}
+                      data-testid={`perk-item-${perk.name}`}
+                      className="rounded border border-emerald-900/50 bg-black/50"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setExpandedPerk(expanded ? null : perk.name)}
+                        aria-expanded={expanded}
+                        className="flex w-full items-center justify-between gap-2 p-2 text-xs cursor-pointer"
+                      >
+                        <span className="flex min-w-0 items-center gap-2">
+                          <img
+                            src={perk.imageUrl || getFalloutPerkIcon()}
+                            alt=""
+                            aria-hidden="true"
+                            className="h-5 w-5 shrink-0"
+                          />
+                          <span className="truncate font-bold text-emerald-200">{perk.name}</span>
+                        </span>
+                        <span className="flex shrink-0 items-center gap-1.5 text-[10px] text-emerald-400">
+                          {rankLabel}
+                          <ChevronDown
+                            className={`h-3.5 w-3.5 transition-transform ${expanded ? "rotate-180" : ""}`}
+                          />
+                        </span>
+                      </button>
+                      {expanded && (
+                        <div
+                          data-testid={`perk-details-${perk.name}`}
+                          className="space-y-2 border-t border-emerald-900/50 px-2 py-2"
+                        >
+                          {perk.description && (
+                            <p className="text-[11px] leading-relaxed text-emerald-400">
+                              {perk.description}
+                            </p>
+                          )}
+                          {perk.requirements && (
+                            <p className="text-[10px] text-emerald-500">
+                              Requisitos:{" "}
+                              <span className="text-emerald-300">{perk.requirements}</span>
+                            </p>
+                          )}
+                          {!perk.description && !perk.requirements && (
+                            <p className="text-[11px] italic text-emerald-600">
+                              Perk registrado sem detalhes do catálogo.
+                            </p>
+                          )}
+                          {canEdit && (
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handlePerkRank(perk.name, -1)}
+                                  disabled={perk.rank <= 1}
+                                  aria-label={`Diminuir rank de ${perk.name}`}
+                                  className="rounded border border-emerald-500/50 p-1 text-emerald-300 hover:bg-emerald-950 cursor-pointer disabled:opacity-40 disabled:cursor-default"
+                                >
+                                  <Minus className="h-3 w-3" />
+                                </button>
+                                <span className="text-[10px] text-emerald-400">{rankLabel}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handlePerkRank(perk.name, 1)}
+                                  disabled={perk.maxRank !== undefined && perk.rank >= perk.maxRank}
+                                  aria-label={`Aumentar rank de ${perk.name}`}
+                                  className="rounded border border-emerald-500/50 p-1 text-emerald-300 hover:bg-emerald-950 cursor-pointer disabled:opacity-40 disabled:cursor-default"
+                                >
+                                  <Plus className="h-3 w-3" />
+                                </button>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleRemovePerk(perk.name)}
+                                aria-label={`Remover ${perk.name}`}
+                                className="text-emerald-600 hover:text-red-400 cursor-pointer"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
@@ -436,6 +570,13 @@ export function PipBoySheet({
         campaignId={character.campaignId}
         initialAttribute={rollerInitialAttr}
         initialSkill={rollerInitialSkill}
+      />
+
+      <PipBoyPerkPickerModal
+        isOpen={isPerkPickerOpen}
+        onClose={() => setIsPerkPickerOpen(false)}
+        character={character}
+        onSelect={handleAddPerk}
       />
     </div>
   );

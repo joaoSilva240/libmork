@@ -1,5 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { getFalloutPerkRequirementText, normalizeFalloutPerk } from "../rules";
+import {
+  adjustFalloutPerkRank,
+  getFalloutPerkRequirementText,
+  normalizeFalloutPerk,
+} from "../rules";
+import {
+  getPerkRequirementAttributes,
+  getUnmetPerkRequirements,
+} from "../perkRequirements";
 import type { FalloutCharacterPerk } from "../types";
 import {
   createFalloutCharacterSchema,
@@ -205,5 +213,55 @@ describe("getFalloutPerkRequirementText", () => {
         requirementsEx: { attributes: { int: { value: "6" }, per: 7 } },
       }),
     ).toBeNull();
+  });
+});
+
+describe("adjustFalloutPerkRank", () => {
+  it("respeita o teto do maxRank", () => {
+    expect(adjustFalloutPerkRank({ name: "Gun Nut", rank: 4, maxRank: 4 }, 1).rank).toBe(4);
+    expect(adjustFalloutPerkRank({ name: "Gun Nut", rank: 2, maxRank: 4 }, 1).rank).toBe(3);
+  });
+
+  it("não deixa o rank cair abaixo de 1", () => {
+    expect(adjustFalloutPerkRank({ name: "Gun Nut", rank: 1, maxRank: 4 }, -1).rank).toBe(1);
+    expect(adjustFalloutPerkRank({ name: "Gun Nut", rank: 1 }, -5).rank).toBe(1);
+  });
+
+  it("não limita perks sem maxRank (customizados ou legados)", () => {
+    expect(adjustFalloutPerkRank({ name: "Perk da mesa", rank: 3 }, 2).rank).toBe(5);
+  });
+
+  it("preserva os demais campos do perk", () => {
+    const perk: FalloutCharacterPerk = {
+      name: "Gun Nut",
+      rank: 1,
+      maxRank: 4,
+      description: "Permite criar mods de armas.",
+      requirements: "INT 6, Nível 2",
+      sourceKey: "perk-gun-nut",
+    };
+    expect(adjustFalloutPerkRank(perk, 1)).toEqual({ ...perk, rank: 2 });
+  });
+});
+
+describe("requisitos de perks (parser compartilhado)", () => {
+  const attributes = { str: 5, per: 5, end: 5, cha: 5, int: 5, agi: 5, luc: 5 };
+
+  it("extrai atributos das grafias PT e EN sem duplicar", () => {
+    expect(getPerkRequirementAttributes("FOR 5, INT 6, Nível 2")).toEqual(["str", "int"]);
+    expect(getPerkRequirementAttributes("STR 5, LCK 5")).toEqual(["str", "luc"]);
+    expect(getPerkRequirementAttributes("SOR 5, SOR 6")).toEqual(["luc"]);
+    expect(getPerkRequirementAttributes(null)).toEqual([]);
+    expect(getPerkRequirementAttributes("Nível 5")).toEqual([]);
+  });
+
+  it("lista as parcelas não atendidas em PT-BR", () => {
+    expect(getUnmetPerkRequirements("INT 6, Nível 2", attributes, 1)).toEqual([
+      "INT 6",
+      "Nível 2",
+    ]);
+    expect(getUnmetPerkRequirements("FOR 5", attributes, 1)).toEqual([]);
+    expect(getUnmetPerkRequirements("LCK 6, Level 2+", attributes, 3)).toEqual(["SOR 6"]);
+    expect(getUnmetPerkRequirements(null, attributes, 1)).toEqual([]);
   });
 });
