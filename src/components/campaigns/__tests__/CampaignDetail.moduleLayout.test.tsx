@@ -45,6 +45,8 @@ vi.mock("@/context/SocketContext", () => ({
     subscribeCampaignLogUpdated: vi.fn(() => vi.fn()),
     subscribeDiceRoll: vi.fn(() => vi.fn()),
     setCampaignDice3DSettings: vi.fn(),
+    subscribeCombatState: vi.fn(() => vi.fn()),
+    updateCombatState: vi.fn(),
   }),
 }));
 

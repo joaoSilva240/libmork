@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Npc, World, Encounter } from "@/types";
 import { ActorOverlay } from "@/components/campaigns/ActorOverlay";
 import type { RosterActor, RosterPlayer } from "@/components/campaigns/ActorOverlay";
@@ -17,6 +17,7 @@ import { useResizableLayout } from "@/hooks/useResizableLayout";
 import { ExternalLink, Minimize2 } from "lucide-react";
 import { MissingHabitantSheet } from "@/components/systems/missing/MissingHabitantSheet";
 import type { MissingHabitant, EquipmentStatus } from "@/lib/systems/missing/types";
+import { NEUTRAL_MODULES, modulesForScene, type ActiveScene } from "@/lib/scenes/sceneConfig";
 
 const CombatTrackerModal = dynamic(
   () =>
@@ -52,6 +53,7 @@ type MasterRosterProps = {
   showCanvas?: boolean;
   showMap?: boolean;
   onResetConfig?: () => void;
+  activeScene?: ActiveScene;
 };
 
 export function MasterRoster({
@@ -64,8 +66,11 @@ export function MasterRoster({
   showCanvas = true,
   showMap = true,
   onResetConfig,
+  activeScene,
 }: MasterRosterProps) {
   const isMissing = rulesEngine === "missing_zero";
+  // Missing ignora a matriz; cena undefined/null = neutro (comportamento atual).
+  const sceneMods = isMissing ? NEUTRAL_MODULES : modulesForScene(activeScene ?? null);
   const { isConnected, presenceList, joinCampaign, subscribeActorStatus, subscribeCombatState } =
     useSocket();
   const [roster, setRoster] = useState<RosterData>({ players: [], npcs: [] });
@@ -350,6 +355,38 @@ export function MasterRoster({
       unsubscribeCombat();
     };
   }, [campaignId, selectedWorldId, subscribeCombatState]);
+
+  // Automação da cena Combate: abrir seleção de participantes ao ENTRAR na cena
+  // (silencioso se já há encontro ativo); fechar o modal ao SAIR da cena.
+  // `undefined` = ainda sem referência: a PRIMEIRA execução só semeia a cena
+  // atual (montar/remontar direto em combat não conta como "entrar na cena").
+  const prevSceneRef = useRef<ActiveScene | undefined>(undefined);
+  useEffect(() => {
+    if (isMissing) return;
+    const prev = prevSceneRef.current;
+    const current = activeScene ?? null;
+    if (prev === current) return;
+    prevSceneRef.current = current;
+    if (prev === undefined) return;
+
+    if (current === "combat" && prev !== "combat") {
+      const hasActiveCombat = !!combatState?.active || !!activeEncounter;
+      // Transição real (guarda por ref acima): sincronizar o estado do modal com
+      // a entrada na cena, padrão já estabelecido no repositório.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (!hasActiveCombat && selectedWorldId) setShowEncounterModal(true);
+    }
+    if (current !== "combat" && prev === "combat") {
+      setShowEncounterModal(false);
+    }
+  }, [
+    activeScene,
+    isMissing,
+    combatState?.active,
+    activeEncounter,
+    selectedWorldId,
+    setShowEncounterModal,
+  ]);
 
   const { updateCombatState } = useSocket();
 
@@ -765,6 +802,7 @@ export function MasterRoster({
 
       {/* Barra de Ações sobre o Carrossel (Combate/Encontros ou Registro Civil) */}
       {showRoster &&
+        sceneMods.combatBar !== "hidden" &&
         (isMissing ? (
           <div className="mb-1 flex items-center justify-between rounded-t-lg bg-[#111215] px-3 py-2 border border-b-0 border-zinc-800 text-xs flex-wrap gap-2">
             <div className="flex items-center gap-2">
@@ -837,6 +875,11 @@ export function MasterRoster({
               ) : (
                 <span className="text-gray-400">Nenhum combate ativo</span>
               )}
+              {activeScene === "combat" && !selectedWorldId && (
+                <span data-testid="scene-combat-world-hint" className="text-[11px] text-amber-300">
+                  Selecione um mundo para iniciar o encontro
+                </span>
+              )}
             </div>
 
             <div className="flex items-center gap-2">
@@ -878,48 +921,53 @@ export function MasterRoster({
                     ⚔️ Iniciar Encontro (Combate)
                   </button>
 
-                  {/* Botão recolher/expandir movido para cá */}
-                  <button
-                    onClick={toggleCarousel}
-                    className="flex items-center gap-1 rounded-lg border border-gray-700 bg-gray-800 px-2.5 py-1.5 text-xs font-semibold text-gray-300 hover:bg-gray-700 transition-colors"
-                    title={isCarouselCollapsed ? "Expandir carrossel" : "Recolher carrossel"}
-                  >
-                    {isCarouselCollapsed ? (
-                      <>
-                        <svg
-                          className="h-3.5 w-3.5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 15l7-7 7 7"
-                          />
-                        </svg>
-                        <span>Expandir</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg
-                          className="h-3.5 w-3.5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                        <span>Recolher</span>
-                      </>
-                    )}
-                  </button>
+                  {/* Botão recolher/expandir movido para cá.
+                      Nas cenas a matriz tem precedência: quando "visible" força o
+                      carrossel, o colapso é ineficaz — não renderiza o toggle
+                      (ferramenta exclusiva do estado Livre). */}
+                  {sceneMods.carousel !== "visible" && (
+                    <button
+                      onClick={toggleCarousel}
+                      className="flex items-center gap-1 rounded-lg border border-gray-700 bg-gray-800 px-2.5 py-1.5 text-xs font-semibold text-gray-300 hover:bg-gray-700 transition-colors"
+                      title={isCarouselCollapsed ? "Expandir carrossel" : "Recolher carrossel"}
+                    >
+                      {isCarouselCollapsed ? (
+                        <>
+                          <svg
+                            className="h-3.5 w-3.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 15l7-7 7 7"
+                            />
+                          </svg>
+                          <span>Expandir</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg
+                            className="h-3.5 w-3.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                          <span>Recolher</span>
+                        </>
+                      )}
+                    </button>
+                  )}
                 </>
               )}
             </div>
@@ -927,41 +975,43 @@ export function MasterRoster({
         ))}
 
       {/* Carrossel de personagens fixo na parte inferior */}
-      {showRoster && !isCarouselCollapsed && (
-        <div
-          onDragOver={(e) => {
-            e.preventDefault();
-            setIsDragOver(true);
-          }}
-          onDragLeave={() => setIsDragOver(false)}
-          onDrop={(e) => {
-            setIsDragOver(false);
-            handleDropActor(e);
-          }}
-          style={{ height: `${carouselPanel.height}px` }}
-          className={`relative transition-[height] duration-150 rounded-b-lg border p-2 overflow-visible ${
-            isMissing
-              ? "border-zinc-800 bg-[#0d0e11]/80"
-              : isDragOver
-                ? "border-purple-500 bg-purple-950/40"
-                : "border-gray-800 bg-gray-900/50"
-          }`}
-        >
-          <CharacterCarousel
-            actors={carouselActors}
-            combatState={combatState}
-            onSelect={handleSelectActor}
-            onRemove={handleRemoveDeskActor}
-            isMissing={isMissing}
-          />
-          <ResizeHandle
-            direction="vertical"
-            onResize={(_, dy) => carouselPanel.handleResize(0, dy)}
-            title="Redimensionar carrossel de personagens"
-            data-testid="resize-carousel-panel"
-          />
-        </div>
-      )}
+      {showRoster &&
+        sceneMods.carousel !== "hidden" &&
+        (sceneMods.carousel === "visible" || !isCarouselCollapsed) && (
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDragOver(true);
+            }}
+            onDragLeave={() => setIsDragOver(false)}
+            onDrop={(e) => {
+              setIsDragOver(false);
+              handleDropActor(e);
+            }}
+            style={{ height: `${carouselPanel.height}px` }}
+            className={`relative transition-[height] duration-150 rounded-b-lg border p-2 overflow-visible ${
+              isMissing
+                ? "border-zinc-800 bg-[#0d0e11]/80"
+                : isDragOver
+                  ? "border-purple-500 bg-purple-950/40"
+                  : "border-gray-800 bg-gray-900/50"
+            }`}
+          >
+            <CharacterCarousel
+              actors={carouselActors}
+              combatState={combatState}
+              onSelect={handleSelectActor}
+              onRemove={handleRemoveDeskActor}
+              isMissing={isMissing}
+            />
+            <ResizeHandle
+              direction="vertical"
+              onResize={(_, dy) => carouselPanel.handleResize(0, dy)}
+              title="Redimensionar carrossel de personagens"
+              data-testid="resize-carousel-panel"
+            />
+          </div>
+        )}
 
       {selectedMissingHabitant ? (
         <div

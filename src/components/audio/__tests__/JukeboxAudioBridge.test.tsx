@@ -40,6 +40,7 @@ function createMockReturn(overrides: Partial<UseJukeboxReturn> = {}): UseJukebox
     toggleLoop: vi.fn(),
     createPlaylist: vi.fn(),
     ungroupPlaylist: vi.fn(),
+    setTrackScene: vi.fn(),
     ...overrides,
   };
 }

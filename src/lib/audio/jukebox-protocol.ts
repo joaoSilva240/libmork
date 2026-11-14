@@ -30,6 +30,7 @@ export interface AudioTrack {
   addedAt: string; // ISO timestamp
   playlistId?: string | null;
   playlistName?: string | null;
+  scene?: string | null;
 }
 
 export interface AudioTrackAddPayload {
@@ -96,6 +97,7 @@ export const audioTrackSchema = z.object({
   addedAt: z.iso.datetime(),
   playlistId: z.string().nullable().optional(),
   playlistName: z.string().nullable().optional(),
+  scene: z.string().nullable().optional(),
 });
 
 export const audioTrackAddSchema = z.object({

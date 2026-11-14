@@ -58,15 +58,15 @@ export function ChatGroupList({
       className="flex flex-col h-full w-full border-r border-secondary-border bg-secondary-card"
     >
       {/* Top Header */}
-      <div className="flex items-center justify-between border-b border-secondary-border p-3.5 bg-dominant-deep/50 shrink-0">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/20 border border-accent/40 font-bold text-accent">
+      <div className="flex items-center justify-between border-b border-secondary-border px-4 py-3.5 bg-dominant-deep/40 shrink-0">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/15 border border-accent/30 font-bold text-accent">
             {currentUser?.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={currentUser.avatarUrl}
                 alt={currentUser.displayName || "Avatar"}
-                className="h-full w-full object-cover rounded-full"
+                className="h-full w-full object-cover rounded-xl"
               />
             ) : (
               <span>{(currentUser?.displayName || "U").charAt(0).toUpperCase()}</span>
@@ -77,14 +77,17 @@ export function ChatGroupList({
               {currentUser?.displayName || "Minhas Conversas"}
             </h3>
             <span className="text-[10px] text-secondary-muted flex items-center gap-1">
-              <MessageSquare className="h-2.5 w-2.5" /> Grupos de Campanha
+              <MessageSquare className="h-2.5 w-2.5 text-accent" /> Grupos de Campanha
             </span>
           </div>
         </div>
+        <span className="rounded-full border border-secondary-border bg-dominant-deep px-2 py-0.5 text-[10px] font-bold text-secondary-muted">
+          {groups.length}
+        </span>
       </div>
 
       {/* Busca */}
-      <div className="p-2.5 border-b border-secondary-border/60 shrink-0">
+      <div className="p-3 border-b border-secondary-border/60 shrink-0">
         <div className="relative flex items-center">
           <Search className="absolute left-3 h-3.5 w-3.5 text-secondary-muted pointer-events-none" />
           <input
@@ -92,13 +95,13 @@ export function ChatGroupList({
             placeholder="Pesquisar conversas..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-secondary-border bg-secondary-input pl-8 pr-3 py-1.5 text-xs text-secondary-pure placeholder-secondary-muted focus:outline-none focus:ring-1 focus:ring-accent"
+            className="w-full rounded-xl border border-secondary-border bg-secondary-input pl-8 pr-3 py-2 text-xs text-secondary-pure placeholder-secondary-muted focus:outline-none focus:ring-1 focus:ring-accent"
           />
         </div>
       </div>
 
       {/* Lista de Grupos */}
-      <div className="flex-1 overflow-y-auto divide-y divide-secondary-border/40">
+      <div className="flex-1 overflow-y-auto p-2 space-y-1">
         {filteredGroups.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-8 text-center text-secondary-muted">
             <Users className="h-8 w-8 mb-2 opacity-40" />
@@ -128,12 +131,14 @@ export function ChatGroupList({
                 type="button"
                 onClick={() => onSelectGroup(group.id)}
                 data-testid={`chat-group-item-${group.id}`}
-                className={`flex w-full items-center gap-3 p-3 text-left transition-colors cursor-pointer ${
-                  isActive ? "bg-accent/15 border-l-4 border-accent" : "hover:bg-secondary-input/60"
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all cursor-pointer border ${
+                  isActive
+                    ? "bg-accent/15 border-accent/40 shadow-sm"
+                    : "border-transparent hover:bg-secondary-input/60 hover:border-secondary-border/50"
                 }`}
               >
                 {/* Avatar da Campanha */}
-                <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-dominant-deep border border-secondary-border overflow-hidden">
+                <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-dominant-deep border border-secondary-border overflow-hidden">
                   {group.avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -156,7 +161,7 @@ export function ChatGroupList({
                         {group.name}
                       </span>
                       {group.role === "admin" && (
-                        <span className="flex items-center gap-0.5 rounded bg-accent/20 border border-accent/40 px-1 py-0.2 text-[9px] font-bold text-accent shrink-0">
+                        <span className="flex items-center gap-0.5 rounded-md bg-accent/20 border border-accent/40 px-1.5 py-0.5 text-[9px] font-bold text-accent shrink-0">
                           <Shield className="h-2.5 w-2.5" />
                           Mestre
                         </span>
@@ -176,7 +181,7 @@ export function ChatGroupList({
                     {group.unreadCount > 0 && (
                       <span
                         data-testid={`unread-badge-${group.id}`}
-                        className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold text-white shrink-0"
+                        className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-accent px-1.5 text-[9px] font-bold text-white shrink-0"
                       >
                         {group.unreadCount}
                       </span>

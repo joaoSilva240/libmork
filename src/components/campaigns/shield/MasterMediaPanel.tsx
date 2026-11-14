@@ -6,6 +6,7 @@ import { MasterAssetsPanel } from "@/components/campaigns/MasterAssetsPanel";
 import { MasterWorldsPanel } from "./MasterWorldsPanel";
 import { ShieldTabContainer, type ShieldTabDef } from "./ShieldTabContainer";
 import type { Establishment, World } from "@/types";
+import type { ActiveScene } from "@/lib/scenes/sceneConfig";
 
 type MasterMediaPanelProps = {
   campaignId: string;
@@ -26,6 +27,7 @@ type MasterMediaPanelProps = {
   onToggleEstablishmentsExpanded: () => void;
   onToggleEstablishment: (establishment: Establishment) => void;
   className?: string;
+  activeScene?: ActiveScene;
 };
 
 /**
@@ -51,6 +53,7 @@ export function MasterMediaPanel({
   onToggleEstablishmentsExpanded,
   onToggleEstablishment,
   className = "",
+  activeScene = null,
 }: MasterMediaPanelProps) {
   const tabs: ShieldTabDef[] = [
     {
@@ -70,6 +73,7 @@ export function MasterMediaPanel({
           isEstablishmentsExpanded={isEstablishmentsExpanded}
           onToggleEstablishmentsExpanded={onToggleEstablishmentsExpanded}
           onToggleEstablishment={onToggleEstablishment}
+          activeScene={activeScene}
         />
       ),
     },
@@ -97,6 +101,7 @@ export function MasterMediaPanel({
           campaignId={campaignId}
           userId={masterId}
           userName="Mestre"
+          activeScene={activeScene}
           className="h-full w-full overflow-y-auto border-0 bg-transparent p-3"
         />
       ),

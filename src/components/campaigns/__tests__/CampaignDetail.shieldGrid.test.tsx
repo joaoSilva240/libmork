@@ -37,7 +37,13 @@ vi.mock("@/components/ui", async (importOriginal) => {
   };
 });
 vi.mock("@/context/SocketContext", () => ({
-  useSocket: () => ({ socket: null, isConnected: true }),
+  useSocket: () => ({
+    socket: null,
+    isConnected: true,
+    // CampaignDetail assina combat-state para a confirmação de troca (Fase 2).
+    subscribeCombatState: vi.fn(() => vi.fn()),
+    updateCombatState: vi.fn(),
+  }),
 }));
 
 const GRID_WIDTH = 1100;
