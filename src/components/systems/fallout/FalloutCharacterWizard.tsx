@@ -14,13 +14,17 @@ import {
   FALLOUT_SKILL_CONFIGS,
   type FalloutAttribute,
   type FalloutCharacter,
+  type FalloutCharacterPerk,
   type FalloutOrigin,
   type FalloutSkillName,
 } from "@/lib/systems/fallout/types";
+import { normalizeFalloutPerk } from "@/lib/systems/fallout/rules";
+import { getFalloutPerkIcon } from "@/lib/systems/fallout/assets";
 import {
   FALLOUT_ORIGIN_CONFIGS,
   FALLOUT_ORIGIN_LIST,
 } from "@/lib/systems/fallout/origins";
+import { Plus, Minus, X, RefreshCw } from "lucide-react";
 
 interface FalloutCharacterWizardProps {
   campaignId?: string | null;
@@ -33,7 +37,7 @@ type WizardData = {
   origin: FalloutOrigin;
   attributes: Record<FalloutAttribute, number>;
   tagSkills: FalloutSkillName[];
-  perks: string[];
+  perks: Array<string | FalloutCharacterPerk>;
 };
 
 const STORAGE_KEY = "fallout_character_wizard_draft_v1";
@@ -679,6 +683,72 @@ function StepSkills({
 // Fase 4 — Perks
 // =============================================================================
 
+type CatalogPerk = {
+  id: string;
+  name: string;
+  circle: number;
+  useType: string;
+  description: string | null;
+  imageUrl: string | null;
+  structuredEffects?: { requirements?: string | null } | null;
+};
+
+const REQUIREMENT_TOKEN_ATTRIBUTES: Record<string, FalloutAttribute> = {
+  STR: "str",
+  FOR: "str",
+  PER: "per",
+  END: "end",
+  RES: "end",
+  CHA: "cha",
+  CAR: "cha",
+  INT: "int",
+  AGI: "agi",
+  LUC: "luc",
+  SOR: "luc",
+};
+
+const REQUIREMENT_TOKENS = /\b(STR|FOR|PER|END|RES|CHA|CAR|INT|AGI|LUC|SOR)\b/gi;
+const REQUIREMENT_MINIMUMS =
+  /\b(STR|FOR|PER|END|RES|CHA|CAR|INT|AGI|LUC|SOR|Level|Nível|Nivel)\s*(\d+)/gi;
+
+function attributeChipLabel(attribute: FalloutAttribute): string {
+  return FALLOUT_ATTRIBUTE_CONFIGS[attribute].shortLabel.split(" / ")[0];
+}
+
+function getPerkRequirementAttributes(
+  requirements: string | null | undefined,
+): FalloutAttribute[] {
+  if (!requirements) return [];
+  const found = new Set<FalloutAttribute>();
+  for (const match of requirements.matchAll(REQUIREMENT_TOKENS)) {
+    const attribute = REQUIREMENT_TOKEN_ATTRIBUTES[match[1].toUpperCase()];
+    if (attribute) found.add(attribute);
+  }
+  return [...found];
+}
+
+function getUnmetPerkRequirements(
+  requirements: string | null | undefined,
+  attributes: Record<FalloutAttribute, number>,
+  level: number,
+): string[] {
+  if (!requirements) return [];
+  const unmet: string[] = [];
+  for (const match of requirements.matchAll(REQUIREMENT_MINIMUMS)) {
+    const token = match[1].toUpperCase();
+    const minimum = Number(match[2]);
+    if (token === "LEVEL" || token === "NÍVEL" || token === "NIVEL") {
+      if (level < minimum) unmet.push(`Nível ${minimum}`);
+      continue;
+    }
+    const attribute = REQUIREMENT_TOKEN_ATTRIBUTES[token];
+    if (attribute && attributes[attribute] < minimum) {
+      unmet.push(`${attributeChipLabel(attribute)} ${minimum}`);
+    }
+  }
+  return unmet;
+}
+
 function StepPerks({
   data,
   updateData,
@@ -686,76 +756,312 @@ function StepPerks({
   data: WizardData;
   updateData: (partial: Partial<WizardData>) => void;
 }) {
-  const [draft, setDraft] = useState("");
+  const [catalog, setCatalog] = useState<CatalogPerk[]>([]);
+  const [isLoadingCatalog, setIsLoadingCatalog] = useState(true);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
+  const [catalogReload, setCatalogReload] = useState(0);
+  const [search, setSearch] = useState("");
+  const [attributeFilter, setAttributeFilter] = useState<FalloutAttribute | null>(null);
+  const [customDraft, setCustomDraft] = useState("");
 
-  const addPerk = () => {
-    const name = draft.trim();
-    if (!name) return;
-    if (data.perks.includes(name)) return;
-    updateData({ perks: [...data.perks, name] });
-    setDraft("");
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const response = await fetch("/api/content/spells?ruleSystem=fallout_2d20", {
+          credentials: "include",
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.success) {
+          throw new Error(payload.error || "Falha ao carregar o catálogo");
+        }
+        const perks = ((payload.data ?? []) as CatalogPerk[]).filter(
+          (entry) => entry.useType === "perk",
+        );
+        if (active) setCatalog(perks);
+      } catch {
+        if (active) {
+          setCatalogError("Não foi possível carregar o catálogo de perks da Biblioteca Global.");
+        }
+      } finally {
+        if (active) setIsLoadingCatalog(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [catalogReload]);
+
+  const selectedPerks = data.perks.map(normalizeFalloutPerk);
+  const selectedNames = new Set(selectedPerks.map((perk) => perk.name));
+
+  const term = search.trim().toLowerCase();
+  const visiblePerks = catalog.filter((perk) => {
+    if (term && !perk.name.toLowerCase().includes(term)) return false;
+    if (
+      attributeFilter &&
+      !getPerkRequirementAttributes(perk.structuredEffects?.requirements).includes(attributeFilter)
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const addCatalogPerk = (perk: CatalogPerk) => {
+    if (selectedNames.has(perk.name)) return;
+    updateData({
+      perks: [
+        ...data.perks,
+        {
+          name: perk.name,
+          rank: 1,
+          maxRank: Math.max(1, perk.circle),
+          description: perk.description,
+          requirements: perk.structuredEffects?.requirements ?? null,
+          imageUrl: perk.imageUrl,
+          sourceKey: perk.id,
+        },
+      ],
+    });
+  };
+
+  const addCustomPerk = () => {
+    const name = customDraft.trim();
+    if (!name || selectedNames.has(name)) return;
+    updateData({ perks: [...data.perks, { name, rank: 1 }] });
+    setCustomDraft("");
+  };
+
+  const removePerk = (name: string) => {
+    updateData({
+      perks: data.perks.filter((entry) => normalizeFalloutPerk(entry).name !== name),
+    });
+  };
+
+  const changeRank = (name: string, delta: number) => {
+    updateData({
+      perks: data.perks.map((entry) => {
+        const perk = normalizeFalloutPerk(entry);
+        if (perk.name !== name) return entry;
+        const raised = Math.max(1, perk.rank + delta);
+        return { ...perk, rank: perk.maxRank ? Math.min(raised, perk.maxRank) : raised };
+      }),
+    });
+  };
+
+  const retryCatalog = () => {
+    setCatalogError(null);
+    setIsLoadingCatalog(true);
+    setCatalogReload((count) => count + 1);
   };
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between text-xs">
         <span className="font-bold uppercase text-emerald-300">Perks Iniciais</span>
-        <span className="text-emerald-400">{data.perks.length} selecionada(s)</span>
+        <span className="text-emerald-400">{selectedPerks.length} selecionada(s)</span>
+      </div>
+
+      <input
+        type="text"
+        aria-label="Buscar perks"
+        placeholder="Buscar perk pelo nome..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="w-full bg-black border border-emerald-500/50 rounded px-3 py-2 text-xs text-emerald-200 focus:outline-none focus:border-emerald-400"
+      />
+
+      <div className="flex flex-wrap gap-1.5">
+        {FALLOUT_ATTRIBUTES.map((attribute) => {
+          const active = attributeFilter === attribute;
+          return (
+            <button
+              key={attribute}
+              type="button"
+              aria-pressed={active}
+              onClick={() => setAttributeFilter(active ? null : attribute)}
+              className={`px-2 py-1 rounded border text-[10px] font-bold cursor-pointer transition-all ${
+                active
+                  ? "bg-emerald-500/25 border-emerald-400 text-emerald-200"
+                  : "bg-black/50 border-emerald-900/50 text-emerald-500 hover:text-emerald-300"
+              }`}
+            >
+              {attributeChipLabel(attribute)}
+            </button>
+          );
+        })}
+      </div>
+
+      {isLoadingCatalog ? (
+        <p className="text-[11px] text-emerald-500 animate-pulse">
+          Carregando catálogo oficial do Fallout 2d20...
+        </p>
+      ) : catalogError ? (
+        <div
+          data-testid="perk-catalog-error"
+          className="rounded border border-amber-500/40 bg-amber-950/20 px-3 py-2 space-y-2"
+        >
+          <p className="text-[11px] text-amber-300">{catalogError}</p>
+          <button
+            type="button"
+            onClick={retryCatalog}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-black border border-amber-500 text-[11px] font-bold text-amber-300 hover:bg-amber-950 cursor-pointer"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Tentar novamente
+          </button>
+        </div>
+      ) : visiblePerks.length === 0 ? (
+        <p className="text-[11px] text-emerald-600 italic">
+          Nenhum perk encontrado para os filtros atuais.
+        </p>
+      ) : (
+        <ul className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+          {visiblePerks.map((perk) => {
+            const requirements = perk.structuredEffects?.requirements ?? null;
+            const unmet = getUnmetPerkRequirements(requirements, data.attributes, 1);
+            const maxRank = Math.max(1, perk.circle);
+            const selected = selectedNames.has(perk.name);
+            return (
+              <li
+                key={perk.id}
+                data-testid={`perk-card-${perk.id}`}
+                className="rounded border border-emerald-500/30 bg-black/60 px-3 py-2"
+              >
+                <div className="flex items-start gap-2">
+                  <img
+                    src={perk.imageUrl || getFalloutPerkIcon()}
+                    alt=""
+                    aria-hidden="true"
+                    className="h-8 w-8 shrink-0 opacity-80"
+                  />
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate text-xs font-bold text-emerald-200">
+                        {perk.name}
+                      </span>
+                      <span className="shrink-0 text-[10px] text-emerald-500">
+                        máx. {maxRank}
+                      </span>
+                    </div>
+                    {requirements && (
+                      <p
+                        className={`text-[10px] ${unmet.length > 0 ? "text-amber-400" : "text-emerald-400"}`}
+                      >
+                        {requirements}
+                      </p>
+                    )}
+                    {unmet.length > 0 && (
+                      <p data-testid="perk-requirements-warning" className="text-[10px] text-amber-400">
+                        Requisitos não atendidos: {unmet.join(", ")}
+                      </p>
+                    )}
+                    {perk.description && (
+                      <p className="text-[10px] leading-relaxed text-emerald-600">
+                        {perk.description}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => addCatalogPerk(perk)}
+                    disabled={selected}
+                    aria-label={`Adicionar ${perk.name}`}
+                    className="shrink-0 rounded border border-emerald-500 bg-emerald-950 p-1.5 text-emerald-300 hover:bg-emerald-900 cursor-pointer disabled:opacity-40 disabled:cursor-default"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      <div className="space-y-1.5">
+        <span className="text-[11px] font-bold uppercase text-emerald-300">
+          Selecionados para o registro
+        </span>
+        {selectedPerks.length === 0 ? (
+          <p className="text-[11px] text-emerald-600 italic">
+            Nenhum perk selecionado — você pode adicionar perks ao subir de nível no Pip-Boy.
+          </p>
+        ) : (
+          <ul className="space-y-1.5">
+            {selectedPerks.map((perk) => (
+              <li
+                key={perk.name}
+                data-testid={`selected-perk-${perk.name}`}
+                className="flex items-center justify-between gap-2 rounded border border-emerald-500/30 bg-black/60 px-3 py-2 text-xs text-emerald-200"
+              >
+                <span className="truncate">{perk.name}</span>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => changeRank(perk.name, -1)}
+                    disabled={perk.rank <= 1}
+                    aria-label={`Diminuir rank de ${perk.name}`}
+                    className="rounded border border-emerald-500/50 p-1 text-emerald-300 hover:bg-emerald-950 cursor-pointer disabled:opacity-40 disabled:cursor-default"
+                  >
+                    <Minus className="h-3 w-3" />
+                  </button>
+                  <span className="text-[10px] text-emerald-400">
+                    Rank {perk.rank}
+                    {perk.maxRank ? ` / ${perk.maxRank}` : ""}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => changeRank(perk.name, 1)}
+                    disabled={perk.maxRank !== undefined && perk.rank >= perk.maxRank}
+                    aria-label={`Aumentar rank de ${perk.name}`}
+                    className="rounded border border-emerald-500/50 p-1 text-emerald-300 hover:bg-emerald-950 cursor-pointer disabled:opacity-40 disabled:cursor-default"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removePerk(perk.name)}
+                    aria-label={`Remover ${perk.name}`}
+                    className="text-emerald-600 hover:text-red-400 cursor-pointer"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div className="flex gap-2">
         <input
           type="text"
-          placeholder="Ex: Action Boy / Fortune Finder..."
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          aria-label="Perk personalizado"
+          placeholder="Ex: perk customizado da mesa"
+          value={customDraft}
+          onChange={(e) => setCustomDraft(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
-              addPerk();
+              addCustomPerk();
             }
           }}
           className="flex-1 bg-black border border-emerald-500/50 rounded px-3 py-2 text-xs text-emerald-200 focus:outline-none focus:border-emerald-400"
         />
         <button
           type="button"
-          onClick={addPerk}
-          disabled={!draft.trim() || data.perks.includes(draft.trim())}
+          onClick={addCustomPerk}
+          disabled={!customDraft.trim() || selectedNames.has(customDraft.trim())}
+          aria-label="Adicionar perk personalizado"
           className="px-4 py-2 rounded bg-emerald-950 border border-emerald-500 text-xs font-bold text-emerald-300 hover:bg-emerald-900 cursor-pointer disabled:opacity-40 disabled:cursor-default"
         >
           + Adicionar
         </button>
       </div>
 
-      {data.perks.length === 0 ? (
-        <p className="text-[11px] text-emerald-600 italic">
-          Nenhum perk selecionado — você pode adicionar perks ao subir de nível no Pip-Boy.
-        </p>
-      ) : (
-        <ul className="space-y-1.5">
-          {data.perks.map((perk) => (
-            <li
-              key={perk}
-              className="flex items-center justify-between rounded border border-emerald-500/30 bg-black/60 px-3 py-2 text-xs text-emerald-200"
-            >
-              <span>{perk}</span>
-              <button
-                type="button"
-                onClick={() => updateData({ perks: data.perks.filter((p) => p !== perk) })}
-                className="text-emerald-600 hover:text-red-400 cursor-pointer"
-                aria-label={`Remover ${perk}`}
-              >
-                ✕
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-
       <p className="text-[11px] text-emerald-600 leading-relaxed">
-        Personagens de nível 1 começam com 1 perk (além do traço de origem). Os perks oficiais do
-        Fallout 2d20 estarão disponíveis para seleção na Biblioteca Global a partir da Fase 3 do
-        projeto.
+        Personagens de nível 1 começam com 1 perk (além do traço de origem). Requisitos em âmbar são
+        informativos: o mestre pode liberar perks fora dos requisitos do personagem.
       </p>
     </div>
   );
