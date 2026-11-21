@@ -36,6 +36,9 @@ export type RosterPlayer = {
   manaPointsMax: number;
   conditions: RosterCondition[];
   status?: string;
+  /** Sistema da campanha quando o ator não vem da junção d20 (ex: fallout_2d20) */
+  system?: string;
+  origin?: string;
 };
 
 export type RosterActor = {
@@ -53,6 +56,8 @@ export type RosterActor = {
   xpReward?: number;
   conditions?: RosterCondition[];
   status?: string;
+  system?: string;
+  origin?: string;
 };
 
 export type ContentCategory = "items" | "spells" | "skills";

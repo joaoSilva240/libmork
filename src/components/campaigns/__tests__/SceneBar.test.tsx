@@ -40,6 +40,21 @@ describe("SceneBar (issue #86, Fase 1)", () => {
     expect(onSceneChange).not.toHaveBeenCalled();
   });
 
+  it("mostra apenas o ícone em cada botão, com o nome da cena no nome acessível", () => {
+    render(<SceneBar activeScene="combat" onSceneChange={vi.fn()} />);
+
+    for (const value of ["combat", "interlude", "stealth", "investigation", "escape"]) {
+      expect(screen.getByTestId(`scene-btn-${value}`).textContent).toBe("");
+    }
+
+    expect(screen.queryByText("Combate")).not.toBeInTheDocument();
+    expect(screen.queryByText("Furtividade")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Combate — clique para voltar ao modo Livre" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ativar cena: Fuga" })).toBeInTheDocument();
+  });
+
   describe("indicador de combate em 2º plano (Fase 2)", () => {
     it("combatBackgroundActive com cena que não é Combate mostra o indicador", () => {
       render(<SceneBar activeScene="stealth" onSceneChange={vi.fn()} combatBackgroundActive />);

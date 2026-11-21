@@ -3,7 +3,7 @@
 // =============================================================================
 // Retorna todas as campanhas em que o jogador autenticado possui convite ativo,
 // juntamente com os dados do mestre, os personagens vinculados e suporte a
-// Habitantes em campanhas de MISSING — Edição ZERO.
+// Habitantes (MISSING — Edição ZERO) e Sobreviventes (Fallout 2d20).
 // =============================================================================
 
 import { NextResponse } from "next/server";
@@ -15,6 +15,7 @@ import {
   characterCampaigns,
   characters,
   missingHabitants,
+  falloutCharacters,
 } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth/session";
 import { eq, and, inArray } from "drizzle-orm";
@@ -177,6 +178,51 @@ export async function GET() {
           updatedAt: h.updatedAt.toISOString(),
         });
         habitantsByCampaign.set(h.campaignId, habitantList);
+      }
+    }
+
+    // Suporte a campanhas Fallout 2d20 — sobreviventes vivem em
+    // fallout_characters, vinculados por campaign_id.
+    const falloutCampaignIds = campaignRows
+      .filter((camp) => camp.rulesEngine === "fallout_2d20")
+      .map((camp) => camp.id);
+
+    const allCampaignSurvivors =
+      falloutCampaignIds.length > 0
+        ? await db
+            .select()
+            .from(falloutCharacters)
+            .where(inArray(falloutCharacters.campaignId, falloutCampaignIds))
+        : [];
+
+    for (const survivor of allCampaignSurvivors) {
+      if (!survivor.campaignId) continue;
+      const isMine = survivor.ownerId === session.user.id;
+
+      const rosterList = rosterByCampaign.get(survivor.campaignId) ?? [];
+      rosterList.push({
+        id: survivor.id,
+        name: survivor.name,
+        imageUrl: null,
+        isMine,
+      });
+      rosterByCampaign.set(survivor.campaignId, rosterList);
+
+      if (isMine) {
+        const charList = charactersByCampaign.get(survivor.campaignId) ?? [];
+        charList.push({
+          campaignId: survivor.campaignId,
+          id: survivor.id,
+          name: survivor.name,
+          imageUrl: null,
+          ownerId: survivor.ownerId,
+          level: survivor.level,
+          hitPointsCurrent: survivor.hpCurrent,
+          hitPointsMax: survivor.hpMax,
+          manaPointsCurrent: 0,
+          manaPointsMax: 0,
+        });
+        charactersByCampaign.set(survivor.campaignId, charList);
       }
     }
 

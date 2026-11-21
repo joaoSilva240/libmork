@@ -50,27 +50,26 @@ export function SceneBar({
         const scene = SCENES[value];
         const Icon = scene.icon;
         const isActive = activeScene === value;
+        const hint = isActive
+          ? `${scene.label} — clique para voltar ao modo Livre`
+          : `Ativar cena: ${scene.label}`;
         return (
           <button
             key={value}
             type="button"
             data-testid={`scene-btn-${value}`}
             aria-pressed={isActive}
+            aria-label={hint}
             disabled={disabled}
-            title={
-              isActive
-                ? `${scene.label} — clique para voltar ao modo Livre`
-                : `Ativar cena: ${scene.label}`
-            }
+            title={hint}
             onClick={() => onSceneChange(isActive ? null : value)}
-            className={`flex cursor-pointer items-center gap-1 rounded border px-2 py-1 text-xs font-semibold transition-colors ${
+            className={`flex cursor-pointer items-center rounded border px-1.5 py-1 text-xs font-semibold transition-colors ${
               isActive
                 ? scene.activeClasses
                 : "border-gray-700 bg-gray-800/70 text-gray-300 hover:bg-gray-700"
             } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
           >
             <Icon size={14} />
-            <span className="hidden xl:inline">{scene.label}</span>
           </button>
         );
       })}

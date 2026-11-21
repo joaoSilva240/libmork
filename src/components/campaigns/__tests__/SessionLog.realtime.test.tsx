@@ -384,5 +384,78 @@ describe("SessionLog - Realtime and Acceptance Criteria (Issue #13)", () => {
 
       expect(screen.queryByText("Thora:")).not.toBeInTheDocument();
     });
+
+    it("mostra a detalhe da rolagem por extenso, sem recortar o texto", async () => {
+      mockFetchWithLogs([]);
+
+      render(<SessionLog campaignId={campaignId} />);
+
+      await waitFor(() => {
+        expect(rollHandler).toBeTypeOf("function");
+      });
+
+      const detail =
+        "AGI + Armas Leves | Dados: [11, 20] | Sucessos: 2/5 (+1 AP) | Local: Cabeça (15)";
+      act(() => {
+        rollHandler?.(roll({ diceDetail: detail }));
+      });
+
+      const detailNode = await screen.findByTestId("roll-detail");
+      expect(detailNode).toHaveTextContent(detail);
+      expect(detailNode.className).not.toContain("truncate");
+      expect(detailNode.className).toContain("break-words");
+    });
+
+    it("reflete no card o desfecho do teste 2d20: sucesso, crítico e localização", async () => {
+      mockFetchWithLogs([]);
+
+      render(<SessionLog campaignId={campaignId} />);
+
+      await waitFor(() => {
+        expect(rollHandler).toBeTypeOf("function");
+      });
+
+      act(() => {
+        rollHandler?.(
+          roll({
+            rollType: "pericia",
+            formula: "2d20 (Alvo 5)",
+            result: 2,
+            system: "fallout_2d20",
+            outcome: "success",
+            isCritical: true,
+            hitLocation: "Cabeça (15)",
+            rolledDice: [
+              { sides: 20, value: 3 },
+              { sides: 20, value: 11 },
+            ],
+            dieStates: ["crit", "neutral"],
+          }),
+        );
+      });
+
+      expect(await screen.findByTestId("roll-outcome")).toHaveTextContent("Sucesso");
+      expect(screen.getByTestId("roll-critical")).toHaveTextContent("Crítico");
+      expect(screen.getByTestId("roll-location")).toHaveTextContent("Cabeça (15)");
+      expect(screen.getByTestId("fallout-dice-strip")).toBeInTheDocument();
+    });
+
+    it("marca a falha do teste e omite os selos quando a rolagem não traz desfecho", async () => {
+      mockFetchWithLogs([]);
+
+      render(<SessionLog campaignId={campaignId} />);
+
+      await waitFor(() => {
+        expect(rollHandler).toBeTypeOf("function");
+      });
+
+      act(() => {
+        rollHandler?.(roll({ system: "fallout_2d20", outcome: "failure" }));
+      });
+
+      expect(await screen.findByTestId("roll-outcome")).toHaveTextContent("Falha");
+      expect(screen.queryByTestId("roll-critical")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("roll-location")).not.toBeInTheDocument();
+    });
   });
 });

@@ -445,6 +445,11 @@ findAvailablePort(initialPort)
           io.to(`campaign:${payload.campaignId}`).emit("fallout:dice-rolled", payload);
         });
 
+        socket.on("fallout:radiation-update", (payload) => {
+          if (!payload || !payload.campaignId) return;
+          io.to(`campaign:${payload.campaignId}`).emit("fallout:radiation-updated", payload);
+        });
+
         // Sair explicitamente de uma campanha
         socket.on("leave-campaign", ({ campaignId }) => {
           if (!campaignId) return;

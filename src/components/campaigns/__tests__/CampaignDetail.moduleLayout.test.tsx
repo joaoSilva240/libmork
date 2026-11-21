@@ -15,8 +15,8 @@ vi.mock("@/components/campaigns/MasterRoster", () => ({
 vi.mock("@/components/campaigns/ContentOverlay", () => ({ ContentOverlay: () => null }));
 vi.mock("@/components/campaigns/WorldOverlay", () => ({ WorldOverlay: () => null }));
 vi.mock("@/components/campaigns/shield/MasterMediaPanel", () => ({
-  MasterMediaPanel: () => (
-    <div data-testid="media-panel-mock">
+  MasterMediaPanel: ({ isFallout }: any) => (
+    <div data-testid="media-panel-mock" data-fallout={isFallout ? "true" : "false"}>
       <div data-testid="master-jukebox-mock" />
       <div data-testid="master-assets-mock" />
     </div>
@@ -115,6 +115,45 @@ describe("CampaignDetail Dynamic Column Module Placement (Issue #75)", () => {
 
     expect(screen.queryByTestId("master-assets-mock")).not.toBeInTheDocument();
     expect(screen.queryByTestId("media-panel-mock")).not.toBeInTheDocument();
+  });
+
+  it("mantém o painel de mídia na esquerda para a aba de recursos numa campanha Fallout 2d20", async () => {
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.includes("/worlds") || url.includes("/logs")) {
+        return Promise.resolve({ ok: true, json: async () => ({ data: [] }) });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({
+          data: { id: "camp-1", name: "Refúgio 111", rulesEngine: "fallout_2d20" },
+        }),
+      });
+    }) as any;
+
+    localStorage.setItem(
+      masterScreenConfigKey,
+      JSON.stringify({
+        showAssets: false,
+        showMap: false,
+        showJukebox: false,
+        leftColumnOrder: ["mediaPanel"],
+        rightColumnOrder: ["sessionLog"],
+      }),
+    );
+
+    render(<CampaignDetail />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("media-panel-mock")).toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId("media-panel-mock")).toHaveAttribute("data-fallout", "true");
+    expect(screen.getByTestId("shield-left-column")).toContainElement(
+      screen.getByTestId("media-panel-mock"),
+    );
+    // O AP e a radiação saíram do cabeçalho: agora vivem só no card da aba.
+    expect(screen.queryByTestId("fallout-ap-tracker")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("fallout-radiation-meter")).not.toBeInTheDocument();
   });
 
   it("maintains flex-1 and min-h-0 on SessionLog container when sharing column with other modules", async () => {

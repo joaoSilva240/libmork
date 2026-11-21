@@ -1,10 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Droplet, Droplets, HeartCrack, HeartPulse, Shield, User } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Droplet,
+  Droplets,
+  HeartCrack,
+  HeartPulse,
+  Shield,
+  Target,
+  User,
+  Zap,
+} from "lucide-react";
 import type { CampaignLog } from "@/types";
 import { Spinner, ConditionIcon } from "@/components/ui";
 import { useSocket, type RollDataPayload } from "@/context/SocketContext";
+import type { D20DieState } from "@/lib/systems/fallout/assets";
 import { getCombatDieFace, getD20Icon } from "@/lib/systems/fallout/assets";
 
 type SessionLogProps = {
@@ -172,26 +184,106 @@ function ConditionChip({ name }: { name: string }) {
   );
 }
 
+const D20_DIE_TITLE: Record<D20DieState, string> = {
+  crit: "Acerto Crítico (2 sucessos)",
+  complication: "Complicação!",
+  success: "Sucesso",
+  neutral: "Falha",
+};
+
 /** Dados individuais de uma rolagem Fallout 2d20 (d20 vetorial ou face de combate). */
-function FalloutDiceStrip({ dice }: { dice: NonNullable<RollDataPayload["rolledDice"]> }) {
+function FalloutDiceStrip({
+  dice,
+  states,
+}: {
+  dice: NonNullable<RollDataPayload["rolledDice"]>;
+  states?: D20DieState[];
+}) {
   return (
     <div className="flex shrink-0 flex-wrap items-center gap-1" data-testid="fallout-dice-strip">
-      {dice.map((die, idx) =>
-        die.sides === 6 ? (
-          <img
-            key={idx}
-            src={getCombatDieFace(die.value)}
-            alt={`Dado de combate: ${die.value}`}
-            className="h-8 w-8"
-          />
-        ) : (
-          <div key={idx} className="relative h-8 w-8">
-            <img src={getD20Icon("neutral")} alt="" aria-hidden="true" className="h-full w-full" />
-            <span className="absolute inset-0 flex items-center justify-center text-[11px] font-black text-zinc-900">
+      {dice.map((die, idx) => {
+        if (die.sides === 6) {
+          return (
+            <img
+              key={idx}
+              src={getCombatDieFace(die.value)}
+              alt={`Dado de combate: ${die.value}`}
+              className="h-8 w-8"
+            />
+          );
+        }
+
+        const state = states?.[idx] ?? "neutral";
+
+        return (
+          <div key={idx} className="relative h-8 w-8" title={D20_DIE_TITLE[state]}>
+            <img src={getD20Icon(state)} alt="" aria-hidden="true" className="h-full w-full" />
+            <span
+              className={`absolute inset-0 flex items-center justify-center text-[11px] font-black ${
+                state === "complication" ? "text-white" : "text-zinc-900"
+              }`}
+            >
               {die.value}
             </span>
+            {state === "crit" && (
+              <span className="absolute -right-1 -top-1 rounded-full bg-amber-400 px-1 text-[9px] font-black text-black shadow">
+                ★2
+              </span>
+            )}
           </div>
-        ),
+        );
+      })}
+    </div>
+  );
+}
+
+const outcomeChip =
+  "inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-bold tracking-wide";
+
+/** Desfecho do teste como o rolador do jogador o mostra: sucesso/falha, crítico e local. */
+function RollOutcomeChips({ roll }: { roll: RollDataPayload }) {
+  const outcome =
+    roll.outcome ?? (typeof roll.hit === "boolean" ? (roll.hit ? "success" : "failure") : null);
+
+  if (!outcome && !roll.isCritical && !roll.hitLocation) return null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {outcome === "success" && (
+        <span
+          className={`${outcomeChip} border-emerald-800 bg-emerald-950/60 text-emerald-300`}
+          data-testid="roll-outcome"
+        >
+          <CheckCircle2 className="h-3 w-3 shrink-0" />
+          Sucesso
+        </span>
+      )}
+      {outcome === "failure" && (
+        <span
+          className={`${outcomeChip} border-red-700 bg-red-950/80 text-red-300`}
+          data-testid="roll-outcome"
+        >
+          <AlertTriangle className="h-3 w-3 shrink-0" />
+          Falha
+        </span>
+      )}
+      {roll.isCritical && (
+        <span
+          className={`${outcomeChip} border-amber-600 bg-amber-950/60 text-amber-300`}
+          data-testid="roll-critical"
+        >
+          <Zap className="h-3 w-3 shrink-0" />
+          Crítico
+        </span>
+      )}
+      {roll.hitLocation && (
+        <span
+          className={`${outcomeChip} border-purple-700 bg-purple-950/70 text-purple-300`}
+          data-testid="roll-location"
+        >
+          <Target className="h-3 w-3 shrink-0" />
+          {roll.hitLocation}
+        </span>
       )}
     </div>
   );
@@ -456,24 +548,33 @@ export function SessionLog({ campaignId, showDiceRolls = true }: SessionLogProps
             </span>
           </div>
 
-          <div className="mt-1.5 flex items-center gap-2">
-            {roll.system === "fallout_2d20" && roll.rolledDice?.length ? (
-              <FalloutDiceStrip dice={roll.rolledDice} />
-            ) : (
-              <DieGlyph sides={dieSidesOf(roll.formula)} value={roll.result} />
-            )}
-            <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-amber-400/90">
-                {roll.formula}
-              </p>
-              <span className="mt-1 flex min-w-0 items-center gap-1.5 text-[10px] text-gray-500">
-                <span className="flex shrink-0 items-center gap-1 rounded bg-purple-950/70 px-1 text-purple-300">
+          <div className="mt-1.5 space-y-1.5">
+            <div className="flex flex-wrap items-center gap-2">
+              {roll.system === "fallout_2d20" && roll.rolledDice?.length ? (
+                <FalloutDiceStrip dice={roll.rolledDice} states={roll.dieStates} />
+              ) : (
+                <DieGlyph sides={dieSidesOf(roll.formula)} value={roll.result} />
+              )}
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-amber-400/90">
+                  {roll.formula}
+                </p>
+                <span className="mt-1 inline-flex items-center gap-1 rounded bg-purple-950/70 px-1 text-[10px] text-purple-300">
                   <span className="inline-block h-1.5 w-1.5 rounded-full bg-purple-500" />
                   ao vivo
                 </span>
-                {roll.diceDetail && <span className="truncate">{roll.diceDetail}</span>}
-              </span>
+              </div>
+              <RollOutcomeChips roll={roll} />
             </div>
+
+            {roll.diceDetail && (
+              <p
+                className="break-words text-[10px] leading-relaxed text-gray-500"
+                data-testid="roll-detail"
+              >
+                {roll.diceDetail}
+              </p>
+            )}
           </div>
         </div>
       </div>

@@ -273,6 +273,52 @@ export interface FalloutCharacter {
   updatedAt: string;
 }
 
+/** Estágios de radiação derivados do percentual sobre o teto base de PV. */
+export const FALLOUT_RADIATION_STAGES = [
+  "clean",
+  "tainted",
+  "sickened",
+  "weakened",
+  "critical",
+  "incapacitated",
+] as const;
+export type FalloutRadiationStage = (typeof FALLOUT_RADIATION_STAGES)[number];
+
+export interface FalloutRadiationCondition {
+  stage: FalloutRadiationStage;
+  label: string;
+  description: string;
+  /** Dificuldade extra somada a todo teste enquanto a condição persistir. */
+  difficultyPenalty: number;
+  tone: "safe" | "warn" | "danger" | "lethal";
+  radiation: number;
+  percent: number;
+  effectiveMaxHp: number;
+}
+
+/** Origens que não acumulam radiação (regra oficial de Fallout 2d20). */
+export const FALLOUT_RADIATION_IMMUNE_ORIGINS: readonly FalloutOrigin[] = [
+  "ghoul",
+  "super_mutant",
+  "mister_handy",
+];
+
+/** Radiação aplicada pelo Supervisor, retransmitida aos Pip-Boys da mesa. */
+export interface FalloutRadiationUpdate {
+  characterId: string;
+  name: string;
+  radiation: number;
+  hpCurrent: number;
+  hpMax: number;
+  condition: FalloutRadiationCondition;
+}
+
+export interface FalloutRadiationBroadcast {
+  campaignId: string;
+  delta: number;
+  characters: FalloutRadiationUpdate[];
+}
+
 /** Estado da Campanha Fallout (AP Pool Compartilhado) */
 export interface FalloutCampaignState {
   campaignId: string;

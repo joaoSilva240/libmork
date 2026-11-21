@@ -100,22 +100,28 @@ export const updateFalloutCharacterSchema = z.object({
 
 export type UpdateFalloutCharacterInput = z.infer<typeof updateFalloutCharacterSchema>;
 
+/**
+ * Pedido de teste 2d20. O cliente escolhe apenas o que testa e com quantos
+ * dados: Número Alvo, graduação, Tag e custo saem sempre da ficha no servidor.
+ */
 export const falloutRollSchema = z.object({
-  campaignId: z.string().optional(),
-  characterId: z.string().optional(),
-  characterName: z.string().default("Viajante"),
+  characterId: z.string().uuid("Personagem inválido"),
   attribute: falloutAttributeSchema,
   skill: falloutSkillNameSchema.optional(),
-  attributeValue: z.number().int().min(1).max(25),
-  skillRank: z.number().int().min(0).max(6).default(0),
-  isTagSkill: z.boolean().default(false),
-  extraDiceCount: z.number().int().min(0).max(3).default(0),
   difficulty: z.number().int().min(0).max(10).default(1),
+  extraDiceCount: z.number().int().min(0).max(3).default(0),
   complicationThreshold: z.number().int().min(15).max(20).default(20),
   rollLocation: z.boolean().default(false),
 });
 
 export type FalloutRollInput = z.infer<typeof falloutRollSchema>;
+
+export const falloutRerollSchema = z.object({
+  rollId: z.string().uuid("Teste inválido"),
+  dieIndex: z.number().int().min(0).max(4),
+});
+
+export type FalloutRerollInput = z.infer<typeof falloutRerollSchema>;
 
 export const combatDiceRollSchema = z.object({
   campaignId: z.string().optional(),
@@ -129,10 +135,32 @@ export const combatDiceRollSchema = z.object({
 
 export type CombatDiceRollInput = z.infer<typeof combatDiceRollSchema>;
 
-export const updateFalloutCampaignStateSchema = z.object({
-  partyAP: z.number().int().min(0).max(6).optional(),
-  overseerAP: z.number().int().min(0).max(99).optional(),
-  scarcityLevel: z.enum(["abundant", "standard", "scarce", "desolate"]).optional(),
+/**
+ * Ajuste do pool por delta: o cliente nunca define o valor absoluto, então
+ * cliques simultâneos de jogadores diferentes não se sobrescrevem.
+ */
+export const adjustFalloutAPSchema = z
+  .object({
+    deltaParty: z.number().int().min(-6).max(6).default(0),
+    deltaOverseer: z.number().int().min(-99).max(99).default(0),
+  })
+  .refine((v) => v.deltaParty !== 0 || v.deltaOverseer !== 0, {
+    message: "Informe ao menos um ajuste de AP",
+  });
+
+export type AdjustFalloutAPInput = z.infer<typeof adjustFalloutAPSchema>;
+
+export const applyFalloutRadiationSchema = z.object({
+  campaignId: z.string().uuid("Campanha inválida"),
+  characterIds: z.array(z.string().uuid()).min(1, "Selecione ao menos um sobrevivente").max(20),
+  delta: z
+    .number()
+    .int()
+    .min(-20)
+    .max(20)
+    .refine((v) => v !== 0, {
+      message: "O ajuste de radiação não pode ser zero",
+    }),
 });
 
-export type UpdateFalloutCampaignStateInput = z.infer<typeof updateFalloutCampaignStateSchema>;
+export type ApplyFalloutRadiationInput = z.infer<typeof applyFalloutRadiationSchema>;

@@ -11,6 +11,8 @@ import React, {
 } from "react";
 import { io, Socket } from "socket.io-client";
 import { showDice3D, type Dice3DDie } from "@/lib/dice3d";
+import type { D20DieState } from "@/lib/systems/fallout/assets";
+import type { FalloutRadiationBroadcast } from "@/lib/systems/fallout/types";
 import type { CampaignLog, CampaignAsset } from "@/types";
 import type {
   AudioTrackAddPayload,
@@ -68,6 +70,12 @@ export interface RollDataPayload {
   senderSocketId?: string;
   rolledDice?: Dice3DDie[];
   system?: string;
+  /** Desfecho do teste de perícia (Fallout 2d20) */
+  outcome?: "success" | "failure";
+  isCritical?: boolean;
+  hitLocation?: string;
+  /** Estado de cada dado, na mesma ordem de rolledDice */
+  dieStates?: D20DieState[];
 }
 
 import type { CombatSessionState, PendingDefenseReaction } from "@/lib/engine";
@@ -272,6 +280,10 @@ interface SocketContextValue {
   ) => () => void;
   emitFalloutDiceRoll: (payload: Record<string, unknown>) => void;
   subscribeFalloutDiceRoll: (callback: (payload: Record<string, unknown>) => void) => () => void;
+  emitFalloutRadiationUpdate: (payload: FalloutRadiationBroadcast) => void;
+  subscribeFalloutRadiationUpdate: (
+    callback: (payload: FalloutRadiationBroadcast) => void,
+  ) => () => void;
 }
 
 const SocketContext = createContext<SocketContextValue | undefined>(undefined);
@@ -1382,6 +1394,32 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     [socket],
   );
 
+  const emitFalloutRadiationUpdate = useCallback(
+    (payload: FalloutRadiationBroadcast) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.emit("fallout:radiation-update", payload);
+      }
+    },
+    [socket],
+  );
+
+  const subscribeFalloutRadiationUpdate = useCallback(
+    (callback: (payload: FalloutRadiationBroadcast) => void) => {
+      const currentSocket = socketRef.current || socket;
+      if (currentSocket) {
+        currentSocket.on("fallout:radiation-updated", callback);
+      }
+      return () => {
+        const activeSocket = socketRef.current || socket;
+        if (activeSocket) {
+          activeSocket.off("fallout:radiation-updated", callback);
+        }
+      };
+    },
+    [socket],
+  );
+
   const contextValue = useMemo<SocketContextValue>(
     () => ({
       socket,
@@ -1465,6 +1503,8 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       subscribeFalloutApUpdate,
       emitFalloutDiceRoll,
       subscribeFalloutDiceRoll,
+      emitFalloutRadiationUpdate,
+      subscribeFalloutRadiationUpdate,
     }),
     [
       socket,
@@ -1548,6 +1588,8 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       subscribeFalloutApUpdate,
       emitFalloutDiceRoll,
       subscribeFalloutDiceRoll,
+      emitFalloutRadiationUpdate,
+      subscribeFalloutRadiationUpdate,
     ],
   );
 

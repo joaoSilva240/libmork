@@ -1,14 +1,15 @@
 // =============================================================================
-// Libmork — API Route: AP Pool da Campanha Fallout 2d20 (GET e PATCH)
+// Libmork — API Route: AP Pool da Campanha Fallout 2d20 (GET e ajuste por delta)
 // =============================================================================
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/session";
 import {
+  adjustFalloutCampaignAP,
   getOrCreateFalloutCampaignState,
-  updateFalloutCampaignState,
+  FalloutServiceError,
 } from "@/lib/server/fallout-service";
-import { updateFalloutCampaignStateSchema } from "@/lib/systems/fallout/validators";
+import { adjustFalloutAPSchema } from "@/lib/systems/fallout/validators";
 import { ZodError } from "zod";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -41,9 +42,9 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
     const { id: campaignId } = await params;
     const body = await request.json();
-    const validated = updateFalloutCampaignStateSchema.parse(body);
+    const validated = adjustFalloutAPSchema.parse(body);
 
-    const updated = await updateFalloutCampaignState(campaignId, validated);
+    const updated = await adjustFalloutCampaignAP(campaignId, validated, session.user.id);
 
     return NextResponse.json({ success: true, data: updated });
   } catch (error: any) {
@@ -52,6 +53,9 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         { success: false, error: "Dados inválidos", details: error.issues },
         { status: 400 },
       );
+    }
+    if (error instanceof FalloutServiceError) {
+      return NextResponse.json({ success: false, error: error.message }, { status: error.status });
     }
     return NextResponse.json(
       { success: false, error: error.message || "Erro ao atualizar AP pool" },

@@ -83,6 +83,8 @@ export function CampaignInvites({
             manaPoints: player.manaPointsCurrent,
             manaPointsMax: player.manaPointsMax,
             conditions: player.conditions,
+            system: player.system,
+            origin: player.origin,
           }));
 
           const npcActors: RosterActor[] = npcsList.map((npc) => ({
@@ -279,38 +281,58 @@ export function CampaignInvites({
             </p>
           ) : (
             <div className="max-h-36 space-y-1.5 overflow-y-auto pr-0.5 lg:max-h-none lg:min-h-0 lg:flex-1">
-              {filteredActors.map((actor) => (
-                <div
-                  key={`${actor.kind}-${actor.id}`}
-                  draggable
-                  onDragStart={(e) => handleDragStartActor(e, actor)}
-                  className="group flex cursor-grab items-center justify-between rounded-lg border border-gray-800 bg-gray-950 p-2 transition-colors hover:border-purple-600 hover:bg-gray-900 active:cursor-grabbing"
-                  title="Arraste para o carrossel na Mesa para ativar no combate"
-                >
-                  <div className="flex items-center gap-2 overflow-hidden">
-                    <span className="text-gray-500 group-hover:text-purple-400">⠿</span>
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-semibold text-white">{actor.name}</p>
-                      <p className="text-[10px] text-gray-400">Nível {actor.level}</p>
-                    </div>
-                  </div>
-                  <span
-                    className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold ${
-                      actor.kind === "character"
-                        ? "bg-purple-900/50 text-purple-300 border border-purple-800/50"
-                        : actor.npcType === "enemy"
-                          ? "bg-red-900/50 text-red-300 border border-red-800/50"
-                          : "bg-gray-800 text-gray-300"
+              {filteredActors.map((actor) => {
+                const isSurvivor = actor.system === "fallout_2d20";
+
+                return (
+                  <div
+                    key={`${actor.kind}-${actor.id}`}
+                    draggable={!isSurvivor}
+                    onDragStart={(e) => handleDragStartActor(e, actor)}
+                    className={`group flex items-center justify-between rounded-lg border border-gray-800 bg-gray-950 p-2 transition-colors hover:border-purple-600 hover:bg-gray-900 ${
+                      isSurvivor ? "" : "cursor-grab active:cursor-grabbing"
                     }`}
+                    title={
+                      isSurvivor
+                        ? "Sobrevivente Fallout — a mesa tática ainda não suporta o sistema 2d20"
+                        : "Arraste para o carrossel na Mesa para ativar no combate"
+                    }
                   >
-                    {actor.kind === "character"
-                      ? "Jogador"
-                      : actor.npcType === "enemy"
-                        ? "Inimigo"
-                        : "NPC"}
-                  </span>
-                </div>
-              ))}
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <span className="text-gray-500 group-hover:text-purple-400">
+                        {isSurvivor ? "☢" : "⠿"}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-semibold text-white">{actor.name}</p>
+                        <p className="text-[10px] text-gray-400">
+                          Nível {actor.level}
+                          {isSurvivor && ` · HP ${actor.hitPoints}/${actor.hitPointsMax}`}
+                          {isSurvivor && actor.origin && ` · ${actor.origin.replace(/_/g, " ")}`}
+                        </p>
+                      </div>
+                    </div>
+                    <span
+                      className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+                        isSurvivor
+                          ? "bg-emerald-900/50 text-emerald-300 border border-emerald-800/50"
+                          : actor.kind === "character"
+                            ? "bg-purple-900/50 text-purple-300 border border-purple-800/50"
+                            : actor.npcType === "enemy"
+                              ? "bg-red-900/50 text-red-300 border border-red-800/50"
+                              : "bg-gray-800 text-gray-300"
+                      }`}
+                    >
+                      {isSurvivor
+                        ? "Sobrevivente"
+                        : actor.kind === "character"
+                          ? "Jogador"
+                          : actor.npcType === "enemy"
+                            ? "Inimigo"
+                            : "NPC"}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

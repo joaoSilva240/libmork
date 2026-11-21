@@ -4,7 +4,7 @@
 // Libmork — Sistema Fallout 2d20: Ficha Pip-Boy 3000 (STAT / SPECIAL / INV / DATA)
 // =============================================================================
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   FALLOUT_ATTRIBUTES,
   FALLOUT_ATTRIBUTE_CONFIGS,
@@ -21,6 +21,8 @@ import {
   calculateDefense,
   calculateInitiative,
   calculateCarryWeightMax,
+  getCharacterRadiation,
+  isRadiationImmune,
 } from "@/lib/systems/fallout/rules";
 import {
   getFalloutItemIcon,
@@ -31,8 +33,10 @@ import { PipBoyPaperdoll } from "./PipBoyPaperdoll";
 import { PipBoyPortrait } from "./PipBoyPortrait";
 import { PipBoyRollFab } from "./PipBoyRollFab";
 import { APTrackerWidget } from "./APTrackerWidget";
+import { RadiationConditionChip } from "./RadiationConditionChip";
 import { FalloutDiceRollerModal } from "./FalloutDiceRollerModal";
 import { PipBoyTabNav } from "./PipBoyTabNav";
+import { useSocket } from "@/context/SocketContext";
 import {
   Heart,
   Biohazard,
@@ -57,21 +61,46 @@ type PipBoyTabId = (typeof PIPBOY_TABS)[number]["id"];
 interface PipBoySheetProps {
   character: FalloutCharacter;
   onUpdateCharacter?: (patch: Partial<FalloutCharacter>) => void;
+  /** Sorte já debitada no servidor durante a re-rolagem; só sincroniza a lista. */
+  onLuckSpent?: (luckPointsCurrent: number) => void;
   readOnly?: boolean;
   isMaster?: boolean;
 }
 
 export function PipBoySheet({
-  character,
+  character: characterProp,
   onUpdateCharacter,
+  onLuckSpent,
   readOnly = false,
   isMaster = false,
 }: PipBoySheetProps) {
+  const { subscribeFalloutRadiationUpdate } = useSocket();
+  const [character, setCharacter] = useState(characterProp);
   const [activeTab, setActiveTab] = useState<PipBoyTabId>("stat");
   const [isRollerOpen, setIsRollerOpen] = useState(false);
   const [rollerInitialAttr, setRollerInitialAttr] = useState<FalloutAttribute>("agi");
   const [rollerInitialSkill, setRollerInitialSkill] = useState<FalloutSkillName>("small_guns");
 
+  useEffect(() => {
+    setCharacter(characterProp);
+  }, [characterProp]);
+
+  useEffect(() => {
+    return subscribeFalloutRadiationUpdate((payload) => {
+      setCharacter((prev) => {
+        const update = payload.characters.find((c) => c.characterId === prev.id);
+        if (!update) return prev;
+        return {
+          ...prev,
+          radiation: update.radiation,
+          hpCurrent: update.hpCurrent,
+          hpMax: update.hpMax,
+        };
+      });
+    });
+  }, [subscribeFalloutRadiationUpdate]);
+
+  const radiation = getCharacterRadiation(character);
   const effectiveMaxHp = calculateEffectiveMaxHp(character.hpMax, character.radiation);
   const radPercent = Math.min(
     100,
@@ -165,6 +194,10 @@ export function PipBoySheet({
               <div className="flex items-center gap-2">
                 <Biohazard size={15} className="text-red-400" />
                 <span className="font-bold text-red-400">RADS: {character.radiation}</span>
+                <RadiationConditionChip
+                  condition={radiation}
+                  immune={isRadiationImmune(character.origin)}
+                />
               </div>
             </div>
 
@@ -433,6 +466,10 @@ export function PipBoySheet({
         campaignId={character.campaignId}
         initialAttribute={rollerInitialAttr}
         initialSkill={rollerInitialSkill}
+        onLuckSpent={(luckPointsCurrent) => {
+          setCharacter((prev) => ({ ...prev, luckPointsCurrent }));
+          onLuckSpent?.(luckPointsCurrent);
+        }}
       />
     </div>
   );

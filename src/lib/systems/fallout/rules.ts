@@ -9,6 +9,9 @@ import type {
   FalloutBodyLocation,
   FalloutBodyPart,
   FalloutCharacter,
+  FalloutOrigin,
+  FalloutRadiationCondition,
+  FalloutRadiationStage,
   FalloutRollDie,
   FalloutRollParams,
   FalloutRollResult,
@@ -16,7 +19,27 @@ import type {
   FalloutSkillState,
 } from "./types";
 import type { CreateFalloutCharacterInput } from "./validators";
-import { FALLOUT_BODY_LOCATIONS, FALLOUT_DEFAULT_BODY_PARTS, FALLOUT_SKILLS } from "./types";
+import {
+  FALLOUT_BODY_LOCATIONS,
+  FALLOUT_DEFAULT_BODY_PARTS,
+  FALLOUT_RADIATION_IMMUNE_ORIGINS,
+  FALLOUT_SKILLS,
+} from "./types";
+
+/** Custo progressivo em AP para comprar 0 a 3 dados d20 extras. */
+export const FALLOUT_EXTRA_DICE_AP_COST = [0, 1, 3, 6] as const;
+
+export const FALLOUT_MAX_EXTRA_DICE = 3;
+
+export function getExtraDiceApCost(extraDiceCount: number): number {
+  const index = Math.max(0, Math.min(Math.trunc(extraDiceCount) || 0, FALLOUT_MAX_EXTRA_DICE));
+  return FALLOUT_EXTRA_DICE_AP_COST[index];
+}
+
+/** Sem campanha não há pool de AP: cada dado extra custa 1 Ponto de Sorte. */
+export function getExtraDiceLuckCost(extraDiceCount: number): number {
+  return Math.max(0, Math.min(Math.trunc(extraDiceCount) || 0, FALLOUT_MAX_EXTRA_DICE));
+}
 
 /**
  * Gera um número aleatório inteiro entre min e max (inclusivos).
@@ -26,25 +49,18 @@ export function rollDie(sides: number): number {
 }
 
 /**
- * Rola o teste central de 2d20 do Fallout.
- *
- * - Alvo de Sucesso (Target Number) = Atributo + Perícia
- * - Limiar Crítico: se for Tag Skill = Graduação da Perícia (mínimo 1), senão = 1
- * - Complicação: qualquer dado >= complicationThreshold (padrão 20)
- * - Sucessos excedentes além da Dificuldade geram Action Points (AP)
+ * Avalia faces já roladas contra os parâmetros do teste.
+ * É a base tanto de roll2d20 quanto do re-roll com Pontos de Sorte, para que
+ * uma re-rolagem parcial recalcule o teste com exatamente as mesmas regras.
  */
-export function roll2d20(params: FalloutRollParams, diceOverride?: number[]): FalloutRollResult {
+export function evaluateRollDice(
+  rolledValues: number[],
+  params: FalloutRollParams,
+): FalloutRollResult {
   const targetNumber = params.attributeValue + params.skillRank;
   const criticalThreshold = params.isTagSkill ? Math.max(params.skillRank, 1) : 1;
   const complicationThreshold = params.complicationThreshold ?? 20;
   const difficulty = params.difficulty ?? 1;
-
-  const extraDice = Math.max(0, Math.min(params.extraDiceCount ?? 0, 3));
-  const totalDiceCount = Math.max(2, Math.min(2 + extraDice, 5));
-
-  const rolledValues: number[] = diceOverride
-    ? diceOverride.slice(0, totalDiceCount)
-    : Array.from({ length: totalDiceCount }, () => rollDie(20));
 
   const dice: FalloutRollDie[] = rolledValues.map((val) => {
     let successes = 0;
@@ -82,6 +98,25 @@ export function roll2d20(params: FalloutRollParams, diceOverride?: number[]): Fa
     isSuccess,
     apGenerated,
   };
+}
+
+/**
+ * Rola o teste central de 2d20 do Fallout.
+ *
+ * - Alvo de Sucesso (Target Number) = Atributo + Perícia
+ * - Limiar Crítico: se for Tag Skill = Graduação da Perícia (mínimo 1), senão = 1
+ * - Complicação: qualquer dado >= complicationThreshold (padrão 20)
+ * - Sucessos excedentes além da Dificuldade geram Action Points (AP)
+ */
+export function roll2d20(params: FalloutRollParams, diceOverride?: number[]): FalloutRollResult {
+  const extraDice = Math.max(0, Math.min(params.extraDiceCount ?? 0, FALLOUT_MAX_EXTRA_DICE));
+  const totalDiceCount = 2 + extraDice;
+
+  const rolledValues: number[] = diceOverride
+    ? diceOverride.slice(0, totalDiceCount)
+    : Array.from({ length: totalDiceCount }, () => rollDie(20));
+
+  return evaluateRollDice(rolledValues, params);
 }
 
 /**
@@ -175,6 +210,97 @@ export function calculateMaxHp(
 export function calculateEffectiveMaxHp(maxHp: number, radiation: number): number {
   const rads = Math.max(0, radiation);
   return Math.max(0, maxHp - rads);
+}
+
+export function isRadiationImmune(origin: FalloutOrigin): boolean {
+  return FALLOUT_RADIATION_IMMUNE_ORIGINS.includes(origin);
+}
+
+/** A radiação nunca passa do teto base de PV: 100% significa PV máximo zero. */
+export function clampRadiation(radiation: number, maxHp: number): number {
+  return Math.max(0, Math.min(Math.trunc(radiation) || 0, Math.max(0, maxHp)));
+}
+
+const RADIATION_STAGE_CONFIG: Record<
+  FalloutRadiationStage,
+  {
+    label: string;
+    description: string;
+    difficultyPenalty: number;
+    tone: FalloutRadiationCondition["tone"];
+  }
+> = {
+  clean: {
+    label: "Sem Radiação",
+    description: "Contador Geiger silencioso. Nenhuma penalidade.",
+    difficultyPenalty: 0,
+    tone: "safe",
+  },
+  tainted: {
+    label: "Contaminado",
+    description: "Náusea leve. O teto de PV já caiu, mas os testes seguem normais.",
+    difficultyPenalty: 0,
+    tone: "warn",
+  },
+  sickened: {
+    label: "Enjoado",
+    description: "Enjoo de radiação: +1 de Dificuldade em todo teste.",
+    difficultyPenalty: 1,
+    tone: "warn",
+  },
+  weakened: {
+    label: "Debilitado",
+    description: "Fraqueza e queimaduras: +1 de Dificuldade em todo teste.",
+    difficultyPenalty: 1,
+    tone: "danger",
+  },
+  critical: {
+    label: "Crítico",
+    description: "Envenenamento agudo: +2 de Dificuldade em todo teste.",
+    difficultyPenalty: 2,
+    tone: "danger",
+  },
+  incapacitated: {
+    label: "Incapacitado",
+    description: "Teto de PV zerado pela radiação. Precisa de RadAway imediato.",
+    difficultyPenalty: 2,
+    tone: "lethal",
+  },
+};
+
+/**
+ * Condição derivada da radiação acumulada sobre o teto base de PV.
+ * Não há estado próprio: a condição é sempre recalculada a partir dos RADS.
+ */
+export function getRadiationCondition(radiation: number, maxHp: number): FalloutRadiationCondition {
+  const safeMaxHp = Math.max(1, maxHp);
+  const rads = clampRadiation(radiation, safeMaxHp);
+  const percent = Math.round((rads / safeMaxHp) * 100);
+
+  let stage: FalloutRadiationStage = "clean";
+  if (rads >= safeMaxHp) stage = "incapacitated";
+  else if (percent >= 75) stage = "critical";
+  else if (percent >= 50) stage = "weakened";
+  else if (percent >= 25) stage = "sickened";
+  else if (rads > 0) stage = "tainted";
+
+  return {
+    stage,
+    ...RADIATION_STAGE_CONFIG[stage],
+    radiation: rads,
+    percent,
+    effectiveMaxHp: calculateEffectiveMaxHp(safeMaxHp, rads),
+  };
+}
+
+/** Radiação e condição de uma ficha, já considerando a imunidade da origem. */
+export function getCharacterRadiation(
+  character: Pick<FalloutCharacter, "origin" | "radiation" | "hpMax">,
+): FalloutRadiationCondition {
+  if (isRadiationImmune(character.origin)) {
+    return { ...getRadiationCondition(0, character.hpMax), description: "Imune à radiação." };
+  }
+  return getRadiationCondition(character.radiation, character.hpMax);
 }
 
 /**

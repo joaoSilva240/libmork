@@ -1,9 +1,10 @@
 "use client";
 
-import { Image, MapPin, Music } from "lucide-react";
+import { Image, MapPin, Music, Radiation } from "lucide-react";
 import { MasterJukebox } from "@/components/campaigns/MasterJukebox";
 import { MasterAssetsPanel } from "@/components/campaigns/MasterAssetsPanel";
 import { MasterWorldsPanel } from "./MasterWorldsPanel";
+import { MasterFalloutPanel } from "./MasterFalloutPanel";
 import { ShieldTabContainer, type ShieldTabDef } from "./ShieldTabContainer";
 import type { Establishment, World } from "@/types";
 import type { ActiveScene } from "@/lib/scenes/sceneConfig";
@@ -13,6 +14,8 @@ type MasterMediaPanelProps = {
   masterId: string;
   activeAssetId: string | null;
   isMissing: boolean;
+  /** Aba de recursos (AP e Radiação) exclusiva de campanhas Fallout 2d20. */
+  isFallout: boolean;
   showMap: boolean;
   showAssets: boolean;
   showJukebox: boolean;
@@ -34,12 +37,14 @@ type MasterMediaPanelProps = {
  * Painel Unificado de Cenário & Mídia do Escudo (issue #89): consolida
  * Mundos, Assets e Jukebox em um contêiner com abas. As abas ficam montadas
  * enquanto visíveis — o áudio da Jukebox não para ao trocar de aba.
+ * Campanhas Fallout 2d20 ganham a aba de recursos (AP e Radiação).
  */
 export function MasterMediaPanel({
   campaignId,
   masterId,
   activeAssetId,
   isMissing,
+  isFallout,
   showMap,
   showAssets,
   showJukebox,
@@ -56,6 +61,13 @@ export function MasterMediaPanel({
   activeScene = null,
 }: MasterMediaPanelProps) {
   const tabs: ShieldTabDef[] = [
+    {
+      id: "fallout",
+      label: "Recursos Fallout 2d20 — AP e Radiação",
+      icon: Radiation,
+      visible: isFallout,
+      content: <MasterFalloutPanel campaignId={campaignId} />,
+    },
     {
       id: "worlds",
       label: isMissing ? "Cenas / Locais de Investigação" : "Mundos & Cenas de Investigação",

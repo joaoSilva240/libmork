@@ -1230,6 +1230,10 @@ export function PlayerDashboard() {
           importingCampaignId === null &&
           (() => {
             const isMissing = selectedCampaign.rulesEngine === "missing_zero";
+            const isFallout = selectedCampaign.rulesEngine === "fallout_2d20";
+            const campaignSurvivors = isFallout
+              ? falloutCharacters.filter((fc) => fc.campaignId === selectedCampaign.id)
+              : [];
             const campaignHabitants: MissingHabitant[] = isMissing
               ? selectedCampaign.habitants && selectedCampaign.habitants.length > 0
                 ? selectedCampaign.habitants
@@ -1419,7 +1423,9 @@ export function PlayerDashboard() {
                           <h3 className="text-sm font-semibold text-accent-vibrant [data-theme-mode=light]:text-accent-primary mb-2.5">
                             {isMissing
                               ? "Meus Habitantes nesta campanha"
-                              : "Meus Personagens nesta campanha"}
+                              : isFallout
+                                ? "Meus Sobreviventes nesta campanha"
+                                : "Meus Personagens nesta campanha"}
                           </h3>
                           <div className="space-y-2.5">
                             {isMissing ? (
@@ -1488,6 +1494,63 @@ export function PlayerDashboard() {
                                           onClick={() => setSelectedHabitant(habitant)}
                                         >
                                           Abrir Ficha
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  );
+                                })
+                              )
+                            ) : isFallout ? (
+                              campaignSurvivors.length === 0 ? (
+                                <p className="text-sm text-gray-500">
+                                  Nenhum sobrevivente nesta campanha.
+                                </p>
+                              ) : (
+                                campaignSurvivors.map((survivor) => {
+                                  const initials =
+                                    survivor.name
+                                      .split(" ")
+                                      .map((w) => w[0])
+                                      .filter(Boolean)
+                                      .slice(0, 2)
+                                      .join("")
+                                      .toUpperCase() || "S";
+
+                                  return (
+                                    <div
+                                      key={survivor.id}
+                                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-secondary-border bg-dominant-deep/70 p-3.5 font-mono shadow-sm transition-colors hover:border-emerald-500/50"
+                                    >
+                                      <div className="flex items-center gap-3.5 min-w-0">
+                                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-950 border border-emerald-700/60 text-emerald-300 font-bold text-sm select-none">
+                                          {initials}
+                                        </div>
+                                        <div className="min-w-0">
+                                          <div className="flex flex-wrap items-center gap-2">
+                                            <p className="font-semibold text-secondary-pure text-sm sm:text-base truncate">
+                                              {survivor.name}
+                                            </p>
+                                            <span className="rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800/60 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                                              ☢ {survivor.origin.replace(/_/g, " ")}
+                                            </span>
+                                          </div>
+                                          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
+                                            <span className="rounded bg-accent-glow border border-accent/40 px-2 py-0.5 text-[11px] font-medium text-accent-vibrant [data-theme-mode=light]:text-accent-primary">
+                                              Nível {survivor.level}
+                                            </span>
+                                            <span className="rounded border border-red-300 bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700 [data-theme-mode=dark]:border-red-800/50 [data-theme-mode=dark]:bg-red-950/60 [data-theme-mode=dark]:text-red-300">
+                                              HP {survivor.hpCurrent}/{survivor.hpMax}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center justify-end sm:shrink-0 pt-2 sm:pt-0 border-t border-secondary-border sm:border-t-0">
+                                        <Button
+                                          variant="secondary"
+                                          className="px-3.5 py-1.5 text-xs font-semibold"
+                                          onClick={() => setSelectedFalloutCharacter(survivor)}
+                                        >
+                                          Abrir Pip-Boy
                                         </Button>
                                       </div>
                                     </div>
@@ -2067,6 +2130,16 @@ export function PlayerDashboard() {
               <PipBoySheet
                 character={selectedFalloutCharacter}
                 onUpdateCharacter={handleUpdateFalloutCharacter}
+                onLuckSpent={(luckPointsCurrent) => {
+                  setSelectedFalloutCharacter((prev) =>
+                    prev ? { ...prev, luckPointsCurrent } : prev,
+                  );
+                  setFalloutCharacters((prev) =>
+                    prev.map((fc) =>
+                      fc.id === selectedFalloutCharacter.id ? { ...fc, luckPointsCurrent } : fc,
+                    ),
+                  );
+                }}
               />
             </div>
           </div>

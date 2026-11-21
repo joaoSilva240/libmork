@@ -5,100 +5,24 @@
 // Sincronização em tempo real entre Jogadores e Supervisor (Mestre)
 // =============================================================================
 
-import React, { useEffect, useState, useCallback } from "react";
-import { useSocket } from "@/context/SocketContext";
+import React from "react";
 import { Zap, Plus, Minus } from "lucide-react";
+import { useFalloutAP } from "@/hooks/useFalloutAP";
 
 interface APTrackerWidgetProps {
   campaignId: string | null;
   isMaster?: boolean;
   className?: string;
-  initialPartyAP?: number;
-  initialOverseerAP?: number;
-  maxPartyAP?: number;
 }
 
 export function APTrackerWidget({
   campaignId,
   isMaster = false,
   className = "",
-  initialPartyAP = 0,
-  initialOverseerAP = 0,
-  maxPartyAP = 6,
 }: APTrackerWidgetProps) {
-  const { emitFalloutApUpdate, subscribeFalloutApUpdate } = useSocket();
+  const { partyAP, overseerAP, maxAP, isUpdating, error, updateAP } = useFalloutAP(campaignId);
 
-  const [partyAP, setPartyAP] = useState<number>(initialPartyAP);
-  const [overseerAP, setOverseerAP] = useState<number>(initialOverseerAP);
-  const [maxAP, setMaxAP] = useState<number>(maxPartyAP);
-  const [isUpdating, setIsUpdating] = useState<boolean>(false);
-
-  // Carrega estado inicial do servidor caso haja campanha
-  useEffect(() => {
-    if (!campaignId) return;
-    let active = true;
-
-    fetch(`/api/systems/fallout/campaigns/${campaignId}/ap`, { credentials: "include" })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!active || !data?.success || !data.data) return;
-        setPartyAP(data.data.partyAP);
-        setOverseerAP(data.data.overseerAP);
-        setMaxAP(data.data.maxPartyAP || 6);
-      })
-      .catch(() => {});
-
-    return () => {
-      active = false;
-    };
-  }, [campaignId]);
-
-  // Escuta atualizações via WebSocket
-  useEffect(() => {
-    const unsub = subscribeFalloutApUpdate((payload) => {
-      if (!campaignId || payload.campaignId === campaignId) {
-        if (payload.partyAP !== undefined) setPartyAP(payload.partyAP);
-        if (payload.overseerAP !== undefined) setOverseerAP(payload.overseerAP);
-      }
-    });
-    return unsub;
-  }, [campaignId, subscribeFalloutApUpdate]);
-
-  const updateAP = useCallback(
-    async (deltaParty: number, deltaOverseer: number = 0) => {
-      const nextParty = Math.max(0, Math.min(partyAP + deltaParty, maxAP));
-      const nextOverseer = Math.max(0, overseerAP + deltaOverseer);
-
-      setPartyAP(nextParty);
-      setOverseerAP(nextOverseer);
-
-      if (campaignId) {
-        setIsUpdating(true);
-        emitFalloutApUpdate({
-          campaignId,
-          partyAP: nextParty,
-          overseerAP: nextOverseer,
-        });
-
-        try {
-          await fetch(`/api/systems/fallout/campaigns/${campaignId}/ap`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({
-              partyAP: nextParty,
-              overseerAP: nextOverseer,
-            }),
-          });
-        } catch {
-          // Fallback silencioso
-        } finally {
-          setIsUpdating(false);
-        }
-      }
-    },
-    [campaignId, partyAP, overseerAP, maxAP, emitFalloutApUpdate],
-  );
+  if (!campaignId) return null;
 
   return (
     <div
@@ -188,6 +112,16 @@ export function APTrackerWidget({
             </div>
           )}
         </div>
+      )}
+
+      {error && (
+        <span
+          data-testid="fallout-ap-error"
+          role="status"
+          className="pl-3 border-l border-amber-700/40 text-[10px] font-semibold text-red-300"
+        >
+          {error}
+        </span>
       )}
     </div>
   );

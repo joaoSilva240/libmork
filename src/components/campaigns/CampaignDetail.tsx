@@ -11,7 +11,6 @@ import { useSocket } from "@/context/SocketContext";
 import { MasterRoster } from "@/components/campaigns/MasterRoster";
 import { SessionLog } from "@/components/campaigns/SessionLog";
 import { MissingSessionLog } from "@/components/systems/missing/MissingSessionLog";
-import { APTrackerWidget } from "@/components/systems/fallout";
 import { ContentOverlay } from "@/components/campaigns/ContentOverlay";
 import { WorldOverlay } from "@/components/campaigns/WorldOverlay";
 import { CampaignSettingsModal } from "./CampaignSettingsModal";
@@ -122,8 +121,14 @@ export function CampaignDetail() {
       case "sessionLog":
         return screenConfig.showSessionLog;
       // Blocos consolidados (issue #89): visíveis quando pelo menos uma aba está ativa.
+      // A aba de recursos Fallout independe dos toggles de mídia do telão.
       case "mediaPanel":
-        return screenConfig.showMap || screenConfig.showAssets || screenConfig.showJukebox;
+        return (
+          screenConfig.showMap ||
+          screenConfig.showAssets ||
+          screenConfig.showJukebox ||
+          campaign?.rulesEngine === "fallout_2d20"
+        );
       case "actorsPanel":
         return screenConfig.showCharactersNpcs || screenConfig.showPlayers;
       default:
@@ -418,6 +423,7 @@ export function CampaignDetail() {
             masterId={campaign.masterId}
             activeAssetId={campaign.activeAssetId ?? null}
             isMissing={isMissing}
+            isFallout={campaign.rulesEngine === "fallout_2d20"}
             showMap={screenConfig.showMap}
             showAssets={screenConfig.showAssets}
             showJukebox={screenConfig.showJukebox}
@@ -527,9 +533,6 @@ export function CampaignDetail() {
           </div>
 
           <div className="flex items-center gap-2">
-            {campaign.rulesEngine === "fallout_2d20" && (
-              <APTrackerWidget campaignId={campaign.id} isMaster />
-            )}
             {!isMissing && (
               <SceneBar
                 activeScene={activeScene}

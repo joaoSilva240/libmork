@@ -12,12 +12,16 @@ vi.mock("@/components/campaigns/MasterAssetsPanel", () => ({
 vi.mock("../MasterWorldsPanel", () => ({
   MasterWorldsPanel: () => <div data-testid="master-worlds-mock" />,
 }));
+vi.mock("../MasterFalloutPanel", () => ({
+  MasterFalloutPanel: () => <div data-testid="master-fallout-mock" />,
+}));
 
 const baseProps = {
   campaignId: "camp-1",
   masterId: "user-1",
   activeAssetId: null,
   isMissing: false,
+  isFallout: false,
   showMap: true,
   showAssets: true,
   showJukebox: true,
@@ -82,5 +86,46 @@ describe("MasterMediaPanel (issue #89)", () => {
     await waitFor(() => {
       expect(screen.getByTestId("shield-tab-assets")).toHaveAttribute("aria-selected", "true");
     });
+  });
+
+  it("não mostra a aba de recursos Fallout fora do sistema fallout_2d20", () => {
+    render(<MasterMediaPanel {...baseProps} />);
+
+    expect(screen.queryByTestId("shield-tab-fallout")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("master-fallout-mock")).not.toBeInTheDocument();
+  });
+
+  it("mostra a aba de recursos Fallout junto de Mundos e Jukebox no sistema 2d20", () => {
+    render(<MasterMediaPanel {...baseProps} isFallout={true} />);
+
+    expect(screen.getByTestId("shield-tab-fallout")).toBeInTheDocument();
+    expect(screen.getByTestId("shield-tab-worlds")).toBeInTheDocument();
+    expect(screen.getByTestId("shield-tab-jukebox")).toBeInTheDocument();
+    expect(screen.getByTestId("master-fallout-mock")).toBeInTheDocument();
+  });
+
+  it("mantém o card de recursos montado ao trocar de aba", () => {
+    render(<MasterMediaPanel {...baseProps} isFallout={true} />);
+
+    fireEvent.click(screen.getByTestId("shield-tab-jukebox"));
+
+    const falloutPanel = screen.getByTestId("shield-tabpanel-fallout");
+    expect(falloutPanel).toHaveAttribute("hidden", "");
+    expect(screen.getByTestId("master-fallout-mock")).toBeInTheDocument();
+  });
+
+  it("renderiza só o card de recursos quando a mídia está desligada numa campanha 2d20", () => {
+    render(
+      <MasterMediaPanel
+        {...baseProps}
+        isFallout={true}
+        showMap={false}
+        showAssets={false}
+        showJukebox={false}
+      />,
+    );
+
+    expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
+    expect(screen.getByTestId("master-fallout-mock")).toBeInTheDocument();
   });
 });
