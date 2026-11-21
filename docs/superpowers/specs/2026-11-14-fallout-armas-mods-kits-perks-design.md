@@ -254,3 +254,94 @@ O botão de adicionar fica disabled quando unmet.length > 0 (mesmo com toggle at
 - lucide-react para ícones (Crosshair, Wrench, Package)
 - PT-BR em labels e mensagens
 - Commit atômico por feature, HUSKY=0 --no-verify
+
+---
+
+## Status de Execução
+
+**Fase 4a.1: COMPLETA (2026-11-20)**
+
+Todas as 5 funcionalidades implementadas, testadas e commitadas:
+
+| # | Feature | Commits | Testes |
+|---|---------|---------|--------|
+| 1 | Equipar/Atirar armas | 4a0610f | 4 (PipBoySheet INV) |
+| 2 | Instalar/remover mods | 282dd45, 4a0610f | 4 (rules) + 2 (PipBoySheet) |
+| 3 | Kits de origem | 282dd45, 0f79109 | 3 (rules) + 1 (wizard) |
+| 4 | Limite de perks | 282dd45, 0f79109, 25e3327 | 3 (rules) + 2 (wizard) + 1 (modal) |
+| 5 | Filtro por requisitos | 0f79109, 25e3327 | 4 (wizard) + 3 (modal) |
+
+Validação final: `tsc --noEmit` limpo, **1469 testes / 181 arquivos / 0 falhas**.
+
+### Commits da fase (ordem cronológica)
+
+```
+92ef0d4 docs(fallout): spec Fase 4a.1
+6ce3269 docs(fallout): plano de implementacao Fase 4a.1
+32b6c52 feat(fallout): tipos weapon skill/stashed/installedMods, FalloutModItem, origins startingItems
+282dd45 feat(fallout): getMaxFalloutPerks, applyMod/removeMod, resolveStartingItems e kits por origem
+ae8f9c2 feat(fallout): mapper skill por tipo de arma e modEffects para weapon_mods
+4a0610f feat(fallout): equipar/atirar armas e instalar/remover mods na aba INV
+0f79109 feat(fallout): limite de perks, filtro por requisitos e preview de kit no wizard
+25e3327 feat(fallout): limite e filtro de perks no modal in-game
+4d1c59b fix(fallout): bump DATA test character to level 5 so perk addition is not at limit
+```
+
+---
+
+## Pendências e Próximas Fases
+
+### 1. Integração da branch (BLOQUEADO — decisão do usuário)
+
+A branch `feat/fallout-2d20-improvements` contém Fases 3 + 4a + 4a.1 completas, mas **nunca foi mergeada nem pushada**. A base do branch é `feat/fallout-2d20-system` (fork em `56c94cf`), não `main`.
+
+Opções pendentes:
+- **Merge em main** — integrar tudo de uma vez (Fases 3, 4a, 4a.1)
+- **Push da branch** — manter separada para revisão/PR
+- **Keep local** — continuar acumulando fases antes de integrar
+
+Nenhuma ação de merge/push deve ser tomada sem escolha explícita do usuário.
+
+### 2. Fase 4b — Ataque e Dano (PRÓXIMA)
+
+Depende de 4a (items+ammo populados) — satisfeito.
+
+Escopo planejado:
+- Pipeline weapon → 2d20 pool (attribute+skill do weaponType, crítico=skill se tag senão 1, complication 20)
+- DC de dano: `damage.rating + meleeBonus − tear`
+- Hit location: `1dh` (dado de localização)
+- Ammo decrement: `ammoPerShot`, gatling ×2/2, `least-shots-first`
+- Efeito `vicious`: soma +damage por effect
+- Wear-and-tear opcional (`tear` field)
+- Botão "aplicar em alvo selecionado" no chat card — **extensão Libmork, não existe no upstream** (escolha deliberada a documentar na spec de 4b)
+
+Pré-requisitos atendidos por 4a/4a.1:
+- `weapon.skill` mapeado (4a.1)
+- `ammo.shotsCurrent/shotsMax` populados (4a)
+- `bodyParts[].resistances` recalculadas ao equipar (4a)
+- `injuries` slots por parte (4a)
+- Arma equipada com botão Atirar que abre roller (4a.1)
+
+### 3. Fase 4c — Sobrevivência (DEPOIS DE 4b)
+
+Depende de 4a + decisão de design sobre "world time" (relógio de jogo ainda não modelado no Libmork).
+
+Escopo planejado:
+- Hunger/thirst/sleep/fatigue com relógio de jogo
+- Chem doses + addiction check (auto-criar Addiction item)
+- Alcoholic check
+- Irradiated food → rad roll
+- Magazines + Comprehension perk
+- drinkDirtyWater
+
+**Bloqueador de design:** o Libmork não possui modelo de tempo de mundo. A spec de 4c precisa decidir como modelar isso (ticks por sessão? relógio manual do mestre? tempo real?). Não avançar sem essa decisão.
+
+### 4. Itens fora de escopo (todas as fases)
+
+- NPCs/creatures/robots/vehicles (só FalloutCharacter de jogador)
+- Power armor frame com `frameId` aninhado (powerArmor = armor monolítico)
+- Stash folder UI, sort por tipo
+- Mods de apparel (modTarget="apparel" existe no tipo mas sem UI de aplicação)
+- Animações de combate
+- Custo de AP para atirar (ação de combate completa fica para 4b)
+
